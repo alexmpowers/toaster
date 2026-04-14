@@ -124,7 +124,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
       if (result.filler_indices.length > 0) {
         setHighlightedIndices(result.filler_indices, "filler");
       } else {
-        clearHighlights();
+        setHighlightedIndices([], "filler");
       }
     } catch (err) {
       console.error("Filler detection failed:", err);
@@ -146,7 +146,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
         const pauseWordIndices = result.pauses.map((p: PauseInfo) => p.after_word_index);
         setHighlightedIndices(pauseWordIndices, "pause");
       } else {
-        clearHighlights();
+        setHighlightedIndices([], "pause");
       }
     } catch (err) {
       console.error("Pause detection failed:", err);
@@ -393,17 +393,19 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
           <Timer size={12} />
           {t("editor.detectPauses")}
         </button>
-        {highlightedIndices.length > 0 && (
+        {highlightType && (
           <>
             <span className="text-[11px] text-mid-gray/60">
               {highlightedIndices.length} {highlightType === "filler" ? t("editor.fillersFound") : t("editor.pausesFound")}
             </span>
-            <button
-              onClick={() => clearHighlights()}
-              className="text-[11px] text-mid-gray/60 hover:text-mid-gray transition-colors"
-            >
-              <X size={12} />
-            </button>
+            {highlightedIndices.length > 0 && (
+              <button
+                onClick={() => clearHighlights()}
+                className="text-[11px] text-mid-gray/60 hover:text-mid-gray transition-colors"
+              >
+                <X size={12} />
+              </button>
+            )}
           </>
         )}
       </div>
