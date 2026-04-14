@@ -101,10 +101,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div className="flex flex-col w-40 h-full border-e border-mid-gray/20 items-center px-2">
-      <div className="mt-3 mb-1 px-1">
-        <img src={toasterLogo} alt="Toaster" className="w-full h-auto" />
-      </div>
-      <div className="flex flex-col w-full items-center gap-0.5">
+      <img src={toasterLogo} alt="Toaster" className="w-[120px] m-4" />
+      <div className="flex flex-col w-full items-center gap-1 pt-2 border-t border-mid-gray/20">
         {availableSections.map((section) => {
           const Icon = section.icon;
           const isActive = activeSection === section.id;
