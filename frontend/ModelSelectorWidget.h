@@ -18,6 +18,7 @@ public:
 
 signals:
   void modelChanged(const QString &modelId);
+  void languageChanged(const QString &languageCode);
   void downloadRequested(const QString &modelId);
 
 private slots:
@@ -29,6 +30,7 @@ private:
   void updateStatusDisplay();
 
   QComboBox *m_modelCombo = nullptr;
+  QComboBox *m_languageCombo = nullptr;
   QLabel *m_statusLabel = nullptr;
   QLabel *m_descriptionLabel = nullptr;
   QLabel *m_sizeLabel = nullptr;

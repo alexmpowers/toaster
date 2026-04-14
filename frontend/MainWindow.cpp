@@ -60,6 +60,7 @@
 #include <algorithm>
 #include <array>
 #include <limits>
+#include <vector>
 
 #ifdef Q_OS_WIN
 #ifndef NOMINMAX
@@ -241,20 +242,6 @@ toaster_caption_format_t captionFormatForPath(const QString &path)
   return QFileInfo(path).suffix().compare("vtt", Qt::CaseInsensitive) == 0
            ? TOASTER_CAPTION_FORMAT_VTT
            : TOASTER_CAPTION_FORMAT_SRT;
-}
-
-bool isSpecialWhisperToken(const QString &token)
-{
-  return token.startsWith('[') && token.endsWith(']');
-}
-
-bool shouldAttachWhisperToken(const QString &token)
-{
-  if (token.isEmpty())
-    return false;
-
-  const QChar first = token.front();
-  return first.isPunct() || first == '\'' || first == '-';
 }
 
 struct ScopedFlag {
@@ -658,6 +645,12 @@ void MainWindow::createDocks()
 
   m_modelSelector = new ModelSelectorWidget(this);
   m_modelDock = createDock(this, "Model", "modelDock", m_modelSelector);
+
+  connect(m_modelSelector, &ModelSelectorWidget::languageChanged, this, [this](const QString &lang) {
+    if (m_project)
+      toaster_project_set_language(m_project, lang.toUtf8().constData());
+    appendLogLine(QString("Language set to: %1").arg(lang));
+  });
 
   m_docks = {m_transcriptDock, m_waveformDock, m_suggestedEditsDock,
              m_inspectorDock, m_exportDock,   m_logsDock, m_modelDock};
@@ -1282,27 +1275,6 @@ void MainWindow::transcribeMedia()
   }
 }
 
-QString MainWindow::locateWhisperModel() const
-{
-  QString envModel = qEnvironmentVariable("TOASTER_WHISPER_MODEL");
-  QString appDataModel =
-    QDir(QStandardPaths::writableLocation(QStandardPaths::AppDataLocation)).filePath(
-      "models/ggml-tiny.en.bin");
-  QStringList candidates = {
-    envModel,
-    QCoreApplication::applicationDirPath() + "/models/ggml-tiny.en.bin",
-    appDataModel,
-    "C:/msys64/mingw64/bin/models/ggml-tiny.en.bin",
-  };
-
-  for (const QString &candidate : candidates) {
-    if (!candidate.isEmpty() && QFileInfo::exists(candidate))
-      return candidate;
-  }
-
-  return appDataModel;
-}
-
 QString MainWindow::waveformCachePath(const QString &mediaPath) const
 {
   QFileInfo info(mediaPath);
@@ -1318,217 +1290,14 @@ QString MainWindow::waveformCachePath(const QString &mediaPath) const
   return QDir(cacheRoot + "/waveforms").filePath(QString::fromUtf8(hash) + ".png");
 }
 
-bool MainWindow::downloadWhisperModel(const QString &modelPath, QString *errorMessage)
-{
-  QString stdoutText;
-  QString stderrText;
-  QString targetPath = QDir::toNativeSeparators(modelPath);
-  QString command =
-    QString("Invoke-WebRequest -Uri '%1' -OutFile '%2'")
-      .arg("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en.bin?download=true")
-      .arg(targetPath.replace("'", "''"));
-
-  if (!QDir().mkpath(QFileInfo(modelPath).absolutePath())) {
-    if (errorMessage)
-      *errorMessage = QString("Failed to create model directory for:\n%1").arg(modelPath);
-    return false;
-  }
-
-  appendLogLine("Downloading local whisper.cpp model (tiny.en)...");
-  if (!runProcess("powershell.exe",
-                  {"-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", command}, &stdoutText,
-                  &stderrText)) {
-    QFile::remove(modelPath);
-    if (errorMessage) {
-      *errorMessage = stderrText.isEmpty()
-                        ? "Failed to download whisper.cpp model."
-                        : QString("Failed to download whisper.cpp model.\n\n%1").arg(stderrText);
-    }
-    return false;
-  }
-
-  if (!QFileInfo::exists(modelPath) || QFileInfo(modelPath).size() == 0) {
-    QFile::remove(modelPath);
-    if (errorMessage)
-      *errorMessage = "Downloaded whisper.cpp model was empty.";
-    return false;
-  }
-
-  return true;
-}
-
-bool MainWindow::ensureWhisperModel(QString *modelPath, bool allowDownload,
-                                    QString *errorMessage)
-{
-  QString candidate = locateWhisperModel();
-
-  if (QFileInfo::exists(candidate)) {
-    if (modelPath)
-      *modelPath = candidate;
-    return true;
-  }
-
-  if (!allowDownload) {
-    if (errorMessage) {
-      *errorMessage =
-        "No local whisper.cpp model was found. Set TOASTER_WHISPER_MODEL or transcribe once with network access.";
-    }
-    return false;
-  }
-
-  if (!downloadWhisperModel(candidate, errorMessage))
-    return false;
-
-  if (modelPath)
-    *modelPath = candidate;
-  return true;
-}
-
-bool MainWindow::populateTranscriptFromWhisperJson(const QString &jsonPath, QString *errorMessage)
-{
-  QFile jsonFile(jsonPath);
-  QJsonParseError parseError;
-  QByteArray rawJson;
-  QJsonDocument document;
-  QJsonObject root;
-  QJsonArray transcription;
-  toaster_transcript_t *transcript;
-  QString currentWord;
-  qint64 currentStartUs = 0;
-  qint64 currentEndUs = 0;
-  bool haveCurrentWord = false;
-  int parsedWords = 0;
-
-  if (!m_project) {
-    if (errorMessage)
-      *errorMessage = "No project is loaded.";
-    return false;
-  }
-
-  if (!jsonFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    if (errorMessage)
-      *errorMessage = QString("Failed to open whisper transcript:\n%1").arg(jsonPath);
-    return false;
-  }
-
-  rawJson = jsonFile.readAll();
-  document = QJsonDocument::fromJson(rawJson, &parseError);
-  if (parseError.error != QJsonParseError::NoError || !document.isObject()) {
-    if (errorMessage) {
-      *errorMessage =
-        QString("Failed to parse whisper transcript JSON: %1").arg(parseError.errorString());
-    }
-    return false;
-  }
-
-  root = document.object();
-  transcription = root.value("transcription").toArray();
-  if (transcription.isEmpty()) {
-    if (errorMessage)
-      *errorMessage = "whisper.cpp returned no transcription segments.";
-    return false;
-  }
-
-  transcript = toaster_project_get_transcript(m_project);
-  toaster_transcript_clear(transcript);
-  toaster_transcript_clear_cut_spans(transcript);
-  toaster_suggestion_list_clear(m_suggestions);
-
-  auto flushWord = [&]() -> bool {
-    if (!haveCurrentWord || currentWord.isEmpty())
-      return true;
-
-    if (currentEndUs <= currentStartUs)
-      currentEndUs = currentStartUs + 100000;
-
-    if (!toaster_transcript_add_word(transcript, currentWord.toUtf8().constData(), currentStartUs,
-                                     currentEndUs)) {
-      return false;
-    }
-
-    ++parsedWords;
-    haveCurrentWord = false;
-    currentWord.clear();
-    currentStartUs = 0;
-    currentEndUs = 0;
-    return true;
-  };
-
-  for (const QJsonValue &segmentValue : transcription) {
-    QJsonArray tokens = segmentValue.toObject().value("tokens").toArray();
-
-    for (const QJsonValue &tokenValue : tokens) {
-      QJsonObject tokenObject = tokenValue.toObject();
-      QString rawToken = tokenObject.value("text").toString();
-      QString normalizedToken = rawToken.trimmed();
-      QJsonObject offsets = tokenObject.value("offsets").toObject();
-      qint64 startUs = static_cast<qint64>(offsets.value("from").toDouble() * 1000.0);
-      qint64 endUs = static_cast<qint64>(offsets.value("to").toDouble() * 1000.0);
-      bool startsNewWord = rawToken.startsWith(' ');
-
-      if (isSpecialWhisperToken(rawToken) || normalizedToken.isEmpty())
-        continue;
-
-      if (!haveCurrentWord) {
-        currentWord = normalizedToken;
-        currentStartUs = startUs;
-        currentEndUs = std::max(startUs, endUs);
-        haveCurrentWord = true;
-        continue;
-      }
-
-      if (startsNewWord && !shouldAttachWhisperToken(normalizedToken)) {
-        if (!flushWord()) {
-          if (errorMessage)
-            *errorMessage = "Failed to append transcribed word to transcript.";
-          return false;
-        }
-
-        currentWord = normalizedToken;
-        currentStartUs = startUs;
-        currentEndUs = std::max(startUs, endUs);
-        haveCurrentWord = true;
-        continue;
-      }
-
-      currentWord += normalizedToken;
-      currentEndUs = std::max(currentEndUs, std::max(startUs, endUs));
-    }
-  }
-
-  if (!flushWord()) {
-    if (errorMessage)
-      *errorMessage = "Failed to append final transcribed word to transcript.";
-    return false;
-  }
-
-  if (parsedWords == 0) {
-    if (errorMessage)
-      *errorMessage = "whisper.cpp returned no word-level tokens.";
-    return false;
-  }
-
-  toaster_project_set_language(m_project,
-                               root.value("result").toObject().value("language").toString("en")
-                                 .toUtf8()
-                                 .constData());
-  rebuildAllViews();
-  appendLogLine(QString("Transcribed media into %1 words.").arg(parsedWords));
-  return true;
-}
-
 bool MainWindow::transcribeCurrentMedia(bool allowModelDownload, QString *errorMessage)
 {
   QString mediaPath;
-  QString whisperCliPath;
-  QString whisperModelPath;
   QString ffmpegPath;
   QString stdoutText;
   QString stderrText;
   QTemporaryDir tempDir;
   QString wavPath;
-  QString jsonBasePath;
-  QString jsonPath;
 
   if (!m_project) {
     if (errorMessage)
@@ -1552,15 +1321,25 @@ bool MainWindow::transcribeCurrentMedia(bool allowModelDownload, QString *errorM
   ScopedFlag transcriptionGuard(m_transcriptionInProgress);
   m_lastTranscriptionError.clear();
 
-  whisperCliPath = locateTool("whisper-cli.exe");
-  if (!QFileInfo::exists(whisperCliPath)) {
-    if (errorMessage)
-      *errorMessage = "whisper-cli.exe was not found in the deployed app or MSYS2 toolchain.";
-    return false;
+  /* Check active model is downloaded */
+  const char *activeId = toaster_model_get_active();
+  if (!toaster_model_is_downloaded(activeId)) {
+    if (!allowModelDownload) {
+      if (errorMessage)
+        *errorMessage = QString("Model '%1' is not downloaded. Use the Model dock to download it.")
+                            .arg(QString::fromUtf8(activeId));
+      return false;
+    }
+    appendLogLine(QString("Downloading model '%1'...").arg(QString::fromUtf8(activeId)));
+    if (!toaster_model_download(activeId, nullptr, nullptr)) {
+      if (errorMessage)
+        *errorMessage = "Failed to download the transcription model.";
+      return false;
+    }
+    toaster_model_refresh_status();
+    if (m_modelSelector)
+      m_modelSelector->refreshModelList();
   }
-
-  if (!ensureWhisperModel(&whisperModelPath, allowModelDownload, errorMessage))
-    return false;
 
   if (!tempDir.isValid()) {
     if (errorMessage)
@@ -1569,8 +1348,6 @@ bool MainWindow::transcribeCurrentMedia(bool allowModelDownload, QString *errorM
   }
 
   wavPath = tempDir.filePath("transcription.wav");
-  jsonBasePath = tempDir.filePath("transcription");
-  jsonPath = jsonBasePath + ".json";
   ffmpegPath = locateTool("ffmpeg.exe");
 
   appendLogLine("Extracting media audio for transcription...");
@@ -1586,22 +1363,50 @@ bool MainWindow::transcribeCurrentMedia(bool allowModelDownload, QString *errorM
     return false;
   }
 
-  appendLogLine("Running local whisper.cpp transcription...");
-  if (!runProcess(whisperCliPath,
-                  {"-m", whisperModelPath, "-f", wavPath, "-oj", "-ojf", "-np", "-l", "en", "-of",
-                   jsonBasePath},
-                  &stdoutText, &stderrText)) {
-    if (errorMessage) {
-      *errorMessage = stderrText.isEmpty()
-                        ? "whisper.cpp transcription failed."
-                        : QString("whisper.cpp transcription failed.\n\n%1").arg(stderrText);
-    }
+  /* Read WAV file into float PCM samples */
+  QFile wavFile(wavPath);
+  if (!wavFile.open(QIODevice::ReadOnly)) {
+    if (errorMessage)
+      *errorMessage = "Failed to open extracted audio file.";
     return false;
   }
 
-  if (!populateTranscriptFromWhisperJson(jsonPath, errorMessage))
-    return false;
+  QByteArray wavData = wavFile.readAll();
+  wavFile.close();
 
+  /* Skip WAV header (44 bytes for standard PCM WAV) */
+  if (wavData.size() < 44) {
+    if (errorMessage)
+      *errorMessage = "Extracted audio file is too small.";
+    return false;
+  }
+
+  const int16_t *pcm16 = reinterpret_cast<const int16_t *>(wavData.constData() + 44);
+  size_t sampleCount = static_cast<size_t>(wavData.size() - 44) / sizeof(int16_t);
+
+  /* Convert int16 to float32 */
+  std::vector<float> pcmFloat(sampleCount);
+  for (size_t i = 0; i < sampleCount; i++)
+    pcmFloat[i] = static_cast<float>(pcm16[i]) / 32768.0f;
+
+  /* Clear existing transcript */
+  toaster_transcript_t *transcript = toaster_project_get_transcript(m_project);
+  toaster_transcript_clear(transcript);
+
+  appendLogLine("Running built-in whisper.cpp transcription...");
+
+  bool ok = toaster_transcribe(transcript, pcmFloat.data(), pcmFloat.size(), 16000,
+                               toaster_project_get_language(m_project), nullptr, nullptr);
+
+  if (!ok) {
+    if (errorMessage)
+      *errorMessage = "Built-in whisper.cpp transcription failed.";
+    return false;
+  }
+
+  size_t wordCount = toaster_transcript_word_count(transcript);
+  rebuildAllViews();
+  appendLogLine(QString("Transcribed media into %1 words.").arg(wordCount));
   return true;
 }
 

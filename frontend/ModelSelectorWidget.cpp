@@ -59,6 +59,29 @@ ModelSelectorWidget::ModelSelectorWidget(QWidget *parent) : QWidget(parent)
   m_modelCombo->setMinimumWidth(200);
   layout->addWidget(m_modelCombo);
 
+  /* Language selector */
+  auto *langLabel = new QLabel(QStringLiteral("🌐 Language"));
+  langLabel->setStyleSheet("font-weight: bold; font-size: 13px; margin-top: 4px;");
+  layout->addWidget(langLabel);
+
+  m_languageCombo = new QComboBox;
+  m_languageCombo->addItem("English", "en");
+  m_languageCombo->addItem("Auto-detect", "auto");
+  m_languageCombo->addItem("Spanish", "es");
+  m_languageCombo->addItem("French", "fr");
+  m_languageCombo->addItem("German", "de");
+  m_languageCombo->addItem("Portuguese", "pt");
+  m_languageCombo->addItem("Japanese", "ja");
+  m_languageCombo->addItem("Chinese", "zh");
+  m_languageCombo->addItem("Korean", "ko");
+  m_languageCombo->addItem("Russian", "ru");
+  m_languageCombo->addItem("Italian", "it");
+  m_languageCombo->addItem("Dutch", "nl");
+  m_languageCombo->addItem("Turkish", "tr");
+  m_languageCombo->addItem("Arabic", "ar");
+  m_languageCombo->addItem("Hindi", "hi");
+  layout->addWidget(m_languageCombo);
+
   /* Description */
   m_descriptionLabel = new QLabel;
   m_descriptionLabel->setWordWrap(true);
@@ -105,6 +128,10 @@ ModelSelectorWidget::ModelSelectorWidget(QWidget *parent) : QWidget(parent)
           &ModelSelectorWidget::onModelSelected);
   connect(m_downloadButton, &QPushButton::clicked, this, &ModelSelectorWidget::onDownloadClicked);
   connect(m_deleteButton, &QPushButton::clicked, this, &ModelSelectorWidget::onDeleteClicked);
+  connect(m_languageCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int idx) {
+    if (idx >= 0)
+      emit languageChanged(m_languageCombo->itemData(idx).toString());
+  });
 
   refreshModelList();
 }

@@ -107,12 +107,8 @@ private:
                             QString *errorMessage = nullptr);
   bool exportScriptToPath(const QString &outputPath, QString *errorMessage = nullptr);
   bool transcribeCurrentMedia(bool allowModelDownload, QString *errorMessage = nullptr);
-  bool populateTranscriptFromWhisperJson(const QString &jsonPath, QString *errorMessage = nullptr);
   bool replaceTranscriptFromText(const QString &text, qint64 duration_us,
                                  QString *errorMessage = nullptr);
-  bool ensureWhisperModel(QString *modelPath, bool allowDownload,
-                          QString *errorMessage = nullptr);
-  bool downloadWhisperModel(const QString &modelPath, QString *errorMessage = nullptr);
   bool loadWaveformForMedia(const QString &mediaPath, QString *errorMessage = nullptr);
   bool selectTranscriptSearchMatch(int matchIndex);
   bool confirmTranscriptReplacement(const QString &title, const QString &message);
@@ -139,7 +135,6 @@ private:
   int suggestionRowForPosition(qint64 positionUs) const;
   bool applySuggestion(size_t suggestionIndex);
   QString locateTool(const QString &toolName) const;
-  QString locateWhisperModel() const;
   QString waveformCachePath(const QString &mediaPath) const;
   bool runProcess(const QString &program, const QStringList &arguments, QString *stdOut,
                   QString *stdErr) const;
