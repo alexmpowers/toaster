@@ -7,6 +7,76 @@ use crate::commands::editor::EditorStore;
 use crate::managers::editor::Word;
 use crate::managers::transcription::TranscriptionManager;
 
+/// Refine word boundaries by snapping them to low-energy points in the audio.
+///
+/// After proportional timestamp distribution, word boundaries may fall in the
+/// middle of speech. This function analyzes the actual audio signal around each
+/// boundary and moves it to the nearest silence/low-energy point, producing
+/// much more precise word-level cuts.
+///
+/// `samples` must be 16kHz mono f32 audio.
+fn refine_word_boundaries(words: &mut [Word], samples: &[f32]) {
+    if words.len() < 2 || samples.is_empty() {
+        return;
+    }
+
+    const SAMPLE_RATE: f64 = 16000.0;
+    const SEARCH_WINDOW_US: i64 = 80_000; // ±80ms search window around each boundary
+    const RMS_WINDOW_SAMPLES: usize = 80; // 5ms RMS analysis window (16000 * 0.005)
+
+    /// Compute RMS energy for a slice of audio samples
+    fn rms(samples: &[f32]) -> f32 {
+        if samples.is_empty() {
+            return 0.0;
+        }
+        let sum_sq: f32 = samples.iter().map(|s| s * s).sum();
+        (sum_sq / samples.len() as f32).sqrt()
+    }
+
+    // For each boundary between adjacent words, find the minimum energy point
+    for i in 0..words.len() - 1 {
+        let boundary_us = words[i].end_us;
+
+        // Search window in samples
+        let center_sample = (boundary_us as f64 / 1_000_000.0 * SAMPLE_RATE) as usize;
+        let half_window_samples = (SEARCH_WINDOW_US as f64 / 1_000_000.0 * SAMPLE_RATE) as usize;
+
+        let search_start = center_sample.saturating_sub(half_window_samples);
+        let search_end = (center_sample + half_window_samples).min(samples.len());
+
+        if search_start >= search_end || search_end - search_start < RMS_WINDOW_SAMPLES {
+            continue;
+        }
+
+        // Slide the RMS window across the search range and find minimum energy
+        let mut min_energy = f32::MAX;
+        let mut min_pos = center_sample;
+
+        let mut pos = search_start;
+        while pos + RMS_WINDOW_SAMPLES <= search_end {
+            let energy = rms(&samples[pos..pos + RMS_WINDOW_SAMPLES]);
+            if energy < min_energy {
+                min_energy = energy;
+                min_pos = pos + RMS_WINDOW_SAMPLES / 2; // center of the window
+            }
+            pos += RMS_WINDOW_SAMPLES / 2; // step by half-window for overlap
+        }
+
+        // Convert back to microseconds
+        let refined_us = (min_pos as f64 / SAMPLE_RATE * 1_000_000.0) as i64;
+
+        // Only snap if the refined point is within the search window
+        // and doesn't create zero-duration or negative-duration words
+        let min_word_us = 10_000; // minimum 10ms per word
+        if refined_us > words[i].start_us + min_word_us
+            && refined_us < words[i + 1].end_us - min_word_us
+        {
+            words[i].end_us = refined_us;
+            words[i + 1].start_us = refined_us;
+        }
+    }
+}
+
 /// Build word-level timestamps from transcription segments.
 ///
 /// Each segment has a start/end time and text. We split each segment's text
@@ -14,7 +84,7 @@ use crate::managers::transcription::TranscriptionManager;
 /// This produces timestamps that are accurate to within a segment (~30s chunks
 /// from Whisper), with proportional distribution within each segment being
 /// much better than global even distribution.
-fn build_words_from_segments(full_text: &str, segments: &[TranscriptionSegment]) -> Vec<Word> {
+fn build_words_from_segments(full_text: &str, segments: &[TranscriptionSegment], samples: &[f32]) -> Vec<Word> {
     let mut words = Vec::new();
 
     // The filtered text may differ from segment text (due to filler filtering,
@@ -126,6 +196,9 @@ fn build_words_from_segments(full_text: &str, segments: &[TranscriptionSegment])
             });
         }
     }
+
+    // Refine word boundaries by snapping to silence points in the audio
+    refine_word_boundaries(&mut words, samples);
 
     words
 }
@@ -252,7 +325,7 @@ pub async fn transcribe_media_file(
     // duration). This is far more accurate than the previous approach of
     // dividing total audio duration evenly across all words.
     let words: Vec<Word> = if let Some(ref segs) = segments {
-        build_words_from_segments(&text, segs)
+        build_words_from_segments(&text, segs, &samples)
     } else {
         // Fallback: no segments available (some engines don't provide them).
         // Distribute words evenly across total duration (legacy behavior).
