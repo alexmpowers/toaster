@@ -1,8 +1,17 @@
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
-import { FileVideo, Upload, FileText, Download } from "lucide-react";
+import {
+  FileVideo,
+  Upload,
+  FileText,
+  Download,
+  Trash2,
+  Save,
+  FolderOpen,
+  Terminal,
+} from "lucide-react";
 import { useEditorStore } from "@/stores/editorStore";
 import { usePlayerStore } from "@/stores/playerStore";
 import TranscriptEditor from "@/components/editor/TranscriptEditor";
@@ -17,6 +26,13 @@ interface MediaInfo {
   extension: string;
 }
 
+interface FillerAnalysis {
+  filler_indices: number[];
+  pauses: { after_word_index: number; gap_duration_us: number }[];
+  filler_count: number;
+  pause_count: number;
+}
+
 const EditorView: React.FC = () => {
   const { t } = useTranslation();
   const { words, setWords } = useEditorStore();
@@ -25,6 +41,7 @@ const EditorView: React.FC = () => {
   const seekTo = usePlayerStore((s) => s.seekTo);
   const [mediaInfo, setMediaInfo] = useState<MediaInfo | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [fillerInfo, setFillerInfo] = useState<FillerAnalysis | null>(null);
 
   const handleImportMedia = useCallback(async () => {
     try {
@@ -75,7 +92,6 @@ const EditorView: React.FC = () => {
     if (!mediaInfo) return;
     setIsTranscribing(true);
     try {
-      // Transcribe the media file using the backend engine
       const words = await invoke<
         Array<{
           text: string;
@@ -87,12 +103,9 @@ const EditorView: React.FC = () => {
           speaker_id: number;
         }>
       >("transcribe_media_file", { path: mediaInfo.path });
-      // The backend already populated the editor store,
-      // but we also update the frontend store
       await setWords(words);
     } catch (err) {
       console.error("Transcription failed:", err);
-      // Fall back to a placeholder if transcription fails
       const placeholderWords = [
         {
           text: String(err),
@@ -112,12 +125,15 @@ const EditorView: React.FC = () => {
 
   const handleExport = useCallback(
     async (format: string) => {
+      const ext = format === "Srt" ? "srt" : format === "Vtt" ? "vtt" : "txt";
       try {
-        const content = await invoke<string>("export_transcript", {
-          format,
+        const filePath = await save({
+          filters: [{ name: format, extensions: [ext] }],
+          defaultPath: `transcript.${ext}`,
         });
-        // Copy to clipboard as a quick export
-        await navigator.clipboard.writeText(content);
+        if (!filePath) return;
+
+        await invoke("export_transcript_to_file", { format, path: filePath });
       } catch (err) {
         console.error("Export failed:", err);
       }
@@ -125,9 +141,89 @@ const EditorView: React.FC = () => {
     [],
   );
 
+  const handleAnalyzeFillers = useCallback(async () => {
+    try {
+      const analysis = await invoke<FillerAnalysis>("analyze_fillers", {});
+      setFillerInfo(analysis);
+    } catch (err) {
+      console.error("Filler analysis failed:", err);
+    }
+  }, []);
+
+  const handleDeleteFillers = useCallback(async () => {
+    try {
+      const count = await invoke<number>("delete_fillers", {});
+      setFillerInfo(null);
+      if (count > 0) {
+        // Refresh words from backend
+        const updated = await invoke<typeof words>("editor_get_words", {});
+        await setWords(updated);
+      }
+    } catch (err) {
+      console.error("Delete fillers failed:", err);
+    }
+  }, [setWords]);
+
+  const handleSaveProject = useCallback(async () => {
+    try {
+      const filePath = await save({
+        filters: [{ name: "Toaster Project", extensions: ["toaster"] }],
+        defaultPath: `${mediaInfo?.file_name ?? "project"}.toaster`,
+      });
+      if (!filePath) return;
+      await invoke("save_project", { path: filePath });
+    } catch (err) {
+      console.error("Save project failed:", err);
+    }
+  }, [mediaInfo]);
+
+  const handleLoadProject = useCallback(async () => {
+    try {
+      const selected = await open({
+        multiple: false,
+        filters: [{ name: "Toaster Project", extensions: ["toaster"] }],
+      });
+      if (!selected) return;
+      const path = typeof selected === "string" ? selected : selected;
+      const mediaPath = await invoke<string>("load_project", { path });
+
+      // Refresh editor words
+      const loadedWords = await invoke<typeof words>("editor_get_words", {});
+      await setWords(loadedWords);
+
+      // Restore media playback
+      if (mediaPath) {
+        const assetUrl = await invoke<string | null>("media_get_asset_url");
+        if (assetUrl) {
+          const info = await invoke<MediaInfo>("media_get_current", {});
+          if (info) {
+            setMediaInfo(info);
+            setMedia(
+              assetUrl,
+              info.media_type === "Video" ? "video" : "audio",
+            );
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Load project failed:", err);
+    }
+  }, [setWords, setMedia]);
+
+  const handleFFmpegScript = useCallback(async () => {
+    if (!mediaInfo) return;
+    try {
+      const script = await invoke<string>("generate_ffmpeg_edit_script", {
+        inputPath: mediaInfo.path,
+      });
+      await navigator.clipboard.writeText(script);
+    } catch (err) {
+      console.error("FFmpeg script generation failed:", err);
+    }
+  }, [mediaInfo]);
+
   const handleTimeUpdate = useCallback(
     (time: number) => {
-      // Highlight the word at the current playback time
       if (words.length === 0) return;
       const timeUs = time * 1_000_000;
       const idx = words.findIndex(
@@ -142,7 +238,6 @@ const EditorView: React.FC = () => {
 
   const handleWordClick = useCallback(
     (index: number) => {
-      // Seek player to the word's start time
       const word = words[index];
       if (word) {
         seekTo(word.start_us / 1_000_000);
@@ -153,6 +248,28 @@ const EditorView: React.FC = () => {
 
   return (
     <div className="max-w-4xl w-full mx-auto space-y-4">
+      {/* Project toolbar */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={handleLoadProject}
+          className="flex items-center gap-1 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
+          title={t("editor.loadProject")}
+        >
+          <FolderOpen size={14} />
+          {t("editor.open")}
+        </button>
+        {words.length > 0 && (
+          <button
+            onClick={handleSaveProject}
+            className="flex items-center gap-1 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
+            title={t("editor.saveProject")}
+          >
+            <Save size={14} />
+            {t("editor.save")}
+          </button>
+        )}
+      </div>
+
       {/* Media import area */}
       {!mediaUrl ? (
         <div
@@ -208,7 +325,7 @@ const EditorView: React.FC = () => {
           )}
 
           {/* Transcribe / Export toolbar */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {words.length === 0 && (
               <button
                 onClick={handleTranscribe}
@@ -222,7 +339,7 @@ const EditorView: React.FC = () => {
               </button>
             )}
             {words.length > 0 && (
-              <div className="flex items-center gap-2">
+              <>
                 <button
                   onClick={() => handleExport("Srt")}
                   className="flex items-center gap-1 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
@@ -244,9 +361,50 @@ const EditorView: React.FC = () => {
                   <Download size={14} />
                   {t("editor.script")}
                 </button>
-              </div>
+
+                <div className="w-px h-5 bg-mid-gray/20 mx-1" />
+
+                <button
+                  onClick={handleAnalyzeFillers}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
+                  title={t("editor.analyzeFillers")}
+                >
+                  🔍 {t("editor.fillers")}
+                </button>
+
+                {fillerInfo && fillerInfo.filler_count > 0 && (
+                  <button
+                    onClick={handleDeleteFillers}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-red-900/30 border border-red-500/30 rounded-lg text-xs text-red-400 hover:bg-red-900/50 transition-colors"
+                  >
+                    <Trash2 size={14} />
+                    {t("editor.deleteFillers", {
+                      count: fillerInfo.filler_count,
+                    })}
+                  </button>
+                )}
+
+                <button
+                  onClick={handleFFmpegScript}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
+                  title={t("editor.ffmpegScript")}
+                >
+                  <Terminal size={14} />
+                  FFmpeg
+                </button>
+              </>
             )}
           </div>
+
+          {/* Filler analysis results */}
+          {fillerInfo && (
+            <div className="text-xs text-mid-gray bg-background border border-mid-gray/20 rounded-lg px-4 py-2">
+              {t("editor.fillerResults", {
+                fillers: fillerInfo.filler_count,
+                pauses: fillerInfo.pause_count,
+              })}
+            </div>
+          )}
         </>
       )}
 

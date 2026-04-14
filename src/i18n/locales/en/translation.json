@@ -635,6 +635,15 @@
     "transcribe": "Transcribe",
     "transcribing": "Transcribing...",
     "transcriptionPlaceholder": "Import a media file and click Transcribe to begin editing",
-    "script": "Script"
+    "script": "Script",
+    "fillers": "Fillers",
+    "analyzeFillers": "Detect filler words and pauses",
+    "deleteFillers": "Delete {{count}} fillers",
+    "fillerResults": "Found {{fillers}} filler word(s) and {{pauses}} long pause(s)",
+    "ffmpegScript": "Copy FFmpeg edit command to clipboard",
+    "open": "Open",
+    "save": "Save",
+    "loadProject": "Open a .toaster project",
+    "saveProject": "Save project as .toaster file"
   }
 }
