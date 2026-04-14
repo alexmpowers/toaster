@@ -9,6 +9,7 @@
     "cancel": "Cancel"
   },
   "sidebar": {
+    "editor": "Editor",
     "general": "General",
     "models": "Models",
     "advanced": "Advanced",
@@ -626,6 +627,14 @@
     "redo": "Redo",
     "restoreAll": "Restore All",
     "deleteRange": "Delete Range",
-    "noTranscript": "No transcript loaded"
+    "noTranscript": "No transcript loaded",
+    "importMedia": "Click to import a video or audio file",
+    "supportedFormats": "MP4, MKV, WebM, AVI, MOV, MP3, WAV, FLAC, OGG, and more",
+    "mediaFiles": "Media Files",
+    "changeFile": "Change file",
+    "transcribe": "Transcribe",
+    "transcribing": "Transcribing...",
+    "transcriptionPlaceholder": "Import a media file and click Transcribe to begin editing",
+    "script": "Script"
   }
 }

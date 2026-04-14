@@ -726,6 +726,87 @@ async getClamshellMicrophone() : Promise<Result<string, string>> {
 async isRecording() : Promise<boolean> {
     return await TAURI_INVOKE("is_recording");
 },
+async editorSetWords(words: Word[]) : Promise<Word[]> {
+    return await TAURI_INVOKE("editor_set_words", { words });
+},
+async editorGetWords() : Promise<Word[]> {
+    return await TAURI_INVOKE("editor_get_words");
+},
+async editorDeleteWord(index: number) : Promise<boolean> {
+    return await TAURI_INVOKE("editor_delete_word", { index });
+},
+async editorRestoreWord(index: number) : Promise<boolean> {
+    return await TAURI_INVOKE("editor_restore_word", { index });
+},
+async editorDeleteRange(start: number, end: number) : Promise<boolean> {
+    return await TAURI_INVOKE("editor_delete_range", { start, end });
+},
+async editorRestoreAll() : Promise<boolean> {
+    return await TAURI_INVOKE("editor_restore_all");
+},
+async editorSplitWord(index: number, position: number) : Promise<boolean> {
+    return await TAURI_INVOKE("editor_split_word", { index, position });
+},
+async editorSilenceWord(index: number) : Promise<boolean> {
+    return await TAURI_INVOKE("editor_silence_word", { index });
+},
+async editorUndo() : Promise<boolean> {
+    return await TAURI_INVOKE("editor_undo");
+},
+async editorRedo() : Promise<boolean> {
+    return await TAURI_INVOKE("editor_redo");
+},
+async editorGetKeepSegments() : Promise<([number, number])[]> {
+    return await TAURI_INVOKE("editor_get_keep_segments");
+},
+async mediaImport(path: string) : Promise<Result<MediaInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("media_import", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async mediaGetCurrent() : Promise<Result<MediaInfo | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("media_get_current") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async mediaGetAssetUrl() : Promise<Result<string | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("media_get_asset_url") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async mediaClear() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("media_clear") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async exportTranscript(format: ExportFormat, maxCharsPerLine: number | null, includeSilenced: boolean | null) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_transcript", { format, maxCharsPerLine, includeSilenced }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async exportTranscriptToFile(format: ExportFormat, path: string, maxCharsPerLine: number | null, includeSilenced: boolean | null) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_transcript_to_file", { format, path, maxCharsPerLine, includeSilenced }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async setModelUnloadTimeout(timeout: ModelUnloadTimeout) : Promise<void> {
     await TAURI_INVOKE("set_model_unload_timeout", { timeout });
 },
@@ -802,10 +883,8 @@ async updateRecordingRetentionPeriod(period: string) : Promise<Result<null, stri
 }
 },
 /**
- * Checks if the Mac is a laptop by detecting battery presence
- * 
- * This uses pmset to check for battery information.
- * Returns true if a battery is detected (laptop), false otherwise (desktop)
+ * Stub implementation for non-macOS platforms
+ * Always returns false since laptop detection is macOS-specific
  */
 async isLaptop() : Promise<Result<boolean, string>> {
     try {
@@ -840,6 +919,7 @@ export type BindingResponse = { success: boolean; binding: ShortcutBinding | nul
 export type ClipboardHandling = "dont_modify" | "copy_to_clipboard"
 export type CustomSounds = { start: boolean; stop: boolean }
 export type EngineType = "Whisper" | "Parakeet" | "Moonshine" | "MoonshineStreaming" | "SenseVoice" | "GigaAM" | "Canary" | "Cohere"
+export type ExportFormat = "Srt" | "Vtt" | "Script"
 export type GpuDeviceOption = { id: number; name: string; total_vram_mb: number }
 export type HistoryEntry = { id: number; file_name: string; timestamp: number; saved: boolean; title: string; transcription_text: string; post_processed_text: string | null; post_process_prompt: string | null; post_process_requested: boolean }
 export type HistoryUpdatePayload = { action: "added"; entry: HistoryEntry } | { action: "updated"; entry: HistoryEntry } | { action: "deleted"; id: number } | { action: "toggled"; id: number }
@@ -854,6 +934,28 @@ reset_bindings: string[] }
 export type KeyboardImplementation = "tauri" | "handy_keys"
 export type LLMPrompt = { id: string; name: string; prompt: string }
 export type LogLevel = "trace" | "debug" | "info" | "warn" | "error"
+export type MediaInfo = { 
+/**
+ * Absolute path to the media file.
+ */
+path: string; 
+/**
+ * File name without directory.
+ */
+file_name: string; 
+/**
+ * File size in bytes.
+ */
+file_size: number; 
+/**
+ * Whether this is video or audio.
+ */
+media_type: MediaType; 
+/**
+ * File extension (lowercase).
+ */
+extension: string }
+export type MediaType = "Video" | "Audio"
 export type ModelInfo = { id: string; name: string; description: string; filename: string; url: string | null; sha256: string | null; size_mb: number; is_downloaded: boolean; is_downloading: boolean; partial_size: number; is_directory: boolean; engine_type: EngineType; accuracy_score: number; speed_score: number; supports_translation: boolean; is_recommended: boolean; supported_languages: string[]; supports_language_selection: boolean; is_custom: boolean }
 export type ModelLoadStatus = { is_loaded: boolean; current_model: string | null }
 export type ModelUnloadTimeout = "never" | "immediately" | "min_2" | "min_5" | "min_10" | "min_15" | "hour_1" | "sec_15"
@@ -870,6 +972,23 @@ export type SoundTheme = "marimba" | "pop" | "custom"
 export type TypingTool = "auto" | "wtype" | "kwtype" | "dotool" | "ydotool" | "xdotool"
 export type WhisperAcceleratorSetting = "auto" | "cpu" | "gpu"
 export type WindowsMicrophonePermissionStatus = { supported: boolean; overall_access: PermissionAccess; device_access: PermissionAccess; app_access: PermissionAccess; desktop_app_access: PermissionAccess }
+export type Word = { text: string; 
+/**
+ * Start timestamp in microseconds.
+ */
+start_us: number; 
+/**
+ * End timestamp in microseconds.
+ */
+end_us: number; deleted: boolean; silenced: boolean; 
+/**
+ * Word confidence from transcription. -1.0 = unknown.
+ */
+confidence: number; 
+/**
+ * Speaker identifier. -1 = unknown.
+ */
+speaker_id: number }
 
 /** tauri-specta globals **/
 
