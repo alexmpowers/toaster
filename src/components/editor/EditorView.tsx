@@ -370,16 +370,18 @@ const EditorView: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleSaveProject}
-                    className="text-xs text-mid-gray hover:text-foreground transition-colors px-2 py-1"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
                     title={t("editor.saveProject")}
                   >
+                    <Save size={14} />
                     {t("editor.save")}
                   </button>
                   <button
                     onClick={handleClose}
-                    className="text-xs text-mid-gray hover:text-foreground transition-colors px-2 py-1"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
                     title={t("editor.close")}
                   >
+                    <X size={14} />
                     {t("editor.close")}
                   </button>
                 </div>
