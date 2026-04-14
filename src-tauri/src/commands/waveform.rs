@@ -17,7 +17,10 @@ pub struct KeepSegment {
 /// a bar-chart waveform. Falls back gracefully if the file cannot be decoded.
 #[tauri::command]
 #[specta::specta]
-pub fn generate_waveform_peaks(path: String, peak_count: Option<usize>) -> Result<Vec<f32>, String> {
+pub fn generate_waveform_peaks(
+    path: String,
+    peak_count: Option<usize>,
+) -> Result<Vec<f32>, String> {
     let count = peak_count.unwrap_or(300);
     if count == 0 {
         return Err("peak_count must be > 0".to_string());
@@ -87,9 +90,7 @@ fn build_audio_segment_filter(
     let end_s = end_us as f64 / 1_000_000.0;
     let duration_s = ((end_us - start_us).max(0)) as f64 / 1_000_000.0;
 
-    let mut filter = format!(
-        "[0:a]atrim=start={start_s:.6}:end={end_s:.6},asetpts=PTS-STARTPTS"
-    );
+    let mut filter = format!("[0:a]atrim=start={start_s:.6}:end={end_s:.6},asetpts=PTS-STARTPTS");
 
     if let Some(fade_s) = seam_fade_duration_seconds(start_us, end_us) {
         if index > 0 {
@@ -224,17 +225,14 @@ pub async fn export_edited_media(
     }
 
     // Detect if input has video by checking extension
-    let ext = input.extension()
+    let ext = input
+        .extension()
         .and_then(|e| e.to_str())
         .unwrap_or("")
         .to_lowercase();
     let has_video = matches!(ext.as_str(), "mp4" | "mkv" | "mov" | "avi" | "webm" | "flv");
 
-    let mut args: Vec<String> = vec![
-        "-y".to_string(),
-        "-i".to_string(),
-        input_path.clone(),
-    ];
+    let mut args: Vec<String> = vec!["-y".to_string(), "-i".to_string(), input_path.clone()];
 
     if segments.len() == 1 {
         // Single segment — simple trim with re-encode for sample-accurate cuts
@@ -242,14 +240,21 @@ pub async fn export_edited_media(
         let start_s = start as f64 / 1_000_000.0;
         let end_s = end as f64 / 1_000_000.0;
         args.extend([
-            "-ss".to_string(), format!("{:.6}", start_s),
-            "-to".to_string(), format!("{:.6}", end_s),
+            "-ss".to_string(),
+            format!("{:.6}", start_s),
+            "-to".to_string(),
+            format!("{:.6}", end_s),
         ]);
         // Re-encode audio for sample-accurate cut (stream copy can only cut on keyframes)
         if has_video {
             args.extend(["-c:v".to_string(), "copy".to_string()]);
         }
-        args.extend(["-c:a".to_string(), "aac".to_string(), "-b:a".to_string(), "192k".to_string()]);
+        args.extend([
+            "-c:a".to_string(),
+            "aac".to_string(),
+            "-b:a".to_string(),
+            "192k".to_string(),
+        ]);
     } else {
         // Multiple segments — filter_complex with trim/atrim + concat
         let mut filter_parts = Vec::new();
@@ -277,19 +282,22 @@ pub async fn export_edited_media(
             ));
             let filter = filter_parts.join("; ");
             args.extend([
-                "-filter_complex".to_string(), filter,
-                "-map".to_string(), "[outv]".to_string(),
-                "-map".to_string(), "[outa]".to_string(),
+                "-filter_complex".to_string(),
+                filter,
+                "-map".to_string(),
+                "[outv]".to_string(),
+                "-map".to_string(),
+                "[outa]".to_string(),
             ]);
         } else {
             let a_inputs: String = (0..n).map(|i| format!("[a{i}]")).collect();
-            filter_parts.push(format!(
-                "{a_inputs}concat=n={n}:v=0:a=1[outa]"
-            ));
+            filter_parts.push(format!("{a_inputs}concat=n={n}:v=0:a=1[outa]"));
             let filter = filter_parts.join("; ");
             args.extend([
-                "-filter_complex".to_string(), filter,
-                "-map".to_string(), "[outa]".to_string(),
+                "-filter_complex".to_string(),
+                filter,
+                "-map".to_string(),
+                "[outa]".to_string(),
             ]);
         }
     }
@@ -299,13 +307,16 @@ pub async fn export_edited_media(
     log::info!("Running FFmpeg export: ffmpeg {}", args.join(" "));
 
     let output = tokio::task::spawn_blocking(move || {
-        std::process::Command::new("ffmpeg")
-            .args(&args)
-            .output()
+        std::process::Command::new("ffmpeg").args(&args).output()
     })
     .await
     .map_err(|e| format!("Export task panicked: {}", e))?
-    .map_err(|e| format!("FFmpeg not found. Install FFmpeg to export edited media. Error: {}", e))?;
+    .map_err(|e| {
+        format!(
+            "FFmpeg not found. Install FFmpeg to export edited media. Error: {}",
+            e
+        )
+    })?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);

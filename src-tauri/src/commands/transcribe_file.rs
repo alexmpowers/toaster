@@ -7,6 +7,203 @@ use crate::commands::editor::EditorStore;
 use crate::managers::editor::Word;
 use crate::managers::transcription::TranscriptionManager;
 
+const SAMPLE_RATE_HZ: f64 = 16000.0;
+
+#[derive(Debug, Clone, Copy, Default)]
+struct WordAlignmentMeta {
+    interpolated: bool,
+}
+
+fn rms(samples: &[f32]) -> f32 {
+    if samples.is_empty() {
+        return 0.0;
+    }
+    let sum_sq: f32 = samples.iter().map(|s| s * s).sum();
+    (sum_sq / samples.len() as f32).sqrt()
+}
+
+fn sample_to_us(sample_idx: usize) -> i64 {
+    (sample_idx as f64 / SAMPLE_RATE_HZ * 1_000_000.0) as i64
+}
+
+fn us_to_sample(timestamp_us: i64, total_samples: usize) -> usize {
+    if total_samples == 0 {
+        return 0;
+    }
+    let sample = (timestamp_us.max(0) as f64 / 1_000_000.0 * SAMPLE_RATE_HZ) as usize;
+    sample.min(total_samples.saturating_sub(1))
+}
+
+fn snap_to_zero_crossing(samples: &[f32], target: usize, half_window: usize) -> usize {
+    if samples.len() < 2 {
+        return target.min(samples.len().saturating_sub(1));
+    }
+
+    let max_z = samples.len().saturating_sub(2);
+    let zc_start = target.saturating_sub(half_window).min(max_z);
+    let zc_end = (target + half_window).min(max_z);
+
+    let mut best_zc = target.min(max_z);
+    let mut best_dist = usize::MAX;
+    for z in zc_start..=zc_end {
+        if samples[z] * samples[z + 1] <= 0.0 {
+            let dist = z.abs_diff(target);
+            if dist < best_dist {
+                best_dist = dist;
+                best_zc = z;
+            }
+        }
+    }
+    best_zc
+}
+
+fn find_local_low_energy_boundary(
+    samples: &[f32],
+    center_sample: usize,
+    half_window_samples: usize,
+    rms_window_samples: usize,
+    step_samples: usize,
+) -> Option<(usize, f32, f32)> {
+    if samples.len() < rms_window_samples || rms_window_samples == 0 || step_samples == 0 {
+        return None;
+    }
+
+    let search_start = center_sample.saturating_sub(half_window_samples);
+    let search_end = (center_sample + half_window_samples).min(samples.len());
+    if search_start >= search_end || search_end - search_start < rms_window_samples {
+        return None;
+    }
+
+    let mut min_energy = f32::MAX;
+    let mut min_pos = center_sample;
+    let mut pos = search_start;
+    while pos + rms_window_samples <= search_end {
+        let energy = rms(&samples[pos..pos + rms_window_samples]);
+        if energy < min_energy {
+            min_energy = energy;
+            min_pos = pos + rms_window_samples / 2;
+        }
+        pos += step_samples;
+    }
+
+    let center_start = center_sample
+        .saturating_sub(rms_window_samples / 2)
+        .min(samples.len().saturating_sub(rms_window_samples));
+    let center_end = (center_start + rms_window_samples).min(samples.len());
+    let center_energy = rms(&samples[center_start..center_end]);
+
+    Some((min_pos, min_energy, center_energy))
+}
+
+fn normalized_word_text(text: &str) -> String {
+    text.trim_matches(|c: char| !c.is_alphanumeric())
+        .to_lowercase()
+}
+
+fn boundary_has_interpolated_pattern(
+    words: &[Word],
+    meta: Option<&[WordAlignmentMeta]>,
+    boundary_idx: usize,
+) -> bool {
+    let Some(meta) = meta else {
+        return false;
+    };
+    if boundary_idx + 1 >= words.len() || meta.len() != words.len() {
+        return false;
+    }
+
+    if meta[boundary_idx].interpolated || meta[boundary_idx + 1].interpolated {
+        return true;
+    }
+
+    let left = normalized_word_text(&words[boundary_idx].text);
+    let right = normalized_word_text(&words[boundary_idx + 1].text);
+    if left.is_empty() || right.is_empty() || left != right {
+        return false;
+    }
+
+    (boundary_idx > 0 && meta[boundary_idx - 1].interpolated)
+        || (boundary_idx + 2 < words.len() && meta[boundary_idx + 2].interpolated)
+}
+
+/// Confidence-gated local re-alignment pass for suspicious boundaries.
+/// Uses short local windows only, so runtime is bounded and independent of
+/// global transcript length.
+fn realign_suspicious_spans(
+    words: &mut [Word],
+    samples: &[f32],
+    meta: Option<&[WordAlignmentMeta]>,
+) {
+    if words.len() < 2 || samples.is_empty() {
+        return;
+    }
+
+    const LOCAL_WINDOW_US: i64 = 120_000;
+    const RMS_WINDOW_SAMPLES: usize = 80; // 5 ms at 16 kHz
+    const RMS_STEP_SAMPLES: usize = 40; // 2.5 ms
+    const ZC_SNAP_HALF: usize = 32; // ±2 ms
+    const MIN_WORD_US: i64 = 10_000;
+    const LOW_CONF_THRESHOLD: f32 = 0.45;
+    const MAX_REALIGN_BOUNDARIES: usize = 256;
+
+    let half_window_samples = (LOCAL_WINDOW_US as f64 / 1_000_000.0 * SAMPLE_RATE_HZ) as usize;
+    let mut adjusted = 0usize;
+
+    for i in 0..words.len() - 1 {
+        if adjusted >= MAX_REALIGN_BOUNDARIES {
+            break;
+        }
+
+        let left_duration = (words[i].end_us - words[i].start_us).max(0);
+        let right_duration = (words[i + 1].end_us - words[i + 1].start_us).max(0);
+        let min_duration = left_duration.min(right_duration);
+        let max_duration = left_duration.max(right_duration);
+
+        let low_confidence = [words[i].confidence, words[i + 1].confidence]
+            .iter()
+            .any(|&c| c >= 0.0 && c < LOW_CONF_THRESHOLD);
+        let confidence_unknown = words[i].confidence < 0.0 || words[i + 1].confidence < 0.0;
+        let very_short_word = left_duration < 35_000 || right_duration < 35_000;
+        let abrupt_duration_jump = min_duration > 0
+            && max_duration > min_duration * 3
+            && (max_duration - min_duration) > 80_000;
+        let interpolated_pattern = boundary_has_interpolated_pattern(words, meta, i);
+
+        let boundary_sample = us_to_sample(words[i].end_us, samples.len());
+        let Some((low_energy_sample, min_energy, boundary_energy)) = find_local_low_energy_boundary(
+            samples,
+            boundary_sample,
+            half_window_samples,
+            RMS_WINDOW_SAMPLES,
+            RMS_STEP_SAMPLES,
+        ) else {
+            continue;
+        };
+
+        // Boundary in high-energy region often indicates a cut in the middle of phonemes.
+        let boundary_high_energy = boundary_energy > (min_energy * 1.35 + 1e-5);
+        let heuristic_suspicious =
+            very_short_word || abrupt_duration_jump || boundary_high_energy || interpolated_pattern;
+        if !(low_confidence || (confidence_unknown && heuristic_suspicious)) {
+            continue;
+        }
+
+        let snapped_sample = snap_to_zero_crossing(samples, low_energy_sample, ZC_SNAP_HALF);
+        let refined_us = sample_to_us(snapped_sample);
+        if (refined_us - words[i].end_us).abs() < 1_000 {
+            continue;
+        }
+
+        if refined_us > words[i].start_us + MIN_WORD_US
+            && refined_us < words[i + 1].end_us - MIN_WORD_US
+        {
+            words[i].end_us = refined_us;
+            words[i + 1].start_us = refined_us;
+            adjusted += 1;
+        }
+    }
+}
+
 /// Refine word boundaries with hybrid RMS + zero-crossing snapping.
 ///
 /// After proportional timestamp distribution, word boundaries may fall in the
@@ -27,20 +224,10 @@ fn refine_word_boundaries(words: &mut [Word], samples: &[f32]) {
         return;
     }
 
-    const SAMPLE_RATE: f64 = 16000.0;
     const SEARCH_WINDOW_US: i64 = 80_000; // ±80ms search window around each boundary
     const RMS_WINDOW_SAMPLES: usize = 80; // 5ms RMS analysis window (16000 * 0.005)
-    // ±2 ms at 16 kHz = 32 samples; tight enough to stay near the energy dip
+                                          // ±2 ms at 16 kHz = 32 samples; tight enough to stay near the energy dip
     const ZC_SNAP_HALF: usize = 32;
-
-    /// Compute RMS energy for a slice of audio samples.
-    fn rms(samples: &[f32]) -> f32 {
-        if samples.is_empty() {
-            return 0.0;
-        }
-        let sum_sq: f32 = samples.iter().map(|s| s * s).sum();
-        (sum_sq / samples.len() as f32).sqrt()
-    }
 
     // For each boundary between adjacent words, find the minimum energy point
     // then snap it to the nearest zero-crossing.
@@ -48,8 +235,8 @@ fn refine_word_boundaries(words: &mut [Word], samples: &[f32]) {
         let boundary_us = words[i].end_us;
 
         // Search window in samples
-        let center_sample = (boundary_us as f64 / 1_000_000.0 * SAMPLE_RATE) as usize;
-        let half_window_samples = (SEARCH_WINDOW_US as f64 / 1_000_000.0 * SAMPLE_RATE) as usize;
+        let center_sample = (boundary_us as f64 / 1_000_000.0 * SAMPLE_RATE_HZ) as usize;
+        let half_window_samples = (SEARCH_WINDOW_US as f64 / 1_000_000.0 * SAMPLE_RATE_HZ) as usize;
 
         let search_start = center_sample.saturating_sub(half_window_samples);
         let search_end = (center_sample + half_window_samples).min(samples.len());
@@ -92,7 +279,7 @@ fn refine_word_boundaries(words: &mut [Word], samples: &[f32]) {
         min_pos = best_zc;
 
         // Convert back to microseconds
-        let refined_us = (min_pos as f64 / SAMPLE_RATE * 1_000_000.0) as i64;
+        let refined_us = sample_to_us(min_pos);
 
         // Only snap if the refined point preserves minimum word durations on both
         // sides, keeping monotonic ordering intact.
@@ -113,8 +300,13 @@ fn refine_word_boundaries(words: &mut [Word], samples: &[f32]) {
 /// This produces timestamps that are accurate to within a segment (~30s chunks
 /// from Whisper), with proportional distribution within each segment being
 /// much better than global even distribution.
-fn build_words_from_segments(full_text: &str, segments: &[TranscriptionSegment], samples: &[f32]) -> Vec<Word> {
+fn build_words_from_segments(
+    full_text: &str,
+    segments: &[TranscriptionSegment],
+    samples: &[f32],
+) -> (Vec<Word>, Vec<WordAlignmentMeta>) {
     let mut words = Vec::new();
+    let mut meta = Vec::new();
 
     // The filtered text may differ from segment text (due to filler filtering,
     // custom word correction). We'll use the final text's words and match them
@@ -122,7 +314,7 @@ fn build_words_from_segments(full_text: &str, segments: &[TranscriptionSegment],
     let final_words: Vec<&str> = full_text.split_whitespace().collect();
 
     if final_words.is_empty() || segments.is_empty() {
-        return words;
+        return (words, meta);
     }
 
     // Build a flat list of (word, start_us, end_us) from segments first
@@ -191,6 +383,9 @@ fn build_words_from_segments(full_text: &str, segments: &[TranscriptionSegment],
                     confidence: -1.0,
                     speaker_id: -1,
                 });
+                meta.push(WordAlignmentMeta {
+                    interpolated: false,
+                });
                 seg_idx = k + 1;
                 found = true;
                 break;
@@ -223,13 +418,14 @@ fn build_words_from_segments(full_text: &str, segments: &[TranscriptionSegment],
                 confidence: -1.0,
                 speaker_id: -1,
             });
+            meta.push(WordAlignmentMeta { interpolated: true });
         }
     }
 
     // Refine word boundaries by snapping to silence points in the audio
     refine_word_boundaries(&mut words, samples);
 
-    words
+    (words, meta)
 }
 
 /// Sanitize word timestamps to guarantee monotonic, non-overlapping,
@@ -284,8 +480,7 @@ fn sanitize_word_timestamps(words: &mut Vec<Word>, total_duration_us: i64) {
 /// Returns the path to the temporary WAV file.
 fn extract_audio_to_wav(input_path: &std::path::Path) -> Result<std::path::PathBuf, String> {
     let temp_dir = std::env::temp_dir().join("toaster_audio");
-    std::fs::create_dir_all(&temp_dir)
-        .map_err(|e| format!("Failed to create temp dir: {}", e))?;
+    std::fs::create_dir_all(&temp_dir).map_err(|e| format!("Failed to create temp dir: {}", e))?;
 
     let wav_path = temp_dir.join(format!(
         "extract_{}.wav",
@@ -295,22 +490,33 @@ fn extract_audio_to_wav(input_path: &std::path::Path) -> Result<std::path::PathB
             .as_millis()
     ));
 
-    info!("Extracting audio from {} to {}", input_path.display(), wav_path.display());
+    info!(
+        "Extracting audio from {} to {}",
+        input_path.display(),
+        wav_path.display()
+    );
 
     let output = std::process::Command::new("ffmpeg")
         .args([
-            "-y",                                    // overwrite
-            "-i", &input_path.to_string_lossy(),     // input file
-            "-vn",                                   // no video
-            "-acodec", "pcm_s16le",                  // 16-bit PCM
-            "-ar", "16000",                          // 16kHz sample rate
-            "-ac", "1",                              // mono
+            "-y", // overwrite
+            "-i",
+            &input_path.to_string_lossy(), // input file
+            "-vn",                         // no video
+            "-acodec",
+            "pcm_s16le", // 16-bit PCM
+            "-ar",
+            "16000", // 16kHz sample rate
+            "-ac",
+            "1",                                     // mono
             &wav_path.to_string_lossy().to_string(), // output
         ])
         .output()
-        .map_err(|e| format!(
-            "FFmpeg not found. Install FFmpeg to transcribe non-WAV files. Error: {}", e
-        ))?;
+        .map_err(|e| {
+            format!(
+                "FFmpeg not found. Install FFmpeg to transcribe non-WAV files. Error: {}",
+                e
+            )
+        })?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -404,34 +610,39 @@ pub async fn transcribe_media_file(
     let sample_rate = 16000.0_f64;
     let total_duration_us = ((samples.len() as f64 / sample_rate) * 1_000_000.0) as i64;
 
-    let mut words: Vec<Word> = if let Some(ref segs) = segments {
-        build_words_from_segments(&text, segs, &samples)
-    } else {
-        // Fallback: no segments available (some engines don't provide them).
-        // Distribute words evenly across total duration (legacy behavior).
-        let raw_words: Vec<&str> = text.split_whitespace().collect();
-        let word_duration_us = if raw_words.is_empty() {
-            0
+    let (mut words, align_meta): (Vec<Word>, Option<Vec<WordAlignmentMeta>>) =
+        if let Some(ref segs) = segments {
+            let (words, meta) = build_words_from_segments(&text, segs, &samples);
+            (words, Some(meta))
         } else {
-            total_duration_us / raw_words.len() as i64
+            // Fallback: no segments available (some engines don't provide them).
+            // Distribute words evenly across total duration (legacy behavior).
+            let raw_words: Vec<&str> = text.split_whitespace().collect();
+            let word_duration_us = if raw_words.is_empty() {
+                0
+            } else {
+                total_duration_us / raw_words.len() as i64
+            };
+            let fallback_words: Vec<Word> = raw_words
+                .iter()
+                .enumerate()
+                .map(|(i, w)| Word {
+                    text: w.to_string(),
+                    start_us: i as i64 * word_duration_us,
+                    end_us: (i as i64 + 1) * word_duration_us,
+                    deleted: false,
+                    silenced: false,
+                    confidence: -1.0,
+                    speaker_id: -1,
+                })
+                .collect();
+            (fallback_words, None)
         };
-        raw_words
-            .iter()
-            .enumerate()
-            .map(|(i, w)| Word {
-                text: w.to_string(),
-                start_us: i as i64 * word_duration_us,
-                end_us: (i as i64 + 1) * word_duration_us,
-                deleted: false,
-                silenced: false,
-                confidence: -1.0,
-                speaker_id: -1,
-            })
-            .collect()
-    };
 
     // Sanitize timestamps: clamp to audio duration, enforce monotonic
     // non-overlapping progression, and ensure minimal non-zero durations.
+    sanitize_word_timestamps(&mut words, total_duration_us);
+    realign_suspicious_spans(&mut words, &samples, align_meta.as_deref());
     sanitize_word_timestamps(&mut words, total_duration_us);
 
     if words.is_empty() {
@@ -443,4 +654,592 @@ pub async fn transcribe_media_file(
     state.set_words(words.clone());
 
     Ok(state.get_words().to_vec())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_word(text: &str, start_us: i64, end_us: i64, confidence: f32) -> Word {
+        Word {
+            text: text.to_string(),
+            start_us,
+            end_us,
+            deleted: false,
+            silenced: false,
+            confidence,
+            speaker_id: -1,
+        }
+    }
+
+    #[test]
+    fn realigns_low_confidence_boundary_locally() {
+        let mut words = vec![
+            make_word("hello", 0, 450_000, 0.2),
+            make_word("world", 450_000, 800_000, 0.9),
+        ];
+        let mut samples = vec![0.5_f32; 16_000];
+        for s in samples.iter_mut().take(8_080).skip(7_920) {
+            *s = 0.0;
+        }
+
+        realign_suspicious_spans(&mut words, &samples, None);
+
+        assert!(words[0].end_us > 480_000);
+        assert!(words[0].end_us < 520_000);
+        assert_eq!(words[0].end_us, words[1].start_us);
+    }
+
+    #[test]
+    fn keeps_stable_high_confidence_boundary() {
+        let mut words = vec![
+            make_word("hello", 0, 450_000, 0.9),
+            make_word("world", 450_000, 800_000, 0.9),
+        ];
+        let mut samples = vec![0.5_f32; 16_000];
+        for s in samples.iter_mut().take(8_080).skip(7_920) {
+            *s = 0.0;
+        }
+
+        realign_suspicious_spans(&mut words, &samples, None);
+
+        assert_eq!(words[0].end_us, 450_000);
+        assert_eq!(words[1].start_us, 450_000);
+    }
+}
+
+/// Precision benchmark suite for the Toaster edit pipeline.
+///
+/// These tests assert explicit acceptance thresholds for boundary quality and
+/// pipeline correctness. All tests are deterministic — no timing, no I/O, no
+/// external dependencies.
+///
+/// Acceptance thresholds (in comments near each group):
+///   - Monotonicity violations:  0 (hard invariant)
+///   - Boundary drift budget:   ≤ 82 000 µs (search window 80 ms + ZC snap 2 ms)
+///   - Sample↔µs roundtrip:    ≤ 1 sample error (≈62.5 µs at 16 kHz)
+///   - Edit→source time drift:  0 µs (integer arithmetic, exact)
+///
+/// TODO[click-rate]: True per-seam click rate cannot be asserted in unit tests
+/// without perceptual audio analysis. Surrogate checks to add once the export
+/// pipeline is end-to-end testable:
+///   1. `samples[result] * samples[result+1] <= 0.0` at every exported cut point.
+///   2. RMS in a 2 ms window around each seam < 10 % of signal peak RMS.
+///   3. Adjacent keep-segments share exactly one boundary sample (no gap/overlap).
+/// Add a `seam_rms_at_boundary(samples, cut_sample, window_samples) -> f32`
+/// helper and assert `seam_rms < 0.05 * peak_rms` for each cut.
+#[cfg(test)]
+mod precision_benchmarks {
+    use super::*;
+    use crate::managers::editor::{EditorState, Word as EdWord};
+
+    // ── acceptance thresholds ────────────────────────────────────────────────
+    /// Maximum µs a boundary is allowed to drift after `refine_word_boundaries`.
+    /// Derived from SEARCH_WINDOW_US (80 ms) + ZC_SNAP_HALF in µs (2 ms).
+    const MAX_BOUNDARY_DRIFT_US: i64 = 82_000;
+
+    /// Zero monotonicity violations are tolerated anywhere in the pipeline.
+    const MAX_MONOTONICITY_VIOLATIONS: usize = 0;
+
+    /// Roundtrip conversion must be within this many samples.
+    const MAX_ROUNDTRIP_SAMPLE_ERROR: usize = 1;
+
+    // ── helpers ──────────────────────────────────────────────────────────────
+
+    fn w(text: &str, start_us: i64, end_us: i64, confidence: f32) -> Word {
+        Word {
+            text: text.to_string(),
+            start_us,
+            end_us,
+            deleted: false,
+            silenced: false,
+            confidence,
+            speaker_id: -1,
+        }
+    }
+
+    fn ed_word(text: &str, start_us: i64, end_us: i64) -> EdWord {
+        EdWord {
+            text: text.to_string(),
+            start_us,
+            end_us,
+            deleted: false,
+            silenced: false,
+            confidence: 0.9,
+            speaker_id: 0,
+        }
+    }
+
+    /// Count monotonicity violations: inverted word ranges and adjacent overlaps.
+    fn count_monotonicity_violations(words: &[Word]) -> usize {
+        let mut violations = 0;
+        for (i, word) in words.iter().enumerate() {
+            if word.start_us > word.end_us {
+                violations += 1;
+            }
+            if i + 1 < words.len() && word.end_us > words[i + 1].start_us {
+                violations += 1;
+            }
+        }
+        violations
+    }
+
+    // ── sanitize_word_timestamps ─────────────────────────────────────────────
+
+    /// After sanitize, all words must be monotonically ordered with no overlaps.
+    /// Threshold: 0 violations.
+    #[test]
+    fn sanitize_enforces_monotonic_ordering() {
+        let mut words = vec![
+            w("a", 500_000, 100_000, 0.9),   // inverted: start > end
+            w("b", 200_000, 800_000, 0.9),   // overlaps with c
+            w("c", 600_000, 900_000, 0.9),   // starts before b ends
+            w("d", 850_000, 1_200_000, 0.9), // starts before c ends
+        ];
+        sanitize_word_timestamps(&mut words, 2_000_000);
+        assert_eq!(
+            count_monotonicity_violations(&words),
+            MAX_MONOTONICITY_VIOLATIONS,
+            "monotonicity violated after sanitize_word_timestamps"
+        );
+    }
+
+    /// All timestamps must be clamped within [0, total_duration_us].
+    #[test]
+    fn sanitize_clamps_to_total_duration() {
+        let total = 1_000_000_i64;
+        let mut words = vec![
+            w("a", -500_000, 200_000, 0.9),  // negative start
+            w("b", 800_000, 2_000_000, 0.9), // end beyond total
+        ];
+        sanitize_word_timestamps(&mut words, total);
+        for word in &words {
+            assert!(word.start_us >= 0, "start_us must be >= 0, got {}", word.start_us);
+            assert!(
+                word.end_us <= total,
+                "end_us {} must be <= total {}", word.end_us, total
+            );
+        }
+        assert_eq!(count_monotonicity_violations(&words), MAX_MONOTONICITY_VIOLATIONS);
+    }
+
+    /// Zero-duration words with available budget must receive the 1 ms minimum.
+    #[test]
+    fn sanitize_grants_minimum_duration_where_budget_allows() {
+        let mut words = vec![
+            w("a", 0, 0, 0.9),            // zero-duration, room to expand
+            w("b", 500_000, 500_000, 0.9), // zero-duration mid, room to expand
+        ];
+        sanitize_word_timestamps(&mut words, 2_000_000);
+        assert!(
+            words[0].end_us > words[0].start_us,
+            "zero-duration word 'a' must receive minimum duration"
+        );
+    }
+
+    /// A second pass over already-valid timestamps must leave them unchanged.
+    /// Threshold: exact equality.
+    #[test]
+    fn sanitize_idempotent_on_clean_input() {
+        let mut words = vec![
+            w("hello", 0, 1_000_000, 0.9),
+            w("world", 1_000_000, 2_000_000, 0.9),
+            w("test", 2_000_000, 3_000_000, 0.9),
+        ];
+        let before: Vec<(i64, i64)> =
+            words.iter().map(|ww| (ww.start_us, ww.end_us)).collect();
+        sanitize_word_timestamps(&mut words, 3_000_000);
+        let after: Vec<(i64, i64)> =
+            words.iter().map(|ww| (ww.start_us, ww.end_us)).collect();
+        assert_eq!(before, after, "sanitize must be idempotent on already-valid timestamps");
+    }
+
+    // ── snap_to_zero_crossing ────────────────────────────────────────────────
+
+    /// With a single zero-crossing at sample 100 inside the window, the snap
+    /// must return exactly sample 100.
+    #[test]
+    fn snap_zc_finds_nearest_crossing_within_window() {
+        // samples 0..100 = +1.0, then −1.0 from 101 onwards → ZC between 100 and 101.
+        let mut samples = vec![1.0_f32; 200];
+        for s in samples[101..].iter_mut() {
+            *s = -1.0;
+        }
+        let result = snap_to_zero_crossing(&samples, 95, 20);
+        assert_eq!(result, 100, "ZC snap must find the crossing at sample 100");
+    }
+
+    /// With no zero crossings in the signal, the result must still be in-bounds.
+    #[test]
+    fn snap_zc_result_in_bounds_when_no_crossing() {
+        let samples = vec![1.0_f32; 200];
+        let result = snap_to_zero_crossing(&samples, 100, 10);
+        assert!(
+            result < samples.len() - 1,
+            "ZC result {} must be within sample bounds", result
+        );
+    }
+
+    /// Edge: target near the end of a very short signal must not panic.
+    #[test]
+    fn snap_zc_edge_near_end_of_signal() {
+        let samples = vec![1.0_f32, -1.0, 1.0_f32, -1.0];
+        let result = snap_to_zero_crossing(&samples, 3, 5);
+        assert!(result < samples.len() - 1, "ZC result must be within bounds");
+    }
+
+    // ── find_local_low_energy_boundary ───────────────────────────────────────
+
+    /// When a silence gap exists inside the search window, the energy finder must
+    /// return a minimum whose energy is lower than that of the original boundary
+    /// centre. Threshold: min_energy < center_energy.
+    #[test]
+    fn energy_finder_returns_lower_energy_than_center() {
+        // High energy (0.8) everywhere except a 160-sample silence gap at ~800.
+        let mut samples = vec![0.8_f32; 1600];
+        for s in samples[720..880].iter_mut() {
+            *s = 0.0;
+        }
+        // Center at sample 320 — well away from the gap, so center_energy ≈ 0.8.
+        let (min_pos, min_energy, center_energy) =
+            find_local_low_energy_boundary(&samples, 320, 800, 80, 40)
+                .expect("must return a result when signal is long enough");
+
+        assert!(
+            min_energy < center_energy,
+            "min_energy ({:.4}) must be < center_energy ({:.4}) when a silence region exists",
+            min_energy,
+            center_energy
+        );
+        // The minimum centre should land inside or near the silence gap.
+        assert!(
+            min_pos >= 700 && min_pos <= 900,
+            "energy minimum centre should be near the silence gap, got sample {}",
+            min_pos
+        );
+    }
+
+    /// Inputs shorter than the RMS window must return `None` (no panic).
+    #[test]
+    fn energy_finder_returns_none_on_too_short_input() {
+        let samples = vec![0.5_f32; 10]; // rms_window_samples = 80 > 10
+        let result = find_local_low_energy_boundary(&samples, 5, 10, 80, 10);
+        assert!(
+            result.is_none(),
+            "should return None when signal is shorter than RMS window"
+        );
+    }
+
+    // ── refine_word_boundaries ───────────────────────────────────────────────
+
+    /// Monotonicity (start ≤ end, no adjacent overlap) must be preserved after
+    /// boundary refinement regardless of where the energy minimum lands.
+    /// Threshold: 0 violations.
+    #[test]
+    fn refine_preserves_monotonicity() {
+        let mut words = vec![
+            w("hello", 0, 500_000, 0.9),
+            w("world", 500_000, 1_000_000, 0.9),
+        ];
+        // Silence gap at samples 7680..7760 (≈ 480 ms..485 ms).
+        let mut samples = vec![0.5_f32; 16_000];
+        for s in samples[7_680..7_760].iter_mut() {
+            *s = 0.0;
+        }
+        refine_word_boundaries(&mut words, &samples);
+        assert_eq!(
+            count_monotonicity_violations(&words),
+            MAX_MONOTONICITY_VIOLATIONS,
+            "monotonicity must be preserved after refine_word_boundaries"
+        );
+    }
+
+    /// The boundary shift caused by `refine_word_boundaries` must not exceed
+    /// the combined search + snap budget.
+    /// Threshold: ≤ MAX_BOUNDARY_DRIFT_US (82 000 µs).
+    #[test]
+    fn refine_boundary_drift_within_budget() {
+        let initial_boundary_us = 500_000_i64;
+        let mut words = vec![
+            w("hello", 0, initial_boundary_us, 0.9),
+            w("world", initial_boundary_us, 1_000_000, 0.9),
+        ];
+        // Silence gap at samples 7100..7300 (≈ 444 ms..456 ms) — within ±80 ms.
+        let mut samples = vec![0.3_f32; 16_000];
+        for s in samples[7_100..7_300].iter_mut() {
+            *s = 0.0;
+        }
+        refine_word_boundaries(&mut words, &samples);
+        let drift = (words[0].end_us - initial_boundary_us).abs();
+        assert!(
+            drift <= MAX_BOUNDARY_DRIFT_US,
+            "boundary drift {} µs exceeds budget of {} µs",
+            drift,
+            MAX_BOUNDARY_DRIFT_US
+        );
+        assert_eq!(
+            words[0].end_us, words[1].start_us,
+            "adjacent boundary timestamps must agree after refinement"
+        );
+    }
+
+    /// When a silence gap exists below the initial boundary, the refined
+    /// boundary must move toward that gap.
+    #[test]
+    fn refine_snaps_boundary_toward_silence_gap() {
+        // Boundary at 500 ms; silence gap centred at ~450 ms (samples 7160..7240).
+        let initial_boundary_us = 500_000_i64;
+        let mut words = vec![
+            w("hello", 0, initial_boundary_us, 0.9),
+            w("world", initial_boundary_us, 1_000_000, 0.9),
+        ];
+        let mut samples = vec![0.5_f32; 16_000];
+        for s in samples[7_160..7_240].iter_mut() {
+            *s = 0.0;
+        }
+        refine_word_boundaries(&mut words, &samples);
+        assert!(
+            words[0].end_us < initial_boundary_us,
+            "boundary must shift toward silence at ~450 ms, got {} µs",
+            words[0].end_us
+        );
+    }
+
+    // ── full pipeline: sanitize → refine → realign → sanitize ───────────────
+
+    /// After running the full pipeline against a heavily corrupted word list the
+    /// result must have zero monotonicity violations.
+    /// Threshold: MAX_MONOTONICITY_VIOLATIONS = 0.
+    #[test]
+    fn full_pipeline_preserves_monotonicity_on_corrupted_input() {
+        let total_duration_us = 10_000_000_i64; // 10 s
+        let mut words = vec![
+            w("one",   -200_000,   300_000, 0.3),   // negative start
+            w("two",    100_000,   800_000, 0.2),   // overlaps with "one"
+            w("three",  700_000,   600_000, 0.4),   // inverted
+            w("four",   900_000, 1_500_000, 0.85),
+            w("five", 1_400_000, 2_100_000, 0.9),   // overlaps with "four"
+            w("six",  2_000_000, 1_800_000, 0.15),  // inverted
+            w("seven",2_500_000, 3_000_000, 0.9),
+            w("eight",2_900_000, 3_500_000, 0.3),   // overlaps with "seven"
+            w("nine", 3_600_000, 4_200_000, 0.9),
+            w("ten",  4_100_000,12_000_000, 0.9),   // end beyond total
+        ];
+        let n_samples = (total_duration_us as f64 / 1_000_000.0 * SAMPLE_RATE_HZ) as usize;
+        let samples = vec![0.3_f32; n_samples];
+
+        sanitize_word_timestamps(&mut words, total_duration_us);
+        refine_word_boundaries(&mut words, &samples);
+        realign_suspicious_spans(&mut words, &samples, None);
+        sanitize_word_timestamps(&mut words, total_duration_us);
+
+        assert_eq!(
+            count_monotonicity_violations(&words),
+            MAX_MONOTONICITY_VIOLATIONS,
+            "full pipeline must leave 0 monotonicity violations"
+        );
+    }
+
+    /// After the full pipeline every timestamp must lie within [0, total_duration_us].
+    #[test]
+    fn full_pipeline_all_timestamps_within_total_duration() {
+        let total_duration_us = 5_000_000_i64;
+        // 20 words with overlapping/negative offsets to stress the sanitizer.
+        let mut words: Vec<Word> = (0..20)
+            .map(|i| {
+                let base = i as i64 * 300_000;
+                w("x", base - 50_000, base + 400_000, if i % 3 == 0 { 0.2 } else { 0.9 })
+            })
+            .collect();
+        let n_samples = (total_duration_us as f64 / 1_000_000.0 * SAMPLE_RATE_HZ) as usize;
+        let samples = vec![0.4_f32; n_samples];
+
+        sanitize_word_timestamps(&mut words, total_duration_us);
+        refine_word_boundaries(&mut words, &samples);
+        realign_suspicious_spans(&mut words, &samples, None);
+        sanitize_word_timestamps(&mut words, total_duration_us);
+
+        for word in &words {
+            assert!(word.start_us >= 0, "start_us {} must be >= 0", word.start_us);
+            assert!(
+                word.end_us <= total_duration_us,
+                "end_us {} must be <= total {}", word.end_us, total_duration_us
+            );
+        }
+    }
+
+    // ── sample ↔ µs conversion accuracy ─────────────────────────────────────
+
+    /// `us_to_sample(sample_to_us(n))` must equal `n` within MAX_ROUNDTRIP_SAMPLE_ERROR.
+    /// Threshold: ≤ 1 sample (≈ 62.5 µs at 16 kHz).
+    #[test]
+    fn us_to_sample_roundtrip_within_one_sample() {
+        let total_samples = 16_000_usize;
+        for &sample_idx in &[0_usize, 1, 100, 800, 8_000, 15_999] {
+            let us = sample_to_us(sample_idx);
+            let recovered = us_to_sample(us, total_samples);
+            let error = (recovered as i64 - sample_idx as i64).unsigned_abs() as usize;
+            assert!(
+                error <= MAX_ROUNDTRIP_SAMPLE_ERROR,
+                "roundtrip error for sample {} is {} (limit: {} sample)",
+                sample_idx, error, MAX_ROUNDTRIP_SAMPLE_ERROR
+            );
+        }
+    }
+
+    /// `sample_to_us` must be non-decreasing (monotone).
+    #[test]
+    fn sample_to_us_is_monotone() {
+        for i in 0_usize..100 {
+            assert!(
+                sample_to_us(i) <= sample_to_us(i + 1),
+                "sample_to_us is not monotone at {} → {}", i, i + 1
+            );
+        }
+    }
+
+    // ── keep-segment coverage ────────────────────────────────────────────────
+
+    /// The total duration of all keep-segments must equal the sum of durations
+    /// of non-deleted words.
+    #[test]
+    fn keep_segment_coverage_matches_non_deleted_duration() {
+        let words = vec![
+            ed_word("a", 0, 1_000_000),
+            ed_word("b", 1_000_000, 2_000_000),
+            ed_word("c", 2_000_000, 3_000_000),
+            ed_word("d", 3_000_000, 4_000_000),
+        ];
+        let deleted_indices = [1_usize, 3]; // "b" and "d"
+
+        let mut state = EditorState::new();
+        state.set_words(words.clone());
+        for &i in &deleted_indices {
+            state.delete_word(i);
+        }
+
+        let segs = state.get_keep_segments();
+        let seg_total: i64 = segs.iter().map(|(s, e)| e - s).sum();
+        let expected: i64 = words
+            .iter()
+            .enumerate()
+            .filter(|(i, _)| !deleted_indices.contains(i))
+            .map(|(_, ww)| ww.end_us - ww.start_us)
+            .sum();
+
+        assert_eq!(
+            seg_total, expected,
+            "keep-segment total must equal sum of non-deleted word durations"
+        );
+    }
+
+    /// No two keep-segments may overlap, and each must have start ≤ end.
+    #[test]
+    fn keep_segments_non_overlapping() {
+        let words: Vec<EdWord> = (0..10)
+            .map(|i| EdWord {
+                text: format!("w{}", i),
+                start_us: i as i64 * 500_000,
+                end_us: (i as i64 + 1) * 500_000,
+                deleted: i % 3 == 0, // delete every 3rd word
+                silenced: false,
+                confidence: 0.9,
+                speaker_id: 0,
+            })
+            .collect();
+        let mut state = EditorState::new();
+        state.set_words(words);
+        let segs = state.get_keep_segments();
+
+        for (i, &(s, e)) in segs.iter().enumerate() {
+            assert!(s <= e, "segment[{}] has start {} > end {}", i, s, e);
+            if i + 1 < segs.len() {
+                let (ns, _) = segs[i + 1];
+                assert!(e <= ns, "segments[{}] and [{}] overlap", i, i + 1);
+            }
+        }
+    }
+
+    // ── edit-time → source-time alignment (preview / export) ────────────────
+
+    /// With no deletions, `map_edit_time_to_source_time(t)` must equal `t` exactly.
+    /// Threshold: 0 µs drift.
+    #[test]
+    fn edit_to_source_time_identity_no_deletions() {
+        let words: Vec<EdWord> = (0..5)
+            .map(|i| ed_word(&format!("w{}", i), i as i64 * 1_000_000, (i + 1) as i64 * 1_000_000))
+            .collect();
+        let mut state = EditorState::new();
+        state.set_words(words);
+
+        for &t in &[0_i64, 500_000, 1_000_000, 2_500_000, 4_999_999] {
+            let src = state.map_edit_time_to_source_time(t);
+            assert_eq!(
+                src, t,
+                "with no deletions, edit time {t} must map to source {t}, got {src}"
+            );
+        }
+    }
+
+    /// Delete one word and verify the exact source-time mapping.
+    /// Threshold: 0 µs drift (integer arithmetic).
+    #[test]
+    fn edit_to_source_time_single_gap_exact() {
+        // 6 words × 1 s each.  Delete word 2 (2M..3M).
+        // Keep segments: [0..2M], [3M..6M]
+        // Edit-time: 0..2M → source 0..2M; 2M..5M → source 3M..6M.
+        let words: Vec<EdWord> = (0..6)
+            .map(|i| ed_word(&format!("w{}", i), i as i64 * 1_000_000, (i + 1) as i64 * 1_000_000))
+            .collect();
+        let mut state = EditorState::new();
+        state.set_words(words);
+        state.delete_word(2);
+
+        assert_eq!(state.map_edit_time_to_source_time(0), 0);
+        assert_eq!(state.map_edit_time_to_source_time(1_000_000), 1_000_000);
+        // edit 2M → source 3M (exact jump over deleted gap)
+        assert_eq!(state.map_edit_time_to_source_time(2_000_000), 3_000_000);
+        assert_eq!(state.map_edit_time_to_source_time(3_000_000), 4_000_000);
+        // past end → clamp to 6M
+        assert_eq!(state.map_edit_time_to_source_time(10_000_000), 6_000_000);
+    }
+
+    /// Delete two non-adjacent words and verify mapping across both gaps.
+    #[test]
+    fn edit_to_source_time_multiple_gaps_exact() {
+        // 5 words × 1 s.  Delete word 1 (1M..2M) and word 3 (3M..4M).
+        // Keep: [0..1M], [2M..3M], [4M..5M]
+        // Edit positions: 0..1M, 1M..2M, 2M..3M
+        let words: Vec<EdWord> = (0..5)
+            .map(|i| ed_word(&format!("w{}", i), i as i64 * 1_000_000, (i + 1) as i64 * 1_000_000))
+            .collect();
+        let mut state = EditorState::new();
+        state.set_words(words);
+        state.delete_word(1);
+        state.delete_word(3);
+
+        assert_eq!(state.map_edit_time_to_source_time(0), 0);
+        assert_eq!(state.map_edit_time_to_source_time(500_000), 500_000);
+        // edit 1M → source 2M (jumped over gap at 1M..2M)
+        assert_eq!(state.map_edit_time_to_source_time(1_000_000), 2_000_000);
+        assert_eq!(state.map_edit_time_to_source_time(1_500_000), 2_500_000);
+        // edit 2M → source 4M (jumped over gap at 3M..4M)
+        assert_eq!(state.map_edit_time_to_source_time(2_000_000), 4_000_000);
+    }
+
+    /// Deleting all words must leave empty keep-segments and clamp to 0.
+    #[test]
+    fn edit_to_source_time_all_deleted_clamps_to_zero() {
+        let words: Vec<EdWord> = (0..3)
+            .map(|i| ed_word(&format!("w{}", i), i as i64 * 1_000_000, (i + 1) as i64 * 1_000_000))
+            .collect();
+        let mut state = EditorState::new();
+        state.set_words(words);
+        state.delete_range(0, 2);
+
+        assert_eq!(state.get_keep_segments(), vec![]);
+        // map_edit_time_to_source_time with empty segments → 0
+        assert_eq!(state.map_edit_time_to_source_time(0), 0);
+        assert_eq!(state.map_edit_time_to_source_time(999_000), 0);
+    }
 }
