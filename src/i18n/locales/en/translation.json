@@ -689,6 +689,7 @@
     "open": "Open",
     "save": "Save",
     "loadProject": "Open a .toaster project",
-    "saveProject": "Save project as .toaster file"
+    "saveProject": "Save project as .toaster file",
+    "close": "Close"
   }
 }

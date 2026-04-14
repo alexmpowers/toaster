@@ -10,6 +10,7 @@ import {
   Save,
   FolderOpen,
   Terminal,
+  X,
 } from "lucide-react";
 import { SettingsGroup } from "@/components/ui/SettingsGroup";
 import { useEditorStore } from "@/stores/editorStore";
@@ -27,6 +28,7 @@ const EditorView: React.FC = () => {
     usePlayerStore();
   const mediaInfo = usePlayerStore((s) => s.mediaInfo);
   const setMediaInfo = usePlayerStore((s) => s.setMediaInfo);
+  const clearMedia = usePlayerStore((s) => s.clearMedia);
   const seekTo = usePlayerStore((s) => s.seekTo);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [modelMissing, setModelMissing] = useState(false);
@@ -280,6 +282,17 @@ const EditorView: React.FC = () => {
     }
   }, [mediaInfo]);
 
+  const handleClose = useCallback(() => {
+    clearMedia();
+    setWords([]);
+    selectWord(null);
+    setSelectionRange(null);
+    clearHighlights();
+    setLastSavedPath(null);
+    setIsTranscribing(false);
+    setModelMissing(false);
+  }, [clearMedia, setWords, selectWord, setSelectionRange, clearHighlights]);
+
   const handleTimeUpdate = useCallback(
     (time: number) => {
       if (words.length === 0) return;
@@ -315,44 +328,30 @@ const EditorView: React.FC = () => {
 
   return (
     <div className="max-w-4xl w-full mx-auto space-y-6">
-      {/* Project section */}
-      <SettingsGroup title={t("editor.sections.project")}>
-        <div className="flex items-center gap-2 px-4 py-3">
-          <button
-            onClick={handleLoadProject}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
-            title={t("editor.loadProject")}
-          >
-            <FolderOpen size={14} />
-            {t("editor.open")}
-          </button>
-          {words.length > 0 && (
-            <button
-              onClick={handleSaveProject}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
-              title={t("editor.saveProject")}
-            >
-              <Save size={14} />
-              {t("editor.save")}
-            </button>
-          )}
-        </div>
-      </SettingsGroup>
-
       {/* Media section */}
       <SettingsGroup title={t("editor.sections.media")}>
         <div className="px-4 py-3 space-y-3">
           {!mediaUrl ? (
-            <div
-              className="border-2 border-dashed border-mid-gray/30 rounded-xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-accent/50 transition-colors"
-              onClick={handleImportMedia}
-            >
-              <Upload size={40} className="text-mid-gray/50" />
-              <p className="text-sm text-mid-gray">{t("editor.importMedia")}</p>
-              <p className="text-xs text-mid-gray/60">
-                {t("editor.supportedFormats")}
-              </p>
-            </div>
+            <>
+              <div
+                className="border-2 border-dashed border-mid-gray/30 rounded-xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-accent/50 transition-colors"
+                onClick={handleImportMedia}
+              >
+                <Upload size={40} className="text-mid-gray/50" />
+                <p className="text-sm text-mid-gray">{t("editor.importMedia")}</p>
+                <p className="text-xs text-mid-gray/60">
+                  {t("editor.supportedFormats")}
+                </p>
+              </div>
+              <button
+                onClick={handleLoadProject}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
+                title={t("editor.loadProject")}
+              >
+                <FolderOpen size={14} />
+                {t("editor.open")}
+              </button>
+            </>
           ) : (
             <>
               {/* File info bar */}
@@ -496,6 +495,28 @@ const EditorView: React.FC = () => {
             </div>
           </div>
         </SettingsGroup>
+      )}
+
+      {/* Bottom action bar — Save & Close */}
+      {words.length > 0 && (
+        <div className="flex items-center gap-2 justify-end">
+          <button
+            onClick={handleSaveProject}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
+            title={t("editor.saveProject")}
+          >
+            <Save size={14} />
+            {t("editor.save")}
+          </button>
+          <button
+            onClick={handleClose}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
+            title={t("editor.close")}
+          >
+            <X size={14} />
+            {t("editor.close")}
+          </button>
+        </div>
       )}
     </div>
   );
