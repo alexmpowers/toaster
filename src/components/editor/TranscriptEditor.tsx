@@ -9,7 +9,50 @@ interface ContextMenuState {
   wordIndex: number;
 }
 
-const TranscriptEditor: React.FC = () => {
+// Speaker colors for visual differentiation
+const SPEAKER_COLORS = [
+  "#8B5CF6", // violet
+  "#06B6D4", // cyan
+  "#F97316", // orange
+  "#10B981", // emerald
+  "#EC4899", // pink
+  "#6366F1", // indigo
+  "#14B8A6", // teal
+  "#F59E0B", // amber
+];
+
+function getSpeakerColor(speakerId: number): string {
+  if (speakerId < 0) return "transparent";
+  return SPEAKER_COLORS[speakerId % SPEAKER_COLORS.length];
+}
+
+/** Map confidence (0-1) to an underline style */
+function getConfidenceStyle(confidence: number): React.CSSProperties {
+  if (confidence >= 0.9) return {};
+  if (confidence >= 0.7)
+    return {
+      textDecorationLine: "underline",
+      textDecorationStyle: "dotted",
+      textDecorationColor: "rgba(234, 179, 8, 0.5)",
+      textUnderlineOffset: "3px",
+    };
+  return {
+    textDecorationLine: "underline",
+    textDecorationStyle: "wavy",
+    textDecorationColor: "rgba(239, 68, 68, 0.6)",
+    textUnderlineOffset: "3px",
+  };
+}
+
+interface TranscriptEditorProps {
+  showConfidence?: boolean;
+  showSpeakers?: boolean;
+}
+
+const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
+  showConfidence = true,
+  showSpeakers = true,
+}) => {
   const { t } = useTranslation();
   const {
     words,
@@ -154,27 +197,57 @@ const TranscriptEditor: React.FC = () => {
         {words.map((word, index) => {
           const isSelected = selectedIndex === index;
           const isRangeSelected = isInSelectionRange(index);
+          const prevWord = index > 0 ? words[index - 1] : null;
+          const showSpeakerLabel =
+            showSpeakers &&
+            word.speaker_id >= 0 &&
+            (!prevWord || prevWord.speaker_id !== word.speaker_id);
+
+          const confidenceStyle =
+            showConfidence && !word.deleted ? getConfidenceStyle(word.confidence) : {};
+          const speakerBorderStyle =
+            showSpeakers && word.speaker_id >= 0
+              ? { borderLeft: `2px solid ${getSpeakerColor(word.speaker_id)}`, paddingLeft: "3px" }
+              : {};
 
           return (
-            <span
-              key={`${index}-${word.start_us}`}
-              role="button"
-              tabIndex={-1}
-              onClick={(e) => handleWordClick(index, e)}
-              onContextMenu={(e) => handleContextMenu(index, e)}
-              className={[
-                "cursor-pointer rounded px-1 py-0.5 transition-colors",
-                word.deleted && "line-through opacity-40",
-                word.silenced && !word.deleted && "opacity-60 italic",
-                isSelected && "bg-[#E8A838] text-[#1E1E1E]",
-                isRangeSelected && !isSelected && "bg-[#E8A838]/40",
-                !isSelected && !isRangeSelected && !word.deleted && !word.silenced && "hover:bg-[rgba(128,128,128,0.2)]",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              {word.text}
-            </span>
+            <React.Fragment key={`${index}-${word.start_us}`}>
+              {showSpeakerLabel && (
+                <div className="w-full mt-2 mb-0.5 flex items-center gap-1.5">
+                  <span
+                    className="inline-block w-2 h-2 rounded-full"
+                    style={{ backgroundColor: getSpeakerColor(word.speaker_id) }}
+                  />
+                  <span className="text-[10px] uppercase tracking-wider text-mid-gray/60">
+                    {t("editor.speaker", { id: word.speaker_id + 1 })}
+                  </span>
+                </div>
+              )}
+              <span
+                role="button"
+                tabIndex={-1}
+                onClick={(e) => handleWordClick(index, e)}
+                onContextMenu={(e) => handleContextMenu(index, e)}
+                style={{ ...confidenceStyle, ...speakerBorderStyle }}
+                title={
+                  showConfidence && word.confidence < 0.9
+                    ? `${t("editor.confidence")}: ${Math.round(word.confidence * 100)}%`
+                    : undefined
+                }
+                className={[
+                  "cursor-pointer rounded px-1 py-0.5 transition-colors",
+                  word.deleted && "line-through opacity-40",
+                  word.silenced && !word.deleted && "opacity-60 italic",
+                  isSelected && "bg-[#E8A838] text-[#1E1E1E]",
+                  isRangeSelected && !isSelected && "bg-[#E8A838]/40",
+                  !isSelected && !isRangeSelected && !word.deleted && !word.silenced && "hover:bg-[rgba(128,128,128,0.2)]",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                {word.text}
+              </span>
+            </React.Fragment>
           );
         })}
       </div>

@@ -444,6 +444,7 @@ pub fn run(cli_args: CliArgs) {
             commands::waveform::map_edit_to_source_time,
             commands::filler::analyze_fillers,
             commands::filler::delete_fillers,
+            commands::filler::silence_pauses,
             commands::project::save_project,
             commands::project::load_project,
             commands::transcription::set_model_unload_timeout,

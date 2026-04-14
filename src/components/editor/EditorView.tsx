@@ -7,25 +7,17 @@ import {
   Upload,
   FileText,
   Download,
-  Trash2,
   Save,
   FolderOpen,
   Terminal,
-  AudioLines,
 } from "lucide-react";
 import { SettingsGroup } from "@/components/ui/SettingsGroup";
 import { useEditorStore } from "@/stores/editorStore";
 import { usePlayerStore, type MediaInfo } from "@/stores/playerStore";
 import TranscriptEditor from "@/components/editor/TranscriptEditor";
+import FillerDashboard from "@/components/editor/FillerDashboard";
 import MediaPlayer from "@/components/player/MediaPlayer";
 import Waveform from "@/components/player/Waveform";
-
-interface FillerAnalysis {
-  filler_indices: number[];
-  pauses: { after_word_index: number; gap_duration_us: number }[];
-  filler_count: number;
-  pause_count: number;
-}
 
 const EditorView: React.FC = () => {
   const { t } = useTranslation();
@@ -38,7 +30,6 @@ const EditorView: React.FC = () => {
   const setMediaInfo = usePlayerStore((s) => s.setMediaInfo);
   const seekTo = usePlayerStore((s) => s.seekTo);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [fillerInfo, setFillerInfo] = useState<FillerAnalysis | null>(null);
   const [modelMissing, setModelMissing] = useState(false);
 
   // Global keyboard shortcuts
@@ -220,28 +211,6 @@ const EditorView: React.FC = () => {
     },
     [],
   );
-
-  const handleAnalyzeFillers = useCallback(async () => {
-    try {
-      const analysis = await invoke<FillerAnalysis>("analyze_fillers", {});
-      setFillerInfo(analysis);
-    } catch (err) {
-      console.error("Filler analysis failed:", err);
-    }
-  }, []);
-
-  const handleDeleteFillers = useCallback(async () => {
-    try {
-      const count = await invoke<number>("delete_fillers", {});
-      setFillerInfo(null);
-      if (count > 0) {
-        const updated = await invoke<typeof words>("editor_get_words", {});
-        await setWords(updated);
-      }
-    } catch (err) {
-      console.error("Delete fillers failed:", err);
-    }
-  }, [setWords]);
 
   const handleSaveProject = useCallback(async () => {
     try {
@@ -469,27 +438,6 @@ const EditorView: React.FC = () => {
               <div className="w-px h-5 bg-mid-gray/20 mx-1" />
 
               <button
-                onClick={handleAnalyzeFillers}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
-                title={t("editor.analyzeFillers")}
-              >
-                <AudioLines size={14} />
-                {t("editor.fillers")}
-              </button>
-
-              {fillerInfo && fillerInfo.filler_count > 0 && (
-                <button
-                  onClick={handleDeleteFillers}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-900/30 border border-red-500/30 rounded-lg text-xs text-red-400 hover:bg-red-900/50 transition-colors"
-                >
-                  <Trash2 size={14} />
-                  {t("editor.deleteFillers", {
-                    count: fillerInfo.filler_count,
-                  })}
-                </button>
-              )}
-
-              <button
                 onClick={handleFFmpegScript}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
                 title={t("editor.ffmpegScript")}
@@ -499,15 +447,8 @@ const EditorView: React.FC = () => {
               </button>
             </div>
 
-            {/* Filler analysis results */}
-            {fillerInfo && (
-              <p className="text-xs text-mid-gray">
-                {t("editor.fillerResults", {
-                  fillers: fillerInfo.filler_count,
-                  pauses: fillerInfo.pause_count,
-                })}
-              </p>
-            )}
+            {/* Filler & pause dashboard */}
+            <FillerDashboard />
           </div>
         </SettingsGroup>
       )}

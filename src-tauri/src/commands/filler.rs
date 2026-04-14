@@ -72,3 +72,34 @@ pub fn delete_fillers(store: State<EditorStore>) -> Result<usize, String> {
 
     Ok(count)
 }
+
+/// Silence all detected long pauses by marking adjacent words as silenced.
+#[tauri::command]
+#[specta::specta]
+pub fn silence_pauses(
+    store: State<EditorStore>,
+    min_pause_us: Option<i64>,
+) -> Result<usize, String> {
+    let mut config = FillerConfig::default();
+    if let Some(threshold) = min_pause_us {
+        config.pause_threshold_us = threshold;
+    }
+
+    let mut state = store.0.lock().unwrap();
+    let pauses = filler::detect_pauses(state.get_words(), &config);
+    let count = pauses.len();
+
+    if count == 0 {
+        return Ok(0);
+    }
+
+    // Silence the word after each pause gap to mark the dead-air region
+    for (after_word_idx, _) in &pauses {
+        let next_idx = after_word_idx + 1;
+        if next_idx < state.get_words().len() && !state.get_words()[next_idx].silenced {
+            state.silence_word(next_idx);
+        }
+    }
+
+    Ok(count)
+}
