@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Play, Pause, Volume2, VolumeX, Eye, EyeOff } from "lucide-react";
+import { commands, type KeepSegment } from "@/bindings";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useEditorStore, type Word } from "@/stores/editorStore";
 
@@ -62,6 +63,45 @@ function getDeletedRanges(words: Word[], duration: number): Array<{ start: numbe
   return ranges;
 }
 
+function getDeletedRangesFromKeepSegments(
+  words: Word[],
+  keepSegments: KeepSegment[],
+): Array<{ start: number; end: number }> {
+  const MIN_RANGE_DURATION = 0.001; // 1ms
+  if (words.length === 0) return [];
+
+  const transcriptStart = words[0].start_us / 1_000_000;
+  const transcriptEnd = words[words.length - 1].end_us / 1_000_000;
+  if (transcriptEnd - transcriptStart < MIN_RANGE_DURATION) return [];
+
+  const normalized = [...keepSegments]
+    .map((seg) => ({
+      start: seg.start_us / 1_000_000,
+      end: seg.end_us / 1_000_000,
+    }))
+    .filter((seg) => seg.end - seg.start >= MIN_RANGE_DURATION)
+    .sort((a, b) => a.start - b.start);
+
+  const ranges: Array<{ start: number; end: number }> = [];
+  let cursor = transcriptStart;
+
+  for (const segment of normalized) {
+    const segStart = Math.max(transcriptStart, segment.start);
+    const segEnd = Math.min(transcriptEnd, segment.end);
+    if (segEnd - segStart < MIN_RANGE_DURATION) continue;
+    if (segStart - cursor >= MIN_RANGE_DURATION) {
+      ranges.push({ start: cursor, end: segStart });
+    }
+    cursor = Math.max(cursor, segEnd);
+  }
+
+  if (transcriptEnd - cursor >= MIN_RANGE_DURATION) {
+    ranges.push({ start: cursor, end: transcriptEnd });
+  }
+
+  return ranges;
+}
+
 const MediaPlayer: React.FC<MediaPlayerProps> = ({
   className = "",
   onTimeUpdate,
@@ -88,9 +128,48 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   } = usePlayerStore();
 
   const words = useEditorStore((s) => s.words);
+  const [backendDeletedRanges, setBackendDeletedRanges] = useState<
+    Array<{ start: number; end: number }> | null
+  >(null);
+  const backendFetchSeq = useRef(0);
+  const lastSkipTargetRef = useRef(0);
+  const lastObservedTimeRef = useRef(0);
 
   // Memoize deleted ranges so they aren't rebuilt every frame
   const deletedRanges = useMemo(() => getDeletedRanges(words, duration), [words, duration]);
+  const activeDeletedRanges = backendDeletedRanges ?? deletedRanges;
+
+  useEffect(() => {
+    let isCancelled = false;
+    const seq = ++backendFetchSeq.current;
+
+    if (words.length === 0) {
+      setBackendDeletedRanges([]);
+      return;
+    }
+
+    const refreshKeepSegments = async () => {
+      try {
+        const result = await commands.getKeepSegments();
+        if (isCancelled || seq !== backendFetchSeq.current) return;
+        if (result.status === "ok") {
+          setBackendDeletedRanges(getDeletedRangesFromKeepSegments(words, result.data));
+          return;
+        }
+      } catch {
+        // Fallback to local deleted-ranges heuristic below
+      }
+
+      if (!isCancelled && seq === backendFetchSeq.current) {
+        setBackendDeletedRanges(null);
+      }
+    };
+
+    void refreshKeepSegments();
+    return () => {
+      isCancelled = true;
+    };
+  }, [words]);
 
   // Sync seek requests from the store to the media element
   const lastSeekVersion = useRef(0);
@@ -141,6 +220,10 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       const el = mediaRef.current;
       if (!el) return;
       const time = el.currentTime;
+      if (time + 0.05 < lastObservedTimeRef.current) {
+        lastSkipTargetRef.current = 0;
+      }
+      lastObservedTimeRef.current = time;
       const END_EPSILON = 0.005; // 5ms
       const mediaDuration =
         Number.isFinite(el.duration) && el.duration > 0 ? el.duration : duration;
@@ -150,12 +233,15 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
           : Number.POSITIVE_INFINITY;
 
       // Skip deleted segments when preview edits is on
-      if (previewEdits && deletedRanges.length > 0) {
-        for (const range of deletedRanges) {
+      if (previewEdits && activeDeletedRanges.length > 0) {
+        for (const range of activeDeletedRanges) {
           if (time >= range.start && time < range.end) {
             const seekTarget = Math.min(range.end, maxSeekTarget);
-            if (seekTarget > time + END_EPSILON) {
-              el.currentTime = seekTarget;
+            const monotonicTarget = Math.max(seekTarget, lastSkipTargetRef.current + END_EPSILON);
+            const finalTarget = Math.min(monotonicTarget, maxSeekTarget);
+            if (finalTarget > time + END_EPSILON) {
+              lastSkipTargetRef.current = finalTarget;
+              el.currentTime = finalTarget;
               // Don't update store yet — next frame will read the new position
               rafRef.current = requestAnimationFrame(tick);
               return;
@@ -177,7 +263,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         rafRef.current = 0;
       }
     };
-  }, [isPlaying, previewEdits, deletedRanges, setCurrentTime, onTimeUpdate]);
+  }, [isPlaying, previewEdits, activeDeletedRanges, duration, setCurrentTime, onTimeUpdate]);
 
   // Fallback onTimeUpdate for when paused (seek bar scrubbing, etc.)
   const handleTimeUpdate = useCallback(() => {

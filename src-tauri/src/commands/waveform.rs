@@ -1,7 +1,8 @@
 use tauri::State;
 
 use crate::commands::editor::EditorStore;
-use crate::managers::editor::Word;
+
+const EXPORT_SEAM_FADE_US: i64 = 8_000;
 
 /// A keep-segment: contiguous non-deleted region of the source media.
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, specta::Type)]
@@ -68,6 +69,42 @@ fn normalize_peaks(mut peaks: Vec<f32>) -> Vec<f32> {
         *p /= global_max;
     }
     peaks
+}
+
+fn seam_fade_duration_seconds(start_us: i64, end_us: i64) -> Option<f64> {
+    let duration_us = (end_us - start_us).max(0);
+    let fade_us = EXPORT_SEAM_FADE_US.min(duration_us / 2);
+    (fade_us > 0).then_some(fade_us as f64 / 1_000_000.0)
+}
+
+fn build_audio_segment_filter(
+    index: usize,
+    segment_count: usize,
+    start_us: i64,
+    end_us: i64,
+) -> String {
+    let start_s = start_us as f64 / 1_000_000.0;
+    let end_s = end_us as f64 / 1_000_000.0;
+    let duration_s = ((end_us - start_us).max(0)) as f64 / 1_000_000.0;
+
+    let mut filter = format!(
+        "[0:a]atrim=start={start_s:.6}:end={end_s:.6},asetpts=PTS-STARTPTS"
+    );
+
+    if let Some(fade_s) = seam_fade_duration_seconds(start_us, end_us) {
+        if index > 0 {
+            filter.push_str(&format!(",afade=t=in:st=0:d={fade_s:.6}"));
+        }
+        if index + 1 < segment_count {
+            let fade_out_start_s = (duration_s - fade_s).max(0.0);
+            filter.push_str(&format!(
+                ",afade=t=out:st={fade_out_start_s:.6}:d={fade_s:.6}"
+            ));
+        }
+    }
+
+    filter.push_str(&format!("[a{index}]"));
+    filter
 }
 
 /// Get the keep-segments (non-deleted contiguous regions) from the editor.
@@ -224,15 +261,11 @@ pub async fn export_edited_media(
 
             if has_video {
                 filter_parts.push(format!(
-                    "[0:v]trim=start={:.6}:end={:.6},setpts=PTS-STARTPTS[v{i}]; \
-                     [0:a]atrim=start={:.6}:end={:.6},asetpts=PTS-STARTPTS[a{i}]",
-                    start_s, end_s, start_s, end_s
+                    "[0:v]trim=start={start_s:.6}:end={end_s:.6},setpts=PTS-STARTPTS[v{i}]"
                 ));
+                filter_parts.push(build_audio_segment_filter(i, n, *start, *end));
             } else {
-                filter_parts.push(format!(
-                    "[0:a]atrim=start={:.6}:end={:.6},asetpts=PTS-STARTPTS[a{i}]",
-                    start_s, end_s
-                ));
+                filter_parts.push(build_audio_segment_filter(i, n, *start, *end));
             }
         }
 
@@ -302,5 +335,20 @@ mod tests {
         let result = normalize_peaks(peaks);
         // global_max floor is 0.01, so all are 0/0.01 = 0
         assert!(result.iter().all(|&p| p < 0.01));
+    }
+
+    #[test]
+    fn audio_segment_filter_adds_micro_fades_at_joins() {
+        let filter = build_audio_segment_filter(1, 3, 1_000_000, 2_000_000);
+        assert!(filter.contains("afade=t=in:st=0:d=0.008000"));
+        assert!(filter.contains("afade=t=out:st=0.992000:d=0.008000"));
+        assert!(filter.ends_with("[a1]"));
+    }
+
+    #[test]
+    fn audio_segment_filter_scales_fade_for_short_segments() {
+        let filter = build_audio_segment_filter(1, 3, 0, 6_000);
+        assert!(filter.contains("afade=t=in:st=0:d=0.003000"));
+        assert!(filter.contains("afade=t=out:st=0.003000:d=0.003000"));
     }
 }

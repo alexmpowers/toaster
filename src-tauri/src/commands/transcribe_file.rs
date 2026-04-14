@@ -7,14 +7,21 @@ use crate::commands::editor::EditorStore;
 use crate::managers::editor::Word;
 use crate::managers::transcription::TranscriptionManager;
 
-/// Refine word boundaries by snapping them to low-energy points in the audio.
+/// Refine word boundaries with hybrid RMS + zero-crossing snapping.
 ///
 /// After proportional timestamp distribution, word boundaries may fall in the
-/// middle of speech. This function analyzes the actual audio signal around each
-/// boundary and moves it to the nearest silence/low-energy point, producing
-/// much more precise word-level cuts.
+/// middle of speech. This function performs a two-stage refinement per boundary:
 ///
-/// `samples` must be 16kHz mono f32 audio.
+/// 1. **RMS energy scan** (±80 ms): slides a 5 ms window across the search range
+///    and picks the centre of the lowest-energy window — the most likely gap between
+///    words.
+/// 2. **Zero-crossing snap** (±2 ms around the energy minimum): moves the candidate
+///    to the nearest sample index where the signal crosses zero, avoiding a cut mid-
+///    waveform cycle which would produce an audible click on export.
+///
+/// Monotonic ordering and per-word minimum-duration constraints are preserved.
+///
+/// `samples` must be 16 kHz mono f32 audio.
 fn refine_word_boundaries(words: &mut [Word], samples: &[f32]) {
     if words.len() < 2 || samples.is_empty() {
         return;
@@ -23,8 +30,10 @@ fn refine_word_boundaries(words: &mut [Word], samples: &[f32]) {
     const SAMPLE_RATE: f64 = 16000.0;
     const SEARCH_WINDOW_US: i64 = 80_000; // ±80ms search window around each boundary
     const RMS_WINDOW_SAMPLES: usize = 80; // 5ms RMS analysis window (16000 * 0.005)
+    // ±2 ms at 16 kHz = 32 samples; tight enough to stay near the energy dip
+    const ZC_SNAP_HALF: usize = 32;
 
-    /// Compute RMS energy for a slice of audio samples
+    /// Compute RMS energy for a slice of audio samples.
     fn rms(samples: &[f32]) -> f32 {
         if samples.is_empty() {
             return 0.0;
@@ -34,6 +43,7 @@ fn refine_word_boundaries(words: &mut [Word], samples: &[f32]) {
     }
 
     // For each boundary between adjacent words, find the minimum energy point
+    // then snap it to the nearest zero-crossing.
     for i in 0..words.len() - 1 {
         let boundary_us = words[i].end_us;
 
@@ -48,7 +58,7 @@ fn refine_word_boundaries(words: &mut [Word], samples: &[f32]) {
             continue;
         }
 
-        // Slide the RMS window across the search range and find minimum energy
+        // Stage 1: slide the RMS window and find the minimum-energy centre.
         let mut min_energy = f32::MAX;
         let mut min_pos = center_sample;
 
@@ -57,17 +67,36 @@ fn refine_word_boundaries(words: &mut [Word], samples: &[f32]) {
             let energy = rms(&samples[pos..pos + RMS_WINDOW_SAMPLES]);
             if energy < min_energy {
                 min_energy = energy;
-                min_pos = pos + RMS_WINDOW_SAMPLES / 2; // center of the window
+                min_pos = pos + RMS_WINDOW_SAMPLES / 2; // centre of the window
             }
-            pos += RMS_WINDOW_SAMPLES / 2; // step by half-window for overlap
+            pos += RMS_WINDOW_SAMPLES / 2; // 50 % overlap for smooth coverage
         }
+
+        // Stage 2: snap min_pos to the nearest zero-crossing within ±ZC_SNAP_HALF.
+        // A zero-crossing exists between index z and z+1 when the two samples have
+        // opposite signs (or one is exactly zero).
+        let zc_start = min_pos.saturating_sub(ZC_SNAP_HALF);
+        let zc_end = (min_pos + ZC_SNAP_HALF).min(samples.len().saturating_sub(1));
+
+        let mut best_zc = min_pos;
+        let mut best_dist = usize::MAX;
+        for z in zc_start..zc_end {
+            if samples[z] * samples[z + 1] <= 0.0 {
+                let dist = z.abs_diff(min_pos);
+                if dist < best_dist {
+                    best_dist = dist;
+                    best_zc = z;
+                }
+            }
+        }
+        min_pos = best_zc;
 
         // Convert back to microseconds
         let refined_us = (min_pos as f64 / SAMPLE_RATE * 1_000_000.0) as i64;
 
-        // Only snap if the refined point is within the search window
-        // and doesn't create zero-duration or negative-duration words
-        let min_word_us = 10_000; // minimum 10ms per word
+        // Only snap if the refined point preserves minimum word durations on both
+        // sides, keeping monotonic ordering intact.
+        let min_word_us = 10_000; // minimum 10 ms per word
         if refined_us > words[i].start_us + min_word_us
             && refined_us < words[i + 1].end_us - min_word_us
         {
