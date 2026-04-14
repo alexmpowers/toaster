@@ -15,13 +15,12 @@ import { SettingsGroup } from "@/components/ui/SettingsGroup";
 import { useEditorStore } from "@/stores/editorStore";
 import { usePlayerStore, type MediaInfo } from "@/stores/playerStore";
 import TranscriptEditor from "@/components/editor/TranscriptEditor";
-import FillerDashboard from "@/components/editor/FillerDashboard";
 import MediaPlayer from "@/components/player/MediaPlayer";
 import Waveform from "@/components/player/Waveform";
 
 const EditorView: React.FC = () => {
   const { t } = useTranslation();
-  const { words, setWords, deleteWord, silenceWord, splitWord, undo, redo, deleteRange, restoreAll, selectWord, setSelectionRange } = useEditorStore();
+  const { words, setWords, deleteWord, silenceWord, splitWord, undo, redo, deleteRange, restoreAll, selectWord, setSelectionRange, clearHighlights } = useEditorStore();
   const selectedIndex = useEditorStore((s) => s.selectedIndex);
   const selectionRange = useEditorStore((s) => s.selectionRange);
   const { mediaUrl, mediaType, currentTime, duration, setMedia } =
@@ -32,6 +31,8 @@ const EditorView: React.FC = () => {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [modelMissing, setModelMissing] = useState(false);
   const [lastSavedPath, setLastSavedPath] = useState<string | null>(null);
+  // Suppress auto-select briefly after a manual word click so it doesn't get overridden
+  const manualClickRef = React.useRef(false);
 
   // Auto-save: save project every 30 seconds when words exist and a save path is known
   useEffect(() => {
@@ -97,6 +98,7 @@ const EditorView: React.FC = () => {
       } else if (e.key === "Escape") {
         selectWord(null);
         setSelectionRange(null);
+        clearHighlights();
       } else if (e.key === "z" && (e.ctrlKey || e.metaKey) && e.shiftKey) {
         e.preventDefault();
         redo();
@@ -108,7 +110,7 @@ const EditorView: React.FC = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [deleteWord, deleteRange, silenceWord, splitWord, undo, redo, selectWord, setSelectionRange]);
+  }, [deleteWord, deleteRange, silenceWord, splitWord, undo, redo, selectWord, setSelectionRange, clearHighlights]);
 
   const handleTranscribe = useCallback(async () => {
     if (!mediaInfo) return;
@@ -281,6 +283,8 @@ const EditorView: React.FC = () => {
   const handleTimeUpdate = useCallback(
     (time: number) => {
       if (words.length === 0) return;
+      // Don't auto-select during a manual word click — let the user's selection stick
+      if (manualClickRef.current) return;
       const timeUs = time * 1_000_000;
       const idx = words.findIndex(
         (w) => !w.deleted && timeUs >= w.start_us && timeUs <= w.end_us,
@@ -296,7 +300,14 @@ const EditorView: React.FC = () => {
     (index: number) => {
       const word = words[index];
       if (word) {
+        // Flag to suppress auto-select for a brief period
+        manualClickRef.current = true;
         seekTo(word.start_us / 1_000_000);
+        useEditorStore.getState().selectWord(index);
+        // Clear the flag after the seek settles
+        setTimeout(() => {
+          manualClickRef.current = false;
+        }, 300);
       }
     },
     [words, seekTo],
@@ -386,42 +397,38 @@ const EditorView: React.FC = () => {
         </div>
       </SettingsGroup>
 
-      {/* Transcription section */}
-      <SettingsGroup title={t("editor.sections.transcription")}>
-        <div className="px-4 py-3 space-y-3">
-          {mediaUrl && words.length === 0 && (
-            <>
-              <button
-                onClick={handleTranscribe}
-                disabled={isTranscribing}
-                className="flex items-center gap-2 px-4 py-2 bg-accent text-black rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-50"
-              >
-                <FileText size={16} />
-                {isTranscribing
-                  ? t("editor.transcribing")
-                  : t("editor.transcribe")}
-              </button>
-              {modelMissing && (
-                <p className="text-xs text-amber-400">
-                  {t("editor.modelNotLoaded")}
-                </p>
-              )}
-            </>
-          )}
+      {/* Transcription section — only visible when media is loaded */}
+      {mediaUrl && (
+        <SettingsGroup title={t("editor.sections.transcription")}>
+          <div className="px-4 py-3 space-y-3">
+            {words.length === 0 && (
+              <>
+                <button
+                  onClick={handleTranscribe}
+                  disabled={isTranscribing}
+                  className="flex items-center gap-2 px-4 py-2 bg-accent text-black rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-50"
+                >
+                  <FileText size={16} />
+                  {isTranscribing
+                    ? t("editor.transcribing")
+                    : t("editor.transcribe")}
+                </button>
+                {modelMissing && (
+                  <p className="text-xs text-amber-400">
+                    {t("editor.modelNotLoaded")}
+                  </p>
+                )}
+              </>
+            )}
 
-          {words.length > 0 && (
-            <div className="bg-background border border-mid-gray/20 rounded-lg overflow-hidden">
-              <TranscriptEditor />
-            </div>
-          )}
-
-          {!mediaUrl && words.length === 0 && (
-            <p className="text-sm text-mid-gray py-2">
-              {t("editor.noTranscript")}
-            </p>
-          )}
-        </div>
-      </SettingsGroup>
+            {words.length > 0 && (
+              <div className="bg-background border border-mid-gray/20 rounded-lg overflow-hidden">
+                <TranscriptEditor onWordClick={handleWordClick} />
+              </div>
+            )}
+          </div>
+        </SettingsGroup>
+      )}
 
       {/* Export & Tools section */}
       {words.length > 0 && (
@@ -487,9 +494,6 @@ const EditorView: React.FC = () => {
                 </button>
               </div>
             </div>
-
-            {/* Filler & pause dashboard */}
-            <FillerDashboard />
           </div>
         </SettingsGroup>
       )}

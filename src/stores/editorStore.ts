@@ -15,6 +15,8 @@ interface EditorState {
   words: Word[];
   selectedIndex: number | null;
   selectionRange: [number, number] | null;
+  highlightedIndices: number[];
+  highlightType: "filler" | "pause" | null;
 
   setWords: (words: Word[]) => Promise<void>;
   deleteWord: (index: number) => Promise<void>;
@@ -28,12 +30,16 @@ interface EditorState {
   getKeepSegments: () => Promise<[number, number][]>;
   selectWord: (index: number | null) => void;
   setSelectionRange: (range: [number, number] | null) => void;
+  setHighlightedIndices: (indices: number[], type: "filler" | "pause" | null) => void;
+  clearHighlights: () => void;
 }
 
 export const useEditorStore = create<EditorState>()((set) => ({
   words: [],
   selectedIndex: null,
   selectionRange: null,
+  highlightedIndices: [],
+  highlightType: null,
 
   setWords: async (words: Word[]) => {
     const result = await invoke<Word[]>("editor_set_words", { words });
@@ -98,5 +104,13 @@ export const useEditorStore = create<EditorState>()((set) => ({
 
   setSelectionRange: (range: [number, number] | null) => {
     set({ selectionRange: range });
+  },
+
+  setHighlightedIndices: (indices: number[], type: "filler" | "pause" | null) => {
+    set({ highlightedIndices: indices, highlightType: type });
+  },
+
+  clearHighlights: () => {
+    set({ highlightedIndices: [], highlightType: null });
   },
 }));

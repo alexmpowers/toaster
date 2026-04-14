@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, X } from "lucide-react";
+import { Search, X, AudioLines, Timer } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
 import { useEditorStore } from "@/stores/editorStore";
 
 interface ContextMenuState {
@@ -45,20 +46,36 @@ function getConfidenceStyle(confidence: number): React.CSSProperties {
   };
 }
 
+interface PauseInfo {
+  after_word_index: number;
+  gap_duration_us: number;
+}
+
+interface FillerAnalysis {
+  filler_indices: number[];
+  pauses: PauseInfo[];
+  filler_count: number;
+  pause_count: number;
+}
+
 interface TranscriptEditorProps {
   showConfidence?: boolean;
   showSpeakers?: boolean;
+  onWordClick?: (index: number) => void;
 }
 
 const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   showConfidence = true,
   showSpeakers = true,
+  onWordClick,
 }) => {
   const { t } = useTranslation();
   const {
     words,
     selectedIndex,
     selectionRange,
+    highlightedIndices,
+    highlightType,
     deleteWord,
     restoreWord,
     silenceWord,
@@ -69,6 +86,9 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
     redo,
     selectWord,
     setSelectionRange,
+    setWords,
+    setHighlightedIndices,
+    clearHighlights,
   } = useEditorStore();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -78,6 +98,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   const [showFind, setShowFind] = useState(false);
   const [findQuery, setFindQuery] = useState("");
   const [findMatchIndex, setFindMatchIndex] = useState(0);
+  const [isDetecting, setIsDetecting] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     visible: false,
     x: 0,
@@ -85,9 +106,46 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
     wordIndex: -1,
   });
 
+  const highlightedSet = useMemo(() => new Set(highlightedIndices), [highlightedIndices]);
+
   const closeContextMenu = useCallback(() => {
     setContextMenu((prev) => ({ ...prev, visible: false }));
   }, []);
+
+  // Detect fillers — highlights filler words in the transcript
+  const handleDetectFillers = useCallback(async () => {
+    setIsDetecting(true);
+    try {
+      const result = await invoke<FillerAnalysis>("analyze_fillers", {});
+      if (result.filler_indices.length > 0) {
+        setHighlightedIndices(result.filler_indices, "filler");
+      } else {
+        clearHighlights();
+      }
+    } catch (err) {
+      console.error("Filler detection failed:", err);
+    } finally {
+      setIsDetecting(false);
+    }
+  }, [setHighlightedIndices, clearHighlights]);
+
+  // Detect pauses — highlights words adjacent to long pauses
+  const handleDetectPauses = useCallback(async () => {
+    setIsDetecting(true);
+    try {
+      const result = await invoke<FillerAnalysis>("analyze_fillers", {});
+      if (result.pauses.length > 0) {
+        const pauseWordIndices = result.pauses.map((p: PauseInfo) => p.after_word_index);
+        setHighlightedIndices(pauseWordIndices, "pause");
+      } else {
+        clearHighlights();
+      }
+    } catch (err) {
+      console.error("Pause detection failed:", err);
+    } finally {
+      setIsDetecting(false);
+    }
+  }, [setHighlightedIndices, clearHighlights]);
 
   const isInSelectionRange = useCallback(
     (index: number): boolean => {
@@ -125,19 +183,23 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
     (index: number, e: React.MouseEvent) => {
       if (dragStartRef.current === null) return;
       if (!isDraggingRef.current) {
-        // Simple click (no drag)
+        // Simple click (no drag) — clear any filler/pause highlights
+        if (highlightedIndices.length > 0) {
+          clearHighlights();
+        }
         if (e.shiftKey && selectedIndex !== null) {
           const start = Math.min(selectedIndex, index);
           const end = Math.max(selectedIndex, index);
           setSelectionRange([start, end]);
         } else {
           selectWord(index);
+          onWordClick?.(index);
         }
       }
       dragStartRef.current = null;
       isDraggingRef.current = false;
     },
-    [selectedIndex, selectWord, setSelectionRange],
+    [selectedIndex, selectWord, setSelectionRange, onWordClick, highlightedIndices, clearHighlights],
   );
 
   // Clear drag on global mouseup (in case mouse leaves the container)
@@ -204,13 +266,28 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   );
 
   const handleDeleteSelected = useCallback(async () => {
-    if (selectionRange) {
+    if (highlightedIndices.length > 0) {
+      // Bulk-delete highlighted words (fillers or pause-adjacent)
+      if (highlightType === "filler") {
+        const count = await invoke<number>("delete_fillers", {});
+        if (count > 0) {
+          const updated = await invoke<typeof words>("editor_get_words", {});
+          await setWords(updated);
+        }
+      } else {
+        // Delete each highlighted word individually
+        for (const idx of highlightedIndices) {
+          await deleteWord(idx);
+        }
+      }
+      clearHighlights();
+    } else if (selectionRange) {
       await deleteRange(selectionRange[0], selectionRange[1]);
     } else if (selectedIndex !== null) {
       await deleteWord(selectedIndex);
     }
     closeContextMenu();
-  }, [selectedIndex, selectionRange, deleteWord, deleteRange, closeContextMenu]);
+  }, [selectedIndex, selectionRange, highlightedIndices, highlightType, deleteWord, deleteRange, closeContextMenu, clearHighlights, setWords]);
 
   const handleRestoreSelected = useCallback(async () => {
     if (selectedIndex !== null) {
@@ -282,6 +359,47 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
+      {/* Detection toolbar — above transcript */}
+      <div className="flex items-center gap-2 mb-3">
+        <button
+          onClick={handleDetectFillers}
+          disabled={isDetecting}
+          className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] border transition-colors disabled:opacity-50 ${
+            highlightType === "filler"
+              ? "bg-red-900/30 border-red-500/30 text-red-400"
+              : "bg-background border-mid-gray/20 text-mid-gray hover:bg-mid-gray/10"
+          }`}
+        >
+          <AudioLines size={12} />
+          {t("editor.detectFillers")}
+        </button>
+        <button
+          onClick={handleDetectPauses}
+          disabled={isDetecting}
+          className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] border transition-colors disabled:opacity-50 ${
+            highlightType === "pause"
+              ? "bg-yellow-900/30 border-yellow-500/30 text-yellow-400"
+              : "bg-background border-mid-gray/20 text-mid-gray hover:bg-mid-gray/10"
+          }`}
+        >
+          <Timer size={12} />
+          {t("editor.detectPauses")}
+        </button>
+        {highlightedIndices.length > 0 && (
+          <>
+            <span className="text-[11px] text-mid-gray/60">
+              {highlightedIndices.length} {highlightType === "filler" ? t("editor.fillersFound") : t("editor.pausesFound")}
+            </span>
+            <button
+              onClick={() => clearHighlights()}
+              className="text-[11px] text-mid-gray/60 hover:text-mid-gray transition-colors"
+            >
+              <X size={12} />
+            </button>
+          </>
+        )}
+      </div>
+
       {/* Find bar */}
       {showFind && (
         <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-[#1E1E1E] border border-mid-gray/20">
@@ -336,6 +454,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
           const isRangeSelected = isInSelectionRange(index);
           const isFindMatch = findMatchSet.has(index);
           const isCurrentFindMatch = findMatches.length > 0 && findMatches[findMatchIndex] === index;
+          const isHighlighted = highlightedSet.has(index);
           const prevWord = index > 0 ? words[index - 1] : null;
           const showSpeakerLabel =
             showSpeakers &&
@@ -371,19 +490,25 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                 onContextMenu={(e) => handleContextMenu(index, e)}
                 style={{ ...confidenceStyle, ...speakerBorderStyle }}
                 title={
-                  showConfidence && word.confidence < 0.9
-                    ? `${t("editor.confidence")}: ${Math.round(word.confidence * 100)}%`
-                    : undefined
+                  isHighlighted && highlightType === "filler"
+                    ? t("editor.fillerWord")
+                    : isHighlighted && highlightType === "pause"
+                      ? t("editor.pauseDetected")
+                      : showConfidence && word.confidence < 0.9
+                        ? `${t("editor.confidence")}: ${Math.round(word.confidence * 100)}%`
+                        : undefined
                 }
                 className={[
                   "cursor-pointer rounded px-1 py-0.5 transition-colors",
                   word.deleted && "line-through opacity-40",
                   word.silenced && !word.deleted && "opacity-60 italic",
-                  isCurrentFindMatch && "ring-2 ring-[#E8A838] bg-[#E8A838]/30",
-                  isFindMatch && !isCurrentFindMatch && "bg-[#E8A838]/15",
-                  isSelected && !isFindMatch && "bg-[#E8A838] text-[#1E1E1E]",
-                  isRangeSelected && !isSelected && !isFindMatch && "bg-[#E8A838]/40",
-                  !isSelected && !isRangeSelected && !isFindMatch && !word.deleted && !word.silenced && "hover:bg-[rgba(128,128,128,0.2)]",
+                  isHighlighted && highlightType === "filler" && "ring-2 ring-red-500 bg-red-900/30 text-red-300",
+                  isHighlighted && highlightType === "pause" && "ring-2 ring-yellow-500 bg-yellow-900/30 text-yellow-300",
+                  isCurrentFindMatch && !isHighlighted && "ring-2 ring-[#E8A838] bg-[#E8A838]/30",
+                  isFindMatch && !isCurrentFindMatch && !isHighlighted && "bg-[#E8A838]/15",
+                  isSelected && !isFindMatch && !isHighlighted && "bg-[#E8A838] text-[#1E1E1E]",
+                  isRangeSelected && !isSelected && !isFindMatch && !isHighlighted && "bg-[#E8A838]/40",
+                  !isSelected && !isRangeSelected && !isFindMatch && !isHighlighted && !word.deleted && !word.silenced && "hover:bg-[rgba(128,128,128,0.2)]",
                 ]
                   .filter(Boolean)
                   .join(" ")}
