@@ -42,3 +42,7 @@ blob-report/
 
 # Nix build output
 result
+
+# Old C build artifacts
+build/
+nul
