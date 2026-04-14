@@ -10,6 +10,7 @@ import {
 import { toast } from "sonner";
 import { commands } from "@/bindings";
 import { useSettingsStore } from "@/stores/settingsStore";
+import toasterLogo from "../../../toaster_text.svg";
 
 import { Keyboard, Mic, Check, Loader2 } from "lucide-react";
 
@@ -308,7 +309,7 @@ const AccessibilityOnboarding: React.FC<AccessibilityOnboardingProps> = ({
   return (
     <div className="h-screen w-screen flex flex-col p-6 gap-6 items-center justify-center">
       <div className="flex flex-col items-center gap-2">
-        <div className="text-3xl font-bold tracking-wide" style={{ color: 'var(--color-accent, #E8A838)' }}>🍞 Toaster</div>
+        <img src={toasterLogo} alt="Toaster" className="h-12 w-auto" />
       </div>
 
       <div className="max-w-md w-full flex flex-col items-center gap-4">
