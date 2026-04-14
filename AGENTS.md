@@ -2,213 +2,200 @@
 
 This file provides guidance to AI coding assistants working with code in this repository.
 
+Toaster is a transcript-first video/audio editor — "edit video by editing text." Forked from [Handy](https://github.com/cjpais/Handy), it inherits Handy's beautiful UI and offline model management, then adds video import, word-level transcript editing, waveform visualization, and media export.
+
 ## Development Commands
 
 **Prerequisites:**
 
-- [Rust](https://rustup.rs/) (latest stable)
-- [Bun](https://bun.sh/) package manager
+- [Rust](https://rustup.rs/) (latest stable, MSVC target on Windows)
+- [Node.js](https://nodejs.org/) or [Bun](https://bun.sh/)
+- Platform-specific: see [BUILD.md](BUILD.md)
+
+**Windows-specific prerequisites:**
+
+- Visual Studio 2022 Build Tools (C++ workload)
+- [LLVM](https://releases.llvm.org/) (for bindgen/whisper-rs-sys)
+- [Vulkan SDK](https://vulkan.lunarg.com/) (for whisper Vulkan acceleration)
+- [Ninja](https://ninja-build.org/) build system
+- [CMake](https://cmake.org/)
+
+**Environment setup (Windows):**
+
+```powershell
+# Run the setup script to configure all environment variables
+.\scripts\setup-env.ps1
+```
 
 **Core Development:**
 
 ```bash
 # Install dependencies
-bun install
+npm install --ignore-scripts
 
-# Run in development mode
-bun run tauri dev
-# If cmake error on macOS:
-CMAKE_POLICY_VERSION_MINIMUM=3.5 bun run tauri dev
+# Run in development mode (starts Vite + Rust backend)
+cargo tauri dev
 
 # Build for production
-bun run tauri build
+cargo tauri build
 
 # Frontend only development
-bun run dev        # Start Vite dev server
-bun run build      # Build frontend (TypeScript + Vite)
-bun run preview    # Preview built frontend
+npm run dev        # Start Vite dev server
+npm run build      # Build frontend (TypeScript + Vite)
+
+# Rust only
+cd src-tauri
+cargo check        # Type check
+cargo test         # Run tests
+cargo clippy       # Lint
 ```
 
 **Linting and Formatting (run before committing):**
 
 ```bash
-bun run lint              # ESLint for frontend
-bun run lint:fix          # ESLint with auto-fix
-bun run format            # Prettier + cargo fmt
-bun run format:check      # Check formatting without changes
-bun run format:frontend   # Prettier only
-bun run format:backend    # cargo fmt only
-```
-
-**Model Setup (Required for Development):**
-
-```bash
-mkdir -p src-tauri/resources/models
-curl -o src-tauri/resources/models/silero_vad_v4.onnx https://blob.handy.computer/silero_vad_v4.onnx
+npm run lint              # ESLint for frontend
+npm run lint:fix          # ESLint with auto-fix
+cd src-tauri && cargo fmt # Rust formatting
+cd src-tauri && cargo clippy # Rust linting
 ```
 
 For detailed platform-specific build setup, see [BUILD.md](BUILD.md).
 
 ## Architecture Overview
 
-Handy is a cross-platform desktop speech-to-text application built with Tauri 2.x (Rust backend + React/TypeScript frontend).
+Toaster is built with Tauri 2.x (Rust backend + React/TypeScript frontend). The architecture inherits Handy's manager pattern and extends it with video editing capabilities.
 
 ### Backend Structure (src-tauri/src/)
 
+**From Handy (inherited):**
 - `lib.rs` - Main entry point, Tauri setup, manager initialization
 - `managers/` - Core business logic:
   - `audio.rs` - Audio recording and device management
-  - `model.rs` - Model downloading and management
+  - `model.rs` - Model downloading and management (16+ whisper models)
   - `transcription.rs` - Speech-to-text processing pipeline
   - `history.rs` - Transcription history storage
 - `audio_toolkit/` - Low-level audio processing:
   - `audio/` - Device enumeration, recording, resampling
   - `vad/` - Voice Activity Detection (Silero VAD)
 - `commands/` - Tauri command handlers for frontend communication
-- `cli.rs` - CLI argument definitions (clap derive)
-- `shortcut.rs` - Global keyboard shortcut handling
 - `settings.rs` - Application settings management
 - `overlay.rs` - Recording overlay window (platform-specific)
-- `signal_handle.rs` - `send_transcription_input()` reusable function
-- `utils.rs` - Platform detection helpers
+
+**Toaster additions (to be built):**
+- `managers/media.rs` - FFmpeg decode, video playback, waveform extraction
+- `managers/editor.rs` - Transcript editing engine (word-level delete/restore/split, undo/redo)
+- `managers/export.rs` - Caption export (SRT/VTT/script) + media re-encode
+- `managers/project.rs` - Project save/load
+- `commands/media.rs` - Open file, play/pause/seek commands
+- `commands/editor.rs` - Word editing operations
+- `commands/export.rs` - Export commands
+- `commands/project.rs` - Project file commands
 
 ### Frontend Structure (src/)
 
+**From Handy (inherited):**
 - `App.tsx` - Main component with onboarding flow
 - `components/` - React UI components:
-  - `settings/` - Settings UI
-  - `model-selector/` - Model management interface
-  - `onboarding/` - First-run experience
-  - `overlay/` - Recording overlay UI
-  - `update-checker/` - App update notifications
-  - `shared/`, `ui/`, `icons/`, `footer/` - Shared components
-- `hooks/useSettings.ts` - Settings state management hook
-- `stores/settingsStore.ts` - Zustand store for settings
+  - `Sidebar.tsx` - Icon sidebar navigation
+  - `settings/` - Settings UI panels
+  - `model-selector/` - Model cards, download progress, status pills
+  - `onboarding/` - First-run model download experience
+  - `footer/` - Model status button, version info
+  - `shared/`, `ui/`, `icons/` - Shared components
+- `stores/` - Zustand state management
+  - `modelStore.ts` - Model state
+  - `settingsStore.ts` - Settings state
 - `bindings.ts` - Auto-generated Tauri type bindings (via tauri-specta)
-- `overlay/` - Recording overlay window entry point
-- `lib/types.ts` - Shared TypeScript type definitions
+- `i18n/` - Internationalization (20+ languages)
+
+**Toaster additions (to be built):**
+- `components/editor/` - TranscriptView, VideoPlayer, WaveformView, EditorPanel
+- `components/export/` - ExportPanel (format selection, progress)
+- `stores/editorStore.ts` - Transcript words, selection, playback position
+- `stores/projectStore.ts` - Project open/save state
 
 ### Key Architecture Patterns
 
-**Manager Pattern:** Core functionality organized into managers (Audio, Model, Transcription) initialized at startup and managed via Tauri state.
+**Manager Pattern:** Core functionality organized into managers initialized at startup and managed via Tauri state. Each manager owns its domain data and exposes operations.
 
-**Command-Event Architecture:** Frontend → Backend via Tauri commands; Backend → Frontend via events.
+**Command-Event Architecture:** Frontend → Backend via Tauri commands (`#[tauri::command]`); Backend → Frontend via events (`app.emit()`).
 
-**Pipeline Processing:** Audio → VAD → Whisper/Parakeet → Text output → Clipboard/Paste
-
-**State Flow:** Zustand → Tauri Command → Rust State → Persistence (tauri-plugin-store)
+**State Flow:** Zustand stores → Tauri Commands → Rust Managers → Persistence
 
 ### Technology Stack
 
-**Core Libraries:**
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18 + TypeScript + Tailwind CSS 4 |
+| Desktop shell | Tauri 2.x (Rust) |
+| State management | Zustand |
+| Transcription | transcribe-rs (whisper.cpp + ONNX) |
+| Audio I/O | cpal + rubato + rodio |
+| VAD | vad-rs (Silero) |
+| Video decode | ffmpeg-next (planned) |
+| Project storage | rusqlite |
+| Build | Vite (frontend) + Cargo (backend) |
 
-- `whisper-rs` - Local Whisper inference with GPU acceleration
-- `cpal` - Cross-platform audio I/O
-- `vad-rs` - Voice Activity Detection
-- `rdev` - Global keyboard shortcuts
-- `rubato` - Audio resampling
-- `rodio` - Audio playback for feedback sounds
+### Toaster-Specific Concepts
 
-### Application Flow
+**Word-level editing:** Each transcript word has: text, start_us, end_us, deleted, silenced, confidence, speaker_id. Operations (delete, restore, split) create undo snapshots.
 
-1. **Initialization:** App starts minimized to tray, loads settings, initializes managers
-2. **Model Setup:** First-run downloads preferred Whisper model (Small/Medium/Turbo/Large)
-3. **Recording:** Global shortcut triggers audio recording with VAD filtering
-4. **Processing:** Audio sent to Whisper model for transcription
-5. **Output:** Text pasted to active application via system clipboard
+**Timestamps:** All timestamps in **microseconds** (matching FFmpeg's AV_TIME_BASE).
 
-### Settings System
+**Keep-segments:** After deletions, calculate non-deleted time ranges for playback and export. Map edit-time → source-time by summing deleted durations.
 
-Settings are stored using Tauri's store plugin with reactive updates:
-
-- Keyboard shortcuts (configurable, supports push-to-talk)
-- Audio devices (microphone/output selection)
-- Model preferences (Small/Medium/Turbo/Large Whisper variants)
-- Audio feedback and translation options
-
-### Single Instance Architecture
-
-The app enforces single instance behavior — launching when already running brings the settings window to front rather than creating a new process. Remote control flags (`--toggle-transcription`, etc.) work by launching a second instance that sends args to the running instance via `tauri_plugin_single_instance`, then exits.
+**Filler detection:** Pattern-match words like "um", "uh", "like", "you know" and suggest bulk deletion.
 
 ## Internationalization (i18n)
 
-All user-facing strings must use i18next translations. ESLint enforces this (no hardcoded strings in JSX).
+All user-facing strings must use i18next translations. ESLint enforces this.
 
 **Adding new text:**
 
 1. Add key to `src/i18n/locales/en/translation.json`
 2. Use in component: `const { t } = useTranslation(); t('key.path')`
 
-**File structure:**
-
-```
-src/i18n/
-├── index.ts           # i18n setup
-├── languages.ts       # Language metadata
-└── locales/
-    ├── en/translation.json  # English (source)
-    ├── de/, es/, fr/, ja/, ru/, zh/, ...
-    └── ...
-```
-
-For translation contribution guidelines, see [CONTRIBUTING_TRANSLATIONS.md](CONTRIBUTING_TRANSLATIONS.md).
-
 ## Code Style
 
 **Rust:**
 
 - Run `cargo fmt` and `cargo clippy` before committing
-- Handle errors explicitly (avoid unwrap in production)
+- Handle errors explicitly with `anyhow::Result` — avoid `.unwrap()` in production
 - Use descriptive names, add doc comments for public APIs
+- Follow the manager pattern for new features
 
 **TypeScript/React:**
 
 - Strict TypeScript, avoid `any` types
 - Functional components with hooks
-- Tailwind CSS for styling
+- Tailwind CSS for styling (no inline styles or CSS modules)
 - Path aliases: `@/` → `./src/`
+- All UI text via i18next
 
 ## Commit Guidelines
 
 Use conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`, `chore:`
 
-## CLI Parameters
+## Design System
 
-Handy supports command-line parameters on all platforms for integration with scripts, window managers, and autostart configurations.
+Toaster uses a custom color palette derived from its mascot:
 
-**Implementation:** `cli.rs` (definitions), `main.rs` (parsing), `lib.rs` (applying), `signal_handle.rs` (shared logic)
-
-| Flag                     | Description                                                    |
-| ------------------------ | -------------------------------------------------------------- |
-| `--toggle-transcription` | Toggle recording on/off on a running instance                  |
-| `--toggle-post-process`  | Toggle recording with post-processing on/off                   |
-| `--cancel`               | Cancel the current operation on a running instance             |
-| `--start-hidden`         | Launch without showing the main window (tray icon visible)     |
-| `--no-tray`              | Launch without system tray (closing window quits the app)      |
-| `--debug`                | Enable debug mode with verbose (Trace) logging                 |
-
-**Key design decisions:**
-
-- CLI flags are runtime-only overrides — they do NOT modify persisted settings
-- Remote control flags work via `tauri_plugin_single_instance`: second instance sends args, then exits
-- `send_transcription_input()` in `signal_handle.rs` is shared between signal handlers and CLI
-
-## Debug Mode
-
-Access debug features: `Cmd+Shift+D` (macOS) or `Ctrl+Shift+D` (Windows/Linux)
+```
+Primary:            #D9D8D8  (Toaster Grey — mascot body)
+Accent:             #E8A838  (Toast Gold — mascot toast)
+Background Dark:    #1E1E1E
+Background Panel:   #252525
+Surface:            #2A2A2A
+Border:             rgba(128, 128, 128, 0.2)
+Text Primary:       #F0F0F0
+Text Secondary:     rgba(240, 240, 240, 0.6)
+Status Green:       #4ADE80
+Status Yellow:      #FACC15
+Status Red:         #EF4444
+```
 
 ## Platform Notes
 
-- **macOS**: Metal acceleration, accessibility permissions required for keyboard shortcuts
-- **Windows**: Vulkan acceleration, code signing
-- **Linux**: OpenBLAS + Vulkan, limited Wayland support, overlay uses GTK layer shell (disable with `HANDY_NO_GTK_LAYER_SHELL=1`)
-
-## Troubleshooting
-
-See the [Troubleshooting](README.md#troubleshooting) section in README.md.
-
-## Contributing & PR Guidelines
-
-Follow [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow and [PR template](.github/PULL_REQUEST_TEMPLATE.md) when submitting pull requests. For translations, see [CONTRIBUTING_TRANSLATIONS.md](CONTRIBUTING_TRANSLATIONS.md).
-
-**Note:** Feature freeze is active — bug fixes are top priority. New features require community support via [Discussions](https://github.com/cjpais/Handy/discussions).
+- **Windows**: MSVC target, Vulkan acceleration for whisper, requires LLVM + Vulkan SDK
+- **macOS**: Metal acceleration, accessibility permissions required
+- **Linux**: Vulkan acceleration, limited Wayland support

@@ -1,130 +1,104 @@
 # Build Instructions
 
-This guide covers how to set up the development environment and build Handy from source across different platforms.
+This guide covers how to set up the development environment and build Toaster from source.
+
+Toaster is forked from [Handy](https://github.com/cjpais/Handy). It inherits Handy's Tauri + React architecture and extends it with video editing capabilities.
 
 ## Prerequisites
 
 ### All Platforms
 
 - [Rust](https://rustup.rs/) (latest stable)
-- [Bun](https://bun.sh/) package manager
+- [Node.js](https://nodejs.org/) (v18+) or [Bun](https://bun.sh/)
 - [Tauri Prerequisites](https://tauri.app/start/prerequisites/)
+- [CMake](https://cmake.org/)
 
-### Platform-Specific Requirements
+### Windows
 
-#### macOS
+- **Visual Studio 2022 Build Tools** with C++ workload
+- **LLVM** — `winget install LLVM.LLVM` (provides libclang for bindgen)
+- **Vulkan SDK** — `winget install KhronosGroup.VulkanSDK` (for whisper Vulkan acceleration)
+- **Ninja** — `winget install Ninja-build.Ninja` (CMake generator)
 
-- Xcode Command Line Tools
-- Install with: `xcode-select --install`
+**Quick install (PowerShell as admin):**
 
-#### Windows
+```powershell
+winget install LLVM.LLVM --silent
+winget install KhronosGroup.VulkanSDK --silent
+winget install Ninja-build.Ninja --silent
+```
 
-- Microsoft C++ Build Tools
-- Visual Studio 2019/2022 with C++ development tools
-- Or Visual Studio Build Tools 2019/2022
+### macOS
 
-#### Linux
+- Xcode Command Line Tools: `xcode-select --install`
 
-- Build essentials
-- ALSA development libraries
-- Install with:
-
-  ```bash
-  # Ubuntu/Debian
-  sudo apt update
-  sudo apt install build-essential libasound2-dev pkg-config libssl-dev libvulkan-dev vulkan-tools glslc libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libgtk-layer-shell0 libgtk-layer-shell-dev patchelf cmake
-
-  # Fedora/RHEL
-  sudo dnf groupinstall "Development Tools"
-  sudo dnf install alsa-lib-devel pkgconf openssl-devel vulkan-devel \
-    gtk3-devel webkit2gtk4.1-devel libappindicator-gtk3-devel librsvg2-devel \
-    gtk-layer-shell gtk-layer-shell-devel \
-    cmake
-
-  # Arch Linux
-  sudo pacman -S base-devel alsa-lib pkgconf openssl vulkan-devel \
-    gtk3 webkit2gtk-4.1 libappindicator-gtk3 librsvg gtk-layer-shell \
-    cmake
-  ```
-
-## Setup Instructions
-
-### 1. Clone the Repository
+### Linux
 
 ```bash
-git clone git@github.com:cjpais/Handy.git
-cd Handy
+# Ubuntu/Debian
+sudo apt update
+sudo apt install build-essential libasound2-dev pkg-config libssl-dev \
+  libvulkan-dev vulkan-tools glslc libgtk-3-dev libwebkit2gtk-4.1-dev \
+  libayatana-appindicator3-dev librsvg2-dev cmake
+```
+
+## Setup
+
+### 1. Clone
+
+```bash
+git clone https://github.com/itsnotaboutthecell/toaster.git
+cd toaster
+git checkout handy-fork
 ```
 
 ### 2. Install Dependencies
 
 ```bash
-bun install
+npm install --ignore-scripts
 ```
 
-### 3. Start Dev Server
+### 3. Environment Setup (Windows)
+
+```powershell
+.\scripts\setup-env.ps1
+```
+
+Or manually:
+
+```powershell
+$env:LIBCLANG_PATH = "C:\Program Files\LLVM\bin"
+$env:VULKAN_SDK = "C:\VulkanSDK\<version>"
+$env:CMAKE_GENERATOR = "Ninja"
+
+# Source MSVC environment
+$vcvarsall = "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
+$envOut = cmd /c "`"$vcvarsall`" x64 >nul 2>&1 && set"
+foreach ($line in $envOut) {
+    if ($line -match "^([^=]+)=(.*)$") {
+        [Environment]::SetEnvironmentVariable($matches[1], $matches[2], "Process")
+    }
+}
+```
+
+### 4. Dev Server
 
 ```bash
-bun tauri dev
+cargo tauri dev
 ```
 
-### 4. Build for Production
+### 5. Production Build
 
 ```bash
-bun run tauri build
+cargo tauri build
 ```
-
-This compiles a release binary and generates platform-specific bundles (deb, rpm, AppImage on Linux; dmg on macOS; msi on Windows).
-
-## Linux Install (from source)
-
-The raw binary (`src-tauri/target/release/handy`) cannot run standalone — it needs Tauri resource files (tray icons, sounds, VAD model) to be co-located at the expected path.
-
-**Install from the deb bundle** (works on any Linux distro):
-
-```bash
-cd /tmp
-ar x /path/to/Handy/src-tauri/target/release/bundle/deb/Handy_*_amd64.deb data.tar.gz
-tar xzf data.tar.gz
-sudo cp usr/bin/handy /usr/bin/
-sudo cp -r usr/lib/Handy /usr/lib/
-sudo cp -r usr/share/icons/hicolor/* /usr/share/icons/hicolor/
-sudo cp usr/share/applications/Handy.desktop /usr/share/applications/
-```
-
-After subsequent rebuilds, only the binary needs re-copying:
-
-```bash
-sudo cp src-tauri/target/release/handy /usr/bin/
-```
-
-Resources only need re-copying if they change upstream (new icons, sounds, etc.).
 
 ## Troubleshooting
 
-### AppImage build fails on Arch / rolling-release distros
-
-`linuxdeploy` bundles its own `strip` binary which is too old to process system libraries built with newer toolchains on rolling-release distros (Arch, CachyOS, Manjaro, EndeavourOS).
-
-The error from Tauri:
-
-```
-Bundling Handy_*_amd64.AppImage
-failed to bundle project `failed to run linuxdeploy`
-```
-
-Tauri swallows the real linuxdeploy error. To see it, run linuxdeploy manually:
-
-```bash
-cd src-tauri/target/release/bundle/appimage
-~/.cache/tauri/linuxdeploy-x86_64.AppImage --appimage-extract-and-run \
-  --appdir Handy.AppDir --plugin gtk --output appimage
-```
-
-**Workaround:** The binary, deb, and rpm bundles all build fine — only the AppImage step fails. To skip it:
-
-```bash
-bun run tauri build -- --bundles deb
-```
-
-Then install using the deb extraction method above.
+| Symptom | Cause | Fix |
+|---------|-------|-----|
+| `libclang not found` | LLVM not installed | `winget install LLVM.LLVM`, set `LIBCLANG_PATH` |
+| `stdbool.h not found` | Missing MSVC include paths | Set `BINDGEN_EXTRA_CLANG_ARGS` with MSVC include dirs |
+| `VULKAN_SDK not set` | Vulkan SDK not installed | `winget install KhronosGroup.VulkanSDK`, set `VULKAN_SDK` |
+| `Visual Studio not found` | CMake using wrong generator | Set `CMAKE_GENERATOR=Ninja` |
+| `link.exe not found` | MSVC env not sourced | Run vcvars64.bat or use setup-env.ps1 |
