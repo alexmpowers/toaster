@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include "ModelSelectorWidget.h"
 #include "WaveformView.h"
 
 #include <QAbstractItemView>
@@ -655,19 +656,24 @@ void MainWindow::createDocks()
   m_logView->setReadOnly(true);
   m_logsDock = createDock(this, "Logs", "logsDock", m_logView);
 
+  m_modelSelector = new ModelSelectorWidget(this);
+  m_modelDock = createDock(this, "Model", "modelDock", m_modelSelector);
+
   m_docks = {m_transcriptDock, m_waveformDock, m_suggestedEditsDock,
-             m_inspectorDock, m_exportDock,   m_logsDock};
+             m_inspectorDock, m_exportDock,   m_logsDock, m_modelDock};
 
   addDockWidget(Qt::RightDockWidgetArea, m_transcriptDock);
   addDockWidget(Qt::BottomDockWidgetArea, m_waveformDock);
   addDockWidget(Qt::RightDockWidgetArea, m_suggestedEditsDock);
   addDockWidget(Qt::RightDockWidgetArea, m_inspectorDock);
   addDockWidget(Qt::RightDockWidgetArea, m_exportDock);
+  addDockWidget(Qt::RightDockWidgetArea, m_modelDock);
   addDockWidget(Qt::BottomDockWidgetArea, m_logsDock);
 
   tabifyDockWidget(m_transcriptDock, m_suggestedEditsDock);
   tabifyDockWidget(m_transcriptDock, m_inspectorDock);
   tabifyDockWidget(m_transcriptDock, m_exportDock);
+  tabifyDockWidget(m_transcriptDock, m_modelDock);
   tabifyDockWidget(m_waveformDock, m_logsDock);
 
   m_transcriptDock->raise();
@@ -1028,12 +1034,14 @@ void MainWindow::resetDocks()
   addDockWidget(Qt::RightDockWidgetArea, m_suggestedEditsDock);
   addDockWidget(Qt::RightDockWidgetArea, m_inspectorDock);
   addDockWidget(Qt::RightDockWidgetArea, m_exportDock);
+  addDockWidget(Qt::RightDockWidgetArea, m_modelDock);
   addDockWidget(Qt::BottomDockWidgetArea, m_waveformDock);
   addDockWidget(Qt::BottomDockWidgetArea, m_logsDock);
 
   tabifyDockWidget(m_transcriptDock, m_suggestedEditsDock);
   tabifyDockWidget(m_transcriptDock, m_inspectorDock);
   tabifyDockWidget(m_transcriptDock, m_exportDock);
+  tabifyDockWidget(m_transcriptDock, m_modelDock);
   tabifyDockWidget(m_waveformDock, m_logsDock);
 
   for (QDockWidget *dock : m_docks)

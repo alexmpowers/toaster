@@ -6,6 +6,8 @@ qt_add_executable(toaster-app WIN32
   main.cpp
   MainWindow.cpp
   MainWindow.h
+  ModelSelectorWidget.cpp
+  ModelSelectorWidget.h
   WaveformView.cpp
   WaveformView.h
 )

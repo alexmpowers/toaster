@@ -9,6 +9,7 @@ extern "C" {
 #include "toaster.h"
 }
 
+class ModelSelectorWidget;
 class QAction;
 class QAudioOutput;
 class QCloseEvent;
@@ -154,6 +155,7 @@ private:
   QDockWidget *m_inspectorDock = nullptr;
   QDockWidget *m_exportDock = nullptr;
   QDockWidget *m_logsDock = nullptr;
+  QDockWidget *m_modelDock = nullptr;
   QList<QDockWidget *> m_docks;
 
   QAction *m_lockDocksAction = nullptr;
@@ -207,6 +209,7 @@ private:
   QSpinBox *m_pauseMinGapSpin = nullptr;
   QSpinBox *m_pauseShortenToSpin = nullptr;
   QPlainTextEdit *m_logView = nullptr;
+  ModelSelectorWidget *m_modelSelector = nullptr;
 
   QLabel *m_projectLabel = nullptr;
   QLabel *m_mediaLabel = nullptr;

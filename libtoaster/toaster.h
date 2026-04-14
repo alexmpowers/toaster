@@ -213,6 +213,15 @@ TOASTER_API bool toaster_model_download(const char *model_id, toaster_download_p
 TOASTER_API bool toaster_model_cancel_download(void);
 TOASTER_API bool toaster_model_delete(const char *model_id);
 
+/* Transcription */
+
+typedef void (*toaster_transcribe_progress_cb)(int progress_percent, void *user_data);
+
+TOASTER_API bool toaster_transcribe(toaster_transcript_t *transcript, const float *pcm_samples,
+                                    size_t sample_count, int sample_rate, const char *language,
+                                    toaster_transcribe_progress_cb progress_cb, void *user_data);
+TOASTER_API bool toaster_transcribe_cancel(void);
+
 #ifdef __cplusplus
 }
 #endif
