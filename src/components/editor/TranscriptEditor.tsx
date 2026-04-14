@@ -366,7 +366,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
           disabled={isDetecting}
           className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] border transition-colors disabled:opacity-50 ${
             highlightType === "filler"
-              ? "border-[#EEEEEE]/50 text-[#EEEEEE] bg-[#EEEEEE]/10"
+              ? "border-[#EEEEEE]/50 text-black bg-[#EEEEEE]"
               : "bg-background border-mid-gray/20 text-mid-gray hover:bg-mid-gray/10"
           }`}
         >
@@ -378,7 +378,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
           disabled={isDetecting}
           className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] border transition-colors disabled:opacity-50 ${
             highlightType === "pause"
-              ? "border-[#EEEEEE]/50 text-[#EEEEEE] bg-[#EEEEEE]/10"
+              ? "border-[#EEEEEE]/50 text-black bg-[#EEEEEE]"
               : "bg-background border-mid-gray/20 text-mid-gray hover:bg-mid-gray/10"
           }`}
         >
