@@ -572,7 +572,7 @@ impl ShortcutAction for TranscribeAction {
                     };
 
                     match transcription_result {
-                        Ok(transcription) => {
+                        Ok((transcription, _segments)) => {
                             debug!(
                                 "Transcription completed in {:?}: '{}'",
                                 transcription_time.elapsed(),

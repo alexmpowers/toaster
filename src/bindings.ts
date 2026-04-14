@@ -807,6 +807,141 @@ async exportTranscriptToFile(format: ExportFormat, path: string, maxCharsPerLine
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Transcribe any audio or video file and populate the editor with word-level results.
+ * 
+ * For WAV files, reads samples directly. For all other formats (MP4, MP3, etc.),
+ * uses FFmpeg to extract audio to a temporary 16kHz mono WAV first.
+ */
+async transcribeMediaFile(path: string) : Promise<Result<Word[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("transcribe_media_file", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Generate waveform peaks from a WAV audio file.
+ * 
+ * Returns `peak_count` normalized peak values (0.0–1.0) suitable for rendering
+ * a bar-chart waveform. Falls back gracefully if the file cannot be decoded.
+ */
+async generateWaveformPeaks(path: string, peakCount: number | null) : Promise<Result<number[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("generate_waveform_peaks", { path, peakCount }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Get the keep-segments (non-deleted contiguous regions) from the editor.
+ */
+async getKeepSegments() : Promise<Result<KeepSegment[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_keep_segments") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Generate an FFmpeg concat filter script from keep-segments.
+ * 
+ * This produces a filter_complex command that can be run with FFmpeg CLI
+ * to trim and concatenate the kept portions of the source media.
+ * 
+ * Usage: `ffmpeg -i <input> -filter_complex "<output>" -map "[outv]" -map "[outa]" <output_file>`
+ */
+async generateFfmpegEditScript(inputPath: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("generate_ffmpeg_edit_script", { inputPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Map an edit-timeline position back to the source-media position.
+ * 
+ * When words are deleted, the edited timeline is shorter than the source.
+ * This maps a position on the edit timeline to the corresponding source time.
+ */
+async mapEditToSourceTime(editTimeUs: number) : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("map_edit_to_source_time", { editTimeUs }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Export the edited media by running FFmpeg with trim/atrim filters.
+ * 
+ * Uses the keep-segments from the editor to produce an output file
+ * with deleted segments removed. Supports both audio-only and video+audio.
+ */
+async exportEditedMedia(inputPath: string, outputPath: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_edited_media", { inputPath, outputPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async analyzeFillers(minPauseUs: number | null) : Promise<Result<FillerAnalysis, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("analyze_fillers", { minPauseUs }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Auto-delete all detected filler words in the transcript.
+ */
+async deleteFillers() : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_fillers") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Silence all detected long pauses by marking adjacent words as silenced.
+ */
+async silencePauses(minPauseUs: number | null) : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("silence_pauses", { minPauseUs }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Save the current project to a .toaster file.
+ */
+async saveProject(path: string, name: string | null) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("save_project", { path, name }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Load a .toaster project file and populate the editor + media state.
+ */
+async loadProject(path: string) : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("load_project", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async setModelUnloadTimeout(timeout: ModelUnloadTimeout) : Promise<void> {
     await TAURI_INVOKE("set_model_unload_timeout", { timeout });
 },
@@ -920,6 +1055,14 @@ export type ClipboardHandling = "dont_modify" | "copy_to_clipboard"
 export type CustomSounds = { start: boolean; stop: boolean }
 export type EngineType = "Whisper" | "Parakeet" | "Moonshine" | "MoonshineStreaming" | "SenseVoice" | "GigaAM" | "Canary" | "Cohere"
 export type ExportFormat = "Srt" | "Vtt" | "Script"
+/**
+ * Detect filler words and long pauses in the current transcript.
+ */
+export type FillerAnalysis = { filler_indices: number[]; 
+/**
+ * Each pause: (word_index_before_gap, gap_duration_us)
+ */
+pauses: PauseInfo[]; filler_count: number; pause_count: number }
 export type GpuDeviceOption = { id: number; name: string; total_vram_mb: number }
 export type HistoryEntry = { id: number; file_name: string; timestamp: number; saved: boolean; title: string; transcription_text: string; post_processed_text: string | null; post_process_prompt: string | null; post_process_requested: boolean }
 export type HistoryUpdatePayload = { action: "added"; entry: HistoryEntry } | { action: "updated"; entry: HistoryEntry } | { action: "deleted"; id: number } | { action: "toggled"; id: number }
@@ -931,6 +1074,10 @@ export type ImplementationChangeResult = { success: boolean;
  * List of binding IDs that were reset to defaults due to incompatibility
  */
 reset_bindings: string[] }
+/**
+ * A keep-segment: contiguous non-deleted region of the source media.
+ */
+export type KeepSegment = { start_us: number; end_us: number }
 export type KeyboardImplementation = "tauri" | "handy_keys"
 export type LLMPrompt = { id: string; name: string; prompt: string }
 export type LogLevel = "trace" | "debug" | "info" | "warn" | "error"
@@ -963,6 +1110,7 @@ export type OrtAcceleratorSetting = "auto" | "cpu" | "cuda" | "directml" | "rocm
 export type OverlayPosition = "none" | "top" | "bottom"
 export type PaginatedHistory = { entries: HistoryEntry[]; has_more: boolean }
 export type PasteMethod = "ctrl_v" | "direct" | "none" | "shift_insert" | "ctrl_shift_v" | "external_script"
+export type PauseInfo = { after_word_index: number; gap_duration_us: number }
 export type PermissionAccess = "allowed" | "denied" | "unknown"
 export type PostProcessProvider = { id: string; label: string; base_url: string; allow_base_url_edit?: boolean; models_endpoint?: string | null; supports_structured_output?: boolean }
 export type RecordingRetentionPeriod = "never" | "preserve_limit" | "days_3" | "weeks_2" | "months_3"

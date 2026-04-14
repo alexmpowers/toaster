@@ -25,7 +25,7 @@ use transcribe_rs::{
         Quantization,
     },
     whisper_cpp::{WhisperEngine, WhisperInferenceParams},
-    SpeechModel, TranscribeOptions,
+    SpeechModel, TranscribeOptions, TranscriptionSegment,
 };
 
 #[derive(Clone, Debug, Serialize)]
@@ -437,7 +437,7 @@ impl TranscriptionManager {
         current_model.clone()
     }
 
-    pub fn transcribe(&self, audio: Vec<f32>) -> Result<String> {
+    pub fn transcribe(&self, audio: Vec<f32>) -> Result<(String, Option<Vec<TranscriptionSegment>>)> {
         #[cfg(debug_assertions)]
         if std::env::var("HANDY_FORCE_TRANSCRIPTION_FAILURE").is_ok() {
             return Err(anyhow::anyhow!(
@@ -455,7 +455,7 @@ impl TranscriptionManager {
         if audio.is_empty() {
             debug!("Empty audio vector");
             self.maybe_unload_immediately("empty audio");
-            return Ok(String::new());
+            return Ok((String::new(), None));
         }
 
         // Check if model is loaded, if not try to load it
@@ -690,6 +690,8 @@ impl TranscriptionManager {
             .map(|info| matches!(info.engine_type, EngineType::Whisper))
             .unwrap_or(false);
 
+        let segments = result.segments;
+
         let corrected_result = if !settings.custom_words.is_empty() && !is_whisper {
             apply_custom_words(
                 &result.text,
@@ -729,7 +731,7 @@ impl TranscriptionManager {
 
         self.maybe_unload_immediately("transcription");
 
-        Ok(final_result)
+        Ok((final_result, segments))
     }
 }
 

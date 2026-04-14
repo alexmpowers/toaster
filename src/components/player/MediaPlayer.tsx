@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Play, Pause, Volume2, VolumeX, Eye, EyeOff } from "lucide-react";
 import { usePlayerStore } from "@/stores/playerStore";
@@ -17,8 +17,11 @@ function formatTime(seconds: number): string {
 
 const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
-/** Build sorted list of deleted time ranges from words */
+/** Build sorted list of deleted time ranges from words, with crossfade padding */
 function getDeletedRanges(words: Word[]): Array<{ start: number; end: number }> {
+  // Padding in seconds to add before/after deleted segments to prevent clicks/pops
+  const CROSSFADE_PAD = 0.01; // 10ms
+
   const ranges: Array<{ start: number; end: number }> = [];
   let rangeStart: number | null = null;
   let rangeEnd = 0;
@@ -33,19 +36,19 @@ function getDeletedRanges(words: Word[]): Array<{ start: number; end: number }> 
       } else if (startSec <= rangeEnd + 0.05) {
         rangeEnd = Math.max(rangeEnd, endSec);
       } else {
-        ranges.push({ start: rangeStart, end: rangeEnd });
+        ranges.push({ start: Math.max(0, rangeStart - CROSSFADE_PAD), end: rangeEnd + CROSSFADE_PAD });
         rangeStart = startSec;
         rangeEnd = endSec;
       }
     } else {
       if (rangeStart !== null) {
-        ranges.push({ start: rangeStart, end: rangeEnd });
+        ranges.push({ start: Math.max(0, rangeStart - CROSSFADE_PAD), end: rangeEnd + CROSSFADE_PAD });
         rangeStart = null;
       }
     }
   }
   if (rangeStart !== null) {
-    ranges.push({ start: rangeStart, end: rangeEnd });
+    ranges.push({ start: Math.max(0, rangeStart - CROSSFADE_PAD), end: rangeEnd + CROSSFADE_PAD });
   }
   return ranges;
 }
@@ -76,6 +79,9 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   } = usePlayerStore();
 
   const words = useEditorStore((s) => s.words);
+
+  // Memoize deleted ranges so they aren't rebuilt every frame
+  const deletedRanges = useMemo(() => getDeletedRanges(words), [words]);
 
   // Sync seek requests from the store to the media element
   const lastSeekVersion = useRef(0);
@@ -110,25 +116,57 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     }
   }, [isPlaying, mediaUrl, setPlaying]);
 
-  const handleTimeUpdate = useCallback(() => {
-    const el = mediaRef.current;
-    if (!el) return;
-    const time = el.currentTime;
-
-    // Skip deleted segments when preview edits is on
-    if (previewEdits && words.length > 0 && isPlaying) {
-      const deletedRanges = getDeletedRanges(words);
-      for (const range of deletedRanges) {
-        if (time >= range.start && time < range.end) {
-          el.currentTime = range.end;
-          return;
-        }
+  // RAF-based playback loop: polls ~60fps for precise deleted-segment skipping
+  // instead of relying on the ~4Hz onTimeUpdate event
+  const rafRef = useRef<number>(0);
+  useEffect(() => {
+    if (!isPlaying) {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = 0;
       }
+      return;
     }
 
-    setCurrentTime(time);
-    onTimeUpdate?.(time);
-  }, [setCurrentTime, onTimeUpdate, previewEdits, words, isPlaying]);
+    const tick = () => {
+      const el = mediaRef.current;
+      if (!el) return;
+      const time = el.currentTime;
+
+      // Skip deleted segments when preview edits is on
+      if (previewEdits && deletedRanges.length > 0) {
+        for (const range of deletedRanges) {
+          if (time >= range.start && time < range.end) {
+            el.currentTime = range.end;
+            // Don't update store yet — next frame will read the new position
+            rafRef.current = requestAnimationFrame(tick);
+            return;
+          }
+        }
+      }
+
+      setCurrentTime(time);
+      onTimeUpdate?.(time);
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = 0;
+      }
+    };
+  }, [isPlaying, previewEdits, deletedRanges, setCurrentTime, onTimeUpdate]);
+
+  // Fallback onTimeUpdate for when paused (seek bar scrubbing, etc.)
+  const handleTimeUpdate = useCallback(() => {
+    if (isPlaying) return; // RAF loop handles this during playback
+    const el = mediaRef.current;
+    if (!el) return;
+    setCurrentTime(el.currentTime);
+    onTimeUpdate?.(el.currentTime);
+  }, [isPlaying, setCurrentTime, onTimeUpdate]);
 
   const handleLoadedMetadata = useCallback(() => {
     const el = mediaRef.current;

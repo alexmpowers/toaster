@@ -442,6 +442,7 @@ pub fn run(cli_args: CliArgs) {
             commands::waveform::get_keep_segments,
             commands::waveform::generate_ffmpeg_edit_script,
             commands::waveform::map_edit_to_source_time,
+            commands::waveform::export_edited_media,
             commands::filler::analyze_fillers,
             commands::filler::delete_fillers,
             commands::filler::silence_pauses,

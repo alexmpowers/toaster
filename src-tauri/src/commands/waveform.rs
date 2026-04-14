@@ -161,6 +161,129 @@ pub fn map_edit_to_source_time(
     Ok(state.map_edit_time_to_source_time(edit_time_us))
 }
 
+/// Export the edited media by running FFmpeg with trim/atrim filters.
+///
+/// Uses the keep-segments from the editor to produce an output file
+/// with deleted segments removed. Supports both audio-only and video+audio.
+#[tauri::command]
+#[specta::specta]
+pub async fn export_edited_media(
+    store: State<'_, EditorStore>,
+    input_path: String,
+    output_path: String,
+) -> Result<String, String> {
+    let segments = {
+        let state = store.0.lock().unwrap();
+        state.get_keep_segments()
+    };
+
+    if segments.is_empty() {
+        return Err("No segments to export (all words deleted)".to_string());
+    }
+
+    let input = std::path::Path::new(&input_path);
+    if !input.exists() {
+        return Err(format!("Input file not found: {}", input_path));
+    }
+
+    // Detect if input has video by checking extension
+    let ext = input.extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+    let has_video = matches!(ext.as_str(), "mp4" | "mkv" | "mov" | "avi" | "webm" | "flv");
+
+    let mut args: Vec<String> = vec![
+        "-y".to_string(),
+        "-i".to_string(),
+        input_path.clone(),
+    ];
+
+    if segments.len() == 1 {
+        // Single segment — simple trim with re-encode for sample-accurate cuts
+        let (start, end) = segments[0];
+        let start_s = start as f64 / 1_000_000.0;
+        let end_s = end as f64 / 1_000_000.0;
+        args.extend([
+            "-ss".to_string(), format!("{:.6}", start_s),
+            "-to".to_string(), format!("{:.6}", end_s),
+        ]);
+        // Re-encode audio for sample-accurate cut (stream copy can only cut on keyframes)
+        if has_video {
+            args.extend(["-c:v".to_string(), "copy".to_string()]);
+        }
+        args.extend(["-c:a".to_string(), "aac".to_string(), "-b:a".to_string(), "192k".to_string()]);
+    } else {
+        // Multiple segments — filter_complex with trim/atrim + concat
+        let mut filter_parts = Vec::new();
+        let n = segments.len();
+
+        for (i, (start, end)) in segments.iter().enumerate() {
+            let start_s = *start as f64 / 1_000_000.0;
+            let end_s = *end as f64 / 1_000_000.0;
+
+            if has_video {
+                filter_parts.push(format!(
+                    "[0:v]trim=start={:.6}:end={:.6},setpts=PTS-STARTPTS[v{i}]; \
+                     [0:a]atrim=start={:.6}:end={:.6},asetpts=PTS-STARTPTS[a{i}]",
+                    start_s, end_s, start_s, end_s
+                ));
+            } else {
+                filter_parts.push(format!(
+                    "[0:a]atrim=start={:.6}:end={:.6},asetpts=PTS-STARTPTS[a{i}]",
+                    start_s, end_s
+                ));
+            }
+        }
+
+        if has_video {
+            let v_inputs: String = (0..n).map(|i| format!("[v{i}]")).collect();
+            let a_inputs: String = (0..n).map(|i| format!("[a{i}]")).collect();
+            filter_parts.push(format!(
+                "{v_inputs}concat=n={n}:v=1:a=0[outv]; {a_inputs}concat=n={n}:v=0:a=1[outa]"
+            ));
+            let filter = filter_parts.join("; ");
+            args.extend([
+                "-filter_complex".to_string(), filter,
+                "-map".to_string(), "[outv]".to_string(),
+                "-map".to_string(), "[outa]".to_string(),
+            ]);
+        } else {
+            let a_inputs: String = (0..n).map(|i| format!("[a{i}]")).collect();
+            filter_parts.push(format!(
+                "{a_inputs}concat=n={n}:v=0:a=1[outa]"
+            ));
+            let filter = filter_parts.join("; ");
+            args.extend([
+                "-filter_complex".to_string(), filter,
+                "-map".to_string(), "[outa]".to_string(),
+            ]);
+        }
+    }
+
+    args.push(output_path.clone());
+
+    log::info!("Running FFmpeg export: ffmpeg {}", args.join(" "));
+
+    let output = tokio::task::spawn_blocking(move || {
+        std::process::Command::new("ffmpeg")
+            .args(&args)
+            .output()
+    })
+    .await
+    .map_err(|e| format!("Export task panicked: {}", e))?
+    .map_err(|e| format!("FFmpeg not found. Install FFmpeg to export edited media. Error: {}", e))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("FFmpeg export failed: {}", stderr));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    log::info!("FFmpeg export complete: {}", output_path);
+    Ok(format!("Export complete: {}\n{}", output_path, stdout))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
