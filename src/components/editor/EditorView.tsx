@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { invoke, convertFileSrc } from "@tauri-apps/api/core";
@@ -29,7 +29,9 @@ interface FillerAnalysis {
 
 const EditorView: React.FC = () => {
   const { t } = useTranslation();
-  const { words, setWords } = useEditorStore();
+  const { words, setWords, deleteWord, silenceWord, splitWord, undo, redo, deleteRange, restoreAll, selectWord, setSelectionRange } = useEditorStore();
+  const selectedIndex = useEditorStore((s) => s.selectedIndex);
+  const selectionRange = useEditorStore((s) => s.selectionRange);
   const { mediaUrl, mediaType, currentTime, duration, setMedia } =
     usePlayerStore();
   const mediaInfo = usePlayerStore((s) => s.mediaInfo);
@@ -38,6 +40,70 @@ const EditorView: React.FC = () => {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [fillerInfo, setFillerInfo] = useState<FillerAnalysis | null>(null);
   const [modelMissing, setModelMissing] = useState(false);
+
+  // Global keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't capture when typing in input/textarea
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+      const { setPlaying, isPlaying } = usePlayerStore.getState();
+      const { selectedIndex: selIdx, selectionRange: selRange } = useEditorStore.getState();
+
+      if (e.key === " " && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setPlaying(!isPlaying);
+      } else if (e.key === "ArrowLeft" && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        const store = usePlayerStore.getState();
+        usePlayerStore.getState().seekTo(Math.max(0, store.currentTime - 5));
+      } else if (e.key === "ArrowRight" && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        const store = usePlayerStore.getState();
+        usePlayerStore.getState().seekTo(Math.min(store.duration, store.currentTime + 5));
+      } else if (e.key === "d" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        if (selRange) {
+          deleteRange(selRange[0], selRange[1]);
+        } else if (selIdx !== null) {
+          deleteWord(selIdx);
+        }
+      } else if (e.key === "m" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        if (selIdx !== null) {
+          silenceWord(selIdx);
+        }
+      } else if (e.key === "S" && (e.ctrlKey || e.metaKey) && e.shiftKey) {
+        e.preventDefault();
+        if (selIdx !== null) {
+          const w = useEditorStore.getState().words[selIdx];
+          if (w && w.text.length > 1) {
+            splitWord(selIdx, Math.floor(w.text.length / 2));
+          }
+        }
+      } else if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        const ws = useEditorStore.getState().words;
+        if (ws.length > 0) {
+          selectWord(0);
+          setSelectionRange([0, ws.length - 1]);
+        }
+      } else if (e.key === "Escape") {
+        selectWord(null);
+        setSelectionRange(null);
+      } else if (e.key === "z" && (e.ctrlKey || e.metaKey) && e.shiftKey) {
+        e.preventDefault();
+        redo();
+      } else if (e.key === "z" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        undo();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [deleteWord, deleteRange, silenceWord, splitWord, undo, redo, selectWord, setSelectionRange]);
 
   const handleTranscribe = useCallback(async () => {
     if (!mediaInfo) return;
@@ -327,6 +393,8 @@ const EditorView: React.FC = () => {
                 currentTime={currentTime}
                 duration={duration}
                 onSeek={seekTo}
+                words={words}
+                selectedWordIndex={selectedIndex}
                 className="rounded-lg overflow-hidden"
               />
             </>

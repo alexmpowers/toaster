@@ -633,7 +633,9 @@
     "volume": "Volume",
     "mute": "Mute",
     "speed": "Speed",
-    "noMedia": "No media loaded"
+    "noMedia": "No media loaded",
+    "previewEdits": "Preview Edits",
+    "preview": "Preview"
   },
   "editor": {
     "sections": {

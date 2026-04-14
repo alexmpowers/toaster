@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Play, Pause, Volume2, VolumeX } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Eye, EyeOff } from "lucide-react";
 import { usePlayerStore } from "@/stores/playerStore";
+import { useEditorStore, type Word } from "@/stores/editorStore";
 
 interface MediaPlayerProps {
   className?: string;
@@ -16,12 +17,46 @@ function formatTime(seconds: number): string {
 
 const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
+/** Build sorted list of deleted time ranges from words */
+function getDeletedRanges(words: Word[]): Array<{ start: number; end: number }> {
+  const ranges: Array<{ start: number; end: number }> = [];
+  let rangeStart: number | null = null;
+  let rangeEnd = 0;
+
+  for (const w of words) {
+    if (w.deleted) {
+      const startSec = w.start_us / 1_000_000;
+      const endSec = w.end_us / 1_000_000;
+      if (rangeStart === null) {
+        rangeStart = startSec;
+        rangeEnd = endSec;
+      } else if (startSec <= rangeEnd + 0.05) {
+        rangeEnd = Math.max(rangeEnd, endSec);
+      } else {
+        ranges.push({ start: rangeStart, end: rangeEnd });
+        rangeStart = startSec;
+        rangeEnd = endSec;
+      }
+    } else {
+      if (rangeStart !== null) {
+        ranges.push({ start: rangeStart, end: rangeEnd });
+        rangeStart = null;
+      }
+    }
+  }
+  if (rangeStart !== null) {
+    ranges.push({ start: rangeStart, end: rangeEnd });
+  }
+  return ranges;
+}
+
 const MediaPlayer: React.FC<MediaPlayerProps> = ({
   className = "",
   onTimeUpdate,
 }) => {
   const { t } = useTranslation();
   const mediaRef = useRef<HTMLVideoElement & HTMLAudioElement>(null);
+  const [previewEdits, setPreviewEdits] = useState(true);
 
   const {
     mediaUrl,
@@ -39,6 +74,8 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     setVolume,
     setPlaybackRate,
   } = usePlayerStore();
+
+  const words = useEditorStore((s) => s.words);
 
   // Sync seek requests from the store to the media element
   const lastSeekVersion = useRef(0);
@@ -76,9 +113,22 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const handleTimeUpdate = useCallback(() => {
     const el = mediaRef.current;
     if (!el) return;
-    setCurrentTime(el.currentTime);
-    onTimeUpdate?.(el.currentTime);
-  }, [setCurrentTime, onTimeUpdate]);
+    const time = el.currentTime;
+
+    // Skip deleted segments when preview edits is on
+    if (previewEdits && words.length > 0 && isPlaying) {
+      const deletedRanges = getDeletedRanges(words);
+      for (const range of deletedRanges) {
+        if (time >= range.start && time < range.end) {
+          el.currentTime = range.end;
+          return;
+        }
+      }
+    }
+
+    setCurrentTime(time);
+    onTimeUpdate?.(time);
+  }, [setCurrentTime, onTimeUpdate, previewEdits, words, isPlaying]);
 
   const handleLoadedMetadata = useCallback(() => {
     const el = mediaRef.current;
@@ -186,6 +236,22 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
           <span className="text-xs font-mono tabular-nums min-w-[90px]">
             {formatTime(currentTime)} / {formatTime(duration)}
           </span>
+
+          {/* Preview Edits toggle */}
+          {words.length > 0 && (
+            <button
+              onClick={() => setPreviewEdits(!previewEdits)}
+              className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded transition-colors ${
+                previewEdits
+                  ? "text-[#E8A838] bg-[#E8A838]/10"
+                  : "text-neutral-500 hover:text-neutral-300"
+              }`}
+              title={t("player.previewEdits")}
+            >
+              {previewEdits ? <Eye size={14} /> : <EyeOff size={14} />}
+              {t("player.preview")}
+            </button>
+          )}
 
           {/* Spacer */}
           <div className="flex-1" />

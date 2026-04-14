@@ -1,10 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { type Word } from "@/stores/editorStore";
 
 interface WaveformProps {
   audioUrl: string | null;
   currentTime: number;
   duration: number;
   onSeek: (time: number) => void;
+  words?: Word[];
+  selectedWordIndex?: number | null;
   className?: string;
 }
 
@@ -12,6 +15,10 @@ const BAR_COUNT = 300;
 const BAR_GAP = 1;
 const PLAYED_COLOR = "#E8A838";
 const UNPLAYED_COLOR = "#4A4A4A";
+const DELETED_OVERLAY = "rgba(220, 38, 38, 0.25)";
+const SILENCED_OVERLAY = "rgba(234, 179, 8, 0.15)";
+const SELECTED_WORD_COLOR = "rgba(232, 168, 56, 0.3)";
+const WORD_BOUNDARY_COLOR = "rgba(255, 255, 255, 0.08)";
 
 function downsamplePeaks(channelData: Float32Array, barCount: number): number[] {
   const blockSize = Math.floor(channelData.length / barCount);
@@ -26,7 +33,6 @@ function downsamplePeaks(channelData: Float32Array, barCount: number): number[] 
     }
     peaks.push(max);
   }
-  // Normalize to 0-1
   const globalMax = Math.max(...peaks, 0.01);
   return peaks.map((p) => p / globalMax);
 }
@@ -36,6 +42,8 @@ const Waveform: React.FC<WaveformProps> = ({
   currentTime,
   duration,
   onSeek,
+  words = [],
+  selectedWordIndex = null,
   className = "",
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -94,7 +102,7 @@ const Waveform: React.FC<WaveformProps> = ({
     return () => observer.disconnect();
   }, []);
 
-  // Draw waveform
+  // Draw waveform with overlays
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || peaks.length === 0 || canvasWidth === 0) return;
@@ -116,13 +124,59 @@ const Waveform: React.FC<WaveformProps> = ({
     const midY = canvasHeight / 2;
     const maxBarHeight = canvasHeight * 0.8;
 
+    // Draw bars
     for (let i = 0; i < peaks.length; i++) {
       const x = i * (barWidth + BAR_GAP);
       const barH = Math.max(2, peaks[i] * maxBarHeight);
       ctx.fillStyle = i < playedBars ? PLAYED_COLOR : UNPLAYED_COLOR;
       ctx.fillRect(x, midY - barH / 2, barWidth, barH);
     }
-  }, [peaks, currentTime, duration, canvasWidth]);
+
+    // Draw edit overlays (deleted/silenced regions)
+    if (duration > 0 && words.length > 0) {
+      for (const word of words) {
+        if (!word.deleted && !word.silenced) continue;
+        const startX = (word.start_us / 1_000_000 / duration) * canvasWidth;
+        const endX = (word.end_us / 1_000_000 / duration) * canvasWidth;
+        const regionWidth = Math.max(1, endX - startX);
+
+        ctx.fillStyle = word.deleted ? DELETED_OVERLAY : SILENCED_OVERLAY;
+        ctx.fillRect(startX, 0, regionWidth, canvasHeight);
+      }
+
+      // Draw selected word highlight
+      if (selectedWordIndex !== null && words[selectedWordIndex]) {
+        const sw = words[selectedWordIndex];
+        const startX = (sw.start_us / 1_000_000 / duration) * canvasWidth;
+        const endX = (sw.end_us / 1_000_000 / duration) * canvasWidth;
+        ctx.fillStyle = SELECTED_WORD_COLOR;
+        ctx.fillRect(startX, 0, Math.max(2, endX - startX), canvasHeight);
+      }
+
+      // Draw word boundary lines (subtle)
+      ctx.strokeStyle = WORD_BOUNDARY_COLOR;
+      ctx.lineWidth = 1;
+      for (const word of words) {
+        if (word.deleted) continue;
+        const x = (word.start_us / 1_000_000 / duration) * canvasWidth;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvasHeight);
+        ctx.stroke();
+      }
+    }
+
+    // Draw playhead
+    if (duration > 0) {
+      const playheadX = progress * canvasWidth;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(playheadX, 0);
+      ctx.lineTo(playheadX, canvasHeight);
+      ctx.stroke();
+    }
+  }, [peaks, currentTime, duration, canvasWidth, words, selectedWordIndex]);
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
