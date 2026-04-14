@@ -395,17 +395,10 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
         </button>
         {highlightType && (
           <>
+            <div className="w-px h-4 bg-mid-gray/30" />
             <span className="text-[11px] text-mid-gray/60">
               {highlightedIndices.length} {highlightType === "filler" ? t("editor.fillersFound") : t("editor.pausesFound")}
             </span>
-            {highlightedIndices.length > 0 && (
-              <button
-                onClick={() => clearHighlights()}
-                className="text-[11px] text-mid-gray/60 hover:text-mid-gray transition-colors"
-              >
-                <X size={12} />
-              </button>
-            )}
           </>
         )}
       </div>
