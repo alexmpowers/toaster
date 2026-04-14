@@ -364,10 +364,10 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
         <button
           onClick={handleDetectFillers}
           disabled={isDetecting}
-          className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] border transition-colors disabled:opacity-50 ${
+          className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] border transition-all duration-150 disabled:opacity-50 ${
             highlightType === "filler"
-              ? "border-[#EEEEEE]/50 text-black bg-[#EEEEEE]"
-              : "bg-background border-mid-gray/20 text-mid-gray hover:bg-mid-gray/10"
+              ? "bg-mid-gray/10 border-mid-gray/80 text-black"
+              : "bg-mid-gray/10 border-mid-gray/20 text-mid-gray hover:bg-mid-gray/20 hover:border-mid-gray/40"
           }`}
         >
           <AudioLines size={12} />
@@ -376,10 +376,10 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
         <button
           onClick={handleDetectPauses}
           disabled={isDetecting}
-          className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] border transition-colors disabled:opacity-50 ${
+          className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] border transition-all duration-150 disabled:opacity-50 ${
             highlightType === "pause"
-              ? "border-[#EEEEEE]/50 text-black bg-[#EEEEEE]"
-              : "bg-background border-mid-gray/20 text-mid-gray hover:bg-mid-gray/10"
+              ? "bg-mid-gray/10 border-mid-gray/80 text-black"
+              : "bg-mid-gray/10 border-mid-gray/20 text-mid-gray hover:bg-mid-gray/20 hover:border-mid-gray/40"
           }`}
         >
           <Timer size={12} />
