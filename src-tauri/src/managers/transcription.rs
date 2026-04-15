@@ -377,6 +377,11 @@ impl TranscriptionManager {
                 })?;
                 LoadedEngine::Cohere(engine)
             }
+            EngineType::Alignment => {
+                let error_msg = format!("Alignment models cannot be loaded as transcription engines: {}", model_id);
+                emit_loading_failed(&error_msg);
+                return Err(anyhow::anyhow!(error_msg));
+            }
         };
 
         // Update the current engine and model ID
@@ -437,7 +442,10 @@ impl TranscriptionManager {
         current_model.clone()
     }
 
-    pub fn transcribe(&self, audio: Vec<f32>) -> Result<(String, Option<Vec<TranscriptionSegment>>)> {
+    pub fn transcribe(
+        &self,
+        audio: Vec<f32>,
+    ) -> Result<(String, Option<Vec<TranscriptionSegment>>)> {
         #[cfg(debug_assertions)]
         if std::env::var("HANDY_FORCE_TRANSCRIPTION_FAILURE").is_ok() {
             return Err(anyhow::anyhow!(
@@ -463,7 +471,14 @@ impl TranscriptionManager {
             // If the model is loading, wait for it to complete.
             let mut is_loading = self.is_loading.lock().unwrap();
             while *is_loading {
-                is_loading = self.loading_condvar.wait(is_loading).unwrap();
+                let (guard, timeout_result) = self
+                    .loading_condvar
+                    .wait_timeout(is_loading, std::time::Duration::from_secs(300))
+                    .unwrap();
+                is_loading = guard;
+                if timeout_result.timed_out() && *is_loading {
+                    return Err(anyhow::anyhow!("Model loading timed out after 5 minutes"));
+                }
             }
 
             let engine_guard = self.lock_engine();
@@ -557,7 +572,7 @@ impl TranscriptionManager {
                         }
                         LoadedEngine::Parakeet(parakeet_engine) => {
                             let params = ParakeetParams {
-                                timestamp_granularity: Some(TimestampGranularity::Segment),
+                                timestamp_granularity: Some(TimestampGranularity::Word),
                                 ..Default::default()
                             };
                             parakeet_engine
