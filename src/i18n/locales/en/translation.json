@@ -1,4 +1,9 @@
 {
+  "download": {
+    "speed": "{{speed}} MB/s",
+    "downloading": "Downloading...",
+    "downloadingCount": "{{count}} downloading..."
+  },
   "tray": {
     "settings": "Settings...",
     "checkUpdates": "Check for Updates...",
@@ -214,7 +219,8 @@
         "translation": "Translation",
         "allLanguages": "All Languages"
       },
-      "noModelsMatch": "No models match this filter."
+      "noModelsMatch": "No models match this filter.",
+      "download": "Download"
     },
     "sound": {
       "title": "Sound",
@@ -251,6 +257,10 @@
       "experimentalToggle": {
         "label": "Experimental Features",
         "description": "Enable experimental features that are still in development."
+      },
+      "experimentalSimplifyModeToggle": {
+        "label": "Simplify media timing path (experimental)",
+        "description": "Use a simplified preview/export segment path while still enforcing timing-contract validation. Disabled by default."
       },
       "lazyStreamClose": {
         "label": "Keep Mic Open Between Transcriptions",
@@ -433,6 +443,15 @@
         "cancel": "Cancel",
         "selectToEdit": "Select a prompt above to view and edit its details.",
         "createFirst": "Click 'Create New Prompt' above to create your first post-processing prompt."
+      },
+      "review": {
+        "title": "Review Local Cleanup",
+        "description": "Choose whether to apply the cleaned transcript before final output.",
+        "originalLabel": "Original Transcript",
+        "cleanedLabel": "Cleaned Transcript",
+        "reject": "Reject",
+        "accept": "Accept",
+        "resolveError": "Failed to submit your cleanup decision."
       }
     },
     "history": {
@@ -641,7 +660,8 @@
     "previewEditsOff": "Preview edits: Off",
     "cacheModeBuilding": "Cache: building",
     "cacheModeReady": "Cache: ready",
-    "cacheModeFallback": "Cache: fallback"
+    "cacheModeFallback": "Cache: fallback",
+    "cacheModeSimplified": "Cache: simplified"
   },
   "editor": {
     "sections": {
@@ -666,25 +686,44 @@
     "transcribe": "Transcribe",
     "transcribing": "Transcribing...",
     "modelNotLoaded": "No transcription model loaded. Go to the Models tab to download and select one.",
+    "transcriptionError": "Transcription failed. Please try again or check the console for details.",
     "transcriptionPlaceholder": "Import a media file and click Transcribe to begin editing",
     "script": "Script",
     "fillers": "Fillers",
-    "analyzeFillers": "Detect filler words and pauses",
+    "analyzeFillers": "Clean up transcript",
     "analyzing": "Analyzing...",
-    "detectFillers": "Detect fillers",
-    "detectPauses": "Detect pauses",
-    "fillersFound": "found",
-    "pausesFound": "found",
+    "detectFillers": "Clean up",
     "fillerWord": "Filler word",
+    "duplicateWord": "Duplicate word",
+    "duplicateWords": "Duplicate Words",
     "pauseDetected": "Pause detected after this word",
-    "deleteFillers": "Delete {{count}} fillers",
-    "silencePauses": "Silence {{count}} pauses",
-    "fillerResults": "Found {{fillers}} filler word(s) and {{pauses}} long pause(s)",
+    "deleteFillers": "Remove {{count}} fillers",
+    "deleteDuplicates": "Remove {{count}} duplicates",
+    "silencePauses": "Trim {{count}} pauses",
+    "fillerResults": "{{fillers}} fillers · {{duplicates}} duplicates · {{pauses}} pauses",
+    "cleanupMetrics": "{{fillers}} fillers · {{duplicates}} duplicates · {{pauses}} pauses",
+    "removeAll": "Remove all {{count}} issues",
+    "noIssuesFound": "No issues found",
     "fillerWords": "Filler Words",
+    "fillerGroupChip": "\"{{text}}\" x {{count}}",
     "clickToLocate": "Click to locate",
     "pausesDetected": "Pauses Detected",
+    "pauseChip": "{{duration}}s",
+    "pauseChipWithWord": "{{duration}}s after \"{{word}}\"",
     "ffmpegScript": "Copy FFmpeg edit command to clipboard",
+    "ffmpegShortLabel": "FFmpeg",
     "exportFormats": "Export Formats",
+    "exportEditedMedia": "Export Edited Media",
+    "exportingEditedMedia": "Exporting edited media...",
+    "normalizeAudio": "Normalize audio volume",
+    "exportVolume": "Volume adjustment",
+    "exportFadeIn": "Fade in",
+    "exportFadeOut": "Fade out",
+    "exportVolumeFmt": "{{value}} dB",
+    "exportFadeNone": "None",
+    "exportFadeMs": "{{value}}ms",
+    "editedVideo": "Edited Video",
+    "editedAudio": "Edited Audio",
     "tools": "Tools",
     "copyTranscript": "Copy clean transcript to clipboard",
     "copyText": "Copy Text",

@@ -204,7 +204,8 @@ pub fn change_binding(
 #[tauri::command]
 #[specta::specta]
 pub fn reset_binding(app: AppHandle, id: String) -> Result<BindingResponse, String> {
-    let binding = settings::get_stored_binding(&app, &id);
+    let binding = settings::get_stored_binding(&app, &id)
+        .ok_or_else(|| format!("No binding found for id '{}'", id))?;
     change_binding(app, id, binding.default_binding)
 }
 
@@ -826,6 +827,18 @@ pub fn change_experimental_enabled_setting(app: AppHandle, enabled: bool) -> Res
 
 #[tauri::command]
 #[specta::specta]
+pub fn change_experimental_simplify_mode_setting(
+    app: AppHandle,
+    enabled: bool,
+) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.experimental_simplify_mode = enabled;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn change_post_process_base_url_setting(
     app: AppHandle,
     provider_id: String,
@@ -841,14 +854,24 @@ pub fn change_post_process_base_url_setting(
         .post_process_provider_mut(&provider_id)
         .expect("Provider looked up above must exist");
 
-    if provider.id != "custom" {
+    if !provider.allow_base_url_edit {
         return Err(format!(
             "Provider '{}' does not allow editing the base URL",
             label
         ));
     }
 
-    provider.base_url = base_url;
+    let sanitized_base_url = if settings::is_local_post_process_provider(provider) {
+        settings::sanitize_local_post_process_base_url(&base_url)?
+    } else {
+        let trimmed = base_url.trim().trim_end_matches('/').to_string();
+        if trimmed.is_empty() {
+            return Err("Base URL cannot be empty".to_string());
+        }
+        trimmed
+    };
+
+    provider.base_url = sanitized_base_url;
     settings::write_settings(&app, settings);
     Ok(())
 }
@@ -891,7 +914,10 @@ pub fn change_post_process_model_setting(
 ) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
     validate_provider_exists(&settings, &provider_id)?;
-    settings.post_process_models.insert(provider_id, model);
+    let sanitized_model = settings::sanitize_post_process_model(&model)?;
+    settings
+        .post_process_models
+        .insert(provider_id, sanitized_model);
     settings::write_settings(&app, settings);
     Ok(())
 }
@@ -901,6 +927,20 @@ pub fn change_post_process_model_setting(
 pub fn set_post_process_provider(app: AppHandle, provider_id: String) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
     validate_provider_exists(&settings, &provider_id)?;
+
+    if let Some(provider) = settings.post_process_provider(&provider_id) {
+        if settings::is_local_post_process_provider(provider)
+            && provider.id != APPLE_INTELLIGENCE_PROVIDER_ID
+        {
+            settings::sanitize_local_post_process_base_url(&provider.base_url).map_err(|e| {
+                format!(
+                    "Invalid local base URL for '{}': {}. Update the provider base URL and try again.",
+                    provider.label, e
+                )
+            })?;
+        }
+    }
+
     settings.post_process_provider_id = provider_id;
     settings::write_settings(&app, settings);
     Ok(())
@@ -1009,6 +1049,15 @@ pub async fn fetch_post_process_models(
         }
     }
 
+    if settings::is_local_post_process_provider(provider) {
+        settings::sanitize_local_post_process_base_url(&provider.base_url).map_err(|e| {
+            format!(
+                "Invalid local endpoint for '{}': {}. Expected localhost/loopback OpenAI-compatible URL.",
+                provider.label, e
+            )
+        })?;
+    }
+
     // Get API key
     let api_key = settings
         .post_process_api_keys
@@ -1016,15 +1065,36 @@ pub async fn fetch_post_process_models(
         .cloned()
         .unwrap_or_default();
 
-    // Skip fetching if no API key for providers that typically need one
-    if api_key.trim().is_empty() && provider.id != "custom" {
+    // Skip fetching if no API key for providers that require one
+    if provider.requires_api_key && api_key.trim().is_empty() {
         return Err(format!(
             "API key is required for {}. Please add an API key to list available models.",
             provider.label
         ));
     }
 
-    crate::llm_client::fetch_models(provider, api_key).await
+    match crate::llm_client::fetch_models(provider, api_key).await {
+        Ok(models) => {
+            if settings::is_local_post_process_provider(provider) && models.is_empty() {
+                Err(format!(
+                    "Connected to '{}' but no models were returned from its /models endpoint. Ensure OpenAI compatibility mode is enabled.",
+                    provider.label
+                ))
+            } else {
+                Ok(models)
+            }
+        }
+        Err(error) => {
+            if settings::is_local_post_process_provider(provider) {
+                Err(format!(
+                    "Could not reach local provider '{}' at '{}': {}. Make sure the local server is running and exposes OpenAI-compatible /models.",
+                    provider.label, provider.base_url, error
+                ))
+            } else {
+                Err(error)
+            }
+        }
+    }
 }
 
 #[tauri::command]
@@ -1065,6 +1135,42 @@ pub fn change_append_trailing_space_setting(app: AppHandle, enabled: bool) -> Re
 pub fn change_lazy_stream_close_setting(app: AppHandle, enabled: bool) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
     settings.lazy_stream_close = enabled;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_normalize_audio_setting(app: AppHandle, enabled: bool) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.normalize_audio_on_export = enabled;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_export_volume_db_setting(app: AppHandle, volume_db: f32) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.export_volume_db = volume_db.clamp(-12.0, 12.0);
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_export_fade_in_ms_setting(app: AppHandle, fade_in_ms: u32) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.export_fade_in_ms = fade_in_ms;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_export_fade_out_ms_setting(app: AppHandle, fade_out_ms: u32) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.export_fade_out_ms = fade_out_ms;
     settings::write_settings(&app, settings);
     Ok(())
 }

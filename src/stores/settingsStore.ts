@@ -141,6 +141,8 @@ const settingUpdaters: {
   app_language: (value) => commands.changeAppLanguageSetting(value as string),
   experimental_enabled: (value) =>
     commands.changeExperimentalEnabledSetting(value as boolean),
+  experimental_simplify_mode: (value) =>
+    commands.changeExperimentalSimplifyModeSetting(value as boolean),
   lazy_stream_close: (value) =>
     commands.changeLazyStreamCloseSetting(value as boolean),
   show_tray_icon: (value) =>
@@ -155,7 +157,18 @@ const settingUpdaters: {
     commands.changeWhisperGpuDevice(value as number),
   extra_recording_buffer_ms: (value) =>
     commands.changeExtraRecordingBufferSetting(value as number),
+  normalize_audio_on_export: (value) =>
+    commands.changeNormalizeAudioSetting(value as boolean),
+  export_volume_db: (value) =>
+    commands.changeExportVolumeDbSetting(value as number),
+  export_fade_in_ms: (value) =>
+    commands.changeExportFadeInMsSetting(value as number),
+  export_fade_out_ms: (value) =>
+    commands.changeExportFadeOutMsSetting(value as number),
 };
+
+// Tracks pending values for keys that are currently mid-update (race dedup)
+const pendingUpdates = new Map<string, { key: keyof Settings; value: unknown }>();
 
 export const useSettingsStore = create<SettingsStore>()(
   subscribeWithSelector((set, get) => ({
@@ -269,13 +282,26 @@ export const useSettingsStore = create<SettingsStore>()(
       }
     },
 
-    // Update a specific setting
+    // Update a specific setting (with race-condition dedup per key)
     updateSetting: async <K extends keyof Settings>(
       key: K,
       value: Settings[K],
     ) => {
-      const { settings, setUpdating } = get();
       const updateKey = String(key);
+
+      // If this key is already mid-update, queue the latest value (last-write-wins)
+      if (get().isUpdating[updateKey]) {
+        pendingUpdates.set(updateKey, { key, value });
+        // Optimistically apply the new value to the UI immediately
+        set((state) => ({
+          settings: state.settings
+            ? { ...state.settings, [key]: value }
+            : null,
+        }));
+        return;
+      }
+
+      const { settings, setUpdating } = get();
       const originalValue = settings?.[key];
 
       setUpdating(updateKey, true);
@@ -298,6 +324,16 @@ export const useSettingsStore = create<SettingsStore>()(
         }
       } finally {
         setUpdating(updateKey, false);
+
+        // Drain any pending update that arrived while we were busy
+        const pending = pendingUpdates.get(updateKey);
+        if (pending) {
+          pendingUpdates.delete(updateKey);
+          await get().updateSetting(
+            pending.key as K,
+            pending.value as Settings[K],
+          );
+        }
       }
     },
 
@@ -418,7 +454,10 @@ export const useSettingsStore = create<SettingsStore>()(
       setPostProcessModelOptions(providerId, []);
 
       try {
-        await commands.setPostProcessProvider(providerId);
+        const result = await commands.setPostProcessProvider(providerId);
+        if (result.status === "error") {
+          throw new Error(result.error);
+        }
         await refreshSettings();
       } catch (error) {
         console.error("Failed to set post-process provider:", error);
@@ -429,6 +468,7 @@ export const useSettingsStore = create<SettingsStore>()(
               : null,
           }));
         }
+        throw error;
       } finally {
         setUpdating(updateKey, false);
       }
@@ -446,12 +486,15 @@ export const useSettingsStore = create<SettingsStore>()(
       setUpdating(updateKey, true);
 
       try {
-        if (settingType === "base_url") {
-          await commands.changePostProcessBaseUrlSetting(providerId, value);
-        } else if (settingType === "api_key") {
-          await commands.changePostProcessApiKeySetting(providerId, value);
-        } else if (settingType === "model") {
-          await commands.changePostProcessModelSetting(providerId, value);
+        const result =
+          settingType === "base_url"
+            ? await commands.changePostProcessBaseUrlSetting(providerId, value)
+            : settingType === "api_key"
+              ? await commands.changePostProcessApiKeySetting(providerId, value)
+              : await commands.changePostProcessModelSetting(providerId, value);
+
+        if (result.status === "error") {
+          throw new Error(result.error);
         }
         await refreshSettings();
       } catch (error) {
@@ -459,6 +502,7 @@ export const useSettingsStore = create<SettingsStore>()(
           `Failed to update post-process ${settingType.replace("_", " ")}:`,
           error,
         );
+        throw error;
       } finally {
         setUpdating(updateKey, false);
       }
@@ -477,8 +521,7 @@ export const useSettingsStore = create<SettingsStore>()(
           baseUrl,
         );
         if (urlResult.status === "error") {
-          console.error("Failed to persist base URL:", urlResult.error);
-          return;
+          throw new Error(urlResult.error);
         }
 
         // Reset the stored model since the previous value is almost certainly
@@ -489,8 +532,7 @@ export const useSettingsStore = create<SettingsStore>()(
           "",
         );
         if (modelResult.status === "error") {
-          console.error("Failed to reset model setting:", modelResult.error);
-          return;
+          throw new Error(modelResult.error);
         }
 
         // Clear cached model options only after both backend writes succeed.
@@ -505,6 +547,7 @@ export const useSettingsStore = create<SettingsStore>()(
         await refreshSettings();
       } catch (error) {
         console.error("Failed to update post-process base URL:", error);
+        throw error;
       } finally {
         setUpdating(updateKey, false);
       }
@@ -538,13 +581,11 @@ export const useSettingsStore = create<SettingsStore>()(
           setPostProcessModelOptions(providerId, result.data);
           return result.data;
         } else {
-          console.error("Failed to fetch models:", result.error);
-          return [];
+          throw new Error(result.error);
         }
       } catch (error) {
         console.error("Failed to fetch models:", error);
-        // Don't cache empty array on error - let user retry
-        return [];
+        throw error;
       } finally {
         setUpdating(updateKey, false);
       }

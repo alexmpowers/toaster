@@ -4,11 +4,15 @@ use serde::{Deserialize, Deserializer, Serialize};
 use specta::Type;
 use std::collections::HashMap;
 use std::fmt;
+use std::net::IpAddr;
 use tauri::AppHandle;
 use tauri_plugin_store::StoreExt;
 
 pub const APPLE_INTELLIGENCE_PROVIDER_ID: &str = "apple_intelligence";
 pub const APPLE_INTELLIGENCE_DEFAULT_MODEL_ID: &str = "Apple Intelligence";
+pub const OLLAMA_PROVIDER_ID: &str = "ollama";
+pub const LM_STUDIO_PROVIDER_ID: &str = "lm_studio";
+pub const CUSTOM_LOCAL_PROVIDER_ID: &str = "custom";
 
 #[derive(Serialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
 #[serde(rename_all = "lowercase")]
@@ -104,6 +108,10 @@ pub struct PostProcessProvider {
     pub models_endpoint: Option<String>,
     #[serde(default)]
     pub supports_structured_output: bool,
+    #[serde(default)]
+    pub local_only: bool,
+    #[serde(default = "default_post_process_provider_requires_api_key")]
+    pub requires_api_key: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
@@ -359,6 +367,8 @@ pub struct AppSettings {
     pub clamshell_microphone: Option<String>,
     #[serde(default)]
     pub selected_output_device: Option<String>,
+    #[serde(default = "default_preferred_output_sample_rate")]
+    pub preferred_output_sample_rate: u32,
     #[serde(default = "default_translate_to_english")]
     pub translate_to_english: bool,
     #[serde(default = "default_selected_language")]
@@ -410,6 +420,8 @@ pub struct AppSettings {
     #[serde(default)]
     pub experimental_enabled: bool,
     #[serde(default)]
+    pub experimental_simplify_mode: bool,
+    #[serde(default)]
     pub lazy_stream_close: bool,
     #[serde(default)]
     pub keyboard_implementation: KeyboardImplementation,
@@ -430,10 +442,22 @@ pub struct AppSettings {
     pub whisper_gpu_device: i32,
     #[serde(default)]
     pub extra_recording_buffer_ms: u64,
+    #[serde(default)]
+    pub normalize_audio_on_export: bool,
+    #[serde(default)]
+    pub export_volume_db: f32,
+    #[serde(default)]
+    pub export_fade_in_ms: u32,
+    #[serde(default)]
+    pub export_fade_out_ms: u32,
 }
 
 fn default_model() -> String {
     "".to_string()
+}
+
+fn default_preferred_output_sample_rate() -> u32 {
+    48_000
 }
 
 fn default_always_on_microphone() -> bool {
@@ -507,6 +531,10 @@ fn default_post_process_enabled() -> bool {
     false
 }
 
+fn default_post_process_provider_requires_api_key() -> bool {
+    true
+}
+
 fn default_app_language() -> String {
     tauri_plugin_os::locale()
         .map(|l| l.replace('_', "-"))
@@ -518,11 +546,93 @@ fn default_show_tray_icon() -> bool {
 }
 
 fn default_post_process_provider_id() -> String {
-    "openai".to_string()
+    OLLAMA_PROVIDER_ID.to_string()
+}
+
+fn is_loopback_host(host: &str) -> bool {
+    host.eq_ignore_ascii_case("localhost")
+        || host
+            .parse::<IpAddr>()
+            .map(|ip| ip.is_loopback())
+            .unwrap_or(false)
+}
+
+pub fn is_local_post_process_provider(provider: &PostProcessProvider) -> bool {
+    provider.local_only || provider.id == APPLE_INTELLIGENCE_PROVIDER_ID
+}
+
+pub fn sanitize_local_post_process_base_url(base_url: &str) -> Result<String, String> {
+    let trimmed = base_url.trim();
+    if trimmed.is_empty() {
+        return Err("Base URL cannot be empty".to_string());
+    }
+
+    let parsed = reqwest::Url::parse(trimmed)
+        .map_err(|e| format!("Invalid base URL '{}': {}", trimmed, e))?;
+
+    match parsed.scheme() {
+        "http" | "https" => {}
+        _ => {
+            return Err("Local provider URL must use http:// or https://".to_string());
+        }
+    }
+
+    let host = parsed
+        .host_str()
+        .ok_or_else(|| "Base URL must include a host".to_string())?;
+    if !is_loopback_host(host) {
+        return Err("Local provider URL must point to localhost, 127.0.0.1, or ::1".to_string());
+    }
+
+    Ok(trimmed.trim_end_matches('/').to_string())
+}
+
+pub fn sanitize_post_process_model(model: &str) -> Result<String, String> {
+    let trimmed = model.trim();
+
+    if trimmed.len() > 256 {
+        return Err("Model identifier is too long (max 256 characters)".to_string());
+    }
+
+    if trimmed.chars().any(|c| c.is_control()) {
+        return Err("Model identifier contains invalid control characters".to_string());
+    }
+
+    Ok(trimmed.to_string())
 }
 
 fn default_post_process_providers() -> Vec<PostProcessProvider> {
     let mut providers = vec![
+        PostProcessProvider {
+            id: OLLAMA_PROVIDER_ID.to_string(),
+            label: "Ollama (Local)".to_string(),
+            base_url: "http://127.0.0.1:11434/v1".to_string(),
+            allow_base_url_edit: false,
+            models_endpoint: Some("/models".to_string()),
+            supports_structured_output: true,
+            local_only: true,
+            requires_api_key: false,
+        },
+        PostProcessProvider {
+            id: LM_STUDIO_PROVIDER_ID.to_string(),
+            label: "LM Studio (Local)".to_string(),
+            base_url: "http://127.0.0.1:1234/v1".to_string(),
+            allow_base_url_edit: false,
+            models_endpoint: Some("/models".to_string()),
+            supports_structured_output: true,
+            local_only: true,
+            requires_api_key: false,
+        },
+        PostProcessProvider {
+            id: CUSTOM_LOCAL_PROVIDER_ID.to_string(),
+            label: "OpenAI-Compatible (Local)".to_string(),
+            base_url: "http://127.0.0.1:11434/v1".to_string(),
+            allow_base_url_edit: true,
+            models_endpoint: Some("/models".to_string()),
+            supports_structured_output: true,
+            local_only: true,
+            requires_api_key: false,
+        },
         PostProcessProvider {
             id: "openai".to_string(),
             label: "OpenAI".to_string(),
@@ -530,6 +640,8 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
             allow_base_url_edit: false,
             models_endpoint: Some("/models".to_string()),
             supports_structured_output: true,
+            local_only: false,
+            requires_api_key: true,
         },
         PostProcessProvider {
             id: "zai".to_string(),
@@ -538,6 +650,8 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
             allow_base_url_edit: false,
             models_endpoint: Some("/models".to_string()),
             supports_structured_output: true,
+            local_only: false,
+            requires_api_key: true,
         },
         PostProcessProvider {
             id: "openrouter".to_string(),
@@ -546,6 +660,8 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
             allow_base_url_edit: false,
             models_endpoint: Some("/models".to_string()),
             supports_structured_output: true,
+            local_only: false,
+            requires_api_key: true,
         },
         PostProcessProvider {
             id: "anthropic".to_string(),
@@ -554,6 +670,8 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
             allow_base_url_edit: false,
             models_endpoint: Some("/models".to_string()),
             supports_structured_output: false,
+            local_only: false,
+            requires_api_key: true,
         },
         PostProcessProvider {
             id: "groq".to_string(),
@@ -562,6 +680,8 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
             allow_base_url_edit: false,
             models_endpoint: Some("/models".to_string()),
             supports_structured_output: false,
+            local_only: false,
+            requires_api_key: true,
         },
         PostProcessProvider {
             id: "cerebras".to_string(),
@@ -570,6 +690,8 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
             allow_base_url_edit: false,
             models_endpoint: Some("/models".to_string()),
             supports_structured_output: true,
+            local_only: false,
+            requires_api_key: true,
         },
     ];
 
@@ -586,6 +708,8 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
             allow_base_url_edit: false,
             models_endpoint: None,
             supports_structured_output: true,
+            local_only: true,
+            requires_api_key: false,
         });
     }
 
@@ -597,16 +721,8 @@ fn default_post_process_providers() -> Vec<PostProcessProvider> {
         allow_base_url_edit: false,
         models_endpoint: Some("/models".to_string()),
         supports_structured_output: true,
-    });
-
-    // Custom provider always comes last
-    providers.push(PostProcessProvider {
-        id: "custom".to_string(),
-        label: "Custom".to_string(),
-        base_url: "http://localhost:11434/v1".to_string(),
-        allow_base_url_edit: true,
-        models_endpoint: Some("/models".to_string()),
-        supports_structured_output: false,
+        local_only: false,
+        requires_api_key: true,
     });
 
     providers
@@ -642,7 +758,7 @@ fn default_post_process_prompts() -> Vec<LLMPrompt> {
     vec![LLMPrompt {
         id: "default_improve_transcriptions".to_string(),
         name: "Improve Transcriptions".to_string(),
-        prompt: "Clean this transcript:\n1. Fix spelling, capitalization, and punctuation errors\n2. Convert number words to digits (twenty-five → 25, ten percent → 10%, five dollars → $5)\n3. Replace spoken punctuation with symbols (period → ., comma → ,, question mark → ?)\n4. Remove filler words (um, uh, like as filler)\n5. Keep the language in the original version (if it was french, keep it in french for example)\n\nPreserve exact meaning and word order. Do not paraphrase or reorder content.\n\nReturn only the cleaned transcript.\n\nTranscript:\n${output}".to_string(),
+        prompt: "Clean this transcript:\n1. Fix spelling, capitalization, and punctuation errors\n2. Convert number words to digits (twenty-five → 25, ten percent → 10%, five dollars → $5)\n3. Replace spoken punctuation with symbols (period → ., comma → ,, question mark → ?)\n4. Remove filler words (um, uh, like as filler)\n5. Keep the language in the original version (if it was french, keep it in french for example)\n6. Preserve numbers/currency/symbol tokens exactly when they already exist in the transcript\n\nPreserve exact meaning and word order. Do not paraphrase or reorder content.\n\nReturn only the cleaned transcript.\n\nTranscript:\n${output}".to_string(),
     }]
 }
 
@@ -675,6 +791,26 @@ fn ensure_post_process_defaults(settings: &mut AppSettings) -> bool {
                     existing.supports_structured_output = provider.supports_structured_output;
                     changed = true;
                 }
+
+                if existing.allow_base_url_edit != provider.allow_base_url_edit {
+                    existing.allow_base_url_edit = provider.allow_base_url_edit;
+                    changed = true;
+                }
+
+                if existing.models_endpoint != provider.models_endpoint {
+                    existing.models_endpoint = provider.models_endpoint.clone();
+                    changed = true;
+                }
+
+                if existing.local_only != provider.local_only {
+                    existing.local_only = provider.local_only;
+                    changed = true;
+                }
+
+                if existing.requires_api_key != provider.requires_api_key {
+                    existing.requires_api_key = provider.requires_api_key;
+                    changed = true;
+                }
             }
             None => {
                 // Provider doesn't exist, add it
@@ -705,6 +841,15 @@ fn ensure_post_process_defaults(settings: &mut AppSettings) -> bool {
                 changed = true;
             }
         }
+    }
+
+    if !settings
+        .post_process_providers
+        .iter()
+        .any(|provider| provider.id == settings.post_process_provider_id)
+    {
+        settings.post_process_provider_id = default_post_process_provider_id();
+        changed = true;
     }
 
     changed
@@ -778,6 +923,7 @@ pub fn get_default_settings() -> AppSettings {
         selected_microphone: None,
         clamshell_microphone: None,
         selected_output_device: None,
+        preferred_output_sample_rate: default_preferred_output_sample_rate(),
         translate_to_english: false,
         selected_language: "auto".to_string(),
         overlay_position: default_overlay_position(),
@@ -803,6 +949,7 @@ pub fn get_default_settings() -> AppSettings {
         append_trailing_space: false,
         app_language: default_app_language(),
         experimental_enabled: false,
+        experimental_simplify_mode: false,
         lazy_stream_close: false,
         keyboard_implementation: KeyboardImplementation::default(),
         show_tray_icon: default_show_tray_icon(),
@@ -814,6 +961,7 @@ pub fn get_default_settings() -> AppSettings {
         ort_accelerator: OrtAcceleratorSetting::default(),
         whisper_gpu_device: default_whisper_gpu_device(),
         extra_recording_buffer_ms: 0,
+        normalize_audio_on_export: false,
     }
 }
 
@@ -865,7 +1013,10 @@ pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
 
                 if updated {
                     debug!("Settings updated with new bindings");
-                    store.set("settings", serde_json::to_value(&settings).unwrap());
+                    match serde_json::to_value(&settings) {
+                        Ok(val) => store.set("settings", val),
+                        Err(e) => warn!("Failed to serialize updated settings: {}", e),
+                    }
                 }
 
                 settings
@@ -874,18 +1025,27 @@ pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
                 warn!("Failed to parse settings: {}", e);
                 // Fall back to default settings if parsing fails
                 let default_settings = get_default_settings();
-                store.set("settings", serde_json::to_value(&default_settings).unwrap());
+                match serde_json::to_value(&default_settings) {
+                    Ok(val) => store.set("settings", val),
+                    Err(e) => warn!("Failed to serialize default settings: {}", e),
+                }
                 default_settings
             }
         }
     } else {
         let default_settings = get_default_settings();
-        store.set("settings", serde_json::to_value(&default_settings).unwrap());
+        match serde_json::to_value(&default_settings) {
+            Ok(val) => store.set("settings", val),
+            Err(e) => warn!("Failed to serialize default settings: {}", e),
+        }
         default_settings
     };
 
     if ensure_post_process_defaults(&mut settings) {
-        store.set("settings", serde_json::to_value(&settings).unwrap());
+        match serde_json::to_value(&settings) {
+            Ok(val) => store.set("settings", val),
+            Err(e) => warn!("Failed to serialize post-processed settings: {}", e),
+        }
     }
 
     settings
@@ -899,17 +1059,26 @@ pub fn get_settings(app: &AppHandle) -> AppSettings {
     let mut settings = if let Some(settings_value) = store.get("settings") {
         serde_json::from_value::<AppSettings>(settings_value).unwrap_or_else(|_| {
             let default_settings = get_default_settings();
-            store.set("settings", serde_json::to_value(&default_settings).unwrap());
+            match serde_json::to_value(&default_settings) {
+                Ok(val) => store.set("settings", val),
+                Err(e) => warn!("Failed to serialize default settings: {}", e),
+            }
             default_settings
         })
     } else {
         let default_settings = get_default_settings();
-        store.set("settings", serde_json::to_value(&default_settings).unwrap());
+        match serde_json::to_value(&default_settings) {
+            Ok(val) => store.set("settings", val),
+            Err(e) => warn!("Failed to serialize default settings: {}", e),
+        }
         default_settings
     };
 
     if ensure_post_process_defaults(&mut settings) {
-        store.set("settings", serde_json::to_value(&settings).unwrap());
+        match serde_json::to_value(&settings) {
+            Ok(val) => store.set("settings", val),
+            Err(e) => warn!("Failed to serialize post-processed settings: {}", e),
+        }
     }
 
     settings
@@ -920,7 +1089,10 @@ pub fn write_settings(app: &AppHandle, settings: AppSettings) {
         .store(crate::portable::store_path(SETTINGS_STORE_PATH))
         .expect("Failed to initialize store");
 
-    store.set("settings", serde_json::to_value(&settings).unwrap());
+    match serde_json::to_value(&settings) {
+        Ok(val) => store.set("settings", val),
+        Err(e) => warn!("Failed to serialize settings for write: {}", e),
+    }
 }
 
 pub fn get_bindings(app: &AppHandle) -> HashMap<String, ShortcutBinding> {
@@ -929,12 +1101,10 @@ pub fn get_bindings(app: &AppHandle) -> HashMap<String, ShortcutBinding> {
     settings.bindings
 }
 
-pub fn get_stored_binding(app: &AppHandle, id: &str) -> ShortcutBinding {
+pub fn get_stored_binding(app: &AppHandle, id: &str) -> Option<ShortcutBinding> {
     let bindings = get_bindings(app);
 
-    let binding = bindings.get(id).unwrap().clone();
-
-    binding
+    bindings.get(id).cloned()
 }
 
 pub fn get_history_limit(app: &AppHandle) -> usize {
@@ -956,6 +1126,12 @@ mod tests {
         let settings = get_default_settings();
         assert!(!settings.auto_submit);
         assert_eq!(settings.auto_submit_key, AutoSubmitKey::Enter);
+    }
+
+    #[test]
+    fn default_settings_disable_experimental_simplify_mode() {
+        let settings = get_default_settings();
+        assert!(!settings.experimental_simplify_mode);
     }
 
     #[test]
@@ -985,5 +1161,40 @@ mod tests {
         let out = format!("{:?}", map);
         assert!(!out.contains("secret"));
         assert!(out.contains("[REDACTED]"));
+    }
+
+    #[test]
+    fn default_post_process_provider_prefers_local_ollama() {
+        let settings = get_default_settings();
+        assert_eq!(settings.post_process_provider_id, OLLAMA_PROVIDER_ID);
+
+        let ollama = settings
+            .post_process_providers
+            .iter()
+            .find(|provider| provider.id == OLLAMA_PROVIDER_ID)
+            .expect("ollama provider should exist");
+        assert!(ollama.local_only);
+        assert!(!ollama.requires_api_key);
+    }
+
+    #[test]
+    fn sanitize_local_base_url_rejects_non_loopback_hosts() {
+        let result = sanitize_local_post_process_base_url("https://example.com/v1");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn sanitize_local_base_url_normalizes_trailing_slash() {
+        let result = sanitize_local_post_process_base_url("http://127.0.0.1:11434/v1/");
+        assert_eq!(
+            result.expect("expected valid loopback URL"),
+            "http://127.0.0.1:11434/v1"
+        );
+    }
+
+    #[test]
+    fn sanitize_post_process_model_rejects_control_characters() {
+        let result = sanitize_post_process_model("llama3\nbad");
+        assert!(result.is_err());
     }
 }

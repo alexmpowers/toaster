@@ -37,9 +37,11 @@ use managers::transcription::TranscriptionManager;
 use signal_hook::consts::{SIGUSR1, SIGUSR2};
 #[cfg(unix)]
 use signal_hook::iterator::Signals;
-use std::sync::atomic::{AtomicU8, Ordering};
+use std::collections::HashMap;
+use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
 use std::sync::{Arc, Mutex};
 use tauri::image::Image;
+use tokio::sync::oneshot;
 pub use transcription_coordinator::TranscriptionCoordinator;
 
 use tauri::tray::TrayIconBuilder;
@@ -52,6 +54,52 @@ use crate::settings::get_settings;
 // Global atomic to store the file log level filter
 // We use u8 to store the log::LevelFilter as a number
 pub static FILE_LOG_LEVEL: AtomicU8 = AtomicU8::new(log::LevelFilter::Debug as u8);
+
+pub struct LocalCleanupReviewState {
+    pending: Mutex<HashMap<String, oneshot::Sender<bool>>>,
+    next_id: AtomicU64,
+}
+
+impl LocalCleanupReviewState {
+    pub fn new() -> Self {
+        Self {
+            pending: Mutex::new(HashMap::new()),
+            next_id: AtomicU64::new(1),
+        }
+    }
+
+    pub fn register(&self) -> (String, oneshot::Receiver<bool>) {
+        let request_id = format!(
+            "cleanup-review-{}",
+            self.next_id.fetch_add(1, Ordering::Relaxed)
+        );
+        let (tx, rx) = oneshot::channel();
+        if let Ok(mut pending) = self.pending.lock() {
+            pending.insert(request_id.clone(), tx);
+        }
+        (request_id, rx)
+    }
+
+    pub fn resolve(&self, request_id: &str, accept: bool) -> bool {
+        let sender = self
+            .pending
+            .lock()
+            .ok()
+            .and_then(|mut pending| pending.remove(request_id));
+        if let Some(tx) = sender {
+            let _ = tx.send(accept);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn remove(&self, request_id: &str) {
+        if let Ok(mut pending) = self.pending.lock() {
+            pending.remove(request_id);
+        }
+    }
+}
 
 fn level_filter_from_u8(value: u8) -> log::LevelFilter {
     match value {
@@ -169,6 +217,7 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     app_handle.manage(history_manager.clone());
     app_handle.manage(EditorStore(Mutex::new(EditorState::new())));
     app_handle.manage(MediaStore(Mutex::new(MediaState::new())));
+    app_handle.manage(LocalCleanupReviewState::new());
 
     // Note: Shortcuts are NOT initialized here.
     // The frontend is responsible for calling the `initialize_shortcuts` command
@@ -353,6 +402,7 @@ pub fn run(cli_args: CliArgs) {
             shortcut::change_auto_submit_key_setting,
             shortcut::change_post_process_enabled_setting,
             shortcut::change_experimental_enabled_setting,
+            shortcut::change_experimental_simplify_mode_setting,
             shortcut::change_post_process_base_url_setting,
             shortcut::change_post_process_api_key_setting,
             shortcut::change_post_process_model_setting,
@@ -368,6 +418,10 @@ pub fn run(cli_args: CliArgs) {
             shortcut::change_mute_while_recording_setting,
             shortcut::change_append_trailing_space_setting,
             shortcut::change_lazy_stream_close_setting,
+            shortcut::change_normalize_audio_setting,
+            shortcut::change_export_volume_db_setting,
+            shortcut::change_export_fade_in_ms_setting,
+            shortcut::change_export_fade_out_ms_setting,
             shortcut::change_app_language_setting,
             shortcut::change_update_checks_setting,
             shortcut::change_keyboard_implementation_setting,
@@ -392,6 +446,7 @@ pub fn run(cli_args: CliArgs) {
             commands::open_log_dir,
             commands::open_app_data_dir,
             commands::check_apple_intelligence_available,
+            commands::resolve_local_cleanup_review,
             commands::initialize_enigo,
             commands::initialize_shortcuts,
             commands::models::get_available_models,
@@ -415,12 +470,14 @@ pub fn run(cli_args: CliArgs) {
             commands::audio::get_available_output_devices,
             commands::audio::set_selected_output_device,
             commands::audio::get_selected_output_device,
+            commands::audio::normalize_playback_audio_contract,
             commands::audio::play_test_sound,
             commands::audio::check_custom_sounds,
             commands::audio::set_clamshell_microphone,
             commands::audio::get_clamshell_microphone,
             commands::audio::is_recording,
             commands::editor::editor_set_words,
+            commands::editor::editor_apply_local_llm_proposals,
             commands::editor::editor_get_words,
             commands::editor::editor_delete_word,
             commands::editor::editor_restore_word,
@@ -431,6 +488,8 @@ pub fn run(cli_args: CliArgs) {
             commands::editor::editor_undo,
             commands::editor::editor_redo,
             commands::editor::editor_get_keep_segments,
+            commands::editor::editor_get_timing_contract,
+            commands::editor::editor_get_projection,
             commands::media::media_import,
             commands::media::media_get_current,
             commands::media::media_get_asset_url,
@@ -447,7 +506,11 @@ pub fn run(cli_args: CliArgs) {
             commands::waveform::export_edited_media,
             commands::filler::analyze_fillers,
             commands::filler::delete_fillers,
+            commands::filler::delete_duplicates,
             commands::filler::silence_pauses,
+            commands::filler::trim_pauses,
+            commands::filler::tighten_gaps,
+            commands::filler::cleanup_all,
             commands::project::save_project,
             commands::project::load_project,
             commands::transcription::set_model_unload_timeout,
