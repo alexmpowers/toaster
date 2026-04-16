@@ -8,7 +8,7 @@ use crate::commands::editor::EditorStore;
 use crate::managers::editor::{EditorState, TimingContractSnapshot};
 use crate::managers::media::MediaStore;
 
-const EXPORT_SEAM_FADE_US: i64 = 2_000;
+const EXPORT_SEAM_FADE_US: i64 = 10_000;
 const PREVIEW_SEAM_FADE_US: i64 = 0;
 const FIRST_BOUNDARY_FADE_US: i64 = 2_000;
 const PREVIEW_CACHE_DIR: &str = "toaster_preview_cache";
@@ -30,15 +30,48 @@ struct ExportAudioOptions {
     fade_out_ms: u32,
 }
 
-const BURN_CAPTION_STYLE: &str =
-    "FontSize=24,PrimaryColour=&HFFFFFF&,OutlineColour=&H000000&,Outline=2,Alignment=2";
-
-/// Escape a file path for use inside an FFmpeg filter expression.
+/// Escape a file pathfor use inside an FFmpeg filter expression.
 ///
 /// FFmpeg filter syntax treats `:`, `\`, and `'` as special characters.
 /// On Windows the path separator `\` must be escaped or converted.
 fn escape_srt_path_for_ffmpeg(path: &str) -> String {
     path.replace('\\', "/").replace(':', "\\:")
+}
+
+/// Probe the height (in pixels) of the first video stream using ffprobe.
+/// Returns `None` when ffprobe is unavailable or the file has no video stream.
+fn is_valid_hex_color(s: &str) -> bool {
+    let h = s.trim_start_matches('#');
+    (h.len() == 6 || h.len() == 8) && h.chars().all(|c| c.is_ascii_hexdigit())
+}
+
+fn probe_video_dimensions(path: &str) -> Option<(u32, u32)> {
+    let output = std::process::Command::new("ffprobe")
+        .args([
+            "-v",
+            "error",
+            "-select_streams",
+            "v:0",
+            "-show_entries",
+            "stream=width,height",
+            "-of",
+            "csv=s=x:p=0",
+            path,
+        ])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let raw = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    let parts: Vec<&str> = raw.split('x').collect();
+    if parts.len() == 2 {
+        let w = parts[0].parse::<u32>().ok()?;
+        let h = parts[1].parse::<u32>().ok()?;
+        Some((w, h))
+    } else {
+        None
+    }
 }
 
 /// Build the FFmpeg audio post-processing filter chain (volume, fade, normalize)
@@ -312,6 +345,23 @@ fn canonical_keep_segments_for_media(
         }
     }
 
+    // Trim outer boundaries to reduce leading/trailing silence padding
+    // from ASR word timestamps (Parakeet includes significant pre-speech padding).
+    // Use aggressive trim (up to 50% of first/last segment, capped at 300ms)
+    // since the outer edges are most likely to have dead air.
+    const MAX_OUTER_TRIM_US: i64 = 300_000; // cap at 300ms
+    if !normalized.is_empty() {
+        let first = &mut normalized[0];
+        let seg_dur = first.1 - first.0;
+        let trim = (seg_dur / 2).min(MAX_OUTER_TRIM_US);
+        first.0 += trim;
+
+        let last = normalized.last_mut().unwrap();
+        let seg_dur = last.1 - last.0;
+        let trim = (seg_dur / 2).min(MAX_OUTER_TRIM_US);
+        last.1 -= trim;
+    }
+
     normalized
 }
 
@@ -390,6 +440,40 @@ fn extend_single_segment_export_args(
     ]);
 }
 
+/// Build the ASS force_style string for FFmpeg subtitle burn-in.
+///
+/// FFmpeg ASS uses `&HAABBGGRR&` color format (AA = alpha inverted, BGR order).
+/// Alpha: 00 = fully opaque, FF = fully transparent (inverted from CSS convention).
+/// BorderStyle=3 means OutlineColour controls the opaque box fill, not BackColour.
+fn build_caption_style(
+    text_color: &str,
+    bg_color: &str,
+    font_size: u32,
+    position: u32,
+    video_height: u32,
+) -> String {
+    let hex = text_color.trim_start_matches('#');
+    let r = hex.get(0..2).unwrap_or("FF");
+    let g = hex.get(2..4).unwrap_or("FF");
+    let b = hex.get(4..6).unwrap_or("FF");
+    let primary = format!("&H00{b}{g}{r}&");
+
+    let bg_hex = bg_color.trim_start_matches('#');
+    let br = bg_hex.get(0..2).unwrap_or("00");
+    let bg = bg_hex.get(2..4).unwrap_or("00");
+    let bb = bg_hex.get(4..6).unwrap_or("00");
+    let css_alpha = u8::from_str_radix(bg_hex.get(6..8).unwrap_or("B3"), 16).unwrap_or(0xB3);
+    let ass_alpha = 255 - css_alpha;
+    let back = format!("&H{ass_alpha:02X}{bb}{bg}{br}&");
+
+    let margin_v = ((100 - position) as f32 / 100.0 * video_height as f32) as u32;
+
+    format!(
+        "FontSize={},PrimaryColour={},OutlineColour={},BackColour=&H80000000&,BorderStyle=3,Outline=4,Shadow=0,Alignment=2,MarginV={}",
+        font_size, primary, back, margin_v,
+    )
+}
+
 fn build_export_args(
     input_path: &str,
     output_path: &str,
@@ -397,6 +481,8 @@ fn build_export_args(
     has_video: bool,
     audio_opts: &ExportAudioOptions,
     srt_path: Option<&str>,
+    caption_style: &str,
+    video_size: Option<(u32, u32)>,
 ) -> Vec<String> {
     let mut args: Vec<String> = vec!["-y".to_string(), "-i".to_string(), input_path.to_string()];
 
@@ -416,9 +502,13 @@ fn build_export_args(
         if has_video {
             if let Some(srt) = srt_path {
                 let escaped = escape_srt_path_for_ffmpeg(srt);
+                let size_param = match video_size {
+                    Some((w, h)) => format!(":original_size={w}x{h}"),
+                    None => String::new(),
+                };
                 args.extend([
                     "-vf".to_string(),
-                    format!("subtitles='{escaped}':force_style='{BURN_CAPTION_STYLE}'"),
+                    format!("subtitles='{escaped}':force_style='{caption_style}'{size_param}"),
                 ]);
             }
         }
@@ -458,8 +548,12 @@ fn build_export_args(
             // Burn-in subtitles: chain after [outv] in filter_complex
             let video_map_label = if let Some(srt) = srt_path {
                 let escaped = escape_srt_path_for_ffmpeg(srt);
+                let size_param = match video_size {
+                    Some((w, h)) => format!(":original_size={w}x{h}"),
+                    None => String::new(),
+                };
                 filter_parts.push(format!(
-                    "[outv]subtitles='{escaped}':force_style='{BURN_CAPTION_STYLE}'[outvs]"
+                    "[outv]subtitles='{escaped}':force_style='{caption_style}'{size_param}[outvs]"
                 ));
                 "[outvs]"
             } else {
@@ -522,31 +616,9 @@ fn urlencoding(s: &str) -> String {
     out
 }
 
-/// Returns the preview cache directory path under app data.
-///
-/// Uses the APPDATA directory (already allowed in asset protocol scope)
-/// to avoid Tauri scope issues with the system temp directory.
+/// Returns the preview cache directory path.
 fn preview_cache_dir() -> PathBuf {
-    // On Windows: %APPDATA% = C:\Users\<user>\AppData\Roaming
-    // On macOS: ~/Library/Application Support
-    // On Linux: $XDG_DATA_HOME or ~/.local/share
-    // These match Tauri's $APPDATA scope variable.
-    let base = if cfg!(target_os = "windows") {
-        std::env::var("APPDATA")
-            .map(PathBuf::from)
-            .unwrap_or_else(|_| std::env::temp_dir())
-    } else if cfg!(target_os = "macos") {
-        let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
-        PathBuf::from(home).join("Library/Application Support")
-    } else {
-        std::env::var("XDG_DATA_HOME")
-            .map(PathBuf::from)
-            .unwrap_or_else(|_| {
-                let home = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
-                PathBuf::from(home).join(".local/share")
-            })
-    };
-    base.join("com.toaster.app").join(PREVIEW_CACHE_DIR)
+    std::env::temp_dir().join(PREVIEW_CACHE_DIR)
 }
 
 fn preview_generation_token(source_fingerprint: &str, edit_version: &str) -> String {
@@ -1067,10 +1139,40 @@ pub async fn export_edited_media(
     let settings = crate::settings::get_settings(&app);
     let audio_opts = ExportAudioOptions {
         normalize_audio: settings.normalize_audio_on_export,
-        volume_db: settings.export_volume_db,
-        fade_in_ms: settings.export_fade_in_ms,
-        fade_out_ms: settings.export_fade_out_ms,
+        volume_db: settings.export_volume_db.clamp(-60.0, 24.0),
+        fade_in_ms: settings.export_fade_in_ms.min(30_000),
+        fade_out_ms: settings.export_fade_out_ms.min(30_000),
     };
+
+    let caption_position = settings.caption_position.clamp(0, 100);
+    let caption_font_size = settings.caption_font_size.clamp(8, 120);
+    let caption_text_color = if is_valid_hex_color(&settings.caption_text_color) {
+        &settings.caption_text_color
+    } else {
+        "#FFFFFF"
+    };
+    let caption_bg_color = if is_valid_hex_color(&settings.caption_bg_color) {
+        &settings.caption_bg_color
+    } else {
+        "#000000B3"
+    };
+
+    let video_dims = probe_video_dimensions(input.to_str().unwrap_or(""));
+    let video_height = match video_dims {
+        Some((_, h)) => h,
+        None => {
+            log::warn!("Could not probe video dimensions for caption positioning, assuming 720p");
+            720
+        }
+    };
+    let caption_style = build_caption_style(
+        caption_text_color,
+        caption_bg_color,
+        caption_font_size,
+        caption_position,
+        video_height,
+    );
+
     let srt_path_str = srt_temp_path
         .as_ref()
         .map(|p| p.to_string_lossy().to_string());
@@ -1081,6 +1183,8 @@ pub async fn export_edited_media(
         has_video,
         &audio_opts,
         srt_path_str.as_deref(),
+        &caption_style,
+        video_dims,
     );
 
     log::info!("Running FFmpeg export: ffmpeg {}", args.join(" "));
@@ -1825,7 +1929,8 @@ mod tests {
         ]);
 
         let segments = canonical_keep_segments_for_media(&state, false);
-        assert_eq!(segments, vec![(0, 1_000_000), (2_000_000, 3_000_000)]);
+        // Outer boundary trim (50% capped at 300ms) adjusts first.start and last.end
+        assert_eq!(segments, vec![(300_000, 1_000_000), (2_000_000, 2_700_000)]);
     }
 
     #[test]
@@ -2166,6 +2271,8 @@ mod tests {
             has_video,
             &ExportAudioOptions::default(),
             None,
+            "",
+            None,
         );
         run_ffmpeg(&export_args).expect("export render ffmpeg failed");
 
@@ -2266,6 +2373,345 @@ mod tests {
             overall_pass,
             "live validation failed; report: {}",
             report_path.display()
+        );
+    }
+
+    // ---- Caption style construction tests ----
+
+    #[test]
+    fn test_ass_primary_colour_white() {
+        let style = build_caption_style("#FFFFFF", "#000000B3", 24, 90, 1080);
+        // #FFFFFF → BGR is still FFFFFF, alpha 00 = opaque
+        assert!(
+            style.contains("PrimaryColour=&H00FFFFFF&"),
+            "White text should be &H00FFFFFF&, got: {style}"
+        );
+    }
+
+    #[test]
+    fn test_ass_primary_colour_red() {
+        let style = build_caption_style("#FF0000", "#000000B3", 24, 90, 1080);
+        // #FF0000 → R=FF,G=00,B=00 → BGR=0000FF → &H000000FF&
+        assert!(
+            style.contains("PrimaryColour=&H000000FF&"),
+            "Red text (#FF0000) should be &H000000FF& in BGR, got: {style}"
+        );
+    }
+
+    #[test]
+    fn test_ass_primary_colour_blue() {
+        let style = build_caption_style("#0000FF", "#000000B3", 24, 90, 1080);
+        // #0000FF → R=00,G=00,B=FF → BGR=FF0000 → &H00FF0000&
+        assert!(
+            style.contains("PrimaryColour=&H00FF0000&"),
+            "Blue text (#0000FF) should be &H00FF0000& in BGR, got: {style}"
+        );
+    }
+
+    #[test]
+    fn test_ass_back_colour_with_alpha() {
+        let style = build_caption_style("#FFFFFF", "#000000B3", 24, 90, 1080);
+        // bg=#000000B3 → R=00,G=00,B=00, CSS alpha=B3=179
+        // ASS alpha = 255-179 = 76 = 0x4C
+        // OutlineColour=&H4C000000&
+        assert!(
+            style.contains("OutlineColour=&H4C000000&"),
+            "BG #000000B3 should produce OutlineColour=&H4C000000&, got: {style}"
+        );
+    }
+
+    #[test]
+    fn test_ass_back_colour_fully_opaque() {
+        let style = build_caption_style("#FFFFFF", "#000000FF", 24, 90, 1080);
+        // CSS alpha FF=255 → ASS alpha = 255-255 = 0 = 0x00 (opaque)
+        assert!(
+            style.contains("OutlineColour=&H00000000&"),
+            "Fully opaque BG should have ASS alpha 00, got: {style}"
+        );
+    }
+
+    #[test]
+    fn test_ass_margin_v_default_position() {
+        let style = build_caption_style("#FFFFFF", "#000000B3", 24, 90, 1080);
+        // MarginV = (100-90)/100 * 1080 = 108
+        assert!(
+            style.contains("MarginV=108"),
+            "position=90 on 1080p should give MarginV=108, got: {style}"
+        );
+    }
+
+    #[test]
+    fn test_ass_margin_v_position_50() {
+        let style = build_caption_style("#FFFFFF", "#000000B3", 24, 50, 1080);
+        // MarginV = (100-50)/100 * 1080 = 540
+        assert!(
+            style.contains("MarginV=540"),
+            "position=50 on 1080p should give MarginV=540, got: {style}"
+        );
+    }
+
+    #[test]
+    fn test_ass_margin_v_position_0() {
+        let style = build_caption_style("#FFFFFF", "#000000B3", 24, 0, 1080);
+        // MarginV = (100-0)/100 * 1080 = 1080
+        assert!(
+            style.contains("MarginV=1080"),
+            "position=0 on 1080p should give MarginV=1080, got: {style}"
+        );
+    }
+
+    #[test]
+    fn test_caption_style_contains_border_style_3() {
+        let style = build_caption_style("#FFFFFF", "#000000B3", 24, 90, 1080);
+        assert!(
+            style.contains("BorderStyle=3"),
+            "Must use BorderStyle=3 for opaque box mode, got: {style}"
+        );
+    }
+
+    #[test]
+    fn test_caption_style_uses_outline_colour_for_bg() {
+        // The root cause of the missing background bug: bg color must go on
+        // OutlineColour (not BackColour) when BorderStyle=3 is used.
+        let style = build_caption_style("#FFFFFF", "#FF0000B3", 24, 90, 1080);
+        // bg=#FF0000B3 → R=FF,G=00,B=00 → BGR=0000FF, alpha=4C
+        assert!(
+            style.contains("OutlineColour=&H4C0000FF&"),
+            "User bg color must go on OutlineColour for BorderStyle=3, got: {style}"
+        );
+        // BackColour should be the fixed shadow value, not the user's bg color
+        assert!(
+            style.contains("BackColour=&H80000000&"),
+            "BackColour should be fixed shadow value, got: {style}"
+        );
+    }
+
+    #[test]
+    fn test_caption_style_font_size() {
+        let style = build_caption_style("#FFFFFF", "#000000B3", 36, 90, 1080);
+        assert!(
+            style.contains("FontSize=36"),
+            "FontSize should match input, got: {style}"
+        );
+    }
+
+    #[test]
+    fn test_caption_style_720p_margin() {
+        let style = build_caption_style("#FFFFFF", "#000000B3", 24, 90, 720);
+        // MarginV = (100-90)/100 * 720 = 72
+        assert!(
+            style.contains("MarginV=72"),
+            "position=90 on 720p should give MarginV=72, got: {style}"
+        );
+    }
+
+    // ---- FFmpeg build_export_args tests ----
+
+    fn default_audio_opts() -> ExportAudioOptions {
+        ExportAudioOptions {
+            normalize_audio: false,
+            volume_db: 0.0,
+            fade_in_ms: 0,
+            fade_out_ms: 0,
+        }
+    }
+
+    #[test]
+    fn test_build_export_args_single_segment_video() {
+        let args = build_export_args(
+            "input.mp4",
+            "output.mp4",
+            &[(0, 5_000_000)],
+            true,
+            &default_audio_opts(),
+            None,
+            "FontSize=24",
+            None,
+        );
+        assert!(args.contains(&"-y".to_string()));
+        assert!(args.contains(&"-i".to_string()));
+        assert!(args.contains(&"input.mp4".to_string()));
+        assert!(args.contains(&"output.mp4".to_string()));
+    }
+
+    #[test]
+    fn test_build_export_args_single_segment_with_captions() {
+        let args = build_export_args(
+            "input.mp4",
+            "output.mp4",
+            &[(0, 5_000_000)],
+            true,
+            &default_audio_opts(),
+            Some("C:\\path\\to\\captions.srt"),
+            "FontSize=24,BorderStyle=3",
+            None,
+        );
+        let vf_idx = args.iter().position(|a| a == "-vf");
+        assert!(vf_idx.is_some(), "Single segment video with captions should have -vf flag");
+        let filter = &args[vf_idx.unwrap() + 1];
+        assert!(
+            filter.contains("subtitles="),
+            "Filter should contain subtitles directive, got: {filter}"
+        );
+        assert!(
+            filter.contains("force_style='FontSize=24,BorderStyle=3'"),
+            "Filter should include caption style, got: {filter}"
+        );
+    }
+
+    #[test]
+    fn test_build_export_args_multi_segment_video() {
+        let segments = vec![(0, 2_000_000), (3_000_000, 5_000_000)];
+        let args = build_export_args(
+            "input.mp4",
+            "output.mp4",
+            &segments,
+            true,
+            &default_audio_opts(),
+            None,
+            "FontSize=24",
+            None,
+        );
+        assert!(
+            args.contains(&"-filter_complex".to_string()),
+            "Multi-segment should use filter_complex"
+        );
+        let fc_idx = args.iter().position(|a| a == "-filter_complex").unwrap();
+        let filter = &args[fc_idx + 1];
+        assert!(filter.contains("concat=n=2"), "Should concat 2 segments, got: {filter}");
+        assert!(filter.contains("[v0]"), "Should reference video segment 0");
+        assert!(filter.contains("[v1]"), "Should reference video segment 1");
+    }
+
+    #[test]
+    fn test_build_export_args_multi_segment_with_captions() {
+        let segments = vec![(0, 2_000_000), (3_000_000, 5_000_000)];
+        let args = build_export_args(
+            "input.mp4",
+            "output.mp4",
+            &segments,
+            true,
+            &default_audio_opts(),
+            Some("C:\\captions.srt"),
+            "FontSize=24,BorderStyle=3",
+            None,
+        );
+        let fc_idx = args.iter().position(|a| a == "-filter_complex").unwrap();
+        let filter = &args[fc_idx + 1];
+        assert!(
+            filter.contains("subtitles="),
+            "Multi-segment captions should chain subtitles filter"
+        );
+        assert!(
+            filter.contains("[outvs]"),
+            "Should output to [outvs] label after subtitles"
+        );
+        // The map should reference the subtitled output
+        let map_indices: Vec<_> = args
+            .iter()
+            .enumerate()
+            .filter(|(_, a)| a.as_str() == "-map")
+            .map(|(i, _)| i)
+            .collect();
+        assert!(
+            args[map_indices[0] + 1] == "[outvs]",
+            "First -map should reference [outvs] for captioned video"
+        );
+    }
+
+    #[test]
+    fn test_srt_path_escaping() {
+        // Backslashes become forward slashes, colons get escaped with backslash
+        let escaped = escape_srt_path_for_ffmpeg("C:\\Users\\test\\file.srt");
+        assert_eq!(escaped, "C\\:/Users/test/file.srt");
+        let escaped2 = escape_srt_path_for_ffmpeg("D:\\test.srt");
+        assert_eq!(escaped2, "D\\:/test.srt", "Colons should be escaped for FFmpeg filter syntax");
+        // Unix-style path with no special chars passes through
+        let escaped3 = escape_srt_path_for_ffmpeg("/tmp/captions.srt");
+        assert_eq!(escaped3, "/tmp/captions.srt");
+    }
+
+    #[test]
+    fn test_build_export_args_audio_only() {
+        let args = build_export_args(
+            "input.wav",
+            "output.mp3",
+            &[(0, 5_000_000)],
+            false,
+            &default_audio_opts(),
+            None,
+            "",
+            None,
+        );
+        // Audio-only should not contain -vf or video filter
+        assert!(
+            !args.contains(&"-vf".to_string()),
+            "Audio-only export should not have -vf"
+        );
+        assert!(
+            !args.contains(&"-filter_complex".to_string()),
+            "Single segment audio should not need filter_complex"
+        );
+    }
+
+    #[test]
+    fn test_single_segment_captions_include_original_size() {
+        let args = build_export_args(
+            "input.mp4",
+            "output.mp4",
+            &[(0, 5_000_000)],
+            true,
+            &default_audio_opts(),
+            Some("C:\\path\\to\\captions.srt"),
+            "FontSize=24,MarginV=108",
+            Some((1920, 1080)),
+        );
+        let vf_idx = args.iter().position(|a| a == "-vf").unwrap();
+        let filter = &args[vf_idx + 1];
+        assert!(
+            filter.contains("original_size=1920x1080"),
+            "Single segment subtitle filter must include original_size to match preview coordinates, got: {filter}"
+        );
+    }
+
+    #[test]
+    fn test_multi_segment_captions_include_original_size() {
+        let segments = vec![(0, 2_000_000), (3_000_000, 5_000_000)];
+        let args = build_export_args(
+            "input.mp4",
+            "output.mp4",
+            &segments,
+            true,
+            &default_audio_opts(),
+            Some("C:\\captions.srt"),
+            "FontSize=24,MarginV=72",
+            Some((1280, 720)),
+        );
+        let fc_idx = args.iter().position(|a| a == "-filter_complex").unwrap();
+        let filter = &args[fc_idx + 1];
+        assert!(
+            filter.contains("original_size=1280x720"),
+            "Multi-segment subtitle filter must include original_size, got: {filter}"
+        );
+    }
+
+    #[test]
+    fn test_captions_without_video_size_omit_original_size() {
+        let args = build_export_args(
+            "input.mp4",
+            "output.mp4",
+            &[(0, 5_000_000)],
+            true,
+            &default_audio_opts(),
+            Some("C:\\captions.srt"),
+            "FontSize=24",
+            None,
+        );
+        let vf_idx = args.iter().position(|a| a == "-vf").unwrap();
+        let filter = &args[vf_idx + 1];
+        assert!(
+            !filter.contains("original_size"),
+            "Without video_size, original_size should not appear, got: {filter}"
         );
     }
 }
