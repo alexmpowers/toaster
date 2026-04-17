@@ -6,15 +6,6 @@ use log::info;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Manager};
 
-// Overlay window was removed (legacy Handy dictation UI). These stubs remain
-// as no-ops so dictation-era callers (actions.rs, managers/audio.rs,
-// shortcut/mod.rs) still compile until they are pruned by their own todos.
-pub fn show_recording_overlay(_app_handle: &AppHandle) {}
-pub fn show_transcribing_overlay(_app_handle: &AppHandle) {}
-pub fn show_processing_overlay(_app_handle: &AppHandle) {}
-pub fn hide_recording_overlay(_app_handle: &AppHandle) {}
-pub fn update_overlay_position(_app_handle: &AppHandle) {}
-
 pub fn emit_levels(app_handle: &AppHandle, levels: &Vec<f32>) {
     let _ = app_handle.emit("mic-level", levels);
 }
@@ -31,9 +22,6 @@ pub fn cancel_current_operation(app: &AppHandle) {
     let audio_manager = app.state::<Arc<AudioRecordingManager>>();
     let recording_was_active = audio_manager.is_recording();
     audio_manager.cancel_recording();
-
-    // Update tray icon and hide overlay
-    hide_recording_overlay(app);
 
     // Unload model if immediate unload is enabled
     let tm = app.state::<Arc<TranscriptionManager>>();
