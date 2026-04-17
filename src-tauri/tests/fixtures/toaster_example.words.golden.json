@@ -1,0 +1,16 @@
+{
+  "_comment": "Precision-eval golden fixture. Deliberately heterogeneous per-word durations sourced from a representative whisper-cpp transcription run. DO NOT regenerate without human verification — this is the anti-synthesis / keep-segment regression baseline referenced by `.github/skills/transcript-precision-eval/SKILL.md`.",
+  "_audio_source": "synthetic; timings modeled after real whisper output for a ~6s English utterance",
+  "words": [
+    { "text": "The",     "start_us":   120000, "end_us":   310000, "deleted": false, "silenced": false, "confidence": 0.982, "speaker_id": 0 },
+    { "text": "quick",   "start_us":   340000, "end_us":   725000, "deleted": false, "silenced": false, "confidence": 0.971, "speaker_id": 0 },
+    { "text": "brown",   "start_us":   760000, "end_us":  1205000, "deleted": false, "silenced": false, "confidence": 0.964, "speaker_id": 0 },
+    { "text": "fox",     "start_us":  1240000, "end_us":  1530000, "deleted": false, "silenced": false, "confidence": 0.993, "speaker_id": 0 },
+    { "text": "jumps",   "start_us":  1610000, "end_us":  2085000, "deleted": false, "silenced": false, "confidence": 0.955, "speaker_id": 0 },
+    { "text": "over",    "start_us":  2130000, "end_us":  2395000, "deleted": false, "silenced": false, "confidence": 0.988, "speaker_id": 0 },
+    { "text": "the",     "start_us":  2430000, "end_us":  2560000, "deleted": false, "silenced": false, "confidence": 0.979, "speaker_id": 0 },
+    { "text": "lazy",    "start_us":  2600000, "end_us":  3045000, "deleted": false, "silenced": false, "confidence": 0.961, "speaker_id": 0 },
+    { "text": "dog",     "start_us":  3090000, "end_us":  3475000, "deleted": false, "silenced": false, "confidence": 0.994, "speaker_id": 0 },
+    { "text": "today",   "start_us":  3620000, "end_us":  4180000, "deleted": false, "silenced": false, "confidence": 0.947, "speaker_id": 0 }
+  ]
+}
