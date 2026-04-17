@@ -4,15 +4,6 @@
     "downloading": "Downloading...",
     "downloadingCount": "{{count}} downloading..."
   },
-  "tray": {
-    "settings": "Settings...",
-    "checkUpdates": "Check for Updates...",
-    "copyLastTranscript": "Copy Last Transcript",
-    "unloadModel": "Unload Model",
-    "model": "Model",
-    "quit": "Quit",
-    "cancel": "Cancel"
-  },
   "sidebar": {
     "editor": "Editor",
     "general": "General",
@@ -197,10 +188,6 @@
         "searchPlaceholder": "Search languages...",
         "noResults": "No languages found",
         "auto": "Auto"
-      },
-      "pushToTalk": {
-        "label": "Push To Talk",
-        "description": "Hold to record, release to stop"
       }
     },
     "models": {
@@ -222,35 +209,13 @@
       "noModelsMatch": "No models match this filter.",
       "download": "Download"
     },
-    "sound": {
-      "title": "Sound",
-      "microphone": {
-        "title": "Microphone",
-        "description": "Select your preferred microphone device",
-        "placeholder": "Select microphone...",
-        "loading": "Loading..."
-      },
-      "audioFeedback": {
-        "label": "Audio Feedback",
-        "description": "Play sound when recording starts and stops"
-      },
-      "outputDevice": {
-        "title": "Output Device",
-        "description": "Select your preferred audio output device for feedback sounds",
-        "placeholder": "Select output device...",
-        "loading": "Loading..."
-      },
-      "volume": {
-        "title": "Volume",
-        "description": "Adjust the volume of audio feedback sounds"
-      }
-    },
     "advanced": {
       "title": "Advanced",
       "groups": {
         "app": "App",
         "output": "Output",
         "transcription": "Transcription",
+        "captionSettings": "Caption Settings",
         "history": "History",
         "experimental": "Experimental"
       },
@@ -279,66 +244,6 @@
           "title": "GPU Device",
           "description": "Select which GPU to use for Whisper inference. Auto picks the dedicated GPU.",
           "auto": "Auto"
-        }
-      },
-      "startHidden": {
-        "label": "Start Hidden",
-        "description": "Launch to system tray without opening the window."
-      },
-      "autostart": {
-        "label": "Launch on Startup",
-        "description": "Automatically start Toaster when you log in to your computer."
-      },
-      "showTrayIcon": {
-        "label": "Show Tray Icon",
-        "description": "Display the Toaster icon in the system tray."
-      },
-      "overlay": {
-        "title": "Overlay Position",
-        "description": "Display visual feedback overlay during recording and transcription. On Linux 'None' is recommended.",
-        "options": {
-          "none": "None",
-          "bottom": "Bottom",
-          "top": "Top"
-        }
-      },
-      "pasteMethod": {
-        "title": "Paste Method",
-        "description": "Choose how text is inserted. Direct: simulates typing via system input. None: skips paste, only updates history/clipboard.",
-        "options": {
-          "clipboard": "Clipboard ({{modifier}}+V)",
-          "clipboardCtrlShiftV": "Clipboard (Ctrl+Shift+V)",
-          "clipboardShiftInsert": "Clipboard (Shift+Insert)",
-          "direct": "Direct",
-          "none": "None",
-          "externalScript": "External Script"
-        },
-        "externalScriptPlaceholder": "/path/to/your/script.sh"
-      },
-      "typingTool": {
-        "title": "Typing Tool",
-        "description": "Choose which Linux typing tool to use for Direct paste method. Auto will automatically detect and use the best available tool for your system.",
-        "options": {
-          "auto": "Auto (Recommended)"
-        }
-      },
-      "clipboardHandling": {
-        "title": "Clipboard Handling",
-        "description": "Don't Modify Clipboard preserves your current clipboard contents after transcription. Copy to Clipboard leaves the transcription result in your clipboard after pasting.",
-        "options": {
-          "dontModify": "Don't Modify Clipboard",
-          "copyToClipboard": "Copy to Clipboard"
-        }
-      },
-      "autoSubmit": {
-        "title": "Auto Submit",
-        "description": "Automatically send the selected key combination after text insertion. Cmd+Enter applies on macOS, while Windows/Linux use Super+Enter.",
-        "options": {
-          "off": "Off",
-          "enter": "Enter",
-          "cmdEnter": "Cmd+Enter",
-          "superEnter": "Super+Enter",
-          "ctrlEnter": "Ctrl+Enter"
         }
       },
       "translateToEnglish": {
@@ -374,7 +279,8 @@
         "placeholder": "Add word or phrase",
         "add": "Add",
         "remove": "Remove {{word}}",
-        "duplicate": "\"{{word}}\" is already in the discard list"
+        "duplicate": "\"{{word}}\" is already in the discard list",
+        "conflictWithAllow": "\"{{word}}\" is in the Allow Words list. Remove it there first."
       },
       "allowWords": {
         "title": "Allow Words",
@@ -382,7 +288,21 @@
         "placeholder": "Add word or phrase",
         "add": "Add",
         "remove": "Remove {{word}}",
-        "duplicate": "\"{{word}}\" is already in the allow list"
+        "duplicate": "\"{{word}}\" is already in the allow list",
+        "conflictWithDiscard": "\"{{word}}\" is in the Discard Words list. Remove it there first."
+      },
+      "captionSettings": {
+        "title": "Caption Settings",
+        "fontSize": "Font Size",
+        "fontSizeDescription": "How large the caption text appears (in pixels)",
+        "bgColor": "Background Color",
+        "bgColorDescription": "The color behind the caption text",
+        "bgTransparency": "Background Transparency",
+        "bgTransparencyDescription": "How opaque the caption background is (0% = fully transparent, 100% = solid)",
+        "textColor": "Text Color",
+        "textColorDescription": "The color of the caption text",
+        "position": "Vertical Position",
+        "positionDescription": "Where captions appear on screen — 0% is the top, 100% is the bottom"
       }
     },
     "postProcessing": {
@@ -483,17 +403,13 @@
         "label": "Check for Updates",
         "description": "Automatically check for new versions of Toaster"
       },
-      "soundTheme": {
-        "label": "Sound Theme",
-        "description": "Choose a sound theme for recording start and stop feedback"
-      },
       "wordCorrectionThreshold": {
         "title": "Word Correction Threshold",
         "description": "Sensitivity for custom word corrections"
       },
       "historyLimit": {
         "title": "History Limit",
-        "description": "Maximum number of history entries to keep",
+        "description": "Maximum number of recent projects to keep in your history",
         "entries": "entries"
       },
       "recordingRetention": {
@@ -506,10 +422,6 @@
         "months3": "After 3 months",
         "placeholder": "Select retention period..."
       },
-      "alwaysOnMicrophone": {
-        "label": "Always-On Microphone",
-        "description": "Keep microphone active for faster response"
-      },
       "clamshellMicrophone": {
         "title": "Clamshell Microphone",
         "description": "Microphone to use when laptop lid is closed"
@@ -518,31 +430,10 @@
         "label": "Post Processing",
         "description": "Enable AI-powered text refinement after transcription"
       },
-      "muteWhileRecording": {
-        "label": "Mute While Recording",
-        "description": "Mute system audio during recording"
-      },
-      "appendTrailingSpace": {
-        "label": "Append Trailing Space",
-        "description": "Add a space after pasted transcription"
-      },
-      "keyboardImplementation": {
-        "title": "Keyboard Implementation",
-        "description": "Choose the keyboard shortcut backend.",
-        "bindingsReset": "Keyboard shortcuts were incompatible and reset to defaults"
-      },
       "paths": {
         "appData": "App Data:",
         "models": "Models:",
         "settings": "Settings:"
-      },
-      "pasteDelay": {
-        "title": "Paste Delay",
-        "description": "Delay before sending paste keystroke (in milliseconds). Increase if wrong text is being pasted."
-      },
-      "recordingBuffer": {
-        "title": "Extra Recording Buffer",
-        "description": "Extra time (in milliseconds) to keep recording after you release the key, to capture trailing audio. 0 = no extra buffer."
       }
     },
     "about": {
@@ -562,10 +453,11 @@
       },
       "acknowledgments": {
         "title": "Acknowledgments",
+        "intro": "Toaster extends its engine with transcript-first video and audio editing capabilities from the following projects.",
         "handy": {
           "title": "Handy",
-          "description": "Toaster is built on the foundation of Handy by cjpais",
-          "details": "Handy is an open-source, local-first speech-to-text application. Toaster extends Handy's transcription engine with transcript-first video and audio editing capabilities. Thank you to cjpais and all Handy contributors.",
+          "description": "Handy is built on the foundation of Handy by cjpais",
+          "details": "Handy is an open-source, local-first speech-to-text application. Thank you to cjpais and all Handy contributors.",
           "button": "View Handy on GitHub"
         },
         "whisper": {
@@ -649,6 +541,8 @@
   "player": {
     "play": "Play",
     "pause": "Pause",
+    "restart": "Restart",
+    "rewind": "Rewind 5s",
     "volume": "Volume",
     "mute": "Mute",
     "speed": "Speed",
@@ -668,7 +562,8 @@
       "project": "Project",
       "media": "Media",
       "transcription": "Transcription",
-      "exportTools": "Export & Tools"
+      "exportTools": "Export & Tools",
+      "edit": "Edit"
     },
     "deleteWord": "Delete Word",
     "restoreWord": "Restore Word",
@@ -715,7 +610,7 @@
     "exportFormats": "Export Formats",
     "exportEditedMedia": "Export Edited Media",
     "exportingEditedMedia": "Exporting edited media...",
-    "normalizeAudio": "Normalize audio volume",
+    "normalizeAudio": "Normalize Audio",
     "burnCaptions": "Burn captions into video",
     "exportVolume": "Volume adjustment",
     "exportFadeIn": "Fade in",
@@ -736,6 +631,10 @@
     "save": "Save",
     "loadProject": "Open a .toaster project",
     "saveProject": "Save project as .toaster file",
-    "close": "Close"
+    "close": "Close",
+    "export": "Export",
+    "exporting": "Exporting...",
+    "addCaptions": "Add Captions",
+    "cleanup": "Clean up"
   }
 }

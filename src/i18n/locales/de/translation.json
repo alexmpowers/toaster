@@ -1,13 +1,4 @@
 {
-  "tray": {
-    "settings": "Einstellungen...",
-    "checkUpdates": "Nach Updates suchen...",
-    "copyLastTranscript": "Letzte Transkription kopieren",
-    "unloadModel": "Modell entladen",
-    "model": "Modell",
-    "quit": "Beenden",
-    "cancel": "Abbrechen"
-  },
   "sidebar": {
     "general": "Allgemein",
     "models": "Modelle",
@@ -209,33 +200,6 @@
         "searchPlaceholder": "Sprachen suchen...",
         "noResults": "Keine Sprachen gefunden",
         "auto": "Auto"
-      },
-      "pushToTalk": {
-        "label": "Push-to-Talk",
-        "description": "Gedrückt halten zum Aufnehmen, loslassen zum Stoppen"
-      }
-    },
-    "sound": {
-      "title": "Ton",
-      "microphone": {
-        "title": "Mikrofon",
-        "description": "Bevorzugtes Mikrofon auswählen",
-        "placeholder": "Mikrofon auswählen...",
-        "loading": "Wird geladen..."
-      },
-      "audioFeedback": {
-        "label": "Audio-Feedback",
-        "description": "Ton bei Start und Ende der Aufnahme abspielen"
-      },
-      "outputDevice": {
-        "title": "Ausgabegerät",
-        "description": "Bevorzugtes Audioausgabegerät für Feedback-Töne auswählen",
-        "placeholder": "Ausgabegerät auswählen...",
-        "loading": "Wird geladen..."
-      },
-      "volume": {
-        "title": "Lautstärke",
-        "description": "Lautstärke der Audio-Feedback-Töne anpassen"
       }
     },
     "advanced": {
@@ -268,66 +232,6 @@
           "title": "GPU-Gerät",
           "description": "Wählen Sie die GPU für die Whisper-Inferenz. Auto wählt die dedizierte GPU.",
           "auto": "Auto"
-        }
-      },
-      "startHidden": {
-        "label": "Versteckt starten",
-        "description": "In den Systembereich starten, ohne das Fenster zu öffnen."
-      },
-      "autostart": {
-        "label": "Beim Start ausführen",
-        "description": "Toaster automatisch beim Anmelden starten."
-      },
-      "showTrayIcon": {
-        "label": "Taskleistensymbol anzeigen",
-        "description": "Das Toaster-Symbol in der Taskleiste anzeigen."
-      },
-      "overlay": {
-        "title": "Overlay-Position",
-        "description": "Visuelles Feedback-Overlay während Aufnahme und Transkription anzeigen. Unter Linux wird 'Keine' empfohlen.",
-        "options": {
-          "none": "Keine",
-          "bottom": "Unten",
-          "top": "Oben"
-        }
-      },
-      "pasteMethod": {
-        "title": "Einfügemethode",
-        "description": "Wähle, wie Text eingefügt wird. Direkt: simuliert Tippen über Systemeingabe. Keine: überspringt Einfügen, aktualisiert nur Verlauf/Zwischenablage.",
-        "options": {
-          "clipboard": "Zwischenablage ({{modifier}}+V)",
-          "clipboardCtrlShiftV": "Zwischenablage (Strg+Umschalt+V)",
-          "clipboardShiftInsert": "Zwischenablage (Umschalt+Einfg)",
-          "direct": "Direkt",
-          "none": "Keine",
-          "externalScript": "Externes Skript"
-        },
-        "externalScriptPlaceholder": "/pfad/zu/ihrem/skript.sh"
-      },
-      "typingTool": {
-        "title": "Eingabetool",
-        "description": "Wählen Sie, welches Linux-Eingabetool für die Direkt-Einfügen-Methode verwendet werden soll. Auto erkennt und verwendet automatisch das beste verfügbare Tool für Ihr System.",
-        "options": {
-          "auto": "Auto (Empfohlen)"
-        }
-      },
-      "clipboardHandling": {
-        "title": "Zwischenablage-Verhalten",
-        "description": "Zwischenablage nicht ändern bewahrt den aktuellen Inhalt nach der Transkription. In Zwischenablage kopieren hinterlässt das Transkriptionsergebnis in der Zwischenablage.",
-        "options": {
-          "dontModify": "Zwischenablage nicht ändern",
-          "copyToClipboard": "In Zwischenablage kopieren"
-        }
-      },
-      "autoSubmit": {
-        "title": "Automatisch absenden",
-        "description": "Sendet nach dem Einfügen von Text automatisch die ausgewählte Tastenkombination. Cmd+Enter gilt für macOS, während Windows/Linux Super+Enter verwenden.",
-        "options": {
-          "off": "Aus",
-          "enter": "Enter",
-          "cmdEnter": "Cmd+Enter",
-          "superEnter": "Super+Enter",
-          "ctrlEnter": "Ctrl+Enter"
         }
       },
       "translateToEnglish": {
@@ -447,10 +351,6 @@
         "label": "Nach Updates suchen",
         "description": "Automatisch nach neuen Versionen von Toaster suchen"
       },
-      "soundTheme": {
-        "label": "Sound-Thema",
-        "description": "Sound-Thema für Aufnahme-Start und -Stop-Feedback auswählen"
-      },
       "wordCorrectionThreshold": {
         "title": "Wortkorrektur-Schwelle",
         "description": "Empfindlichkeit für benutzerdefinierte Wortkorrekturen"
@@ -470,10 +370,6 @@
         "months3": "Nach 3 Monaten",
         "placeholder": "Aufbewahrungszeitraum auswählen..."
       },
-      "alwaysOnMicrophone": {
-        "label": "Mikrofon immer aktiv",
-        "description": "Mikrofon für schnellere Reaktion aktiv halten"
-      },
       "clamshellMicrophone": {
         "title": "Clamshell-Mikrofon",
         "description": "Mikrofon bei geschlossenem Laptop-Deckel"
@@ -482,31 +378,10 @@
         "label": "Nachbearbeitung",
         "description": "KI-gestützte Textverfeinerung nach der Transkription aktivieren"
       },
-      "muteWhileRecording": {
-        "label": "Während Aufnahme stummschalten",
-        "description": "Systemaudio während der Aufnahme stummschalten"
-      },
-      "appendTrailingSpace": {
-        "label": "Leerzeichen anhängen",
-        "description": "Leerzeichen nach eingefügter Transkription hinzufügen"
-      },
-      "keyboardImplementation": {
-        "title": "Tastatur-Implementierung",
-        "description": "Wähle das Backend für Tastaturkürzel.",
-        "bindingsReset": "Tastaturkürzel waren inkompatibel und wurden auf die Standardwerte zurückgesetzt"
-      },
       "paths": {
         "appData": "App-Daten:",
         "models": "Modelle:",
         "settings": "Einstellungen:"
-      },
-      "pasteDelay": {
-        "title": "Einfügeverzögerung",
-        "description": "Verzögerung vor dem Senden des Einfüge-Tastendrucks (in Millisekunden). Erhöhen Sie den Wert, wenn falscher Text eingefügt wird."
-      },
-      "recordingBuffer": {
-        "title": "Zusätzlicher Aufnahmepuffer",
-        "description": "Zusätzliche Zeit (in Millisekunden), um nach dem Loslassen der Taste weiterzuzeichnen, um nachlaufendes Audio aufzunehmen. 0 = kein zusätzlicher Puffer."
       }
     },
     "about": {

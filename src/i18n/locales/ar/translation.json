@@ -1,13 +1,4 @@
 {
-  "tray": {
-    "settings": "...الإعدادات",
-    "checkUpdates": "...التحقق من وجود تحديثات",
-    "copyLastTranscript": "نسخ آخر نص تم تفريغه",
-    "unloadModel": "تفريغ النموذج",
-    "model": "النموذج",
-    "quit": "إنهاء",
-    "cancel": "إلغاء"
-  },
   "sidebar": {
     "general": "عام",
     "advanced": "متقدم",
@@ -187,33 +178,6 @@
         "searchPlaceholder": "البحث عن اللغات...",
         "noResults": "لم يتم العثور على لغات",
         "auto": "تلقائي"
-      },
-      "pushToTalk": {
-        "label": "اضغط للتحدث",
-        "description": "استمر في الضغط للتسجيل، واترك للتوقف"
-      }
-    },
-    "sound": {
-      "title": "الصوت",
-      "microphone": {
-        "title": "الميكروفون",
-        "description": "اختر جهاز الميكروفون المفضل لديك",
-        "placeholder": "...اختر الميكروفون",
-        "loading": "...جاري التحميل"
-      },
-      "audioFeedback": {
-        "label": "تنبيهات صوتية",
-        "description": "تشغيل صوت عند بدء التسجيل وتوقفه"
-      },
-      "outputDevice": {
-        "title": "جهاز الإخراج",
-        "description": "اختر جهاز إخراج الصوت المفضل لتنبيهات الصوت",
-        "placeholder": "...اختر جهاز الإخراج",
-        "loading": "...جاري التحميل"
-      },
-      "volume": {
-        "title": "مستوى الصوت",
-        "description": "ضبط مستوى صوت تنبيهات الصوت"
       }
     },
     "advanced": {
@@ -246,66 +210,6 @@
           "title": "جهاز GPU",
           "description": "حدد وحدة معالجة الرسومات المستخدمة لاستدلال Whisper. يختار تلقائي وحدة GPU المخصصة.",
           "auto": "تلقائي"
-        }
-      },
-      "startHidden": {
-        "label": "بدء مخفي",
-        "description": ".التشغيل في صينية النظام دون فتح النافذة"
-      },
-      "autostart": {
-        "label": "التشغيل عند بدء التشغيل",
-        "description": ".بدء تشغيل Toaster تلقائياً عند تسجيل الدخول إلى جهاز الكمبيوتر الخاص بك"
-      },
-      "showTrayIcon": {
-        "label": "إظهار أيقونة شريط النظام",
-        "description": ".عرض أيقونة Toaster في شريط النظام"
-      },
-      "overlay": {
-        "title": "موقع التراكب",
-        "description": "عرض تراكب الملاحظات المرئية أثناء التسجيل والتفريغ. على نظام Linux يوصى بـ 'بلا'.",
-        "options": {
-          "none": "بلا",
-          "bottom": "أسفل",
-          "top": "أعلى"
-        }
-      },
-      "pasteMethod": {
-        "title": "طريقة اللصق",
-        "description": ".اختر كيفية إدراج النص. مباشر: يحاكي الكتابة عبر إدخال النظام. بلا: يتخطى اللصق، ويحدث السجل/الحافظة فقط",
-        "options": {
-          "clipboard": "الحافظة ({{modifier}}+V)",
-          "clipboardCtrlShiftV": "الحافظة (Ctrl+Shift+V)",
-          "clipboardShiftInsert": "الحافظة (Shift+Insert)",
-          "direct": "مباشر",
-          "none": "بلا",
-          "externalScript": "نص برمجي خارجي"
-        },
-        "externalScriptPlaceholder": "/path/to/your/script.sh"
-      },
-      "typingTool": {
-        "title": "أداة الكتابة",
-        "description": ".اختر أداة الكتابة في Linux لاستخدامها مع طريقة اللصق المباشر. سيكتشف \"تلقائي\" تلقائياً أفضل أداة متاحة لنظامك ويستخدمها",
-        "options": {
-          "auto": "تلقائي (موصى به)"
-        }
-      },
-      "clipboardHandling": {
-        "title": "التعامل مع الحافظة",
-        "description": ".'عدم تعديل الحافظة' يحافظ على محتويات حافظتك الحالية بعد التفريغ. 'نسخ إلى الحافظة' يترك نتيجة التفريغ في حافظتك بعد اللصق",
-        "options": {
-          "dontModify": "عدم تعديل الحافظة",
-          "copyToClipboard": "نسخ إلى الحافظة"
-        }
-      },
-      "autoSubmit": {
-        "title": "إرسال تلقائي",
-        "description": "إرسال مجموعة المفاتيح المحددة تلقائياً بعد إدراج النص. Cmd+Enter ينطبق على macOS، بينما يستخدم Windows/Linux مفتاح Super+Enter.",
-        "options": {
-          "off": "إيقاف",
-          "enter": "Enter",
-          "cmdEnter": "Cmd+Enter",
-          "superEnter": "Super+Enter",
-          "ctrlEnter": "Ctrl+Enter"
         }
       },
       "translateToEnglish": {
@@ -425,10 +329,6 @@
         "label": "التحقق من وجود تحديثات",
         "description": "التحقق تلقائياً من وجود إصدارات جديدة من Toaster"
       },
-      "soundTheme": {
-        "label": "سمة الصوت",
-        "description": "اختر سمة صوت لتنبيهات بدء وتوقف التسجيل"
-      },
       "wordCorrectionThreshold": {
         "title": "عتبة تصحيح الكلمات",
         "description": "حساسية تصحيح الكلمات المخصصة"
@@ -448,10 +348,6 @@
         "months3": "بعد 3 أشهر",
         "placeholder": "اختر فترة الاحتفاظ..."
       },
-      "alwaysOnMicrophone": {
-        "label": "ميكروفون يعمل دائماً",
-        "description": "إبقاء الميكروفون نشطاً لاستجابة أسرع"
-      },
       "clamshellMicrophone": {
         "title": "ميكروفون وضع الإغلاق",
         "description": "الميكروفون المراد استخدامه عندما يكون غطاء المحمول مغلقاً"
@@ -460,31 +356,10 @@
         "label": "معالجة لاحقة",
         "description": "تمكين تحسين النص المدعوم بالذكاء الاصطناعي بعد التفريغ الصوتي"
       },
-      "muteWhileRecording": {
-        "label": "كتم الصوت أثناء التسجيل",
-        "description": "كتم صوت النظام أثناء التسجيل"
-      },
-      "appendTrailingSpace": {
-        "label": "إضافة مسافة تابعة",
-        "description": "إضافة مسافة بعد التفريغ الملصق"
-      },
-      "keyboardImplementation": {
-        "title": "تنفيذ لوحة المفاتيح",
-        "description": ".اختر الواجهة الخلفية لاختصارات لوحة المفاتيح",
-        "bindingsReset": "كانت اختصارات لوحة المفاتيح غير متوافقة وتمت إعادة تعيينها إلى القيم الافتراضية"
-      },
       "paths": {
         "appData": "بيانات التطبيق:",
         "models": "النماذج:",
         "settings": "الإعدادات:"
-      },
-      "pasteDelay": {
-        "title": "تأخير اللصق",
-        "description": "التأخير قبل إرسال ضغطة مفتاح اللصق (بالمللي ثانية). قم بزيادتها إذا تم لصق نص خاطئ."
-      },
-      "recordingBuffer": {
-        "title": "مخزن التسجيل الإضافي",
-        "description": "وقت إضافي (بالمللي ثانية) للاستمرار في التسجيل بعد تحرير المفتاح، لالتقاط الصوت المتبقي. 0 = لا مخزن إضافي."
       }
     },
     "about": {

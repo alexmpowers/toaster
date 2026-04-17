@@ -1,13 +1,4 @@
 {
-  "tray": {
-    "settings": "Inställningar...",
-    "checkUpdates": "Sök efter uppdateringar...",
-    "copyLastTranscript": "Kopiera senaste transkriptionen",
-    "unloadModel": "Avlasta modell",
-    "model": "Modell",
-    "quit": "Avsluta",
-    "cancel": "Avbryt"
-  },
   "sidebar": {
     "general": "Allmänt",
     "models": "Modeller",
@@ -191,10 +182,6 @@
         "searchPlaceholder": "Sök språk...",
         "noResults": "Inga språk hittades",
         "auto": "Auto"
-      },
-      "pushToTalk": {
-        "label": "Tryck för att tala",
-        "description": "Håll ned för att spela in, släpp för att stoppa"
       }
     },
     "models": {
@@ -214,29 +201,6 @@
         "allLanguages": "Alla språk"
       },
       "noModelsMatch": "Inga modeller matchar detta filter."
-    },
-    "sound": {
-      "title": "Ljud",
-      "microphone": {
-        "title": "Mikrofon",
-        "description": "Välj din föredragna mikrofonenhet",
-        "placeholder": "Välj mikrofon...",
-        "loading": "Laddar..."
-      },
-      "audioFeedback": {
-        "label": "Ljudåterkoppling",
-        "description": "Spela upp ljud när inspelningen startar och stoppar"
-      },
-      "outputDevice": {
-        "title": "Utmatningsenhet",
-        "description": "Välj din föredragna ljudutmatningsenhet för återkopplingsljud",
-        "placeholder": "Välj utmatningsenhet...",
-        "loading": "Laddar..."
-      },
-      "volume": {
-        "title": "Volym",
-        "description": "Justera volymen för ljudåterkopplingsljud"
-      }
     },
     "advanced": {
       "title": "Avancerat",
@@ -268,66 +232,6 @@
           "title": "GPU-enhet",
           "description": "Välj vilken GPU som ska användas för Whisper-inferens. Auto väljer den dedikerade GPU:n.",
           "auto": "Auto"
-        }
-      },
-      "startHidden": {
-        "label": "Starta dold",
-        "description": "Starta i systemfältet utan att öppna fönstret."
-      },
-      "autostart": {
-        "label": "Starta vid uppstart",
-        "description": "Starta Toaster automatiskt när du loggar in på din dator."
-      },
-      "showTrayIcon": {
-        "label": "Visa ikon i systemfältet",
-        "description": "Visa Toaster-ikonen i systemfältet."
-      },
-      "overlay": {
-        "title": "Överlagringsposition",
-        "description": "Visa visuell återkoppling under inspelning och transkription. På Linux rekommenderas 'Ingen'.",
-        "options": {
-          "none": "Ingen",
-          "bottom": "Nederst",
-          "top": "Överst"
-        }
-      },
-      "pasteMethod": {
-        "title": "Klistra-in-metod",
-        "description": "Välj hur text infogas. Direkt: simulerar skrivande via systeminmatning. Ingen: hoppar över klistra in, uppdaterar endast historik/urklipp.",
-        "options": {
-          "clipboard": "Urklipp ({{modifier}}+V)",
-          "clipboardCtrlShiftV": "Urklipp (Ctrl+Shift+V)",
-          "clipboardShiftInsert": "Urklipp (Shift+Insert)",
-          "direct": "Direkt",
-          "none": "Ingen",
-          "externalScript": "Externt skript"
-        },
-        "externalScriptPlaceholder": "/sökväg/till/ditt/skript.sh"
-      },
-      "typingTool": {
-        "title": "Skrivverktyg",
-        "description": "Välj vilket Linux-skrivverktyg som ska användas för metoden Direkt klistra in. Auto kommer automatiskt att upptäcka och använda det bästa tillgängliga verktyget för ditt system.",
-        "options": {
-          "auto": "Auto (Rekommenderas)"
-        }
-      },
-      "clipboardHandling": {
-        "title": "Hantering av urklipp",
-        "description": "Ändra inte urklipp bevarar ditt nuvarande urklippsinnehåll efter transkription. Kopiera till urklipp lämnar transkriptionsresultatet i ditt urklipp efter att ha klistrat in.",
-        "options": {
-          "dontModify": "Ändra inte urklipp",
-          "copyToClipboard": "Kopiera till urklipp"
-        }
-      },
-      "autoSubmit": {
-        "title": "Skicka automatiskt",
-        "description": "Skicka automatiskt den valda tangentkombinationen efter textinsättning. Cmd+Enter gäller på macOS, medan Windows/Linux använder Super+Enter.",
-        "options": {
-          "off": "Av",
-          "enter": "Enter",
-          "cmdEnter": "Cmd+Enter",
-          "superEnter": "Super+Enter",
-          "ctrlEnter": "Ctrl+Enter"
         }
       },
       "translateToEnglish": {
@@ -447,10 +351,6 @@
         "label": "Sök efter uppdateringar",
         "description": "Sök automatiskt efter nya versioner av Toaster"
       },
-      "soundTheme": {
-        "label": "Ljudtema",
-        "description": "Välj ett ljudtema för återkoppling vid start och stopp av inspelning"
-      },
       "wordCorrectionThreshold": {
         "title": "Tröskelvärde för ordkorrigering",
         "description": "Känslighet för anpassade ordkorrigeringar"
@@ -470,10 +370,6 @@
         "months3": "Efter 3 månader",
         "placeholder": "Välj lagringsperiod..."
       },
-      "alwaysOnMicrophone": {
-        "label": "Alltid påslagen mikrofon",
-        "description": "Håll mikrofonen aktiv för snabbare svar"
-      },
       "clamshellMicrophone": {
         "title": "Clamshell-mikrofon",
         "description": "Mikrofon som ska användas när bärbara datorns lock är stängt"
@@ -482,31 +378,10 @@
         "label": "Efterbearbetning",
         "description": "Aktivera AI-driven textförfining efter transkription"
       },
-      "muteWhileRecording": {
-        "label": "Ljudlös under inspelning",
-        "description": "Stäng av systemljudet under inspelning"
-      },
-      "appendTrailingSpace": {
-        "label": "Lägg till avslutande mellanslag",
-        "description": "Lägg till ett mellanslag efter klistrad transkription"
-      },
-      "keyboardImplementation": {
-        "title": "Tangentbordsimplementering",
-        "description": "Välj tangentbordsgenvägens implementation.",
-        "bindingsReset": "Kortkommandona var inkompatibla och återställdes till standardvärden"
-      },
       "paths": {
         "appData": "Appdata:",
         "models": "Modeller:",
         "settings": "Inställningar:"
-      },
-      "pasteDelay": {
-        "title": "Fördröjning vid klistra in",
-        "description": "Fördröjning innan klistra in-tangenttryckning skickas (i millisekunder). Öka om fel text klistras in."
-      },
-      "recordingBuffer": {
-        "title": "Extra inspelningsbuffert",
-        "description": "Extra tid (i millisekunder) för att fortsätta spela in efter att du släppt tangenten, för att fånga upp avslutande ljud. 0 = ingen extra buffert."
       }
     },
     "about": {

@@ -1,13 +1,4 @@
 {
-  "tray": {
-    "settings": "設定...",
-    "checkUpdates": "アップデートを確認...",
-    "copyLastTranscript": "最新の文字起こしをコピー",
-    "unloadModel": "モデルをアンロード",
-    "model": "モデル",
-    "quit": "終了",
-    "cancel": "キャンセル"
-  },
   "sidebar": {
     "general": "一般",
     "models": "モデル",
@@ -209,33 +200,6 @@
         "searchPlaceholder": "言語を検索...",
         "noResults": "言語が見つかりません",
         "auto": "自動"
-      },
-      "pushToTalk": {
-        "label": "プッシュトゥトーク",
-        "description": "押し続けて録音、離して停止"
-      }
-    },
-    "sound": {
-      "title": "サウンド",
-      "microphone": {
-        "title": "マイク",
-        "description": "使用するマイクデバイスを選択",
-        "placeholder": "マイクを選択...",
-        "loading": "読み込み中..."
-      },
-      "audioFeedback": {
-        "label": "音声フィードバック",
-        "description": "録音の開始と停止時にサウンドを再生"
-      },
-      "outputDevice": {
-        "title": "出力デバイス",
-        "description": "フィードバックサウンド用の音声出力デバイスを選択",
-        "placeholder": "出力デバイスを選択...",
-        "loading": "読み込み中..."
-      },
-      "volume": {
-        "title": "音量",
-        "description": "音声フィードバックの音量を調整"
       }
     },
     "advanced": {
@@ -268,66 +232,6 @@
           "title": "GPUデバイス",
           "description": "Whisper推論に使用するGPUを選択します。自動は専用GPUを選択します。",
           "auto": "自動"
-        }
-      },
-      "startHidden": {
-        "label": "非表示で起動",
-        "description": "ウィンドウを開かずにシステムトレイに起動。"
-      },
-      "autostart": {
-        "label": "起動時に実行",
-        "description": "コンピューターにログインしたときにToasterを自動的に起動。"
-      },
-      "showTrayIcon": {
-        "label": "トレイアイコンを表示",
-        "description": "システムトレイにToasterのアイコンを表示します。"
-      },
-      "overlay": {
-        "title": "オーバーレイ位置",
-        "description": "録音と文字起こし中に視覚的なフィードバックオーバーレイを表示。Linuxでは「なし」を推奨。",
-        "options": {
-          "none": "なし",
-          "bottom": "下",
-          "top": "上"
-        }
-      },
-      "pasteMethod": {
-        "title": "貼り付け方法",
-        "description": "テキストの挿入方法を選択。直接：システム入力でタイピングをシミュレート。なし：貼り付けをスキップし、履歴/クリップボードのみ更新。",
-        "options": {
-          "clipboard": "クリップボード ({{modifier}}+V)",
-          "clipboardCtrlShiftV": "クリップボード (Ctrl+Shift+V)",
-          "clipboardShiftInsert": "クリップボード (Shift+Insert)",
-          "direct": "直接",
-          "none": "なし",
-          "externalScript": "外部スクリプト"
-        },
-        "externalScriptPlaceholder": "/path/to/your/script.sh"
-      },
-      "typingTool": {
-        "title": "タイピングツール",
-        "description": "直接貼り付け方式で使用する Linux のタイピングツールを選択します。Auto は自動的に最適なツールを検出して使用します。",
-        "options": {
-          "auto": "Auto（推奨）"
-        }
-      },
-      "clipboardHandling": {
-        "title": "クリップボードの処理",
-        "description": "クリップボードを変更しないを選択すると、文字起こし後も現在のクリップボード内容が保持されます。クリップボードにコピーを選択すると、貼り付け後も文字起こし結果がクリップボードに残ります。",
-        "options": {
-          "dontModify": "クリップボードを変更しない",
-          "copyToClipboard": "クリップボードにコピー"
-        }
-      },
-      "autoSubmit": {
-        "title": "自動送信",
-        "description": "テキスト挿入後に選択したキーの組み合わせを自動的に送信します。macOSではCmd+Enter、Windows/LinuxではSuper+Enterが適用されます。",
-        "options": {
-          "off": "オフ",
-          "enter": "Enter",
-          "cmdEnter": "Cmd+Enter",
-          "superEnter": "Super+Enter",
-          "ctrlEnter": "Ctrl+Enter"
         }
       },
       "translateToEnglish": {
@@ -447,10 +351,6 @@
         "label": "アップデートを確認",
         "description": "Toasterの新しいバージョンを自動的にチェック"
       },
-      "soundTheme": {
-        "label": "サウンドテーマ",
-        "description": "録音開始・停止フィードバックのサウンドテーマを選択"
-      },
       "wordCorrectionThreshold": {
         "title": "単語修正しきい値",
         "description": "カスタム単語修正の感度"
@@ -470,10 +370,6 @@
         "months3": "3ヶ月後",
         "placeholder": "保持期間を選択..."
       },
-      "alwaysOnMicrophone": {
-        "label": "マイク常時オン",
-        "description": "より速い応答のためにマイクをアクティブに保つ"
-      },
       "clamshellMicrophone": {
         "title": "クラムシェルマイク",
         "description": "ノートパソコンの蓋を閉じたときに使用するマイク"
@@ -482,31 +378,10 @@
         "label": "後処理",
         "description": "文字起こし後のAIによるテキスト改善を有効化"
       },
-      "muteWhileRecording": {
-        "label": "録音中にミュート",
-        "description": "録音中にシステムオーディオをミュート"
-      },
-      "appendTrailingSpace": {
-        "label": "末尾にスペースを追加",
-        "description": "貼り付けた文字起こしの後にスペースを追加"
-      },
-      "keyboardImplementation": {
-        "title": "キーボード実装",
-        "description": "キーボードショートカットのバックエンドを選択してください。",
-        "bindingsReset": "キーボードショートカットに互換性がなかったため、デフォルトにリセットされました"
-      },
       "paths": {
         "appData": "アプリデータ:",
         "models": "モデル:",
         "settings": "設定:"
-      },
-      "pasteDelay": {
-        "title": "貼り付け遅延",
-        "description": "貼り付けキー送信前の遅延（ミリ秒）。間違ったテキストが貼り付けられる場合は増やしてください。"
-      },
-      "recordingBuffer": {
-        "title": "追加録音バッファ",
-        "description": "キーを離した後に録音を続ける追加時間（ミリ秒）。末尾の音声を捕捉するため。0 = 追加バッファなし。"
       }
     },
     "about": {

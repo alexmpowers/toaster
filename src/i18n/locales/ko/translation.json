@@ -1,13 +1,4 @@
 {
-  "tray": {
-    "settings": "설정...",
-    "checkUpdates": "업데이트 확인...",
-    "copyLastTranscript": "마지막 녹음 내용 복사",
-    "unloadModel": "모델 언로드",
-    "model": "모델",
-    "quit": "종료",
-    "cancel": "취소"
-  },
   "sidebar": {
     "general": "일반",
     "models": "모델",
@@ -191,33 +182,6 @@
         "searchPlaceholder": "언어 검색...",
         "noResults": "언어를 찾을 수 없습니다",
         "auto": "자동"
-      },
-      "pushToTalk": {
-        "label": "녹음 중 단축키 홀딩",
-        "description": "누르고 있으면 녹음, 놓으면 정지"
-      }
-    },
-    "sound": {
-      "title": "사운드",
-      "microphone": {
-        "title": "마이크",
-        "description": "선호하는 마이크 장치를 선택하세요",
-        "placeholder": "마이크 선택...",
-        "loading": "로딩 중..."
-      },
-      "audioFeedback": {
-        "label": "오디오 피드백",
-        "description": "녹음 시작 및 정지 시 소리 재생"
-      },
-      "outputDevice": {
-        "title": "출력 장치",
-        "description": "피드백 사운드를 위한 오디오 출력 장치를 선택하세요",
-        "placeholder": "출력 장치 선택...",
-        "loading": "로딩 중..."
-      },
-      "volume": {
-        "title": "볼륨",
-        "description": "오디오 피드백 사운드의 볼륨 조절"
       }
     },
     "models": {
@@ -268,66 +232,6 @@
           "title": "GPU 장치",
           "description": "Whisper 추론에 사용할 GPU를 선택합니다. 자동은 전용 GPU를 선택합니다.",
           "auto": "자동"
-        }
-      },
-      "startHidden": {
-        "label": "숨김으로 시작",
-        "description": "창을 열지 않고 시스템 트레이에서 실행합니다."
-      },
-      "autostart": {
-        "label": "시작 시 실행",
-        "description": "컴퓨터 로그인 시 Toaster를 자동으로 시작합니다."
-      },
-      "showTrayIcon": {
-        "label": "트레이 아이콘 표시",
-        "description": "시스템 트레이에 Toaster 아이콘을 표시합니다."
-      },
-      "overlay": {
-        "title": "오버레이 위치",
-        "description": "녹음 및 전사 중 시각적 피드백 오버레이를 표시합니다. Linux에서는 '없음'을 권장합니다.",
-        "options": {
-          "none": "없음",
-          "bottom": "하단",
-          "top": "상단"
-        }
-      },
-      "pasteMethod": {
-        "title": "붙여넣기 방법",
-        "description": "텍스트 삽입 방법을 선택하세요. 직접: 시스템 입력을 통해 타이핑 시뮬레이션. 없음: 붙여넣기를 건너뛰고 히스토리/클립보드만 업데이트합니다.",
-        "options": {
-          "clipboard": "클립보드 ({{modifier}}+V)",
-          "clipboardCtrlShiftV": "클립보드 (Ctrl+Shift+V)",
-          "clipboardShiftInsert": "클립보드 (Shift+Insert)",
-          "direct": "직접",
-          "none": "없음",
-          "externalScript": "외부 스크립트"
-        },
-        "externalScriptPlaceholder": "/path/to/your/script.sh"
-      },
-      "typingTool": {
-        "title": "타이핑 도구",
-        "description": "직접 붙여넣기 방식에 사용할 Linux 타이핑 도구를 선택하세요. Auto는 시스템에서 사용 가능한 최적의 도구를 자동으로 감지해 사용합니다.",
-        "options": {
-          "auto": "Auto (권장)"
-        }
-      },
-      "clipboardHandling": {
-        "title": "클립보드 처리",
-        "description": "클립보드 수정 안 함은 전사 후 현재 클립보드 내용을 보존합니다. 클립보드에 복사는 붙여넣기 후 전사 결과를 클립보드에 남겨둡니다.",
-        "options": {
-          "dontModify": "클립보드 수정 안 함",
-          "copyToClipboard": "클립보드에 복사"
-        }
-      },
-      "autoSubmit": {
-        "title": "자동 제출",
-        "description": "텍스트 삽입 후 선택한 키 조합을 자동으로 전송합니다. macOS에서는 Cmd+Enter가, Windows/Linux에서는 Super+Enter가 적용됩니다.",
-        "options": {
-          "off": "끄기",
-          "enter": "Enter",
-          "cmdEnter": "Cmd+Enter",
-          "superEnter": "Super+Enter",
-          "ctrlEnter": "Ctrl+Enter"
         }
       },
       "translateToEnglish": {
@@ -447,10 +351,6 @@
         "label": "업데이트 확인",
         "description": "Toaster의 새 버전을 자동으로 확인합니다"
       },
-      "soundTheme": {
-        "label": "사운드 테마",
-        "description": "녹음 시작 및 정지 피드백을 위한 사운드 테마를 선택하세요"
-      },
       "wordCorrectionThreshold": {
         "title": "단어 수정 임계값",
         "description": "사용자 정의 단어 수정의 민감도"
@@ -470,10 +370,6 @@
         "months3": "3개월 후",
         "placeholder": "보관 기간 선택..."
       },
-      "alwaysOnMicrophone": {
-        "label": "항상 켜진 마이크",
-        "description": "더 빠른 응답을 위해 마이크를 활성 상태로 유지"
-      },
       "clamshellMicrophone": {
         "title": "클램셸 마이크",
         "description": "노트북 덮개가 닫혀 있을 때 사용할 마이크"
@@ -481,27 +377,6 @@
       "postProcessingToggle": {
         "label": "후처리",
         "description": "텍스트 변환 후 AI 기반 텍스트 개선 활성화"
-      },
-      "muteWhileRecording": {
-        "label": "녹음 중 음소거",
-        "description": "녹음 중 시스템 오디오 음소거"
-      },
-      "appendTrailingSpace": {
-        "label": "끝 공백 추가",
-        "description": "붙여넣은 텍스트 끝에 공백 추가"
-      },
-      "keyboardImplementation": {
-        "title": "키보드 구현",
-        "description": "키보드 단축키 백엔드를 선택하세요.",
-        "bindingsReset": "키보드 단축키가 호환되지 않아 기본값으로 재설정되었습니다"
-      },
-      "pasteDelay": {
-        "title": "붙여넣기 지연",
-        "description": "붙여넣기 키 입력을 보내기 전 지연 시간(밀리초). 잘못된 텍스트가 붙여넣어지면 늘리세요."
-      },
-      "recordingBuffer": {
-        "title": "추가 녹음 버퍼",
-        "description": "키를 놓은 후 추가로 녹음을 계속하는 시간(밀리초). 후행 오디오를 캡처하기 위함. 0 = 추가 버퍼 없음."
       },
       "paths": {
         "appData": "앱 데이터:",

@@ -1,13 +1,4 @@
 {
-  "tray": {
-    "settings": "設定...",
-    "checkUpdates": "檢查更新...",
-    "copyLastTranscript": "複製最新轉錄",
-    "unloadModel": "卸載模型",
-    "model": "模型",
-    "quit": "結束",
-    "cancel": "取消"
-  },
   "sidebar": {
     "general": "一般",
     "models": "模型",
@@ -191,10 +182,6 @@
         "searchPlaceholder": "搜尋語言...",
         "noResults": "未找到語言",
         "auto": "自動"
-      },
-      "pushToTalk": {
-        "label": "按住說話",
-        "description": "按住錄製，放開停止"
       }
     },
     "models": {
@@ -214,29 +201,6 @@
         "allLanguages": "所有語言"
       },
       "noModelsMatch": "沒有符合此篩選條件的模型"
-    },
-    "sound": {
-      "title": "聲音",
-      "microphone": {
-        "title": "麥克風",
-        "description": "選擇您偏好的麥克風裝置",
-        "placeholder": "選擇麥克風...",
-        "loading": "載入中..."
-      },
-      "audioFeedback": {
-        "label": "聲音回饋",
-        "description": "錄製開始和停止時播放聲音"
-      },
-      "outputDevice": {
-        "title": "輸出裝置",
-        "description": "選擇用於聲音回饋的音訊輸出裝置",
-        "placeholder": "選擇輸出裝置...",
-        "loading": "載入中..."
-      },
-      "volume": {
-        "title": "音量",
-        "description": "調整聲音回饋的音量"
-      }
     },
     "advanced": {
       "title": "進階",
@@ -268,66 +232,6 @@
           "title": "GPU 裝置",
           "description": "選擇用於 Whisper 推理的 GPU。自動選擇獨立 GPU。",
           "auto": "自動"
-        }
-      },
-      "startHidden": {
-        "label": "隱藏啟動",
-        "description": "啟動至系統匣而不開啟視窗"
-      },
-      "autostart": {
-        "label": "開機啟動",
-        "description": "登入電腦時自動啟動 Toaster"
-      },
-      "showTrayIcon": {
-        "label": "顯示系統匣圖示",
-        "description": "在系統匣中顯示 Toaster 圖示"
-      },
-      "overlay": {
-        "title": "懸浮窗位置",
-        "description": "在錄製和轉錄期間顯示視覺回饋懸浮窗。在 Linux 上建議選擇「無」",
-        "options": {
-          "none": "無",
-          "bottom": "底部",
-          "top": "頂部"
-        }
-      },
-      "pasteMethod": {
-        "title": "貼上方式",
-        "description": "選擇文字插入方式。直接：透過系統輸入模擬打字。無：跳過貼上，僅更新歷史紀錄/剪貼簿",
-        "options": {
-          "clipboard": "剪貼簿 ({{modifier}}+V)",
-          "clipboardCtrlShiftV": "剪貼簿 (Ctrl+Shift+V)",
-          "clipboardShiftInsert": "剪貼簿 (Shift+Insert)",
-          "direct": "直接",
-          "none": "無",
-          "externalScript": "外部腳本"
-        },
-        "externalScriptPlaceholder": "/path/to/your/script.sh"
-      },
-      "typingTool": {
-        "title": "輸入工具",
-        "description": "選擇在直接貼上方式下使用的 Linux 輸入工具。選擇自動會自動偵測並使用系統中可用的最佳工具",
-        "options": {
-          "auto": "自動（推薦）"
-        }
-      },
-      "clipboardHandling": {
-        "title": "剪貼簿處理",
-        "description": "不修改剪貼簿將在轉錄後保留目前剪貼簿內容。複製到剪貼簿會在貼上後將轉錄結果留在剪貼簿中",
-        "options": {
-          "dontModify": "不修改剪貼簿",
-          "copyToClipboard": "複製到剪貼簿"
-        }
-      },
-      "autoSubmit": {
-        "title": "自動送出",
-        "description": "插入文字後自動發送指定的按鍵組合。macOS 為 Cmd+Enter，Windows/Linux 為 Super+Enter",
-        "options": {
-          "off": "關閉",
-          "enter": "Enter",
-          "cmdEnter": "Cmd+Enter",
-          "superEnter": "Super+Enter",
-          "ctrlEnter": "Ctrl+Enter"
         }
       },
       "translateToEnglish": {
@@ -447,10 +351,6 @@
         "label": "檢查更新",
         "description": "自動檢查 Toaster 的新版本"
       },
-      "soundTheme": {
-        "label": "聲音主題",
-        "description": "選擇錄製開始和停止回饋的聲音主題"
-      },
       "wordCorrectionThreshold": {
         "title": "詞彙修正閾值",
         "description": "自訂詞彙修正的靈敏度"
@@ -470,10 +370,6 @@
         "months3": "3 個月後",
         "placeholder": "選擇保留期限..."
       },
-      "alwaysOnMicrophone": {
-        "label": "麥克風常開",
-        "description": "保持麥克風啟用以獲得更快的回應"
-      },
       "clamshellMicrophone": {
         "title": "闔蓋麥克風",
         "description": "筆記型電腦闔蓋時使用的麥克風"
@@ -482,31 +378,10 @@
         "label": "後處理",
         "description": "啟用轉錄後的 AI 文字最佳化"
       },
-      "muteWhileRecording": {
-        "label": "錄製時靜音",
-        "description": "錄製期間靜音系統音訊"
-      },
-      "appendTrailingSpace": {
-        "label": "附加尾部空格",
-        "description": "在貼上的轉錄後新增空格"
-      },
-      "keyboardImplementation": {
-        "title": "鍵盤實作",
-        "description": "選擇鍵盤快捷鍵的後端",
-        "bindingsReset": "鍵盤快捷鍵不相容，已重設為預設值"
-      },
       "paths": {
         "appData": "應用程式資料:",
         "models": "模型:",
         "settings": "設定:"
-      },
-      "pasteDelay": {
-        "title": "貼上延遲",
-        "description": "發送貼上按鍵前的延遲（毫秒）。如果貼上了錯誤的文字，請增加此值"
-      },
-      "recordingBuffer": {
-        "title": "額外錄音緩衝",
-        "description": "放開按鍵後繼續錄音的額外時間（毫秒），以捕捉尾音。0 = 無額外緩衝。"
       }
     },
     "about": {

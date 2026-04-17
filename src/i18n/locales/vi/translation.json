@@ -1,13 +1,4 @@
 {
-  "tray": {
-    "settings": "Cài đặt...",
-    "checkUpdates": "Kiểm tra cập nhật...",
-    "copyLastTranscript": "Sao chép bản chép lời mới nhất",
-    "unloadModel": "Dỡ mô hình",
-    "model": "Mô hình",
-    "quit": "Thoát",
-    "cancel": "Hủy"
-  },
   "sidebar": {
     "general": "Chung",
     "models": "Mô hình",
@@ -209,33 +200,6 @@
         "searchPlaceholder": "Tìm kiếm ngôn ngữ...",
         "noResults": "Không tìm thấy ngôn ngữ",
         "auto": "Tự động"
-      },
-      "pushToTalk": {
-        "label": "Nhấn để nói",
-        "description": "Giữ để ghi âm, thả để dừng"
-      }
-    },
-    "sound": {
-      "title": "Âm thanh",
-      "microphone": {
-        "title": "Micrô",
-        "description": "Chọn thiết bị micrô ưa thích của bạn",
-        "placeholder": "Chọn micrô...",
-        "loading": "Đang tải..."
-      },
-      "audioFeedback": {
-        "label": "Phản hồi âm thanh",
-        "description": "Phát âm thanh khi bắt đầu và kết thúc ghi âm"
-      },
-      "outputDevice": {
-        "title": "Thiết bị đầu ra",
-        "description": "Chọn thiết bị đầu ra âm thanh ưa thích của bạn cho âm thanh phản hồi",
-        "placeholder": "Chọn thiết bị đầu ra...",
-        "loading": "Đang tải..."
-      },
-      "volume": {
-        "title": "Âm lượng",
-        "description": "Điều chỉnh âm lượng của âm thanh phản hồi"
       }
     },
     "advanced": {
@@ -268,66 +232,6 @@
           "title": "Thiết bị GPU",
           "description": "Chọn GPU để sử dụng cho suy luận Whisper. Tự động chọn GPU chuyên dụng.",
           "auto": "Tự động"
-        }
-      },
-      "startHidden": {
-        "label": "Khởi động ẩn",
-        "description": "Khởi động vào khay hệ thống mà không mở cửa sổ."
-      },
-      "autostart": {
-        "label": "Khởi động cùng hệ thống",
-        "description": "Tự động khởi động Toaster khi bạn đăng nhập vào máy tính."
-      },
-      "showTrayIcon": {
-        "label": "Hiển thị biểu tượng khay",
-        "description": "Hiển thị biểu tượng Toaster trong khay hệ thống."
-      },
-      "overlay": {
-        "title": "Vị trí lớp phủ",
-        "description": "Hiển thị lớp phủ phản hồi trực quan trong quá trình ghi âm và chuyển đổi. Trên Linux, 'Không có' được khuyến nghị.",
-        "options": {
-          "none": "Không có",
-          "bottom": "Dưới",
-          "top": "Trên"
-        }
-      },
-      "pasteMethod": {
-        "title": "Phương thức dán",
-        "description": "Chọn cách chèn văn bản. Trực tiếp: mô phỏng gõ phím qua đầu vào hệ thống. Không có: bỏ qua dán, chỉ cập nhật lịch sử/clipboard.",
-        "options": {
-          "clipboard": "Clipboard ({{modifier}}+V)",
-          "clipboardCtrlShiftV": "Clipboard (Ctrl+Shift+V)",
-          "clipboardShiftInsert": "Clipboard (Shift+Insert)",
-          "direct": "Trực tiếp",
-          "none": "Không có",
-          "externalScript": "Script bên ngoài"
-        },
-        "externalScriptPlaceholder": "/duong-dan/toi/script.sh"
-      },
-      "typingTool": {
-        "title": "Công cụ gõ",
-        "description": "Chọn công cụ gõ trên Linux cho phương thức dán trực tiếp. Auto sẽ tự động phát hiện và dùng công cụ tốt nhất có sẵn cho hệ thống của bạn.",
-        "options": {
-          "auto": "Auto (Khuyến nghị)"
-        }
-      },
-      "clipboardHandling": {
-        "title": "Xử lý Clipboard",
-        "description": "Không sửa đổi Clipboard giữ nguyên nội dung clipboard hiện tại sau khi chuyển đổi. Sao chép vào Clipboard để lại kết quả chuyển đổi trong clipboard sau khi dán.",
-        "options": {
-          "dontModify": "Không sửa đổi Clipboard",
-          "copyToClipboard": "Sao chép vào Clipboard"
-        }
-      },
-      "autoSubmit": {
-        "title": "Gửi tự động",
-        "description": "Tự động gửi tổ hợp phím đã chọn sau khi chèn văn bản. Cmd+Enter áp dụng trên macOS, còn Windows/Linux dùng Super+Enter.",
-        "options": {
-          "off": "Tắt",
-          "enter": "Enter",
-          "cmdEnter": "Cmd+Enter",
-          "superEnter": "Super+Enter",
-          "ctrlEnter": "Ctrl+Enter"
         }
       },
       "translateToEnglish": {
@@ -447,10 +351,6 @@
         "label": "Kiểm tra cập nhật",
         "description": "Tự động kiểm tra phiên bản mới của Toaster"
       },
-      "soundTheme": {
-        "label": "Chủ đề âm thanh",
-        "description": "Chọn chủ đề âm thanh cho phản hồi bắt đầu và kết thúc ghi âm"
-      },
       "wordCorrectionThreshold": {
         "title": "Ngưỡng sửa từ",
         "description": "Độ nhạy cho việc sửa từ tùy chỉnh"
@@ -470,10 +370,6 @@
         "months3": "Sau 3 tháng",
         "placeholder": "Chọn thời gian lưu giữ..."
       },
-      "alwaysOnMicrophone": {
-        "label": "Micrô luôn bật",
-        "description": "Giữ micrô hoạt động để phản hồi nhanh hơn"
-      },
       "clamshellMicrophone": {
         "title": "Micrô chế độ gập",
         "description": "Micrô sử dụng khi nắp laptop được đóng"
@@ -482,31 +378,10 @@
         "label": "Xử lý sau",
         "description": "Bật tinh chỉnh văn bản bằng AI sau khi chuyển đổi"
       },
-      "muteWhileRecording": {
-        "label": "Tắt tiếng khi ghi âm",
-        "description": "Tắt tiếng âm thanh hệ thống trong khi ghi âm"
-      },
-      "appendTrailingSpace": {
-        "label": "Thêm dấu cách cuối",
-        "description": "Thêm một dấu cách sau bản ghi đã dán"
-      },
-      "keyboardImplementation": {
-        "title": "Triển khai bàn phím",
-        "description": "Chọn hệ thống xử lý phím tắt.",
-        "bindingsReset": "Các phím tắt không tương thích và đã được đặt lại về mặc định"
-      },
       "paths": {
         "appData": "Dữ liệu ứng dụng:",
         "models": "Mô hình:",
         "settings": "Cài đặt:"
-      },
-      "pasteDelay": {
-        "title": "Độ trễ dán",
-        "description": "Độ trễ trước khi gửi phím dán (tính bằng mili giây). Tăng nếu văn bản sai đang được dán."
-      },
-      "recordingBuffer": {
-        "title": "Bộ đệm ghi âm thêm",
-        "description": "Thời gian thêm (tính bằng mili giây) để tiếp tục ghi âm sau khi nhả phím, để thu âm thanh cuối. 0 = không có bộ đệm thêm."
       }
     },
     "about": {

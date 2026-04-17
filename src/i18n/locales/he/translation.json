@@ -1,13 +1,4 @@
 {
-  "tray": {
-    "settings": "הגדרות...",
-    "checkUpdates": "בדוק עדכונים...",
-    "copyLastTranscript": "העתק את התמלול האחרון",
-    "unloadModel": "פרוק מודל",
-    "model": "מודל",
-    "quit": "יציאה",
-    "cancel": "ביטול"
-  },
   "sidebar": {
     "general": "כללי",
     "models": "מודלים",
@@ -191,10 +182,6 @@
         "searchPlaceholder": "חפש שפות...",
         "noResults": "לא נמצאו שפות",
         "auto": "אוטומטי"
-      },
-      "pushToTalk": {
-        "label": "לחץ כדי לדבר",
-        "description": "החזק כדי להקליט, שחרר כדי לעצור"
       }
     },
     "models": {
@@ -214,29 +201,6 @@
         "allLanguages": "כל השפות"
       },
       "noModelsMatch": "אין מודלים שמתאימים לסינון הזה."
-    },
-    "sound": {
-      "title": "שמע",
-      "microphone": {
-        "title": "מיקרופון",
-        "description": "בחר את המיקרופון המועדף עליך",
-        "placeholder": "בחר מיקרופון...",
-        "loading": "טוען..."
-      },
-      "audioFeedback": {
-        "label": "משוב קולי",
-        "description": "נגן צליל כשההקלטה מתחילה ומסתיימת"
-      },
-      "outputDevice": {
-        "title": "התקן פלט",
-        "description": "בחר את התקן השמע המועדף עליך עבור צלילי המשוב",
-        "placeholder": "בחר התקן פלט...",
-        "loading": "טוען..."
-      },
-      "volume": {
-        "title": "עוצמת קול",
-        "description": "כוונן את עוצמת צלילי המשוב"
-      }
     },
     "advanced": {
       "title": "מתקדם",
@@ -268,66 +232,6 @@
           "title": "התקן GPU",
           "description": "בחר באיזה GPU להשתמש עבור הסקת Whisper. מצב אוטומטי בוחר את ה-GPU הייעודי.",
           "auto": "אוטומטי"
-        }
-      },
-      "startHidden": {
-        "label": "התחל מוסתר",
-        "description": "הפעל לתוך מגש המערכת בלי לפתוח את החלון."
-      },
-      "autostart": {
-        "label": "הפעל עם עליית המערכת",
-        "description": "הפעל את Toaster אוטומטית כשאתה מתחבר למחשב."
-      },
-      "showTrayIcon": {
-        "label": "הצג אייקון במגש",
-        "description": "הצג את האייקון של Toaster במגש המערכת."
-      },
-      "overlay": {
-        "title": "מיקום שכבת המשוב",
-        "description": "הצג שכבת משוב חזותית בזמן הקלטה ותמלול. בלינוקס מומלץ לבחור 'ללא'.",
-        "options": {
-          "none": "ללא",
-          "bottom": "למטה",
-          "top": "למעלה"
-        }
-      },
-      "pasteMethod": {
-        "title": "שיטת הדבקה",
-        "description": "בחר איך הטקסט יוכנס. ישיר: מדמה הקלדה דרך קלט המערכת. ללא: מדלג על הדבקה ומעדכן רק היסטוריה/לוח.",
-        "options": {
-          "clipboard": "לוח ({{modifier}}+V)",
-          "clipboardCtrlShiftV": "לוח (Ctrl+Shift+V)",
-          "clipboardShiftInsert": "לוח (Shift+Insert)",
-          "direct": "ישיר",
-          "none": "ללא",
-          "externalScript": "סקריפט חיצוני"
-        },
-        "externalScriptPlaceholder": "/path/to/your/script.sh"
-      },
-      "typingTool": {
-        "title": "כלי הקלדה",
-        "description": "בחר איזה כלי הקלדה בלינוקס ישמש עבור הדבקה ישירה. מצב אוטומטי יזהה וישתמש בכלי המתאים ביותר למערכת שלך.",
-        "options": {
-          "auto": "אוטומטי (מומלץ)"
-        }
-      },
-      "clipboardHandling": {
-        "title": "התנהגות הלוח",
-        "description": "אל תשנה את הלוח ישמור על תוכן הלוח הנוכחי שלך אחרי התמלול. העתק ללוח ישאיר את תוצאת התמלול בלוח אחרי ההדבקה.",
-        "options": {
-          "dontModify": "אל תשנה את הלוח",
-          "copyToClipboard": "העתק ללוח"
-        }
-      },
-      "autoSubmit": {
-        "title": "שליחה אוטומטית",
-        "description": "שלח אוטומטית את צירוף המקשים שנבחר אחרי הכנסת הטקסט. ב-macOS יופעל Cmd+Enter, וב-Windows/Linux יופעל Super+Enter.",
-        "options": {
-          "off": "כבוי",
-          "enter": "Enter",
-          "cmdEnter": "Cmd+Enter",
-          "superEnter": "Super+Enter",
-          "ctrlEnter": "Ctrl+Enter"
         }
       },
       "translateToEnglish": {
@@ -447,10 +351,6 @@
         "label": "בדוק עדכונים",
         "description": "בדוק אוטומטית אם קיימות גרסאות חדשות של Toaster"
       },
-      "soundTheme": {
-        "label": "ערכת צלילים",
-        "description": "בחר ערכת צלילים להתחלה ולסיום ההקלטה"
-      },
       "wordCorrectionThreshold": {
         "title": "סף תיקון מילים",
         "description": "רגישות לתיקוני מילים מותאמות אישית"
@@ -470,10 +370,6 @@
         "months3": "אחרי 3 חודשים",
         "placeholder": "בחר משך שמירה..."
       },
-      "alwaysOnMicrophone": {
-        "label": "מיקרופון תמיד פעיל",
-        "description": "השאר את המיקרופון פעיל לתגובה מהירה יותר"
-      },
       "clamshellMicrophone": {
         "title": "מיקרופון במצב clamshell",
         "description": "המיקרופון שישמש כשהמחשב הנייד סגור"
@@ -482,31 +378,10 @@
         "label": "עיבוד משלים",
         "description": "הפעל שיפור טקסט מבוסס AI אחרי התמלול"
       },
-      "muteWhileRecording": {
-        "label": "השתק בזמן הקלטה",
-        "description": "השתק את שמע המערכת בזמן הקלטה"
-      },
-      "appendTrailingSpace": {
-        "label": "הוסף רווח בסוף",
-        "description": "הוסף רווח אחרי התמלול המודבק"
-      },
-      "keyboardImplementation": {
-        "title": "מימוש מקלדת",
-        "description": "בחר את מנגנון קיצורי המקלדת.",
-        "bindingsReset": "קיצורי המקלדת לא היו תואמים ואופסו לברירות המחדל"
-      },
       "paths": {
         "appData": "נתוני אפליקציה:",
         "models": "מודלים:",
         "settings": "הגדרות:"
-      },
-      "pasteDelay": {
-        "title": "השהיית הדבקה",
-        "description": "השהיה לפני שליחת צירוף ההדבקה (במילישניות). הגדל אם טקסט שגוי מודבק."
-      },
-      "recordingBuffer": {
-        "title": "באפר הקלטה נוסף",
-        "description": "זמן נוסף (במילישניות) להמשך הקלטה אחרי שחרור המקש, כדי ללכוד סוף דיבור. 0 = בלי באפר נוסף."
       }
     },
     "about": {
