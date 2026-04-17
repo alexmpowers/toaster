@@ -54,6 +54,12 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Check for unused npm dependencies (depcheck)
+        run: npx --yes depcheck --ignores="@types/*,@tailwindcss/vite,tailwindcss,prettier,@playwright/test,happy-dom,@testing-library/*,@vitejs/plugin-react,vite,vitest,@typescript-eslint/parser,sonner"
+
+      - name: Check for unused npm dependencies (knip)
+        run: npx --yes knip --dependencies
+
       - name: Check translation consistency
         run: bun run check:translations
 
@@ -84,6 +90,12 @@ jobs:
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: "./src-tauri -> target"
+
+      - name: Install cargo-machete
+        run: cargo install --locked cargo-machete
+
+      - name: Check for unused Rust dependencies (cargo-machete)
+        run: cargo machete
 
       - name: Use mock TranscriptionManager (CI only)
         run: |
