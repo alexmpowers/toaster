@@ -1,4 +1,4 @@
-use crate::actions::process_transcription_output;
+use crate::transcription_post_process::process_transcription_output;
 use crate::managers::{
     history::{HistoryManager, PaginatedHistory},
     transcription::TranscriptionManager,

@@ -12,6 +12,7 @@ mod settings;
 mod shortcut;
 mod signal_handle;
 mod transcription_coordinator;
+mod transcription_post_process;
 mod utils;
 
 pub use cli::CliArgs;
