@@ -18,7 +18,6 @@ use tauri_specta::{collect_commands, collect_events, Builder};
 
 use commands::editor::EditorStore;
 use env_filter::Builder as EnvFilterBuilder;
-use managers::audio::AudioRecordingManager;
 use managers::editor::EditorState;
 use managers::history::HistoryManager;
 use managers::media::{MediaState, MediaStore};
@@ -183,9 +182,6 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     // on macOS before the user is ready.
 
     // Initialize the managers
-    let recording_manager = Arc::new(
-        AudioRecordingManager::new(app_handle).expect("Failed to initialize recording manager"),
-    );
     let model_manager =
         Arc::new(ModelManager::new(app_handle).expect("Failed to initialize model manager"));
     let transcription_manager = Arc::new(
@@ -199,7 +195,6 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     managers::transcription::apply_accelerator_settings(app_handle);
 
     // Add managers to Tauri's managed state
-    app_handle.manage(recording_manager.clone());
     app_handle.manage(model_manager.clone());
     app_handle.manage(transcription_manager.clone());
     app_handle.manage(history_manager.clone());
@@ -261,7 +256,6 @@ pub fn run(cli_args: CliArgs) {
             commands::app_settings::change_selected_language_setting,
             commands::app_settings::change_debug_mode_setting,
             commands::app_settings::change_word_correction_threshold_setting,
-            commands::app_settings::change_extra_recording_buffer_setting,
             commands::app_settings::change_post_process_enabled_setting,
             commands::app_settings::change_experimental_enabled_setting,
             commands::app_settings::change_experimental_simplify_mode_setting,
@@ -316,21 +310,14 @@ pub fn run(cli_args: CliArgs) {
             commands::models::is_model_loading,
             commands::models::has_any_models_available,
             commands::models::has_any_models_or_downloads,
-            commands::audio::update_microphone_mode,
-            commands::audio::get_microphone_mode,
             commands::audio::get_windows_microphone_permission_status,
             commands::audio::open_microphone_privacy_settings,
             commands::audio::get_available_microphones,
-            commands::audio::set_selected_microphone,
-            commands::audio::get_selected_microphone,
             commands::audio::get_available_output_devices,
             commands::audio::set_selected_output_device,
             commands::audio::get_selected_output_device,
             commands::audio::normalize_playback_audio_contract,
             commands::audio::check_custom_sounds,
-            commands::audio::set_clamshell_microphone,
-            commands::audio::get_clamshell_microphone,
-            commands::audio::is_recording,
             commands::editor::editor_set_words,
             commands::editor::editor_apply_local_llm_proposals,
             commands::editor::editor_get_words,

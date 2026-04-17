@@ -104,15 +104,12 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onError }) => {
         const modelId = event.payload;
         setTimeout(async () => {
           try {
-            const isRecording = await commands.isRecording();
-            if (!isRecording) {
-              setPendingModelId(modelId);
-              setModelError(null);
-              setShowModelDropdown(false);
-              const success = await selectModel(modelId);
-              if (!success) {
-                setPendingModelId(null);
-              }
+            setPendingModelId(modelId);
+            setModelError(null);
+            setShowModelDropdown(false);
+            const success = await selectModel(modelId);
+            if (!success) {
+              setPendingModelId(null);
             }
           } catch {
             // Ignore errors in auto-select

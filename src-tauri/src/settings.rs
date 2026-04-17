@@ -237,12 +237,6 @@ pub struct AppSettings {
     pub update_checks_enabled: bool,
     #[serde(default = "default_model")]
     pub selected_model: String,
-    #[serde(default = "default_always_on_microphone")]
-    pub always_on_microphone: bool,
-    #[serde(default)]
-    pub selected_microphone: Option<String>,
-    #[serde(default)]
-    pub clamshell_microphone: Option<String>,
     #[serde(default)]
     pub selected_output_device: Option<String>,
     #[serde(default = "default_preferred_output_sample_rate")]
@@ -279,8 +273,6 @@ pub struct AppSettings {
     pub post_process_prompts: Vec<LLMPrompt>,
     #[serde(default)]
     pub post_process_selected_prompt_id: Option<String>,
-    #[serde(default)]
-    pub mute_while_recording: bool,
     #[serde(default = "default_app_language")]
     pub app_language: String,
     #[serde(default)]
@@ -297,8 +289,6 @@ pub struct AppSettings {
     pub ort_accelerator: OrtAcceleratorSetting,
     #[serde(default = "default_whisper_gpu_device")]
     pub whisper_gpu_device: i32,
-    #[serde(default)]
-    pub extra_recording_buffer_ms: u64,
     #[serde(default)]
     pub normalize_audio_on_export: bool,
     #[serde(default)]
@@ -345,10 +335,6 @@ fn default_caption_position() -> u32 {
 
 fn default_preferred_output_sample_rate() -> u32 {
     48_000
-}
-
-fn default_always_on_microphone() -> bool {
-    false
 }
 
 fn default_translate_to_english() -> bool {
@@ -458,7 +444,7 @@ pub fn sanitize_post_process_model(model: &str) -> Result<String, String> {
 }
 
 fn default_post_process_providers() -> Vec<PostProcessProvider> {
-    let mut providers = vec![
+    let providers = vec![
         PostProcessProvider {
             id: OLLAMA_PROVIDER_ID.to_string(),
             label: "Ollama (Local)".to_string(),
@@ -719,9 +705,6 @@ pub fn get_default_settings() -> AppSettings {
         start_hidden: default_start_hidden(),
         update_checks_enabled: default_update_checks_enabled(),
         selected_model: "".to_string(),
-        always_on_microphone: false,
-        selected_microphone: None,
-        clamshell_microphone: None,
         selected_output_device: None,
         preferred_output_sample_rate: default_preferred_output_sample_rate(),
         translate_to_english: false,
@@ -740,7 +723,6 @@ pub fn get_default_settings() -> AppSettings {
         post_process_models: default_post_process_models(),
         post_process_prompts: default_post_process_prompts(),
         post_process_selected_prompt_id: None,
-        mute_while_recording: false,
         app_language: default_app_language(),
         experimental_enabled: false,
         experimental_simplify_mode: false,
@@ -768,7 +750,6 @@ pub fn get_default_settings() -> AppSettings {
         whisper_accelerator: WhisperAcceleratorSetting::default(),
         ort_accelerator: OrtAcceleratorSetting::default(),
         whisper_gpu_device: default_whisper_gpu_device(),
-        extra_recording_buffer_ms: 0,
         normalize_audio_on_export: false,
         export_volume_db: 0.0,
         export_fade_in_ms: 0,

@@ -14,8 +14,6 @@ const { mockCommands } = vi.hoisted(() => {
       getAvailableOutputDevices: fn(),
       checkCustomSounds: fn(),
       changeUpdateChecksSetting: fn(),
-      setSelectedMicrophone: fn(),
-      setClamshellMicrophone: fn(),
       setSelectedOutputDevice: fn(),
       updateRecordingRetentionPeriod: fn(),
       changeTranslateToEnglishSetting: fn(),
@@ -60,8 +58,6 @@ function makeSettings(overrides: Partial<Settings> = {}): Settings {
     bindings: {},
     debug_mode: false,
     update_checks_enabled: true,
-    selected_microphone: "Default",
-    clamshell_microphone: "Default",
     selected_output_device: "Default",
     ...overrides,
   } as Settings;
@@ -111,8 +107,6 @@ describe("settingsStore", () => {
   describe("refreshSettings", () => {
     it("loads settings from backend and normalizes nulls", async () => {
       const backendSettings = makeSettings({
-        selected_microphone: null,
-        clamshell_microphone: null,
         selected_output_device: null,
       });
       mockCommands.getAppSettings.mockResolvedValue(ok(backendSettings));
@@ -121,8 +115,6 @@ describe("settingsStore", () => {
       const state = useSettingsStore.getState();
 
       expect(state.isLoading).toBe(false);
-      expect(state.settings?.selected_microphone).toBe("Default");
-      expect(state.settings?.clamshell_microphone).toBe("Default");
       expect(state.settings?.selected_output_device).toBe("Default");
     });
 
@@ -239,36 +231,6 @@ describe("settingsStore", () => {
       await useSettingsStore.getState().updateSetting("selected_model", "some-model");
 
       expect(useSettingsStore.getState().settings?.selected_model).toBe("some-model");
-    });
-
-    it("normalizes selected_microphone 'Default' to 'default'", async () => {
-      mockCommands.setSelectedMicrophone.mockResolvedValue(undefined);
-
-      await useSettingsStore
-        .getState()
-        .updateSetting("selected_microphone", "Default");
-
-      expect(mockCommands.setSelectedMicrophone).toHaveBeenCalledWith("default");
-    });
-
-    it("normalizes selected_microphone null to 'default'", async () => {
-      mockCommands.setSelectedMicrophone.mockResolvedValue(undefined);
-
-      await useSettingsStore
-        .getState()
-        .updateSetting("selected_microphone", null);
-
-      expect(mockCommands.setSelectedMicrophone).toHaveBeenCalledWith("default");
-    });
-
-    it("passes non-default microphone name as-is", async () => {
-      mockCommands.setSelectedMicrophone.mockResolvedValue(undefined);
-
-      await useSettingsStore
-        .getState()
-        .updateSetting("selected_microphone", "USB Mic");
-
-      expect(mockCommands.setSelectedMicrophone).toHaveBeenCalledWith("USB Mic");
     });
 
     it("normalizes selected_output_device 'Default' to 'default'", async () => {

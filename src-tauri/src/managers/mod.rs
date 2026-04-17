@@ -1,4 +1,3 @@
-pub mod audio;
 pub mod editor;
 pub mod export;
 pub mod filler;

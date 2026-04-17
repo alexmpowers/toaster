@@ -75,16 +75,6 @@ const settingUpdaters: {
 } = {
   update_checks_enabled: (value) =>
     commands.changeUpdateChecksSetting(value as boolean),
-  selected_microphone: (value) =>
-    commands.setSelectedMicrophone(
-      (value as string) === "Default" || value === null
-        ? "default"
-        : (value as string),
-    ),
-  clamshell_microphone: (value) =>
-    commands.setClamshellMicrophone(
-      (value as string) === "Default" ? "default" : (value as string),
-    ),
   selected_output_device: (value) =>
     commands.setSelectedOutputDevice(
       (value as string) === "Default" || value === null
@@ -180,8 +170,6 @@ export const useSettingsStore = create<SettingsStore>()(
           const settings = result.data;
           const normalizedSettings: Settings = {
             ...settings,
-            selected_microphone: settings.selected_microphone ?? "Default",
-            clamshell_microphone: settings.clamshell_microphone ?? "Default",
             selected_output_device:
               settings.selected_output_device ?? "Default",
           };
