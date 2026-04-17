@@ -1,37 +1,46 @@
 ---
 name: Bug Report
-about: Create a report to help us improve Handy
+about: Report a bug in Toaster
 title: "[BUG] "
 labels: ["bug"]
 assignees: ""
 ---
 
-## Before You Submit
+## Before you submit
 
-**Please search [existing issues](https://github.com/cjpais/Handy/issues) to avoid duplicates.** Your bug may already be reported! Right now it's just me maintaining this project so many issues can be overwhelming! Help me out by checking first.
+Please search existing issues first to avoid duplicates.
 
-## Bug Description
+## Bug description
 
-A clear and concise description of what the bug is.
+Describe what went wrong and why it matters.
 
-## System Information
+## Steps to reproduce
 
-**App Version:**
+1.
+2.
+3.
 
-<!-- You can find this in the app settings or about section -->
+## Expected behavior
 
-**Operating System:**
+What should have happened?
 
-<!-- e.g., macOS 14.1, Windows 11, Ubuntu 22.04 -->
+## Actual behavior
 
-**CPU:**
+What happened instead?
 
-<!-- e.g., Apple M2, Intel i7-12700K, AMD Ryzen 7 5800X -->
+## System information
 
-**GPU:**
+- App version:
+- OS:
+- CPU:
+- GPU:
 
-<!-- e.g., Apple M2 GPU, NVIDIA RTX 4080, AMD RX 6800 XT, Intel UHD Graphics -->
+## Logs / artifacts
 
-## Logs
+Attach relevant logs, screenshots, or short recordings.
 
-<!-- Please attach relevant logs to help us diagnose the issue. You can find the log directory by going to Settings > About in the app. -->
+## If this is transcript-edit precision related
+
+- Source media type (audio/video, approximate duration):
+- Edit scenario (e.g., midstream deletions, delete/undo cycles):
+- Whether issue appears in preview, export, or both:

@@ -16,6 +16,7 @@ impl EnigoState {
 
 /// Get the current mouse cursor position using the managed Enigo instance.
 /// Returns None if the state is not available or if getting the location fails.
+#[allow(dead_code)] // Sole caller was overlay.rs (removed); retained for other dictation-era callers.
 pub fn get_cursor_position(app_handle: &AppHandle) -> Option<(i32, i32)> {
     let enigo_state = app_handle.try_state::<EnigoState>()?;
     let enigo = enigo_state.0.lock().ok()?;

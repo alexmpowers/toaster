@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSettings } from "../../../hooks/useSettings";
 import { commands, type PostProcessProvider } from "@/bindings";
 import type { ModelOption } from "./types";
@@ -11,6 +11,7 @@ type PostProcessProviderState = {
   isCustomProvider: boolean;
   isAppleProvider: boolean;
   appleIntelligenceUnavailable: boolean;
+  providerValidationError: string | null;
   baseUrl: string;
   handleBaseUrlChange: (value: string) => void;
   isBaseUrlUpdating: boolean;
@@ -30,6 +31,13 @@ type PostProcessProviderState = {
 
 const APPLE_PROVIDER_ID = "apple_intelligence";
 
+const getErrorMessage = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+};
+
 export const usePostProcessProviderState = (): PostProcessProviderState => {
   const {
     settings,
@@ -46,7 +54,7 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
   const providers = settings?.post_process_providers || [];
 
   const selectedProviderId = useMemo(() => {
-    return settings?.post_process_provider_id || providers[0]?.id || "openai";
+    return settings?.post_process_provider_id || providers[0]?.id || "ollama";
   }, [providers, settings?.post_process_provider_id]);
 
   const selectedProvider = useMemo(() => {
@@ -59,6 +67,9 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
   const isAppleProvider = selectedProvider?.id === APPLE_PROVIDER_ID;
   const [appleIntelligenceUnavailable, setAppleIntelligenceUnavailable] =
     useState(false);
+  const [providerValidationError, setProviderValidationError] = useState<
+    string | null
+  >(null);
 
   // Use settings directly as single source of truth
   const baseUrl = selectedProvider?.base_url ?? "";
@@ -76,6 +87,7 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
     async (providerId: string) => {
       // Clear error state on any selection attempt (allows dismissing the error)
       setAppleIntelligenceUnavailable(false);
+      setProviderValidationError(null);
 
       if (providerId === selectedProviderId) return;
 
@@ -89,7 +101,12 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
         }
       }
 
-      await setPostProcessProvider(providerId);
+      try {
+        await setPostProcessProvider(providerId);
+      } catch (error) {
+        setProviderValidationError(getErrorMessage(error));
+        return;
+      }
 
       // Auto-fetch available models for the new provider so the model dropdown
       // reflects what's actually valid. Without this, a stale model value from
@@ -101,9 +118,16 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
         const apiKey = settings?.post_process_api_keys?.[providerId] ?? "";
         const hasBaseUrl = (provider?.base_url ?? "").trim() !== "";
         const hasApiKey = apiKey.trim() !== "";
+        const requiresApiKey = provider?.requires_api_key ?? true;
+        const canFetchModels = requiresApiKey ? hasApiKey : hasBaseUrl;
 
-        if (provider?.id === "custom" ? hasBaseUrl : hasApiKey) {
-          void fetchPostProcessModels(providerId);
+        if (canFetchModels) {
+          try {
+            await fetchPostProcessModels(providerId);
+            setProviderValidationError(null);
+          } catch (error) {
+            setProviderValidationError(getErrorMessage(error));
+          }
         }
       }
     },
@@ -118,12 +142,16 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
 
   const handleBaseUrlChange = useCallback(
     (value: string) => {
-      if (!selectedProvider || selectedProvider.id !== "custom") {
+      if (!selectedProvider || !selectedProvider.allow_base_url_edit) {
         return;
       }
       const trimmed = value.trim();
       if (trimmed && trimmed !== baseUrl) {
-        void updatePostProcessBaseUrl(selectedProvider.id, trimmed);
+        void updatePostProcessBaseUrl(selectedProvider.id, trimmed)
+          .then(() => setProviderValidationError(null))
+          .catch((error) =>
+            setProviderValidationError(getErrorMessage(error)),
+          );
       }
     },
     [selectedProvider, baseUrl, updatePostProcessBaseUrl],
@@ -133,7 +161,11 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
     (value: string) => {
       const trimmed = value.trim();
       if (trimmed !== apiKey) {
-        void updatePostProcessApiKey(selectedProviderId, trimmed);
+        void updatePostProcessApiKey(selectedProviderId, trimmed)
+          .then(() => setProviderValidationError(null))
+          .catch((error) =>
+            setProviderValidationError(getErrorMessage(error)),
+          );
       }
     },
     [apiKey, selectedProviderId, updatePostProcessApiKey],
@@ -143,7 +175,11 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
     (value: string) => {
       const trimmed = value.trim();
       if (trimmed !== model) {
-        void updatePostProcessModel(selectedProviderId, trimmed);
+        void updatePostProcessModel(selectedProviderId, trimmed)
+          .then(() => setProviderValidationError(null))
+          .catch((error) =>
+            setProviderValidationError(getErrorMessage(error)),
+          );
       }
     },
     [model, selectedProviderId, updatePostProcessModel],
@@ -151,22 +187,33 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
 
   const handleModelSelect = useCallback(
     (value: string) => {
-      void updatePostProcessModel(selectedProviderId, value.trim());
+      void updatePostProcessModel(selectedProviderId, value.trim())
+        .then(() => setProviderValidationError(null))
+        .catch((error) => setProviderValidationError(getErrorMessage(error)));
     },
     [selectedProviderId, updatePostProcessModel],
   );
 
   const handleModelCreate = useCallback(
     (value: string) => {
-      void updatePostProcessModel(selectedProviderId, value);
+      void updatePostProcessModel(selectedProviderId, value.trim())
+        .then(() => setProviderValidationError(null))
+        .catch((error) => setProviderValidationError(getErrorMessage(error)));
     },
     [selectedProviderId, updatePostProcessModel],
   );
 
   const handleRefreshModels = useCallback(() => {
     if (isAppleProvider) return;
-    void fetchPostProcessModels(selectedProviderId);
+    setProviderValidationError(null);
+    void fetchPostProcessModels(selectedProviderId).catch((error) =>
+      setProviderValidationError(getErrorMessage(error)),
+    );
   }, [fetchPostProcessModels, isAppleProvider, selectedProviderId]);
+
+  useEffect(() => {
+    setProviderValidationError(null);
+  }, [selectedProviderId]);
 
   const availableModelsRaw = postProcessModelOptions[selectedProviderId] || [];
 
@@ -216,6 +263,7 @@ export const usePostProcessProviderState = (): PostProcessProviderState => {
     isCustomProvider,
     isAppleProvider,
     appleIntelligenceUnavailable,
+    providerValidationError,
     baseUrl,
     handleBaseUrlChange,
     isBaseUrlUpdating,

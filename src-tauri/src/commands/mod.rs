@@ -133,6 +133,21 @@ pub fn check_apple_intelligence_available() -> bool {
     }
 }
 
+#[specta::specta]
+#[tauri::command]
+pub fn resolve_local_cleanup_review(
+    app: AppHandle,
+    request_id: String,
+    accept: bool,
+) -> Result<(), String> {
+    let review_state = app.state::<crate::LocalCleanupReviewState>();
+    if review_state.resolve(&request_id, accept) {
+        Ok(())
+    } else {
+        Err("No pending cleanup review request found".to_string())
+    }
+}
+
 /// Try to initialize Enigo (keyboard/mouse simulation).
 /// On macOS, this will return an error if accessibility permissions are not granted.
 #[specta::specta]

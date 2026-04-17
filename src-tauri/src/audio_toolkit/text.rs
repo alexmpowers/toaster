@@ -194,41 +194,6 @@ fn extract_punctuation(word: &str) -> (&str, &str) {
     (prefix, suffix)
 }
 
-/// Returns filler words appropriate for the given language code.
-///
-/// Some words like "um" and "ha" are real words in certain languages
-/// (e.g., Portuguese "um" = "a/an", Spanish "ha" = "has"), so we only
-/// include them as fillers for languages where they are truly fillers.
-fn get_filler_words_for_language(lang: &str) -> &'static [&'static str] {
-    let base_lang = lang.split(&['-', '_'][..]).next().unwrap_or(lang);
-
-    match base_lang {
-        "en" => &[
-            "uh", "um", "uhm", "umm", "uhh", "uhhh", "ah", "hmm", "hm", "mmm", "mm", "mh", "eh",
-            "ehh", "ha",
-        ],
-        "es" => &["ehm", "mmm", "hmm", "hm"],
-        "pt" => &["ahm", "hmm", "mmm", "hm"],
-        "fr" => &["euh", "hmm", "hm", "mmm"],
-        "de" => &["äh", "ähm", "hmm", "hm", "mmm"],
-        "it" => &["ehm", "hmm", "mmm", "hm"],
-        "cs" => &["ehm", "hmm", "mmm", "hm"],
-        "pl" => &["hmm", "mmm", "hm"],
-        "tr" => &["hmm", "mmm", "hm"],
-        "ru" => &["хм", "ммм", "hmm", "mmm"],
-        "uk" => &["хм", "ммм", "hmm", "mmm"],
-        "ar" => &["hmm", "mmm"],
-        "ja" => &["hmm", "mmm"],
-        "ko" => &["hmm", "mmm"],
-        "vi" => &["hmm", "mmm", "hm"],
-        "zh" => &["hmm", "mmm"],
-        // Conservative universal fallback (no "um", "eh", "ha")
-        _ => &[
-            "uh", "uhm", "umm", "uhh", "uhhh", "ah", "hmm", "hm", "mmm", "mm", "mh", "ehh",
-        ],
-    }
-}
-
 static MULTI_SPACE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"\s{2,}").unwrap());
 
 /// Collapses repeated words (3+ repetitions) to a single instance.
@@ -287,27 +252,13 @@ fn collapse_stutters(text: &str) -> String {
 /// The filtered text with filler words and stutters removed
 pub fn filter_transcription_output(
     text: &str,
-    lang: &str,
-    custom_filler_words: &Option<Vec<String>>,
+    _lang: &str,
+    _custom_filler_words: &Option<Vec<String>>,
 ) -> String {
     let mut filtered = text.to_string();
 
-    // Build filler patterns from custom list or language defaults
-    let patterns: Vec<Regex> = match custom_filler_words {
-        Some(words) => words
-            .iter()
-            .filter_map(|word| Regex::new(&format!(r"(?i)\b{}\b[,.]?", regex::escape(word))).ok())
-            .collect(),
-        None => get_filler_words_for_language(lang)
-            .iter()
-            .map(|word| Regex::new(&format!(r"(?i)\b{}\b[,.]?", regex::escape(word))).unwrap())
-            .collect(),
-    };
-
-    // Remove filler words
-    for pattern in &patterns {
-        filtered = pattern.replace_all(&filtered, "").to_string();
-    }
+    // Filler words are kept in the transcript so the editor's Clean Up feature
+    // can detect and let the user remove them.
 
     // Collapse repeated 1-2 letter words (stutter artifacts like "wh wh wh wh")
     filtered = collapse_stutters(&filtered);
@@ -363,23 +314,26 @@ mod tests {
 
     #[test]
     fn test_filter_filler_words() {
+        // Filler words are now preserved for the Clean Up feature to detect
         let text = "So uhm I was thinking uh about this";
         let result = filter_transcription_output(text, "en", &None);
-        assert_eq!(result, "So I was thinking about this");
+        assert_eq!(result, "So uhm I was thinking uh about this");
     }
 
     #[test]
     fn test_filter_filler_words_case_insensitive() {
+        // Filler words are now preserved for the Clean Up feature to detect
         let text = "UHM this is UH a test";
         let result = filter_transcription_output(text, "en", &None);
-        assert_eq!(result, "this is a test");
+        assert_eq!(result, "UHM this is UH a test");
     }
 
     #[test]
     fn test_filter_filler_words_with_punctuation() {
+        // Filler words are now preserved for the Clean Up feature to detect
         let text = "Well, uhm, I think, uh. that's right";
         let result = filter_transcription_output(text, "en", &None);
-        assert_eq!(result, "Well, I think, that's right");
+        assert_eq!(result, "Well, uhm, I think, uh. that's right");
     }
 
     #[test]
@@ -398,9 +352,10 @@ mod tests {
 
     #[test]
     fn test_filter_combined() {
+        // Filler words preserved; only whitespace cleanup and stutter collapse apply
         let text = "  Uhm, so I was, uh, thinking about this  ";
         let result = filter_transcription_output(text, "en", &None);
-        assert_eq!(result, "so I was, thinking about this");
+        assert_eq!(result, "Uhm, so I was, uh, thinking about this");
     }
 
     #[test]
@@ -446,10 +401,11 @@ mod tests {
     }
 
     #[test]
-    fn test_filter_english_removes_um() {
+    fn test_filter_english_preserves_um() {
+        // Filler words are now preserved for the Clean Up feature to detect
         let text = "um I think um this is good";
         let result = filter_transcription_output(text, "en", &None);
-        assert_eq!(result, "I think this is good");
+        assert_eq!(result, "um I think um this is good");
     }
 
     #[test]
@@ -478,10 +434,11 @@ mod tests {
 
     #[test]
     fn test_filter_custom_filler_words_override() {
+        // Custom filler words are also preserved now
         let custom = Some(vec!["okay".to_string(), "right".to_string()]);
         let text = "okay so I think right this works";
         let result = filter_transcription_output(text, "en", &custom);
-        assert_eq!(result, "so I think this works");
+        assert_eq!(result, "okay so I think right this works");
     }
 
     #[test]
@@ -495,9 +452,10 @@ mod tests {
 
     #[test]
     fn test_filter_unknown_language_uses_fallback() {
+        // Filler words are now preserved regardless of language
         let text = "uh I think uhm this works";
         let result = filter_transcription_output(text, "xx", &None);
-        assert_eq!(result, "I think this works");
+        assert_eq!(result, "uh I think uhm this works");
     }
 
     #[test]

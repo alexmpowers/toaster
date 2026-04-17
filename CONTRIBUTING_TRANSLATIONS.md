@@ -1,174 +1,72 @@
-# Contributing Translations to Handy
+# Contributing Translations to Toaster
 
-Thank you for helping translate Handy! This guide explains how to add or improve translations.
+Thanks for helping improve Toaster localization.
 
-## Quick Start
+## Quick start
 
 1. Fork the repository
-2. Copy the English translation file to your language folder
-3. Translate the values (not the keys!)
-4. Submit a pull request
+2. Copy the English translation file
+3. Translate values (not keys)
+4. Register language metadata
+5. Open a pull request
 
-## File Structure
+## Translation files
 
-Translation files are located in:
-
-```
+```text
 src/i18n/locales/
-├── en/
-│   └── translation.json    # English (source)
-├── vi/
-│   └── translation.json    # Vietnamese
-├── fr/
-│   └── translation.json    # French
-└── [your-language]/
-    └── translation.json    # Your contribution!
+  en/translation.json          # source
+  <language-code>/translation.json
 ```
 
-## Adding a New Language
+## Add a new language
 
-### Step 1: Create the Language Folder
+### 1) Create a language folder
 
-Create a new folder using the [ISO 639-1 language code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes):
+Use an ISO 639-1 code (for example: `de`, `es`, `ja`, `ko`, `pt`).
+
+### 2) Copy the English source
 
 ```bash
-mkdir src/i18n/locales/[language-code]
+cp src/i18n/locales/en/translation.json src/i18n/locales/<language-code>/translation.json
 ```
 
-Examples:
+PowerShell equivalent:
 
-- `de` for German
-- `es` for Spanish
-- `ja` for Japanese
-- `zh` for Chinese
-- `ko` for Korean
-- `pt` for Portuguese
-
-### Step 2: Copy the English File
-
-```bash
-cp src/i18n/locales/en/translation.json src/i18n/locales/[language-code]/translation.json
+```powershell
+Copy-Item src\i18n\locales\en\translation.json src\i18n\locales\<language-code>\translation.json
 ```
 
-### Step 3: Translate the Values
+### 3) Translate values only
 
-Open the file and translate only the **values** (right side), not the keys (left side):
+- Keep keys unchanged
+- Preserve placeholders like `{{error}}` or `{{model}}`
+- Keep JSON structure valid
 
-```json
-{
-  "sidebar": {
-    "general": "General",      // ← Translate this value
-    "advanced": "Advanced",    // ← Translate this value
-    ...
-  }
-}
-```
+### 4) Register language metadata
 
-**Important:**
+Update `src/i18n/languages.ts` with language name + native name.
 
-- Keep all keys exactly the same
-- Preserve any `{{variables}}` in the text (e.g., `{{error}}`, `{{model}}`)
-- Keep the JSON structure and formatting intact
+### 5) Test in app
 
-### Step 4: Register Your Language
-
-Edit `src/i18n/languages.ts` and add your language metadata:
-
-```typescript
-export const LANGUAGE_METADATA: Record<
-  string,
-  { name: string; nativeName: string }
-> = {
-  en: { name: "English", nativeName: "English" },
-  es: { name: "Spanish", nativeName: "Español" },
-  fr: { name: "French", nativeName: "Français" },
-  vi: { name: "Vietnamese", nativeName: "Tiếng Việt" },
-  de: { name: "German", nativeName: "Deutsch" }, // ← Add your language
-};
-```
-
-### Step 5: Test Your Translation
-
-1. Run the app: `bun run tauri dev`
-2. Go to Settings → General → App Language
+1. Run app (`npm run tauri dev` or `cargo tauri dev`; on Windows run `.\scripts\setup-env.ps1` first)
+2. Open language settings
 3. Select your language
-4. Verify all text displays correctly
+4. Verify labels/flows
 
-### Step 6: Submit a Pull Request
+## Translation guidelines
 
-1. Commit your changes
-2. Push to your fork
-3. Open a pull request with:
-   - Language name in the title (e.g., "Add German translation")
-   - Any notes about the translation
+Do:
+- Use natural, concise phrasing
+- Keep product terminology consistent
+- Preserve variables exactly
 
-## Improving Existing Translations
+Do not:
+- Translate placeholders (`{{...}}`)
+- Change key names
+- Break JSON formatting
 
-Found a typo or better translation?
+## Pull request notes
 
-1. Edit the relevant `translation.json` file
-2. Submit a PR with a brief description of the change
-
-## Translation Guidelines
-
-### Do:
-
-- Use natural, native-sounding language
-- Keep translations concise (UI space is limited)
-- Match the tone of the English text (friendly, clear)
-- Preserve technical terms when appropriate (e.g., "API", "GPU")
-
-### Don't:
-
-- Translate brand names (Handy, Whisper.cpp, OpenAI)
-- Change or remove `{{variables}}`
-- Modify JSON keys
-- Add extra spaces or formatting
-
-### Handling Variables
-
-Some strings contain variables like `{{error}}` or `{{model}}`. Keep these exactly as-is:
-
-```json
-// English
-"downloadModel": "Failed to download model: {{error}}"
-
-// French (correct)
-"downloadModel": "Échec du téléchargement du modèle : {{error}}"
-
-// French (incorrect - don't translate the variable!)
-"downloadModel": "Échec du téléchargement du modèle : {{erreur}}"
-```
-
-### Handling Plurals
-
-Some languages have complex plural rules. For now, use a general form that works for all cases. We may add proper plural support in the future.
-
-## Questions?
-
-- Open an issue on GitHub
-- Join the discussion in existing translation PRs
-
-## Currently Supported Languages
-
-| Language   | Code | Status            |
-| ---------- | ---- | ----------------- |
-| English    | `en` | Complete (source) |
-| Chinese    | `zh` | Complete          |
-| French     | `fr` | Complete          |
-| German     | `de` | Complete          |
-| Japanese   | `ja` | Complete          |
-| Spanish    | `es` | Complete          |
-| Vietnamese | `vi` | Complete          |
-
-## Requested Languages
-
-We'd love help with:
-
-- Korean (`ko`)
-- Portuguese (`pt`)
-- And more!
-
----
-
-Thank you for making Handy accessible to more people around the world!
+- Include language name in PR title (for example: `docs(i18n): add German translation`)
+- Mention whether this is a new language or corrections to an existing one
+- Add screenshots if any text overflows or truncation changes were needed

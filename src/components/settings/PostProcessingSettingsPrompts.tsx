@@ -1,1 +1,1 @@
-export { PostProcessingSettingsPrompts } from "./post-processing/PostProcessingSettings";
+export { PostProcessingSettingsPrompts } from "./post-processing/PostProcessingSettingsPrompts";

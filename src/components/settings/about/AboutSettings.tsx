@@ -59,6 +59,10 @@ export const AboutSettings: React.FC = () => {
       </SettingsGroup>
 
       <SettingsGroup title={t("settings.about.acknowledgments.title")}>
+        <p className="text-sm text-mid-gray px-6 py-4">
+          {t("settings.about.acknowledgments.intro")}
+        </p>
+
         <SettingContainer
           title={t("settings.about.acknowledgments.handy.title")}
           description={t("settings.about.acknowledgments.handy.description")}

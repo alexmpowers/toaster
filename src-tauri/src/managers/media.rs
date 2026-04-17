@@ -3,8 +3,7 @@
 /// Handles media import, validation, and metadata extraction.
 /// Actual video/audio playback uses the frontend HTML5 <video> element
 /// served via Tauri's `asset:` protocol.
-
-use log::{error, info};
+use log::info;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
@@ -13,9 +12,7 @@ use std::sync::Mutex;
 const VIDEO_EXTENSIONS: &[&str] = &[
     "mp4", "mkv", "webm", "avi", "mov", "wmv", "flv", "m4v", "ogv",
 ];
-const AUDIO_EXTENSIONS: &[&str] = &[
-    "mp3", "wav", "flac", "ogg", "aac", "m4a", "wma", "opus",
-];
+const AUDIO_EXTENSIONS: &[&str] = &["mp3", "wav", "flac", "ogg", "aac", "m4a", "wma", "opus"];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub enum MediaType {
@@ -76,8 +73,8 @@ impl MediaState {
             ));
         };
 
-        let metadata = std::fs::metadata(path)
-            .map_err(|e| format!("Cannot read file metadata: {}", e))?;
+        let metadata =
+            std::fs::metadata(path).map_err(|e| format!("Cannot read file metadata: {}", e))?;
 
         let file_name = path
             .file_name()
@@ -93,7 +90,10 @@ impl MediaState {
             extension,
         };
 
-        info!("Imported media: {} ({:?}, {} bytes)", info.file_name, info.media_type, info.file_size);
+        info!(
+            "Imported media: {} ({:?}, {} bytes)",
+            info.file_name, info.media_type, info.file_size
+        );
         self.current = Some(info.clone());
         Ok(info)
     }

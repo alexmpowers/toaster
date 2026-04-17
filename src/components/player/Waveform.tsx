@@ -12,6 +12,8 @@ interface WaveformProps {
 }
 
 const BAR_COUNT = 300;
+const COARSE_BAR_COUNT = 180;
+const LONG_MEDIA_COARSE_THRESHOLD_SECONDS = 20 * 60;
 const BAR_GAP = 1;
 const PLAYED_COLOR = "#E8A838";
 const UNPLAYED_COLOR = "#4A4A4A";
@@ -19,14 +21,22 @@ const DELETED_OVERLAY = "rgba(220, 38, 38, 0.25)";
 const SILENCED_OVERLAY = "rgba(234, 179, 8, 0.15)";
 const SELECTED_WORD_COLOR = "rgba(232, 168, 56, 0.3)";
 const WORD_BOUNDARY_COLOR = "rgba(255, 255, 255, 0.08)";
+const WAVEFORM_RETRY_DELAYS_MS = [120, 360];
+const WAVEFORM_CACHE_MAX_ENTRIES = 12;
+
+const waveformPeaksCache = new Map<string, number[]>();
+
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 function downsamplePeaks(channelData: Float32Array, barCount: number): number[] {
-  const blockSize = Math.floor(channelData.length / barCount);
+  if (barCount <= 0 || channelData.length === 0) return [];
+
+  const sampleCount = channelData.length;
   const peaks: number[] = [];
   for (let i = 0; i < barCount; i++) {
     let max = 0;
-    const start = i * blockSize;
-    const end = Math.min(start + blockSize, channelData.length);
+    const start = Math.floor((i / barCount) * sampleCount);
+    const end = Math.max(start + 1, Math.floor(((i + 1) / barCount) * sampleCount));
     for (let j = start; j < end; j++) {
       const abs = Math.abs(channelData[j]);
       if (abs > max) max = abs;
@@ -59,32 +69,64 @@ const Waveform: React.FC<WaveformProps> = ({
       return;
     }
 
+    const targetBarCount =
+      duration > LONG_MEDIA_COARSE_THRESHOLD_SECONDS ? COARSE_BAR_COUNT : BAR_COUNT;
+    const cacheKey = `${audioUrl}::${targetBarCount}`;
+    const cached = waveformPeaksCache.get(cacheKey);
+    if (cached) {
+      setPeaks(cached);
+      return;
+    }
+
     let cancelled = false;
+    const controller = new AbortController();
 
     const loadAudio = async () => {
-      try {
-        const response = await fetch(audioUrl);
-        const arrayBuffer = await response.arrayBuffer();
-        const audioCtx = new AudioContext();
-        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-        await audioCtx.close();
+      for (let attempt = 0; attempt <= WAVEFORM_RETRY_DELAYS_MS.length; attempt++) {
+        try {
+          const response = await fetch(audioUrl, { signal: controller.signal, cache: "force-cache" });
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
 
-        if (cancelled) return;
+          const arrayBuffer = await response.arrayBuffer();
+          const audioCtx = new AudioContext();
+          let extracted: number[] = [];
+          try {
+            const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+            const channelData = audioBuffer.getChannelData(0);
+            extracted = downsamplePeaks(channelData, targetBarCount);
+          } finally {
+            await audioCtx.close().catch(() => undefined);
+          }
 
-        const channelData = audioBuffer.getChannelData(0);
-        const extracted = downsamplePeaks(channelData, BAR_COUNT);
-        setPeaks(extracted);
-      } catch (err) {
-        console.error("Failed to decode audio for waveform:", err);
-        setPeaks([]);
+          if (cancelled || controller.signal.aborted) return;
+          waveformPeaksCache.set(cacheKey, extracted);
+          while (waveformPeaksCache.size > WAVEFORM_CACHE_MAX_ENTRIES) {
+            const oldestKey = waveformPeaksCache.keys().next().value;
+            if (!oldestKey) break;
+            waveformPeaksCache.delete(oldestKey);
+          }
+          setPeaks(extracted);
+          return;
+        } catch (err) {
+          if (cancelled || controller.signal.aborted) return;
+          if (attempt < WAVEFORM_RETRY_DELAYS_MS.length) {
+            await delay(WAVEFORM_RETRY_DELAYS_MS[attempt]);
+            continue;
+          }
+          console.error("Failed to decode audio for waveform:", err);
+          setPeaks([]);
+        }
       }
     };
 
     loadAudio();
     return () => {
       cancelled = true;
+      controller.abort();
     };
-  }, [audioUrl]);
+  }, [audioUrl, duration]);
 
   // Observe container resize to keep canvas responsive
   useEffect(() => {

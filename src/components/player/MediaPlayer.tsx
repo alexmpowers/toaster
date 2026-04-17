@@ -1,48 +1,35 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Play, Pause, Volume2, VolumeX, Eye, EyeOff, Loader2 } from "lucide-react";
-import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { commands } from "@/bindings";
 import { usePlayerStore } from "@/stores/playerStore";
-import { useEditorStore, type Word } from "@/stores/editorStore";
+import { useEditorStore } from "@/stores/editorStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 import {
   DUAL_TRACK_DRIFT_THRESHOLD,
   DUAL_TRACK_SYNC_COOLDOWN_MS,
   getDeletedRanges,
   getDeletedRangesFromKeepSegments,
   editTimeToSourceTime,
+  snapOutOfDeletedRange,
   type TimeSegment,
 } from "@/lib/utils/timeline";
+import { usePreviewCache } from "./usePreviewCache";
+import PlaybackControls from "./PlaybackControls";
+import CaptionOverlay from "./CaptionOverlay";
 
 interface MediaPlayerProps {
   className?: string;
   onTimeUpdate?: (time: number) => void;
+  captionsEnabled?: boolean;
 }
-
-interface CachedPreviewMetadata {
-  generationToken: string;
-  sourceMediaFingerprint: string | null;
-  editVersion: string;
-}
-
-type PreviewCacheMode = "building" | "ready" | "fallback";
-
-function formatTime(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-}
-
-const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
 const MediaPlayer: React.FC<MediaPlayerProps> = ({
   className = "",
   onTimeUpdate,
+  captionsEnabled = false,
 }) => {
   const { t } = useTranslation();
   const mediaRef = useRef<HTMLVideoElement & HTMLAudioElement>(null);
-  const previewAudioRef = useRef<HTMLAudioElement>(null);
-  const [previewEdits, setPreviewEdits] = useState(true);
 
   const {
     mediaUrl,
@@ -62,6 +49,36 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   } = usePlayerStore();
 
   const words = useEditorStore((s) => s.words);
+  const timingContract = useEditorStore((s) => s.timingContract);
+  const experimentalSimplifyMode = useSettingsStore(
+    (s) => s.settings?.experimental_simplify_mode ?? false,
+  );
+
+  const {
+    previewAudioRef,
+    previewEdits,
+    setPreviewEdits,
+    previewCacheState,
+    setPreviewCacheState,
+    previewAudioUrl,
+    setPreviewAudioReady,
+    usePreviewCache: isPreviewCacheActive,
+    previewToggleLabel,
+    previewCacheModeLabel,
+    hasVideoPreviewCandidate,
+    isDualTrackVideoPreview,
+    primarySrc,
+    activePlaybackSrc,
+    handlePreviewCanPlay,
+    handlePreviewAudioError,
+  } = usePreviewCache({
+    mediaUrl,
+    mediaType,
+    words,
+    timingContract,
+    experimentalSimplifyMode,
+  });
+
   const [backendDeletedRanges, setBackendDeletedRanges] = useState<TimeSegment[] | null>(null);
   const [backendKeepSegments, setBackendKeepSegments] = useState<TimeSegment[]>([]);
   const backendFetchSeq = useRef(0);
@@ -69,88 +86,23 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   const lastObservedTimeRef = useRef(0);
   /** Real-clock timestamp (ms) of the last drift correction applied to the video element */
   const lastVideoSyncTimeRef = useRef(0);
-
-  // Preview cache state: tracks the result of renderTempPreviewAudio
-  const [previewCacheState, setPreviewCacheState] = useState<
-    "idle" | "loading" | "ready" | "error"
-  >("idle");
-  const [previewAudioUrl, setPreviewAudioUrl] = useState<string | null>(null);
-  const previewRenderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const previewInvalidationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const previewRenderSeq = useRef(0);
-  const previewMetadataRef = useRef<CachedPreviewMetadata | null>(null);
-
-  /** Use cached preview when enabled and available; keep using stale cache while refresh is building */
-  const hasPreviewAudio = !!previewAudioUrl;
-  const usePreviewCache = previewEdits && hasPreviewAudio && previewCacheState !== "error";
-  const previewCacheMode: PreviewCacheMode = !previewEdits || previewCacheState === "error"
-    ? "fallback"
-    : previewCacheState === "loading"
-      ? "building"
-      : usePreviewCache
-        ? "ready"
-        : "fallback";
-  const previewToggleLabel = previewEdits ? t("player.previewEditsOn") : t("player.previewEditsOff");
-  const previewCacheModeLabel = previewCacheMode === "building"
-    ? t("player.cacheModeBuilding")
-    : previewCacheMode === "ready"
-      ? t("player.cacheModeReady")
-      : t("player.cacheModeFallback");
-
-  const isDualTrackVideoPreview = mediaType === "video" && usePreviewCache;
-  const primarySrc = mediaType === "video" ? mediaUrl : usePreviewCache ? previewAudioUrl : mediaUrl;
-  const activePlaybackSrc = isDualTrackVideoPreview ? previewAudioUrl : primarySrc;
+  /** Tracks latest activeDeletedRanges for the play/pause effect without adding it to deps. */
+  const activeDeletedRangesRef = useRef<TimeSegment[]>([]);
+  /** Tracks whether fallback/live-skip mode is active for the play/pause effect. */
+  const fallbackSkipModeRef = useRef(false);
 
   // Memoize deleted ranges so they aren't rebuilt every frame
   const deletedRanges = useMemo(() => getDeletedRanges(words, duration), [words, duration]);
   const activeDeletedRanges = backendDeletedRanges ?? deletedRanges;
 
-  const schedulePreviewInvalidation = useCallback(
-    (stalePreview: CachedPreviewMetadata | null, reason: string) => {
-      if (!stalePreview?.generationToken) {
-        return;
-      }
-      if (previewInvalidationTimerRef.current) {
-        clearTimeout(previewInvalidationTimerRef.current);
-      }
-      previewInvalidationTimerRef.current = setTimeout(() => {
-        void invoke("invalidate_temp_preview_cache", {
-          generationToken: stalePreview.generationToken,
-          sourceMediaFingerprint: stalePreview.sourceMediaFingerprint,
-          reason,
-        }).catch((error) => {
-          console.warn("Failed to invalidate preview cache:", error);
-        });
-      }, 250);
-    },
-    [],
-  );
-
-  const resetPreviewCache = useCallback(
-    (reason: string, invalidateBackend: boolean) => {
-      if (previewRenderTimerRef.current) {
-        clearTimeout(previewRenderTimerRef.current);
-        previewRenderTimerRef.current = null;
-      }
-      if (previewInvalidationTimerRef.current) {
-        clearTimeout(previewInvalidationTimerRef.current);
-        previewInvalidationTimerRef.current = null;
-      }
-
-      previewRenderSeq.current += 1;
-      const stalePreview = previewMetadataRef.current;
-      previewMetadataRef.current = null;
-      setPreviewAudioUrl(null);
-      setPreviewCacheState("idle");
-
-      if (!invalidateBackend || !stalePreview?.generationToken) {
-        return;
-      }
-
-      schedulePreviewInvalidation(stalePreview, reason);
-    },
-    [schedulePreviewInvalidation],
-  );
+  // Keep refs current so the play/pause effect can read them without adding
+  // them to its dependency array (which would restart playback on every edit).
+  useEffect(() => {
+    activeDeletedRangesRef.current = activeDeletedRanges;
+  }, [activeDeletedRanges]);
+  useEffect(() => {
+    fallbackSkipModeRef.current = previewEdits && !isPreviewCacheActive;
+  }, [previewEdits, isPreviewCacheActive]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -162,13 +114,32 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       return;
     }
 
+    if (timingContract) {
+      const keepSegments =
+        timingContract.keep_segments?.length > 0
+          ? timingContract.keep_segments
+          : timingContract.quantized_keep_segments ?? [];
+      setBackendDeletedRanges(getDeletedRangesFromKeepSegments(words, keepSegments));
+      const normalized = keepSegments
+        .map((s) => ({ start: s.start_us / 1_000_000, end: s.end_us / 1_000_000 }))
+        .filter((s) => s.end > s.start)
+        .sort((a, b) => a.start - b.start);
+      setBackendKeepSegments(normalized);
+
+      if (!timingContract.keep_segments_valid && timingContract.warning) {
+        console.warn(
+          `[timing-contract] revision=${timingContract.timeline_revision} warning=${timingContract.warning}`,
+        );
+      }
+      return;
+    }
+
     const refreshKeepSegments = async () => {
       try {
         const result = await commands.getKeepSegments();
         if (isCancelled || seq !== backendFetchSeq.current) return;
         if (result.status === "ok") {
           setBackendDeletedRanges(getDeletedRangesFromKeepSegments(words, result.data));
-          // Normalize keep segments to seconds for timeline mapping
           const normalized = result.data
             .map((s) => ({ start: s.start_us / 1_000_000, end: s.end_us / 1_000_000 }))
             .filter((s) => s.end > s.start)
@@ -190,117 +161,91 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     return () => {
       isCancelled = true;
     };
-  }, [words]);
-
-  useEffect(() => {
-    return () => {
-      if (previewRenderTimerRef.current) {
-        clearTimeout(previewRenderTimerRef.current);
-      }
-      if (previewInvalidationTimerRef.current) {
-        clearTimeout(previewInvalidationTimerRef.current);
-      }
-    };
-  }, []);
-
-  const previousPreviewLifecycleRef = useRef<{ mediaUrl: string | null; words: Word[] } | null>(null);
-  useEffect(() => {
-    const previous = previousPreviewLifecycleRef.current;
-    previousPreviewLifecycleRef.current = { mediaUrl, words };
-
-    if (!previous) {
-      return;
-    }
-
-    if (previous.mediaUrl !== mediaUrl) {
-      resetPreviewCache("media-change", true);
-      return;
-    }
-
-  }, [mediaUrl, resetPreviewCache, words]);
-
-  // Debounced preview cache generation — fires whenever words or previewEdits change
-  useEffect(() => {
-    // Clear any running cache when preview is turned off or there are no words
-    if (!previewEdits || words.length === 0) {
-      resetPreviewCache(previewEdits ? "empty-transcript" : "preview-disabled", false);
-      return;
-    }
-
-    setPreviewCacheState("loading");
-
-    if (previewRenderTimerRef.current) {
-      clearTimeout(previewRenderTimerRef.current);
-    }
-
-    const seq = ++previewRenderSeq.current;
-
-    previewRenderTimerRef.current = setTimeout(() => {
-      void (async () => {
-        try {
-          const result = await commands.renderTempPreviewAudio();
-          if (seq !== previewRenderSeq.current) return; // superseded
-          if (result.status !== "ok") {
-            previewMetadataRef.current = null;
-            setPreviewCacheState("error");
-            return;
-          }
-          const meta = result.data;
-          if (meta.status === "ready" && meta.preview_url_safe_path) {
-            const stalePreview = previewMetadataRef.current;
-            previewMetadataRef.current = {
-              generationToken: meta.generation_token,
-              sourceMediaFingerprint: meta.source_media_fingerprint,
-              editVersion: meta.edit_version,
-            };
-            setPreviewAudioUrl(convertFileSrc(meta.preview_url_safe_path));
-            setPreviewCacheState("ready");
-            if (stalePreview?.generationToken && stalePreview.generationToken !== meta.generation_token) {
-              schedulePreviewInvalidation(stalePreview, "preview-replaced");
-            }
-          } else {
-            // no_segments or missing_media — graceful fallback to live skip
-            previewMetadataRef.current = null;
-            setPreviewCacheState("error");
-          }
-        } catch {
-          if (seq === previewRenderSeq.current) {
-            previewMetadataRef.current = null;
-            setPreviewCacheState("error");
-          }
-        }
-      })();
-    }, 500);
-
-    return () => {
-      if (previewRenderTimerRef.current) {
-        clearTimeout(previewRenderTimerRef.current);
-        previewRenderTimerRef.current = null;
-      }
-    };
-  }, [previewEdits, resetPreviewCache, schedulePreviewInvalidation, words]);
+  }, [words, timingContract]);
 
   // Sync seek requests from the store to the media element(s)
   const lastSeekVersion = useRef(0);
+  const pendingSeekRef = useRef<{ version: number; target: number } | null>(null);
+  const seekFlushRafRef = useRef<number | null>(null);
+  const lastAppliedSeekRef = useRef<{ target: number; ts: number } | null>(null);
+  const seekContextRef = useRef<{
+    dualTrack: boolean;
+    keepSegments: TimeSegment[];
+  }>({ dualTrack: false, keepSegments: [] });
+
+  useEffect(() => {
+    seekContextRef.current = {
+      dualTrack: isDualTrackVideoPreview,
+      keepSegments: backendKeepSegments,
+    };
+  }, [isDualTrackVideoPreview, backendKeepSegments]);
+
   useEffect(() => {
     const mediaEl = mediaRef.current;
     if (!mediaEl || seekVersion === lastSeekVersion.current) return;
     lastSeekVersion.current = seekVersion;
-    if (isDualTrackVideoPreview) {
-      // Preview audio is the time authority: seek it to the edit-time target directly.
-      // Video seeks to the corresponding source time so the correct frame is displayed.
-      const previewEl = previewAudioRef.current;
-      if (previewEl) previewEl.currentTime = seekTarget;
-      const sourceTime =
-        backendKeepSegments.length > 0
-          ? editTimeToSourceTime(seekTarget, backendKeepSegments)
-          : seekTarget;
-      mediaEl.currentTime = sourceTime;
-      lastVideoSyncTimeRef.current = performance.now();
-    } else {
-      mediaEl.currentTime = seekTarget;
+
+    // Latest-wins seek queue: coalesce multiple seek intents into one frame.
+    pendingSeekRef.current = { version: seekVersion, target: seekTarget };
+
+    if (seekFlushRafRef.current !== null) {
+      return;
     }
-  }, [seekVersion, seekTarget, isDualTrackVideoPreview, backendKeepSegments]);
+
+    seekFlushRafRef.current = requestAnimationFrame(() => {
+      seekFlushRafRef.current = null;
+      const pending = pendingSeekRef.current;
+      pendingSeekRef.current = null;
+      if (!pending) return;
+
+      const now = performance.now();
+      const lastApplied = lastAppliedSeekRef.current;
+      if (lastApplied && Math.abs(lastApplied.target - pending.target) < 0.0005 && now - lastApplied.ts < 30) {
+        return;
+      }
+
+      const mediaNow = mediaRef.current;
+      if (!mediaNow) return;
+      const context = seekContextRef.current;
+
+      if (context.dualTrack) {
+        // Preview audio is the edit-time authority. Video follows mapped source time.
+        const previewEl = previewAudioRef.current;
+        if (previewEl) previewEl.currentTime = pending.target;
+        const sourceTime =
+          context.keepSegments.length > 0
+            ? editTimeToSourceTime(pending.target, context.keepSegments)
+            : pending.target;
+        mediaNow.currentTime = sourceTime;
+        lastVideoSyncTimeRef.current = now;
+
+        // Verify seeks landed within tolerance after the next frame
+        const tolerance = 0.05;
+        requestAnimationFrame(() => {
+          if (previewEl && Math.abs(previewEl.currentTime - pending.target) > tolerance) {
+            previewEl.currentTime = pending.target;
+          }
+          if (mediaNow && Math.abs(mediaNow.currentTime - sourceTime) > tolerance) {
+            mediaNow.currentTime = sourceTime;
+          }
+        });
+      } else {
+        mediaNow.currentTime = pending.target;
+      }
+
+      lastAppliedSeekRef.current = { target: pending.target, ts: now };
+    });
+  }, [seekVersion, seekTarget]);
+
+  useEffect(() => {
+    return () => {
+      if (seekFlushRafRef.current !== null) {
+        cancelAnimationFrame(seekFlushRafRef.current);
+        seekFlushRafRef.current = null;
+      }
+      pendingSeekRef.current = null;
+    };
+  }, []);
 
   // When playback mode/source switches, reset playback position to 0
   const prevPlaybackKeyRef = useRef<string | null>(null);
@@ -344,25 +289,74 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const mediaEl = mediaRef.current;
     if (!mediaEl || !activePlaybackSrc) return;
     const previewEl = previewAudioRef.current;
+    let cancelled = false;
+
+    const playWithFallback = async () => {
+      if (isDualTrackVideoPreview && previewEl) {
+        try {
+          await mediaEl.play();
+        } catch {
+          if (!cancelled) setPlaying(false);
+          return;
+        }
+
+        try {
+          await previewEl.play();
+          if (!cancelled) setPlaying(true);
+        } catch (error) {
+          if (cancelled) return;
+          console.warn("Preview audio failed to start; falling back to single-track playback:", error);
+          setPreviewCacheState("error");
+          setPreviewAudioReady(false);
+          previewEl.pause();
+          mediaEl.muted = false;
+          mediaEl.volume = volume;
+          if (mediaEl.paused) {
+            mediaEl.play().catch(() => setPlaying(false));
+          } else {
+            setPlaying(true);
+          }
+        }
+        return;
+      }
+
+      // Pre-play snap: if currentTime is inside a deleted range in fallback/live-skip
+      // mode, seek to the next kept boundary before calling play() to prevent startup
+      // leakage of deleted audio. Reuses activeDeletedRanges and the same range logic
+      // as the RAF skip loop.
+      if (fallbackSkipModeRef.current && activeDeletedRangesRef.current.length > 0) {
+        const snapped = snapOutOfDeletedRange(mediaEl.currentTime, activeDeletedRangesRef.current);
+        if (snapped !== mediaEl.currentTime) {
+          mediaEl.currentTime = snapped;
+        }
+      }
+
+      mediaEl.play()
+        .then(() => {
+          if (!cancelled) setPlaying(true);
+        })
+        .catch(() => {
+          if (!cancelled) setPlaying(false);
+        });
+    };
 
     if (isPlaying) {
-      if (isDualTrackVideoPreview && previewEl) {
-        void Promise.all([
-          mediaEl.play(),
-          previewEl.play(),
-        ]).catch(() => setPlaying(false));
-      } else {
-        mediaEl.play().catch(() => setPlaying(false));
-      }
+      void playWithFallback();
     } else {
       mediaEl.pause();
       previewEl?.pause();
     }
-  }, [isPlaying, activePlaybackSrc, isDualTrackVideoPreview, setPlaying]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isPlaying, activePlaybackSrc, isDualTrackVideoPreview, setPlaying, volume]);
 
   // RAF-based playback loop: polls ~60fps for precise deleted-segment skipping
   // instead of relying on the ~4Hz onTimeUpdate event
   const rafRef = useRef<number>(0);
+  const lastFallbackSkipAtRef = useRef(0);
+  const lastVideoSyncTargetRef = useRef(0);
   useEffect(() => {
     if (!isPlaying) {
       if (rafRef.current) {
@@ -378,9 +372,11 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       const time = el.currentTime;
       if (time + 0.05 < lastObservedTimeRef.current) {
         lastSkipTargetRef.current = 0;
+        lastFallbackSkipAtRef.current = 0;
       }
       lastObservedTimeRef.current = time;
       const END_EPSILON = 0.005; // 5ms
+      const nowTick = performance.now();
       const mediaDuration =
         Number.isFinite(el.duration) && el.duration > 0 ? el.duration : duration;
       const maxSeekTarget =
@@ -389,13 +385,14 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
           : Number.POSITIVE_INFINITY;
 
       // Skip deleted segments when preview edits is on but no cached preview is available
-      if (previewEdits && !usePreviewCache && activeDeletedRanges.length > 0) {
+      if (previewEdits && !isPreviewCacheActive && activeDeletedRanges.length > 0) {
         for (const range of activeDeletedRanges) {
           if (time >= range.start && time < range.end) {
             const seekTarget = Math.min(range.end, maxSeekTarget);
             const monotonicTarget = Math.max(seekTarget, lastSkipTargetRef.current + END_EPSILON);
             const finalTarget = Math.min(monotonicTarget, maxSeekTarget);
-            if (finalTarget > time + END_EPSILON) {
+            if (finalTarget > time + END_EPSILON && nowTick - lastFallbackSkipAtRef.current > 35) {
+              lastFallbackSkipAtRef.current = nowTick;
               lastSkipTargetRef.current = finalTarget;
               el.currentTime = finalTarget;
               // Don't update store yet — next frame will read the new position
@@ -423,6 +420,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
           ) {
             videoEl.currentTime = targetSourceTime;
             lastVideoSyncTimeRef.current = now;
+            lastVideoSyncTargetRef.current = targetSourceTime;
           }
         }
       }
@@ -439,7 +437,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         rafRef.current = 0;
       }
     };
-  }, [isPlaying, previewEdits, usePreviewCache, activeDeletedRanges, duration, setCurrentTime, onTimeUpdate, isDualTrackVideoPreview, backendKeepSegments]);
+  }, [isPlaying, previewEdits, isPreviewCacheActive, activeDeletedRanges, duration, setCurrentTime, onTimeUpdate, isDualTrackVideoPreview, backendKeepSegments]);
 
   // Fallback onTimeUpdate for when paused (seek bar scrubbing, etc.)
   const handleTimeUpdate = useCallback(() => {
@@ -450,28 +448,51 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     onTimeUpdate?.(el.currentTime);
   }, [isPlaying, setCurrentTime, onTimeUpdate, isDualTrackVideoPreview]);
 
-  const handleLoadedMetadata = useCallback(() => {
-    const el = isDualTrackVideoPreview ? previewAudioRef.current : mediaRef.current;
-    if (!el) return;
-    setDuration(el.duration);
-    if (isDualTrackVideoPreview) {
-      const mediaEl = mediaRef.current;
-      if (mediaEl) {
-        mediaEl.volume = 0;
-        mediaEl.muted = true;
-      }
-    } else {
-      el.volume = volume;
+  const handleLoadedMetadata = useCallback((e: React.SyntheticEvent<HTMLVideoElement | HTMLAudioElement>) => {
+    const targetEl = e.currentTarget;
+    setDuration(targetEl.duration);
+    targetEl.playbackRate = playbackRate;
+
+    if (targetEl === previewAudioRef.current) {
+      setPreviewAudioReady(true);
+      targetEl.volume = volume;
+      return;
     }
-    el.playbackRate = playbackRate;
+
+    if (isDualTrackVideoPreview) {
+      targetEl.volume = 0;
+      targetEl.muted = true;
+      return;
+    }
+
+    targetEl.volume = volume;
+    targetEl.muted = false;
   }, [setDuration, volume, playbackRate, isDualTrackVideoPreview]);
 
-  const handlePlay = useCallback(() => setPlaying(true), [setPlaying]);
+  const handlePlay= useCallback(() => setPlaying(true), [setPlaying]);
   const handlePause = useCallback(() => setPlaying(false), [setPlaying]);
 
   const togglePlay = useCallback(() => {
     setPlaying(!isPlaying);
   }, [isPlaying, setPlaying]);
+
+  const handleRestart = useCallback(() => {
+    const mediaEl = mediaRef.current;
+    if (mediaEl) mediaEl.currentTime = 0;
+    const previewEl = previewAudioRef.current;
+    if (previewEl) previewEl.currentTime = 0;
+  }, []);
+
+  const handleRewind = useCallback(() => {
+    const skipSeconds = 5;
+    if (isDualTrackVideoPreview) {
+      const previewEl = previewAudioRef.current;
+      if (previewEl) previewEl.currentTime = Math.max(0, previewEl.currentTime - skipSeconds);
+    } else {
+      const mediaEl = mediaRef.current;
+      if (mediaEl) mediaEl.currentTime = Math.max(0, mediaEl.currentTime - skipSeconds);
+    }
+  }, [isDualTrackVideoPreview]);
 
   const toggleMute = useCallback(() => {
     setVolume(volume === 0 ? 1 : 0);
@@ -533,27 +554,38 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   return (
     <div className={`flex flex-col bg-neutral-900 rounded-lg ${className}`}>
       {/* Primary media element — video src remains stable even when preview cache is active */}
-      <MediaTag
-        ref={mediaRef}
-        src={primarySrc ?? undefined}
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onPlay={handlePlay}
-        onPause={handlePause}
-        onEnded={handlePause}
-        className={
-          showVideoDisplay
-            ? "w-full rounded-t-lg bg-black"
-            : "hidden"
-        }
-        preload="metadata"
-      />
-      {isDualTrackVideoPreview && (
+      <div className="relative">
+        <MediaTag
+          ref={mediaRef}
+          src={primarySrc ?? undefined}
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+          onPlay={handlePlay}
+          onPause={handlePause}
+          onEnded={handlePause}
+          className={
+            showVideoDisplay
+              ? "w-full rounded-t-lg bg-black"
+              : "hidden"
+          }
+          preload="metadata"
+        />
+        {showVideoDisplay && (
+          <CaptionOverlay
+            currentTime={currentTime}
+            words={words}
+            enabled={captionsEnabled}
+          />
+        )}
+      </div>
+      {hasVideoPreviewCandidate && (
         <audio
           ref={previewAudioRef}
           src={previewAudioUrl ?? undefined}
           onLoadedMetadata={handleLoadedMetadata}
+          onCanPlay={handlePreviewCanPlay}
           onTimeUpdate={handleTimeUpdate}
+          onError={handlePreviewAudioError}
           onEnded={handlePause}
           className="hidden"
           preload="metadata"
@@ -561,102 +593,26 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       )}
 
       {/* Controls */}
-      <div className="flex flex-col gap-2 px-3 py-2">
-        {/* Seek bar */}
-        <input
-          type="range"
-          min={0}
-          max={duration || 0}
-          step={0.01}
-          value={currentTime}
-          onChange={handleSeekBarChange}
-          className="w-full h-1 appearance-none bg-neutral-700 rounded cursor-pointer accent-[#E8A838]"
-          aria-label="Seek"
-        />
-
-        {/* Controls row */}
-        <div className="flex items-center gap-3 text-neutral-300">
-          {/* Play/Pause */}
-          <button
-            onClick={togglePlay}
-            className="hover:text-[#E8A838] transition-colors"
-            aria-label={isPlaying ? t("player.pause") : t("player.play")}
-          >
-            {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-          </button>
-
-          {/* Time display */}
-          <span className="text-xs font-mono tabular-nums min-w-[90px]">
-            {formatTime(currentTime)} / {formatTime(duration)}
-          </span>
-
-          {/* Preview Edits toggle */}
-          {words.length > 0 && (
-            <button
-              onClick={() => setPreviewEdits(!previewEdits)}
-              aria-pressed={previewEdits}
-              aria-label={previewToggleLabel}
-              className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded transition-colors ${
-                previewEdits
-                  ? "text-[#E8A838] bg-[#E8A838]/10"
-                  : "text-neutral-500 hover:text-neutral-300"
-              }`}
-              title={previewToggleLabel}
-            >
-              {previewEdits && previewCacheState === "loading" ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : previewEdits ? (
-                <Eye size={14} />
-              ) : (
-                <EyeOff size={14} />
-              )}
-              {previewToggleLabel}
-              {previewEdits && (
-                <span className="text-[10px] text-neutral-400 ml-1" title={previewCacheModeLabel}>
-                  {previewCacheModeLabel}
-                </span>
-              )}
-            </button>
-          )}
-
-          {/* Spacer */}
-          <div className="flex-1" />
-
-          {/* Volume */}
-          <button
-            onClick={toggleMute}
-            className="hover:text-[#E8A838] transition-colors"
-            aria-label={volume === 0 ? t("player.volume") : t("player.mute")}
-          >
-            {volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
-          </button>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.01}
-            value={volume}
-            onChange={handleVolumeChange}
-            className="w-16 h-1 appearance-none bg-neutral-700 rounded cursor-pointer accent-[#E8A838]"
-            aria-label={t("player.volume")}
-          />
-
-          {/* Playback speed */}
-          <select
-            value={playbackRate}
-            onChange={handleRateChange}
-            className="bg-neutral-800 text-neutral-300 text-xs rounded px-1.5 py-0.5 border border-neutral-700 cursor-pointer focus:outline-none focus:border-[#E8A838]"
-            aria-label={t("player.speed")}
-          >
-            {PLAYBACK_RATES.map((rate) => (
-              <option key={rate} value={rate}>
-                {/* eslint-disable-next-line i18next/no-literal-string */}
-                {rate}x
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <PlaybackControls
+        currentTime={currentTime}
+        duration={duration}
+        isPlaying={isPlaying}
+        volume={volume}
+        playbackRate={playbackRate}
+        previewEdits={previewEdits}
+        previewCacheState={previewCacheState}
+        previewToggleLabel={previewToggleLabel}
+        previewCacheModeLabel={previewCacheModeLabel}
+        hasWords={words.length > 0}
+        onTogglePlay={togglePlay}
+        onRestart={handleRestart}
+        onRewind={handleRewind}
+        onSeekBarChange={handleSeekBarChange}
+        onToggleMute={toggleMute}
+        onVolumeChange={handleVolumeChange}
+        onRateChange={handleRateChange}
+        onTogglePreviewEdits={() => setPreviewEdits(!previewEdits)}
+      />
     </div>
   );
 };

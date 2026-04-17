@@ -1,7 +1,7 @@
 use tauri::State;
 
 use crate::commands::editor::EditorStore;
-use crate::managers::export::{self, ExportConfig, ExportFormat};
+use crate::managers::export::{self, CaptionSegment, ExportConfig, ExportFormat};
 
 #[tauri::command]
 #[specta::specta]
@@ -38,4 +38,17 @@ pub fn export_transcript_to_file(
         ..Default::default()
     };
     export::export_to_file(words, format, &config, std::path::Path::new(&path))
+}
+
+/// Return all caption segments with their time ranges.
+///
+/// The frontend caches these and performs a simple time-range lookup on each
+/// frame, keeping the hot-path fast while the segmentation logic stays here.
+#[tauri::command]
+#[specta::specta]
+pub fn get_caption_segments(store: State<EditorStore>) -> Vec<CaptionSegment> {
+    let state = store.0.lock().unwrap();
+    let words = state.get_words();
+    let config = ExportConfig::default();
+    export::build_segments(words, &config)
 }

@@ -1,36 +1,53 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import { open, save } from "@tauri-apps/plugin-dialog";
-import { invoke, convertFileSrc } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import {
   FileVideo,
   Upload,
   FileText,
-  Download,
   Save,
   FolderOpen,
-  Terminal,
   X,
+  AudioLines,
+  Captions,
+  Volume2,
 } from "lucide-react";
 import { SettingsGroup } from "@/components/ui/SettingsGroup";
+import { commands, type ExportFormat, type Result } from "@/bindings";
 import { useEditorStore } from "@/stores/editorStore";
-import { usePlayerStore, type MediaInfo } from "@/stores/playerStore";
+import { usePlayerStore } from "@/stores/playerStore";
+import { useSettingsStore } from "@/stores/settingsStore";
 import TranscriptEditor from "@/components/editor/TranscriptEditor";
 import MediaPlayer from "@/components/player/MediaPlayer";
 import Waveform from "@/components/player/Waveform";
+import EditorToolbar from "@/components/editor/EditorToolbar";
+
+const unwrapResult = <T,>(result: Result<T, string>): T => {
+  if (result.status === "ok") {
+    return result.data;
+  }
+  throw new Error(result.error);
+};
 
 const EditorView: React.FC = () => {
   const { t } = useTranslation();
-  const { words, setWords, deleteWord, silenceWord, splitWord, undo, redo, deleteRange, restoreAll, selectWord, setSelectionRange, clearHighlights } = useEditorStore();
+  const { words, setWords, deleteWord, silenceWord, splitWord, undo, redo, deleteRange, selectWord, setSelectionRange, clearHighlights, refreshFromBackend } = useEditorStore();
   const selectedIndex = useEditorStore((s) => s.selectedIndex);
-  const selectionRange = useEditorStore((s) => s.selectionRange);
-  const { mediaUrl, mediaType, currentTime, duration, setMedia } =
+  const { mediaUrl, currentTime, duration, setMedia } =
     usePlayerStore();
   const mediaInfo = usePlayerStore((s) => s.mediaInfo);
   const setMediaInfo = usePlayerStore((s) => s.setMediaInfo);
   const clearMedia = usePlayerStore((s) => s.clearMedia);
   const seekTo = usePlayerStore((s) => s.seekTo);
+  const settings = useSettingsStore((s) => s.settings);
+  const updateSetting = useSettingsStore((s) => s.updateSetting);
+  const normalizeAudio = settings?.normalize_audio_on_export ?? false;
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isExportingMedia, setIsExportingMedia] = useState(false);
+  const [burnCaptions, setBurnCaptions] = useState(false);
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
   const [modelMissing, setModelMissing] = useState(false);
   const [lastSavedPath, setLastSavedPath] = useState<string | null>(null);
   // Suppress auto-select briefly after a manual word click so it doesn't get overridden
@@ -41,7 +58,7 @@ const EditorView: React.FC = () => {
     if (!lastSavedPath || words.length === 0) return;
     const timer = setInterval(async () => {
       try {
-        await invoke("save_project", { path: lastSavedPath });
+        unwrapResult(await commands.saveProject(lastSavedPath, null));
       } catch (err) {
         console.error("Auto-save failed:", err);
       }
@@ -67,11 +84,14 @@ const EditorView: React.FC = () => {
         if (hlIndices.length > 0) {
           // Bulk-delete highlighted words (fillers or pause-adjacent)
           if (hlType === "filler") {
-            invoke<number>("delete_fillers", {}).then(async (count) => {
+            commands.deleteFillers().then(async (result) => {
+              const count = unwrapResult(result);
               if (count > 0) {
-                const updated = await invoke<typeof words>("editor_get_words", {});
-                await setWords(updated);
+                await refreshFromBackend();
               }
+              clearHighlights();
+            }).catch((err) => {
+              console.error("Failed to delete fillers:", err);
               clearHighlights();
             });
           } else {
@@ -137,24 +157,14 @@ const EditorView: React.FC = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [deleteWord, deleteRange, silenceWord, splitWord, undo, redo, selectWord, setSelectionRange, clearHighlights, setWords, words]);
+  }, [deleteWord, deleteRange, silenceWord, splitWord, undo, redo, selectWord, setSelectionRange, clearHighlights, refreshFromBackend]);
 
   const handleTranscribe = useCallback(async () => {
     if (!mediaInfo) return;
     setIsTranscribing(true);
     setModelMissing(false);
     try {
-      const result = await invoke<
-        Array<{
-          text: string;
-          start_us: number;
-          end_us: number;
-          deleted: boolean;
-          silenced: boolean;
-          confidence: number;
-          speaker_id: number;
-        }>
-      >("transcribe_media_file", { path: mediaInfo.path });
+      const result = unwrapResult(await commands.transcribeMediaFile(mediaInfo.path));
       await setWords(result);
     } catch (err) {
       const errStr = String(err);
@@ -162,6 +172,7 @@ const EditorView: React.FC = () => {
         setModelMissing(true);
       } else {
         console.error("Transcription failed:", err);
+        toast.error(t("editor.transcriptionError"));
         const placeholderWords = [
           {
             text: errStr,
@@ -198,7 +209,7 @@ const EditorView: React.FC = () => {
       if (!selected) return;
 
       const path = typeof selected === "string" ? selected : selected;
-      const info = await invoke<MediaInfo>("media_import", { path });
+      const info = unwrapResult(await commands.mediaImport(path));
       setMediaInfo(info);
 
       const assetUrl = convertFileSrc(info.path);
@@ -212,17 +223,7 @@ const EditorView: React.FC = () => {
           if (storeInfo) {
             setIsTranscribing(true);
             setModelMissing(false);
-            const result = await invoke<
-              Array<{
-                text: string;
-                start_us: number;
-                end_us: number;
-                deleted: boolean;
-                silenced: boolean;
-                confidence: number;
-                speaker_id: number;
-              }>
-            >("transcribe_media_file", { path: storeInfo.path });
+            const result = unwrapResult(await commands.transcribeMediaFile(storeInfo.path));
             await setWords(result);
             setIsTranscribing(false);
           }
@@ -239,7 +240,7 @@ const EditorView: React.FC = () => {
   }, [t, setMedia, setMediaInfo, setWords]);
 
   const handleExport = useCallback(
-    async (format: string) => {
+    async (format: ExportFormat) => {
       const ext = format === "Srt" ? "srt" : format === "Vtt" ? "vtt" : "txt";
       try {
         const filePath = await save({
@@ -247,7 +248,9 @@ const EditorView: React.FC = () => {
           defaultPath: `transcript.${ext}`,
         });
         if (!filePath) return;
-        await invoke("export_transcript_to_file", { format, path: filePath });
+        unwrapResult(
+          await commands.exportTranscriptToFile(format, filePath, null, null),
+        );
       } catch (err) {
         console.error("Export failed:", err);
       }
@@ -262,7 +265,7 @@ const EditorView: React.FC = () => {
         defaultPath: `${mediaInfo?.file_name ?? "project"}.toaster`,
       });
       if (!filePath) return;
-      await invoke("save_project", { path: filePath });
+      unwrapResult(await commands.saveProject(filePath, null));
       setLastSavedPath(filePath);
     } catch (err) {
       console.error("Save project failed:", err);
@@ -277,13 +280,12 @@ const EditorView: React.FC = () => {
       });
       if (!selected) return;
       const path = typeof selected === "string" ? selected : selected;
-      const mediaPath = await invoke<string>("load_project", { path });
+      const mediaPath = unwrapResult(await commands.loadProject(path));
 
-      const loadedWords = await invoke<typeof words>("editor_get_words", {});
-      await setWords(loadedWords);
+      await refreshFromBackend();
 
       if (mediaPath) {
-        const info = await invoke<MediaInfo | null>("media_get_current", {});
+        const info = unwrapResult(await commands.mediaGetCurrent());
         if (info) {
           setMediaInfo(info);
           const assetUrl = convertFileSrc(info.path);
@@ -293,19 +295,62 @@ const EditorView: React.FC = () => {
     } catch (err) {
       console.error("Load project failed:", err);
     }
-  }, [setWords, setMedia, setMediaInfo]);
+  }, [refreshFromBackend, setMedia, setMediaInfo]);
 
   const handleFFmpegScript = useCallback(async () => {
     if (!mediaInfo) return;
     try {
-      const script = await invoke<string>("generate_ffmpeg_edit_script", {
-        inputPath: mediaInfo.path,
-      });
+      const script = unwrapResult(
+        await commands.generateFfmpegEditScript(mediaInfo.path),
+      );
       await navigator.clipboard.writeText(script);
     } catch (err) {
       console.error("FFmpeg script generation failed:", err);
     }
   }, [mediaInfo]);
+
+  const handleExportEditedMedia = useCallback(async () => {
+    if (!mediaInfo) return;
+
+    const extension = (mediaInfo.extension || (mediaInfo.media_type === "Video" ? "mp4" : "m4a")).toLowerCase();
+    const baseName = mediaInfo.file_name.replace(/\.[^/.]+$/, "");
+
+    try {
+      const filePath = await save({
+        filters: [
+          {
+            name: mediaInfo.media_type === "Video" ? t("editor.editedVideo") : t("editor.editedAudio"),
+            extensions: [extension],
+          },
+        ],
+        defaultPath: `${baseName}-edited.${extension}`,
+      });
+      if (!filePath) return;
+      setIsExportingMedia(true);
+      unwrapResult(await commands.exportEditedMedia(mediaInfo.path, filePath, burnCaptions || null));
+    } catch (err) {
+      console.error("Edited media export failed:", err);
+    } finally {
+      setIsExportingMedia(false);
+    }
+  }, [mediaInfo, t, burnCaptions]);
+
+  const handleCleanup = useCallback(async () => {
+    clearHighlights();
+    setIsCleaningUp(true);
+    try {
+      await invoke("cleanup_all", {});
+      await refreshFromBackend();
+    } catch (err) {
+      console.error("Cleanup failed:", err);
+    } finally {
+      setIsCleaningUp(false);
+    }
+  }, [clearHighlights, refreshFromBackend]);
+
+  const handleNormalizeToggle = useCallback(() => {
+    updateSetting("normalize_audio_on_export", !normalizeAudio);
+  }, [updateSetting, normalizeAudio]);
 
   const handleClose = useCallback(() => {
     clearMedia();
@@ -372,7 +417,7 @@ const EditorView: React.FC = () => {
               {/* File info bar */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <FileVideo size={16} className="text-black" />
+                  <FileVideo size={16} className="text-text/60" />
                   <span className="text-sm font-medium">
                     {mediaInfo?.file_name}
                   </span>
@@ -383,6 +428,16 @@ const EditorView: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleExportEditedMedia}
+                    disabled={words.length === 0 || isExportingMedia}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors disabled:opacity-50"
+                    title={t("editor.export")}
+                  >
+                    <FileVideo size={14} />
+                    {isExportingMedia ? t("editor.exporting") : t("editor.export")}
+                  </button>
+                  <div className="w-px h-5 bg-mid-gray/30" />
                   <button
                     onClick={handleSaveProject}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
@@ -406,6 +461,7 @@ const EditorView: React.FC = () => {
               <MediaPlayer
                 className="rounded-lg overflow-hidden"
                 onTimeUpdate={handleTimeUpdate}
+                captionsEnabled={burnCaptions}
               />
 
               {/* Waveform */}
@@ -442,103 +498,76 @@ const EditorView: React.FC = () => {
       {/* Transcription section — only visible when media is loaded */}
       {mediaUrl && (
         <SettingsGroup title={t("editor.sections.transcription")}>
-          <div className="px-4 py-3 space-y-3">
-            {words.length === 0 && (
-              <>
-                <button
-                  onClick={handleTranscribe}
-                  disabled={isTranscribing}
-                  className="flex items-center gap-2 px-4 py-2 bg-accent text-black rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-50"
-                >
-                  <FileText size={16} />
-                  {isTranscribing
-                    ? t("editor.transcribing")
-                    : t("editor.transcribe")}
-                </button>
-                {modelMissing && (
-                  <p className="text-xs text-amber-400">
-                    {t("editor.modelNotLoaded")}
-                  </p>
-                )}
-              </>
-            )}
+          {words.length === 0 ? (
+            <div className="px-4 py-3 space-y-3">
+              <button
+                onClick={handleTranscribe}
+                disabled={isTranscribing}
+                className="flex items-center gap-2 px-4 py-2 bg-accent text-black rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-50"
+              >
+                <FileText size={16} />
+                {isTranscribing
+                  ? t("editor.transcribing")
+                  : t("editor.transcribe")}
+              </button>
+              {modelMissing && (
+                <p className="text-xs text-amber-400">
+                  {t("editor.modelNotLoaded")}
+                </p>
+              )}
+            </div>
+          ) : (
+            <TranscriptEditor onWordClick={handleWordClick} />
+          )}
+        </SettingsGroup>
+      )}
 
-            {words.length > 0 && (
-              <div className="bg-background border border-mid-gray/20 rounded-lg overflow-hidden">
-                <TranscriptEditor onWordClick={handleWordClick} />
-              </div>
-            )}
+      {/* Edit section — only visible when words are loaded */}
+      {words.length > 0 && (
+        <SettingsGroup title={t("editor.sections.edit")}>
+          <div className="px-4 py-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={handleCleanup}
+                disabled={isCleaningUp}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors disabled:opacity-50"
+              >
+                <AudioLines size={14} />
+                {t("editor.cleanup")}
+              </button>
+              <button
+                onClick={() => setBurnCaptions(!burnCaptions)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition-colors ${
+                  burnCaptions
+                    ? "bg-accent text-black border-accent"
+                    : "bg-background border-mid-gray/20 hover:bg-mid-gray/10"
+                }`}
+              >
+                <Captions size={14} />
+                {t("editor.addCaptions")}
+              </button>
+              <button
+                onClick={handleNormalizeToggle}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition-colors ${
+                  normalizeAudio
+                    ? "bg-accent text-black border-accent"
+                    : "bg-background border-mid-gray/20 hover:bg-mid-gray/10"
+                }`}
+              >
+                <Volume2 size={14} />
+                {t("editor.normalizeAudio")}
+              </button>
+            </div>
           </div>
         </SettingsGroup>
       )}
 
       {/* Export & Tools section */}
-      {words.length > 0 && (
-        <SettingsGroup title={t("editor.sections.exportTools")}>
-          <div className="px-4 py-3 space-y-3">
-            {/* Export formats */}
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-mid-gray/60 mb-1.5">
-                {t("editor.exportFormats")}
-              </p>
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  onClick={() => handleExport("Srt")}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
-                >
-                  <Download size={14} />
-                  SRT
-                </button>
-                <button
-                  onClick={() => handleExport("Vtt")}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
-                >
-                  <Download size={14} />
-                  VTT
-                </button>
-                <button
-                  onClick={() => handleExport("Script")}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
-                >
-                  <Download size={14} />
-                  {t("editor.script")}
-                </button>
-                <button
-                  onClick={async () => {
-                    const text = words
-                      .filter((w) => !w.deleted && !w.silenced)
-                      .map((w) => w.text)
-                      .join(" ");
-                    await navigator.clipboard.writeText(text);
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
-                  title={t("editor.copyTranscript")}
-                >
-                  <FileText size={14} />
-                  {t("editor.copyText")}
-                </button>
-              </div>
-            </div>
-
-            {/* Tools */}
-            <div>
-              <p className="text-[10px] uppercase tracking-wider text-mid-gray/60 mb-1.5">
-                {t("editor.tools")}
-              </p>
-              <div className="flex items-center gap-2 flex-wrap">
-                <button
-                  onClick={handleFFmpegScript}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-background border border-mid-gray/20 rounded-lg text-xs hover:bg-mid-gray/10 transition-colors"
-                  title={t("editor.ffmpegScript")}
-                >
-                  <Terminal size={14} />
-                  FFmpeg
-                </button>
-              </div>
-            </div>
-          </div>
-        </SettingsGroup>
-      )}
+      <EditorToolbar
+        words={words}
+        onExport={handleExport}
+        onFFmpegScript={handleFFmpegScript}
+      />
     </div>
   );
 };

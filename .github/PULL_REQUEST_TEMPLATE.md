@@ -1,71 +1,43 @@
-## Before Submitting This PR
+## Summary
 
-<!--
-HANDY IS UNDERGOING A FEATURE FREEZE. IF YOU ARE SUBMITTING A PR WHICH IS A NEW FEATURE THAT THE COMMUNITY HAS NOT ASKED FOR: PREPARE TO BE REJECTED. IF THE COMMUNITY HAS ASKED FOR IT, OR YOU HAVE EXPLICITLY GATHERED SUPPORT IT MAY STILL BE CONSIDERED.
+Describe the change and the user impact.
 
-BUG FIXES ARE THE TOP PRIORITY. THERE ARE 60+ ISSUES TO FIX.
--->
-
-**Please confirm you have done the following:**
-
-- [ ] I have searched [existing issues](https://github.com/cjpais/Handy/issues) and [pull requests](https://github.com/cjpais/Handy/pulls) (including closed ones) to ensure this isn't a duplicate
-- [ ] I have read [CONTRIBUTING.md](https://github.com/cjpais/Handy/blob/main/CONTRIBUTING.md)
-
-**If this is a feature or change that was previously closed/rejected:**
-
-- [ ] I have explained in the description below why this should be reconsidered
-- [ ] I have gathered community feedback (link to discussion below)
-
-## Human Written Description
-
-<!-- Describe your changes clearly and concisely
-
-Please write 2-3 sentences in your own words explaining:
-- What problem you noticed or idea you had
-- Why you think this change matters
-
-This section should be YOUR thinking, not AI-generated text. Even if AI helped write the code, we want to hear from you directly. Your perspective as a human is what makes contributions meaningful. Your PR may be rejected if you do not
-include a human-written description.
--->
-
-## Related Issues/Discussions
-
-<!-- Link to related issues, discussions, or previous PRs -->
-<!-- If reopening something previously closed, explain why this should be reconsidered -->
+## Related issues
 
 Fixes #
-Discussion:
 
-## Community Feedback
+## Type of change
 
-<!--
-PRs with community support are much more likely to be merged.
+- [ ] Bug fix
+- [ ] Feature
+- [ ] Refactor
+- [ ] Docs
+- [ ] Build/tooling
 
-For features: Link to a discussion where community members have expressed interest.
-For bug fixes: Link to the issue where others have confirmed the bug.
+## Validation
 
-If you haven't gathered feedback yet, consider starting a discussion first:
-https://github.com/cjpais/Handy/discussions
+Describe what you ran and what behavior you checked.
 
-It is not explicitly required to gather feedback, but it certainly helps your PR get merged.
--->
+- [ ] `cd src-tauri && cargo test`
+- [ ] `cd src-tauri && cargo clippy`
+- [ ] `npm run lint`
 
-## Testing
+## Precision/timeline checklist (if relevant)
 
-<!-- Describe how you tested your changes and if you need help getting additional testing -->
+- [ ] Backend keep-segment/time mapping remains authoritative
+- [ ] Midstream deletion replay behavior remains clean
+- [ ] Delete/undo cycles preserve expected playback
+- [ ] Preview/export cut boundaries remain aligned
 
-## Screenshots/Videos (if applicable)
+## UI changes (if relevant)
 
-<!-- Add screenshots or videos demonstrating the change -->
+- [ ] i18n keys added/updated
+- [ ] Dark-theme readability checked
+- [ ] Screenshot/video attached
 
-## AI Assistance
+## AI assistance disclosure
 
-<!-- AI-assisted PRs are welcome! Just let us know so we can review appropriately. -->
+- [ ] No AI used
+- [ ] AI used (describe tools and scope below)
 
-- [ ] No AI was used in this PR
-- [ ] AI was used (please describe below)
-
-**If AI was used:**
-
-- Tools used:
-- How extensively:
+AI tools + scope:

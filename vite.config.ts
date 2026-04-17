@@ -17,8 +17,17 @@ export default defineConfig(async () => ({
     },
   },
 
+  // Vitest configuration
+  test: {
+    environment: "happy-dom",
+    globals: true,
+    setupFiles: ["./src/test-setup.ts"],
+    include: ["src/**/*.test.{ts,tsx}"],
+  },
+
   // Multiple entry points for main app and overlay
   build: {
+    sourcemap: !!process.env.TAURI_DEBUG,
     rollupOptions: {
       input: {
         main: resolve(__dirname, "index.html"),

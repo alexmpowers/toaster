@@ -1,0 +1,122 @@
+name: "CI"
+
+# Consolidated lint/format/test workflow. Replaces the previous
+# `code-quality.yml` (frontend + Rust lint/format) and `test.yml`
+# (Rust unit tests) workflows.
+#
+# Cross-platform Tauri bundle builds are intentionally NOT part of this
+# workflow — they live in the reusable `build.yml` and its callers
+# (`main-build.yml`, `build-test.yml`, `pr-test-build.yml`, `release.yml`),
+# which have distinct triggers and artifact/signing semantics.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "src-tauri/**"
+      - "package.json"
+      - "bun.lock"
+      - ".eslintrc*"
+      - "eslint.config.*"
+      - ".prettierrc*"
+      - "tsconfig*"
+      - "tailwind.config.*"
+      - ".github/workflows/**"
+  pull_request:
+    paths:
+      - "src/**"
+      - "src-tauri/**"
+      - "package.json"
+      - "bun.lock"
+      - ".eslintrc*"
+      - "eslint.config.*"
+      - ".prettierrc*"
+      - "tsconfig*"
+      - "tailwind.config.*"
+      - ".github/workflows/**"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Check translation consistency
+        run: bun run check:translations
+
+      - name: Run ESLint
+        run: bun run lint
+
+      - name: Run prettier
+        run: bun run format:check
+
+  rust-quality:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: src-tauri
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        working-directory: .
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libasound2-dev libssl-dev libgtk-layer-shell-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Use mock TranscriptionManager (CI only)
+        run: |
+          cp src/managers/transcription_mock.rs src/managers/transcription.rs
+          sed -i '/^transcribe-rs/d' Cargo.toml
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Run clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+  rust-tests:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev libasound2-dev libssl-dev libgtk-layer-shell-dev
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Use mock TranscriptionManager (CI only)
+        working-directory: src-tauri
+        run: |
+          # Swap to mock adapter - avoids compiling whisper/Vulkan
+          cp src/managers/transcription_mock.rs src/managers/transcription.rs
+          sed -i '/^transcribe-rs/d' Cargo.toml
+
+      - name: Run Rust tests
+        working-directory: src-tauri
+        run: cargo test

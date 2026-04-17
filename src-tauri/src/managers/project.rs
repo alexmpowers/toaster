@@ -3,7 +3,6 @@
 /// A `.toaster` project is a pretty-printed JSON file that stores project
 /// metadata, the source media path, the full word list (transcript with
 /// edit states), filler-detection config, and export settings.
-
 use crate::managers::editor::Word;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
@@ -76,8 +75,7 @@ impl ToasterProject {
         let json = serde_json::to_string_pretty(self)
             .map_err(|e| format!("Failed to serialize project: {e}"))?;
 
-        std::fs::write(path, json)
-            .map_err(|e| format!("Failed to write project file: {e}"))
+        std::fs::write(path, json).map_err(|e| format!("Failed to write project file: {e}"))
     }
 
     /// Load a project from a `.toaster` file.

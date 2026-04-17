@@ -1,15 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Search, X, AudioLines, Timer } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { useEditorStore } from "@/stores/editorStore";
-
-interface ContextMenuState {
-  visible: boolean;
-  x: number;
-  y: number;
-  wordIndex: number;
-}
+import TranscriptContextMenu, { type ContextMenuState } from "./TranscriptContextMenu";
+import FindReplaceBar from "./FindReplaceBar";
 
 // Speaker colors for visual differentiation
 const SPEAKER_COLORS = [
@@ -28,34 +22,9 @@ function getSpeakerColor(speakerId: number): string {
   return SPEAKER_COLORS[speakerId % SPEAKER_COLORS.length];
 }
 
-/** Map confidence (0-1) to an underline style */
-function getConfidenceStyle(confidence: number): React.CSSProperties {
-  if (confidence >= 0.9) return {};
-  if (confidence >= 0.7)
-    return {
-      textDecorationLine: "underline",
-      textDecorationStyle: "dotted",
-      textDecorationColor: "rgba(234, 179, 8, 0.5)",
-      textUnderlineOffset: "3px",
-    };
-  return {
-    textDecorationLine: "underline",
-    textDecorationStyle: "wavy",
-    textDecorationColor: "rgba(239, 68, 68, 0.6)",
-    textUnderlineOffset: "3px",
-  };
-}
-
-interface PauseInfo {
-  after_word_index: number;
-  gap_duration_us: number;
-}
-
-interface FillerAnalysis {
-  filler_indices: number[];
-  pauses: PauseInfo[];
-  filler_count: number;
-  pause_count: number;
+/** Map confidence (0-1) to a visual style (currently disabled) */
+function getConfidenceStyle(_confidence: number): React.CSSProperties {
+  return {};
 }
 
 interface TranscriptEditorProps {
@@ -86,8 +55,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
     redo,
     selectWord,
     setSelectionRange,
-    setWords,
-    setHighlightedIndices,
+    refreshFromBackend,
     clearHighlights,
   } = useEditorStore();
 
@@ -98,7 +66,6 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   const [showFind, setShowFind] = useState(false);
   const [findQuery, setFindQuery] = useState("");
   const [findMatchIndex, setFindMatchIndex] = useState(0);
-  const [isDetecting, setIsDetecting] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     visible: false,
     x: 0,
@@ -106,54 +73,13 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
     wordIndex: -1,
   });
 
+  const [cleanupSummary, setCleanupSummary] = useState<string | null>(null);
+
   const highlightedSet = useMemo(() => new Set(highlightedIndices), [highlightedIndices]);
 
   const closeContextMenu = useCallback(() => {
     setContextMenu((prev) => ({ ...prev, visible: false }));
   }, []);
-
-  // Detect fillers — highlights filler words in the transcript
-  const handleDetectFillers = useCallback(async () => {
-    if (highlightType === "filler") {
-      clearHighlights();
-      return;
-    }
-    setIsDetecting(true);
-    try {
-      const result = await invoke<FillerAnalysis>("analyze_fillers", {});
-      if (result.filler_indices.length > 0) {
-        setHighlightedIndices(result.filler_indices, "filler");
-      } else {
-        setHighlightedIndices([], "filler");
-      }
-    } catch (err) {
-      console.error("Filler detection failed:", err);
-    } finally {
-      setIsDetecting(false);
-    }
-  }, [highlightType, setHighlightedIndices, clearHighlights]);
-
-  // Detect pauses — highlights words adjacent to long pauses
-  const handleDetectPauses = useCallback(async () => {
-    if (highlightType === "pause") {
-      clearHighlights();
-      return;
-    }
-    setIsDetecting(true);
-    try {
-      const result = await invoke<FillerAnalysis>("analyze_fillers", {});
-      if (result.pauses.length > 0) {
-        const pauseWordIndices = result.pauses.map((p: PauseInfo) => p.after_word_index);
-        setHighlightedIndices(pauseWordIndices, "pause");
-      } else {
-        setHighlightedIndices([], "pause");
-      }
-    } catch (err) {
-      console.error("Pause detection failed:", err);
-    } finally {
-      setIsDetecting(false);
-    }
-  }, [highlightType, setHighlightedIndices, clearHighlights]);
 
   const isInSelectionRange = useCallback(
     (index: number): boolean => {
@@ -191,9 +117,10 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
     (index: number, e: React.MouseEvent) => {
       if (dragStartRef.current === null) return;
       if (!isDraggingRef.current) {
-        // Simple click (no drag) — clear any filler/pause highlights
+        // Simple click (no drag) — clear any highlights
         if (highlightedIndices.length > 0) {
           clearHighlights();
+          setCleanupSummary(null);
         }
         if (e.shiftKey && selectedIndex !== null) {
           const start = Math.min(selectedIndex, index);
@@ -279,8 +206,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
       if (highlightType === "filler") {
         const count = await invoke<number>("delete_fillers", {});
         if (count > 0) {
-          const updated = await invoke<typeof words>("editor_get_words", {});
-          await setWords(updated);
+          await refreshFromBackend();
         }
       } else {
         // Delete each highlighted word individually
@@ -295,7 +221,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
       await deleteWord(selectedIndex);
     }
     closeContextMenu();
-  }, [selectedIndex, selectionRange, highlightedIndices, highlightType, deleteWord, deleteRange, closeContextMenu, clearHighlights, setWords]);
+  }, [selectedIndex, selectionRange, highlightedIndices, highlightType, deleteWord, deleteRange, closeContextMenu, clearHighlights, refreshFromBackend]);
 
   const handleRestoreSelected = useCallback(async () => {
     if (selectedIndex !== null) {
@@ -367,87 +293,31 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
-      {/* Detection toolbar — above transcript */}
-      <div className="flex items-center gap-2 mb-3">
-        <button
-          onClick={handleDetectFillers}
-          disabled={isDetecting}
-          className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] border transition-all duration-150 disabled:opacity-50 ${
-            highlightType === "filler"
-              ? "bg-mid-gray/10 border-mid-gray/80 text-black"
-              : "bg-mid-gray/10 border-mid-gray/20 text-mid-gray hover:bg-mid-gray/20 hover:border-mid-gray/40"
-          }`}
-        >
-          <AudioLines size={12} />
-          {t("editor.detectFillers")}
-        </button>
-        <button
-          onClick={handleDetectPauses}
-          disabled={isDetecting}
-          className={`flex items-center gap-1 px-2 py-1 rounded-md text-[11px] border transition-all duration-150 disabled:opacity-50 ${
-            highlightType === "pause"
-              ? "bg-mid-gray/10 border-mid-gray/80 text-black"
-              : "bg-mid-gray/10 border-mid-gray/20 text-mid-gray hover:bg-mid-gray/20 hover:border-mid-gray/40"
-          }`}
-        >
-          <Timer size={12} />
-          {t("editor.detectPauses")}
-        </button>
-        {highlightType && (
-          <>
-            <div className="w-px h-4 bg-mid-gray/30" />
-            <span className="text-[11px] text-mid-gray/60">
-              {highlightedIndices.length} {highlightType === "filler" ? t("editor.fillersFound") : t("editor.pausesFound")}
-            </span>
-          </>
-        )}
-      </div>
+      {/* Detection toolbar — cleanup summary only */}
+      {cleanupSummary && (
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-[11px] text-mid-gray/60">
+            {cleanupSummary}
+          </span>
+        </div>
+      )}
 
       {/* Find bar */}
       {showFind && (
-        <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-[#1E1E1E] border border-mid-gray/20">
-          <Search size={14} className="text-mid-gray/60 shrink-0" />
-          <input
-            ref={findInputRef}
-            type="text"
-            value={findQuery}
-            onChange={(e) => {
-              setFindQuery(e.target.value);
-              setFindMatchIndex(0);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") navigateFind(e.shiftKey ? -1 : 1);
-              if (e.key === "Escape") {
-                setShowFind(false);
-                setFindQuery("");
-              }
-            }}
-            placeholder={t("editor.findPlaceholder")}
-            className="flex-1 bg-transparent text-sm text-[#F0F0F0] outline-none placeholder:text-mid-gray/40"
-          />
-          {findMatches.length > 0 && (
-            <span className="text-[11px] text-mid-gray/60 shrink-0">
-              {findMatchIndex + 1}/{findMatches.length}
-            </span>
-          )}
-          {findMatches.length > 0 && (
-            <button
-              onClick={handleDeleteAllMatches}
-              className="px-2 py-0.5 text-[11px] text-red-400 bg-red-900/20 rounded hover:bg-red-900/40 transition-colors"
-            >
-              {t("editor.deleteAll")}
-            </button>
-          )}
-          <button
-            onClick={() => {
-              setShowFind(false);
-              setFindQuery("");
-            }}
-            className="text-mid-gray/60 hover:text-mid-gray transition-colors"
-          >
-            <X size={14} />
-          </button>
-        </div>
+        <FindReplaceBar
+          findQuery={findQuery}
+          findMatchIndex={findMatchIndex}
+          findMatchCount={findMatches.length}
+          findInputRef={findInputRef}
+          onQueryChange={setFindQuery}
+          onMatchIndexReset={() => setFindMatchIndex(0)}
+          onNavigate={navigateFind}
+          onDeleteAll={handleDeleteAllMatches}
+          onClose={() => {
+            setShowFind(false);
+            setFindQuery("");
+          }}
+        />
       )}
 
       {/* Word spans */}
@@ -472,7 +342,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
               : {};
 
           return (
-            <React.Fragment key={`${index}-${word.start_us}`}>
+            <React.Fragment key={`word-${word.start_us}-${index}`}>
               {showSpeakerLabel && (
                 <div className="w-full mt-2 mb-0.5 flex items-center gap-1.5">
                   <span
@@ -495,18 +365,21 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                 title={
                   isHighlighted && highlightType === "filler"
                     ? t("editor.fillerWord")
-                    : isHighlighted && highlightType === "pause"
-                      ? t("editor.pauseDetected")
-                      : showConfidence && word.confidence < 0.9
-                        ? `${t("editor.confidence")}: ${Math.round(word.confidence * 100)}%`
-                        : undefined
+                    : isHighlighted && highlightType === "duplicate"
+                      ? t("editor.duplicateWord")
+                      : isHighlighted && highlightType === "pause"
+                        ? t("editor.pauseDetected")
+                        : showConfidence && word.confidence < 0.9
+                          ? `${t("editor.confidence")}: ${Math.round(word.confidence * 100)}%`
+                          : undefined
                 }
                 className={[
                   "cursor-pointer rounded px-1 py-0.5 transition-colors",
                   word.deleted && "line-through opacity-40",
                   word.silenced && !word.deleted && "opacity-60 italic",
                   isHighlighted && highlightType === "filler" && "bg-red-400/50 text-black",
-                  isHighlighted && highlightType === "pause" && "bg-red-400/50 text-black",
+                  isHighlighted && highlightType === "duplicate" && "bg-orange-400/50 text-black",
+                  isHighlighted && highlightType === "pause" && "bg-yellow-400/50 text-black",
                   isCurrentFindMatch && !isHighlighted && "ring-2 ring-[#E8A838] bg-[#E8A838]/30",
                   isFindMatch && !isCurrentFindMatch && !isHighlighted && "bg-[#E8A838]/15",
                   isSelected && !isFindMatch && !isHighlighted && "bg-[#E8A838] text-[#1E1E1E]",
@@ -524,74 +397,19 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
       </div>
 
       {/* Context menu */}
-      {contextMenu.visible && (
-        <div
-          className="fixed z-50 min-w-[160px] rounded-md border border-[rgba(128,128,128,0.2)] bg-[#252525] py-1 shadow-lg"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
-        >
-          {contextWord && !contextWord.deleted && (
-            <button
-              className="w-full px-3 py-1.5 text-left text-sm text-[#F0F0F0] hover:bg-[rgba(128,128,128,0.2)]"
-              onClick={handleDeleteSelected}
-            >
-              {selectionRange ? t("editor.deleteRange") : t("editor.deleteWord")}
-            </button>
-          )}
-          {contextWord && contextWord.deleted && (
-            <button
-              className="w-full px-3 py-1.5 text-left text-sm text-[#F0F0F0] hover:bg-[rgba(128,128,128,0.2)]"
-              onClick={handleRestoreSelected}
-            >
-              {t("editor.restoreWord")}
-            </button>
-          )}
-          {contextWord && !contextWord.deleted && (
-            <button
-              className="w-full px-3 py-1.5 text-left text-sm text-[#F0F0F0] hover:bg-[rgba(128,128,128,0.2)]"
-              onClick={handleSilenceSelected}
-            >
-              {t("editor.silenceWord")}
-            </button>
-          )}
-          {contextWord && !contextWord.deleted && contextWord.text.length > 1 && (
-            <button
-              className="w-full px-3 py-1.5 text-left text-sm text-[#F0F0F0] hover:bg-[rgba(128,128,128,0.2)]"
-              onClick={handleSplitSelected}
-            >
-              {t("editor.splitWord")}
-            </button>
-          )}
-          <div className="my-1 border-t border-[rgba(128,128,128,0.2)]" />
-          <button
-            className="w-full px-3 py-1.5 text-left text-sm text-[#F0F0F0] hover:bg-[rgba(128,128,128,0.2)]"
-            onClick={async () => {
-              await undo();
-              closeContextMenu();
-            }}
-          >
-            {t("editor.undo")}
-          </button>
-          <button
-            className="w-full px-3 py-1.5 text-left text-sm text-[#F0F0F0] hover:bg-[rgba(128,128,128,0.2)]"
-            onClick={async () => {
-              await redo();
-              closeContextMenu();
-            }}
-          >
-            {t("editor.redo")}
-          </button>
-          <div className="my-1 border-t border-[rgba(128,128,128,0.2)]" />
-          <button
-            className="w-full px-3 py-1.5 text-left text-sm text-[#F0F0F0] hover:bg-[rgba(128,128,128,0.2)]"
-            onClick={async () => {
-              await restoreAll();
-              closeContextMenu();
-            }}
-          >
-            {t("editor.restoreAll")}
-          </button>
-        </div>
-      )}
+      <TranscriptContextMenu
+        contextMenu={contextMenu}
+        contextWord={contextWord}
+        selectionRange={selectionRange}
+        onDelete={handleDeleteSelected}
+        onRestore={handleRestoreSelected}
+        onSilence={handleSilenceSelected}
+        onSplit={handleSplitSelected}
+        onUndo={undo}
+        onRedo={redo}
+        onRestoreAll={restoreAll}
+        onClose={closeContextMenu}
+      />
     </div>
   );
 };

@@ -2,7 +2,6 @@
 ///
 /// Generates SRT, VTT, and plain-text script exports from
 /// the transcript word list, respecting deletions and silenced words.
-
 use crate::managers::editor::Word;
 use serde::{Deserialize, Serialize};
 
@@ -34,18 +33,18 @@ impl Default for ExportConfig {
     }
 }
 
-/// A caption segment for SRT/VTT output.
-#[derive(Debug, Clone)]
-struct CaptionSegment {
-    index: usize,
-    start_us: i64,
-    end_us: i64,
-    text: String,
+/// A caption segment for SRT/VTT output and live preview.
+#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+pub struct CaptionSegment {
+    pub index: usize,
+    pub start_us: i64,
+    pub end_us: i64,
+    pub text: String,
 }
 
 /// Build caption segments from word list, grouping words into segments
 /// that respect max line length and duration constraints.
-fn build_segments(words: &[Word], config: &ExportConfig) -> Vec<CaptionSegment> {
+pub fn build_segments(words: &[Word], config: &ExportConfig) -> Vec<CaptionSegment> {
     let active_words: Vec<&Word> = words
         .iter()
         .filter(|w| !w.deleted && (config.include_silenced || !w.silenced))
@@ -190,6 +189,76 @@ pub fn export_to_file(
 ) -> Result<(), String> {
     let content = export(words, format, config);
     std::fs::write(path, &content).map_err(|e| format!("Failed to write export: {}", e))
+}
+
+/// Generate SRT with timestamps remapped to the edited output timeline.
+///
+/// The keep-segments define which source-time ranges survive the edit.
+/// Each active word's source timestamp is mapped to the corresponding
+/// position on the concatenated output timeline so the captions align
+/// with the exported media.
+pub fn export_srt_for_edited_timeline(
+    words: &[Word],
+    keep_segments: &[(i64, i64)],
+    config: &ExportConfig,
+) -> String {
+    let remapped: Vec<Word> = remap_words_to_edit_timeline(words, keep_segments, config);
+    export_srt(&remapped, config)
+}
+
+/// Remap active words so their timestamps reflect the edited (output) timeline.
+fn remap_words_to_edit_timeline(
+    words: &[Word],
+    keep_segments: &[(i64, i64)],
+    config: &ExportConfig,
+) -> Vec<Word> {
+    let active_words: Vec<&Word> = words
+        .iter()
+        .filter(|w| !w.deleted && (config.include_silenced || !w.silenced))
+        .collect();
+
+    let mut remapped = Vec::with_capacity(active_words.len());
+
+    for word in active_words {
+        if let Some((out_start, out_end)) =
+            map_source_range_to_edit_time(word.start_us, word.end_us, keep_segments)
+        {
+            let mut w = word.clone();
+            w.start_us = out_start;
+            w.end_us = out_end;
+            remapped.push(w);
+        }
+    }
+
+    remapped
+}
+
+/// Map a source-time range to the output (edit) timeline.
+///
+/// Returns `None` if the word doesn't overlap any keep-segment.
+fn map_source_range_to_edit_time(
+    src_start: i64,
+    src_end: i64,
+    keep_segments: &[(i64, i64)],
+) -> Option<(i64, i64)> {
+    let mut elapsed: i64 = 0;
+
+    for &(seg_start, seg_end) in keep_segments {
+        let seg_dur = seg_end - seg_start;
+
+        // Check if the word overlaps this segment
+        if src_start < seg_end && src_end > seg_start {
+            let clamped_start = src_start.max(seg_start);
+            let clamped_end = src_end.min(seg_end);
+            let out_start = elapsed + (clamped_start - seg_start);
+            let out_end = elapsed + (clamped_end - seg_start);
+            return Some((out_start, out_end));
+        }
+
+        elapsed += seg_dur;
+    }
+
+    None
 }
 
 #[cfg(test)]
@@ -352,8 +421,70 @@ mod tests {
         let srt = export(&words, ExportFormat::Srt, &config);
         let vtt = export(&words, ExportFormat::Vtt, &config);
         let script = export(&words, ExportFormat::Script, &config);
-        assert!(srt.contains(","));      // SRT uses comma
+        assert!(srt.contains(",")); // SRT uses comma
         assert!(vtt.contains("WEBVTT")); // VTT has header
         assert!(!script.contains("-->")); // Script has no timestamps
+    }
+
+    #[test]
+    fn edited_timeline_srt_remaps_timestamps() {
+        // Source: words at 0–1s, 1–2s, 3–4s, 4–5s
+        // Keep segments: [0, 2_000_000] and [3_000_000, 5_000_000]
+        // So the 3–4s word should appear at 2–3s in output, 4–5s at 3–4s.
+        let words = vec![
+            make_word("Hello", 0, 1_000_000),
+            make_word("world", 1_000_000, 2_000_000),
+            make_word("foo", 3_000_000, 4_000_000),
+            make_word("bar", 4_000_000, 5_000_000),
+        ];
+        let keep_segments = vec![(0, 2_000_000), (3_000_000, 5_000_000)];
+        let config = ExportConfig {
+            max_chars_per_line: 100,
+            ..Default::default()
+        };
+        let srt = export_srt_for_edited_timeline(&words, &keep_segments, &config);
+        // All 4 words kept — single caption line (100 chars limit)
+        assert!(srt.contains("Hello world foo bar"));
+        // Start at 0, end at 4s on output timeline
+        assert!(srt.contains("00:00:00,000 --> 00:00:04,000"));
+    }
+
+    #[test]
+    fn edited_timeline_srt_drops_deleted_gap() {
+        // Word in the deleted gap (2–3s) should not appear
+        let words = vec![
+            make_word("Hello", 0, 1_000_000),
+            make_word("deleted", 2_000_000, 3_000_000),
+            make_word("world", 3_000_000, 4_000_000),
+        ];
+        let keep_segments = vec![(0, 1_000_000), (3_000_000, 4_000_000)];
+        let config = ExportConfig {
+            max_chars_per_line: 100,
+            ..Default::default()
+        };
+        let srt = export_srt_for_edited_timeline(&words, &keep_segments, &config);
+        assert!(!srt.contains("deleted"));
+        assert!(srt.contains("Hello"));
+        assert!(srt.contains("world"));
+    }
+
+    #[test]
+    fn map_source_range_basic() {
+        let segments = vec![(0, 1_000_000), (2_000_000, 3_000_000)];
+        // Word in first segment
+        assert_eq!(
+            map_source_range_to_edit_time(0, 500_000, &segments),
+            Some((0, 500_000))
+        );
+        // Word in second segment: should map to 1_000_000 + offset
+        assert_eq!(
+            map_source_range_to_edit_time(2_000_000, 2_500_000, &segments),
+            Some((1_000_000, 1_500_000))
+        );
+        // Word in gap: no mapping
+        assert_eq!(
+            map_source_range_to_edit_time(1_500_000, 1_800_000, &segments),
+            None
+        );
     }
 }

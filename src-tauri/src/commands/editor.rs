@@ -1,10 +1,32 @@
 use std::sync::Mutex;
 use tauri::State;
 
-use crate::managers::editor::{EditorState, Word};
+use crate::managers::editor::{
+    EditorState, LocalLlmApplyResult, LocalLlmWordProposal, TimingContractSnapshot, Word,
+};
 
 /// Managed state wrapper for the transcript editor engine.
 pub struct EditorStore(pub Mutex<EditorState>);
+
+/// Atomic frontend projection of editor state after a backend transaction.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, specta::Type)]
+pub struct EditorProjection {
+    pub words: Vec<Word>,
+    pub timing_contract: TimingContractSnapshot,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, specta::Type)]
+pub struct LocalLlmApplyResponse {
+    pub projection: EditorProjection,
+    pub apply_result: LocalLlmApplyResult,
+}
+
+fn build_projection(state: &EditorState) -> EditorProjection {
+    EditorProjection {
+        words: state.get_words().to_vec(),
+        timing_contract: state.timing_contract_snapshot(),
+    }
+}
 
 #[tauri::command]
 #[specta::specta]
@@ -12,6 +34,21 @@ pub fn editor_set_words(store: State<EditorStore>, words: Vec<Word>) -> Vec<Word
     let mut state = store.0.lock().unwrap();
     state.set_words(words);
     state.get_words().to_vec()
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn editor_apply_local_llm_proposals(
+    store: State<EditorStore>,
+    proposals: Vec<LocalLlmWordProposal>,
+) -> LocalLlmApplyResponse {
+    let mut state = store.0.lock().unwrap();
+    let apply_result = state.apply_local_llm_word_proposals(&proposals);
+    let projection = build_projection(&state);
+    LocalLlmApplyResponse {
+        projection,
+        apply_result,
+    }
 }
 
 #[tauri::command]
@@ -81,5 +118,87 @@ pub fn editor_redo(store: State<EditorStore>) -> bool {
 #[specta::specta]
 pub fn editor_get_keep_segments(store: State<EditorStore>) -> Vec<(i64, i64)> {
     let state = store.0.lock().unwrap();
-    state.get_keep_segments()
+    let snapshot = state.timing_contract_snapshot();
+    if snapshot.keep_segments_valid {
+        snapshot
+            .keep_segments
+            .into_iter()
+            .map(|seg| (seg.start_us, seg.end_us))
+            .filter(|(start_us, end_us)| end_us > start_us)
+            .collect()
+    } else {
+        snapshot
+            .quantized_keep_segments
+            .into_iter()
+            .map(|seg| (seg.start_us, seg.end_us))
+            .filter(|(start_us, end_us)| end_us > start_us)
+            .collect()
+    }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn editor_get_timing_contract(store: State<EditorStore>) -> TimingContractSnapshot {
+    let state = store.0.lock().unwrap();
+    state.timing_contract_snapshot()
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn editor_get_projection(store: State<EditorStore>) -> EditorProjection {
+    let state = store.0.lock().unwrap();
+    build_projection(&state)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_words() -> Vec<Word> {
+        vec![
+            Word {
+                text: "alpha".to_string(),
+                start_us: 0,
+                end_us: 1_000_000,
+                deleted: false,
+                silenced: false,
+                confidence: 1.0,
+                speaker_id: 0,
+            },
+            Word {
+                text: "beta".to_string(),
+                start_us: 1_000_000,
+                end_us: 2_000_000,
+                deleted: false,
+                silenced: false,
+                confidence: 1.0,
+                speaker_id: 0,
+            },
+        ]
+    }
+
+    #[test]
+    fn build_projection_returns_words_and_timing_contract() {
+        let mut state = EditorState::new();
+        state.set_words(sample_words());
+        state.delete_word(1);
+
+        let projection = build_projection(&state);
+        assert_eq!(projection.words.len(), 2);
+        assert_eq!(projection.timing_contract.total_words, 2);
+        assert_eq!(projection.timing_contract.deleted_words, 1);
+        assert_eq!(projection.timing_contract.keep_segments.len(), 1);
+    }
+
+    #[test]
+    fn projection_timing_revision_matches_editor_revision() {
+        let mut state = EditorState::new();
+        state.set_words(sample_words());
+        let first = build_projection(&state).timing_contract.timeline_revision;
+
+        state.delete_word(0);
+        let second = build_projection(&state).timing_contract.timeline_revision;
+
+        assert!(second > first);
+    }
 }

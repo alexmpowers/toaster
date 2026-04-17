@@ -166,13 +166,32 @@ export function editTimeToSourceTime(
   let accumulated = 0;
   for (const seg of keepSegments) {
     const segDur = seg.end - seg.start;
-    if (editTime <= accumulated + segDur) {
+    if (editTime < accumulated + segDur) {
       return seg.start + (editTime - accumulated);
     }
     accumulated += segDur;
   }
   // Clamp to end of timeline — prevents seeking past the end of the source.
   return keepSegments[keepSegments.length - 1].end;
+}
+
+/**
+ * Pre-play snap: if `time` falls inside any deleted range, return the end of
+ * that range (the next kept boundary).  Otherwise return `time` unchanged.
+ *
+ * Used in the fallback/live-skip play path to prevent startup leakage of
+ * deleted audio when the player is resumed from inside a deleted region.
+ *
+ * Regression guard: see `dt_pre_play_snap_*` tests in
+ * `src-tauri/src/managers/editor.rs`.
+ */
+export function snapOutOfDeletedRange(time: number, deletedRanges: ReadonlyArray<TimeSegment>): number {
+  for (const range of deletedRanges) {
+    if (time >= range.start && time < range.end) {
+      return range.end;
+    }
+  }
+  return time;
 }
 
 /**

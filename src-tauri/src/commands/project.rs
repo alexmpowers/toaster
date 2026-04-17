@@ -24,9 +24,7 @@ pub fn save_project(
     });
 
     let mut project = ToasterProject::new(&project_name);
-    project.source_media = media
-        .current()
-        .map(|m| m.path.clone());
+    project.source_media = media.current().map(|m| m.path.clone());
     project.set_words(editor.get_words().to_vec());
 
     project.save(std::path::Path::new(&path))

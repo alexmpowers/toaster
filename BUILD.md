@@ -1,46 +1,22 @@
 # Build Instructions
 
-This guide covers how to set up the development environment and build Toaster from source.
-
-Toaster is forked from [Handy](https://github.com/cjpais/Handy). It inherits Handy's Tauri + React architecture and extends it with video editing capabilities.
+This guide sets up and builds **Toaster** (Tauri + Rust + React).
 
 ## Prerequisites
 
-### All Platforms
+### All platforms
 
-- [Rust](https://rustup.rs/) (latest stable)
-- [Node.js](https://nodejs.org/) (v18+) or [Bun](https://bun.sh/)
-- [Tauri Prerequisites](https://tauri.app/start/prerequisites/)
-- [CMake](https://cmake.org/)
+- Rust (stable)
+- Node.js (v18+) with npm (Bun optional for utility scripts)
+- Tauri prerequisites for your OS
+- CMake
 
 ### Windows
 
-- **Visual Studio 2022 Build Tools** with C++ workload
-- **LLVM** — `winget install LLVM.LLVM` (provides libclang for bindgen)
-- **Vulkan SDK** — `winget install KhronosGroup.VulkanSDK` (for whisper Vulkan acceleration)
-- **Ninja** — `winget install Ninja-build.Ninja` (CMake generator)
-
-**Quick install (PowerShell as admin):**
-
-```powershell
-winget install LLVM.LLVM --silent
-winget install KhronosGroup.VulkanSDK --silent
-winget install Ninja-build.Ninja --silent
-```
-
-### macOS
-
-- Xcode Command Line Tools: `xcode-select --install`
-
-### Linux
-
-```bash
-# Ubuntu/Debian
-sudo apt update
-sudo apt install build-essential libasound2-dev pkg-config libssl-dev \
-  libvulkan-dev vulkan-tools glslc libgtk-3-dev libwebkit2gtk-4.1-dev \
-  libayatana-appindicator3-dev librsvg2-dev cmake
-```
+- Visual Studio 2022 Build Tools (C++ workload)
+- LLVM (`winget install LLVM.LLVM`)
+- Vulkan SDK (`winget install KhronosGroup.VulkanSDK`)
+- Ninja (`winget install Ninja-build.Ninja`)
 
 ## Setup
 
@@ -49,56 +25,161 @@ sudo apt install build-essential libasound2-dev pkg-config libssl-dev \
 ```bash
 git clone https://github.com/itsnotaboutthecell/toaster.git
 cd toaster
-git checkout handy-fork
 ```
 
-### 2. Install Dependencies
+### 2. Install frontend dependencies
 
 ```bash
 npm install --ignore-scripts
 ```
 
-### 3. Environment Setup (Windows)
+### 3. Windows environment initialization
+
+Run this in the same shell before Cargo/Tauri commands:
 
 ```powershell
 .\scripts\setup-env.ps1
 ```
 
-Or manually:
+## Development commands
+
+```bash
+# full app (frontend + backend)
+npm run tauri dev
+# or: cargo tauri dev
+
+# production build
+npm run tauri build
+# or: cargo tauri build
+
+# frontend only
+npm run dev
+npm run build
+```
+
+## Launch protocol
+
+- Default launch command: `npm run tauri dev`.
+- Do not stop at process start; monitor startup output for 404/runtime/initialization failures.
+- On failure signals, gather logs and perform first-line debugging before reporting status.
+
+### Optional monitored launcher
+
+Use this helper when you want bounded startup observation and captured logs:
 
 ```powershell
-$env:LIBCLANG_PATH = "C:\Program Files\LLVM\bin"
-$env:VULKAN_SDK = "C:\VulkanSDK\<version>"
-$env:CMAKE_GENERATOR = "Ninja"
-
-# Source MSVC environment
-$vcvarsall = "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
-$envOut = cmd /c "`"$vcvarsall`" x64 >nul 2>&1 && set"
-foreach ($line in $envOut) {
-    if ($line -match "^([^=]+)=(.*)$") {
-        [Environment]::SetEnvironmentVariable($matches[1], $matches[2], "Process")
-    }
-}
+.\scripts\launch-toaster-monitored.ps1 -ObservationSeconds 120
 ```
 
-### 4. Dev Server
+It runs environment setup, starts `npm run tauri dev`, and prints:
+
+- `monitor_summary=...` (detected success/error signal keys + hints)
+- `launch_logs_stdout=...` and `launch_logs_stderr=...` (captured logs)
+- `launch_status=launched_ok|launched_with_errors|failed_to_launch`
+
+### Automated midstream live validation (no manual playback loop)
+
+Run the backend media-pipeline harness against a real file (defaults to `C:\Users\alexm\Downloads\AddReleaseItem.mp4`):
+
+```powershell
+.\scripts\run-live-midstream-validation.ps1
+```
+
+Override media path/output directory:
+
+```powershell
+.\scripts\run-live-midstream-validation.ps1 -MediaPath "C:\path\to\file.mp4" -OutputDir "C:\temp\toaster-live-validation"
+```
+
+Optionally set the local Whisper model file used by the ASR leakage oracle:
+
+```powershell
+.\scripts\run-live-midstream-validation.ps1 -AsrModelPath "C:\path\to\ggml-small.bin"
+```
+
+The run writes `live-validation-report.json` to the output directory with objective pass/fail metrics (duration parity, boundary parity, seam artifact checks, ASR leakage oracle). The ASR oracle fails explicitly if `TOASTER_LIVE_ASR_MODEL_PATH` is missing or invalid.
+
+### Offline local LLM eval gate (cleanup + precision + ASR oracle)
+
+Run the combined offline rollout gate:
+
+```powershell
+.\scripts\run-local-llm-eval-gate.ps1 -MediaPath "C:\path\to\file.mp4" -AsrModelPath "C:\path\to\ggml-small.bin"
+```
+
+Optional output directory override:
+
+```powershell
+.\scripts\run-local-llm-eval-gate.ps1 -MediaPath "C:\path\to\file.mp4" -AsrModelPath "C:\path\to\ggml-small.bin" -OutputDir "C:\temp\toaster-local-llm-gate"
+```
+
+This gate has no silent fallback for required inputs:
+
+- `-MediaPath` is required and must point to an existing media file.
+- `-AsrModelPath` is required and must point to an existing local Whisper model file.
+
+The run writes `local-llm-eval-gate-report.json` with machine-readable pass/fail output, explicit criteria for each check (`cleanup_quality`, `precision_safety`, `asr_leakage_oracle`), and failure reasons when the gate fails.
+
+### First Build Timing
+
+The first build after cloning (or after clearing `target/`) takes **2-4 minutes** due to:
+- whisper-rs-sys Vulkan/ONNX compilation (~60s)
+- Full Rust dependency compilation (~90s)
+- Vite bundling (~15s)
+
+Subsequent incremental builds typically take 10-30 seconds.
+The launch monitoring script defaults to 120 seconds to accommodate first builds.
+
+## Test and lint
 
 ```bash
-cargo tauri dev
+cd src-tauri && cargo test
+cd src-tauri && cargo test test_filter_filler_words -- --nocapture
+cd src-tauri && cargo clippy
+npm run lint
 ```
 
-### 5. Production Build
+## Windows guardrails
 
-```bash
-cargo tauri build
-```
+- Use MSVC Rust toolchain target (not GNU)
+- Run Cargo commands from `src-tauri\` when working directly with Cargo
+- Stop running `toaster-app.exe`/`toaster.exe` before rebuilds to avoid DLL lock/link errors
+
+## macOS private API usage
+
+Toaster uses `macOSPrivateApi: true` and the `tauri-nspanel` crate to create a
+floating recording overlay (`NSPanel`). This means the app **cannot be submitted
+to the Mac App Store** in its current form. For direct distribution (`.dmg` /
+updater) this is fine. See [`docs/MACOS_NOTES.md`](docs/MACOS_NOTES.md) for full
+details, App Store implications, and alternative approaches.
+
+## Windows code signing
+
+The production build (`cargo tauri build`) produces an unsigned installer by default.
+`src-tauri/tauri.conf.json` sets `"signCommand": ""` — an empty string means no signing.
+
+**Unsigned builds will trigger Windows SmartScreen warnings** ("Windows protected your PC")
+on first launch, which may deter users.
+
+### What you need to sign
+
+1. **Code signing certificate** — an EV (Extended Validation) certificate removes
+   SmartScreen warnings immediately; a standard (OV) certificate builds trust over time.
+2. **Set `signCommand`** in `tauri.conf.json` to invoke `signtool`, e.g.:
+   ```json
+   "signCommand": "signtool sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /f \"%CERT_PATH%\" /p \"%CERT_PASSWORD%\" \"%1\""
+   ```
+3. **CI environment variables** — expose `CERT_PATH` (path to `.pfx` file) and
+   `CERT_PASSWORD` (certificate password) as secrets in your CI pipeline.
+
+For full details see the
+[Tauri Windows signing guide](https://v2.tauri.app/distribute/sign/windows/).
 
 ## Troubleshooting
 
 | Symptom | Cause | Fix |
-|---------|-------|-----|
-| `libclang not found` | LLVM not installed | `winget install LLVM.LLVM`, set `LIBCLANG_PATH` |
-| `stdbool.h not found` | Missing MSVC include paths | Set `BINDGEN_EXTRA_CLANG_ARGS` with MSVC include dirs |
-| `VULKAN_SDK not set` | Vulkan SDK not installed | `winget install KhronosGroup.VulkanSDK`, set `VULKAN_SDK` |
-| `Visual Studio not found` | CMake using wrong generator | Set `CMAKE_GENERATOR=Ninja` |
-| `link.exe not found` | MSVC env not sourced | Run vcvars64.bat or use setup-env.ps1 |
+|---|---|---|
+| `libclang not found` | LLVM missing | Install LLVM and set `LIBCLANG_PATH` |
+| `VULKAN_SDK not set` | Vulkan SDK missing | Install Vulkan SDK and set `VULKAN_SDK` |
+| `link.exe not found` | MSVC env not loaded | Run `scripts/setup-env.ps1` in current shell |
+| `ort does not provide prebuilt binaries for gnu` | Wrong target | Use `stable-x86_64-pc-windows-msvc` |

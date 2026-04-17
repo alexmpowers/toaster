@@ -17,6 +17,7 @@ export const AllowWords: React.FC<AllowWordsProps> = React.memo(
     const { getSetting, updateSetting, isUpdating } = useSettings();
     const [newWord, setNewWord] = useState("");
     const allowWords: string[] = getSetting("custom_words") || [];
+    const discardWords: string[] = getSetting("custom_filler_words") ?? [];
 
     const handleAddWord = () => {
       const trimmedWord = newWord.trim();
@@ -25,6 +26,14 @@ export const AllowWords: React.FC<AllowWordsProps> = React.memo(
         if (allowWords.includes(sanitizedWord)) {
           toast.error(
             t("settings.advanced.allowWords.duplicate", {
+              word: sanitizedWord,
+            }),
+          );
+          return;
+        }
+        if (discardWords.includes(sanitizedWord)) {
+          toast.error(
+            t("settings.advanced.allowWords.conflictWithDiscard", {
               word: sanitizedWord,
             }),
           );

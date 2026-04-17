@@ -105,6 +105,30 @@ fn create_client(provider: &PostProcessProvider, api_key: &str) -> Result<reqwes
         .map_err(|e| format!("Failed to build HTTP client: {}", e))
 }
 
+fn build_api_url(base_url: &str, endpoint: &str) -> Result<String, String> {
+    let trimmed_base = base_url.trim();
+    if trimmed_base.is_empty() {
+        return Err("Provider base URL is empty".to_string());
+    }
+
+    let mut normalized_base = trimmed_base.to_string();
+    if !normalized_base.ends_with('/') {
+        normalized_base.push('/');
+    }
+
+    let endpoint_path = endpoint.trim_start_matches('/');
+    reqwest::Url::parse(&normalized_base)
+        .map_err(|e| format!("Invalid provider base URL '{}': {}", base_url, e))?
+        .join(endpoint_path)
+        .map(|url| url.to_string())
+        .map_err(|e| {
+            format!(
+                "Failed to build endpoint URL from '{}' and '{}': {}",
+                base_url, endpoint, e
+            )
+        })
+}
+
 /// Send a chat completion request to an OpenAI-compatible API
 /// Returns Ok(Some(content)) on success, Ok(None) if response has no content,
 /// or Err on actual errors (HTTP, parsing, etc.)
@@ -144,8 +168,7 @@ pub async fn send_chat_completion_with_schema(
     reasoning_effort: Option<String>,
     reasoning: Option<ReasoningConfig>,
 ) -> Result<Option<String>, String> {
-    let base_url = provider.base_url.trim_end_matches('/');
-    let url = format!("{}/chat/completions", base_url);
+    let url = build_api_url(&provider.base_url, "/chat/completions")?;
 
     debug!("Sending chat completion request to: {}", url);
 
@@ -222,8 +245,8 @@ pub async fn fetch_models(
     provider: &PostProcessProvider,
     api_key: String,
 ) -> Result<Vec<String>, String> {
-    let base_url = provider.base_url.trim_end_matches('/');
-    let url = format!("{}/models", base_url);
+    let models_endpoint = provider.models_endpoint.as_deref().unwrap_or("/models");
+    let url = build_api_url(&provider.base_url, models_endpoint)?;
 
     debug!("Fetching models from: {}", url);
 

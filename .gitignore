@@ -45,4 +45,6 @@ result
 
 # Old C build artifacts
 build/
-nul
+
+# Launch monitor logs (from scripts/launch-toaster-monitored.ps1)
+.launch-monitor/

@@ -26,7 +26,6 @@ use crate::settings::{
     OverlayPosition, PasteMethod, ShortcutBinding, SoundTheme, TypingTool,
     APPLE_INTELLIGENCE_PROVIDER_ID,
 };
-use crate::tray;
 
 // Note: Commands are accessed via shortcut::handy_keys:: in lib.rs
 
@@ -651,6 +650,54 @@ pub fn update_custom_words(app: AppHandle, words: Vec<String>) -> Result<(), Str
 
 #[tauri::command]
 #[specta::specta]
+pub fn change_custom_filler_words_setting(
+    app: AppHandle,
+    words: Vec<String>,
+) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.custom_filler_words = Some(words);
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_caption_font_size_setting(app: AppHandle, size: u32) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.caption_font_size = size.clamp(12, 72);
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_caption_bg_color_setting(app: AppHandle, color: String) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.caption_bg_color = color;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_caption_text_color_setting(app: AppHandle, color: String) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.caption_text_color = color;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_caption_position_setting(app: AppHandle, position: u32) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.caption_position = position.clamp(0, 100);
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn change_word_correction_threshold_setting(
     app: AppHandle,
     threshold: f64,
@@ -1182,24 +1229,10 @@ pub fn change_app_language_setting(app: AppHandle, language: String) -> Result<(
     settings.app_language = language.clone();
     settings::write_settings(&app, settings);
 
-    // Refresh the tray menu with the new language
-    tray::update_tray_menu(&app, &tray::TrayIconState::Idle, Some(&language));
-
     Ok(())
 }
 
-#[tauri::command]
-#[specta::specta]
-pub fn change_show_tray_icon_setting(app: AppHandle, enabled: bool) -> Result<(), String> {
-    let mut settings = settings::get_settings(&app);
-    settings.show_tray_icon = enabled;
-    settings::write_settings(&app, settings);
-
-    // Apply change immediately
-    tray::set_tray_visibility(&app, enabled);
-
-    Ok(())
-}
+/// Save accelerator settings, re-apply globals, and unload the model so it
 
 /// Save accelerator settings, re-apply globals, and unload the model so it
 /// reloads with the new backend on next transcription.

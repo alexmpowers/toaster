@@ -22,7 +22,6 @@
       "allow": [
         { "path": "$APPDATA" },
         { "path": "$APPDATA/**/*" },
-        { "path": "$HOME/**/*" },
         { "path": "$DESKTOP/**/*" },
         { "path": "$DOCUMENT/**/*" },
         { "path": "$DOWNLOAD/**/*" },

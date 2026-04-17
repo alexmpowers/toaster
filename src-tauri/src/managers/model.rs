@@ -29,6 +29,18 @@ pub enum EngineType {
     Cohere,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Type, PartialEq)]
+pub enum ModelCategory {
+    Transcription,
+    System,
+}
+
+impl Default for ModelCategory {
+    fn default() -> Self {
+        ModelCategory::Transcription
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct ModelInfo {
     pub id: String,
@@ -50,6 +62,8 @@ pub struct ModelInfo {
     pub supported_languages: Vec<String>, // Languages this model can transcribe
     pub supports_language_selection: bool, // Whether the user can explicitly pick a language
     pub is_custom: bool,            // Whether this is a user-provided custom model
+    #[serde(default)]
+    pub category: ModelCategory,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -147,6 +161,7 @@ impl ModelManager {
                 supported_languages: whisper_languages.clone(),
                 supports_language_selection: true,
                 is_custom: false,
+                category: ModelCategory::Transcription,
             },
         );
 
@@ -175,6 +190,7 @@ impl ModelManager {
                 supported_languages: whisper_languages.clone(),
                 supports_language_selection: true,
                 is_custom: false,
+                category: ModelCategory::Transcription,
             },
         );
 
@@ -202,6 +218,7 @@ impl ModelManager {
                 supported_languages: whisper_languages.clone(),
                 supports_language_selection: true,
                 is_custom: false,
+                category: ModelCategory::Transcription,
             },
         );
 
@@ -229,6 +246,7 @@ impl ModelManager {
                 supported_languages: whisper_languages.clone(),
                 supports_language_selection: true,
                 is_custom: false,
+                category: ModelCategory::Transcription,
             },
         );
 
@@ -257,10 +275,11 @@ impl ModelManager {
                 supported_languages: whisper_languages,
                 supports_language_selection: true,
                 is_custom: false,
+                category: ModelCategory::Transcription,
             },
         );
 
-        // Add NVIDIA Parakeet models (directory-based)
+        // Add NVIDIA Parakeet models(directory-based)
         available_models.insert(
             "parakeet-tdt-0.6b-v2".to_string(),
             ModelInfo {
@@ -285,10 +304,11 @@ impl ModelManager {
                 supported_languages: vec!["en".to_string()],
                 supports_language_selection: false,
                 is_custom: false,
+                category: ModelCategory::Transcription,
             },
         );
 
-        // Parakeet V3 supported languages (25 EU languages + Russian/Ukrainian):
+        // Parakeet V3 supported languages(25 EU languages + Russian/Ukrainian):
         // bg, hr, cs, da, nl, en, et, fi, fr, de, el, hu, it, lv, lt, mt, pl, pt, ro, sk, sl, es, sv, ru, uk
         let parakeet_v3_languages: Vec<String> = vec![
             "bg", "hr", "cs", "da", "nl", "en", "et", "fi", "fr", "de", "el", "hu", "it", "lv",
@@ -322,6 +342,7 @@ impl ModelManager {
                 supported_languages: parakeet_v3_languages,
                 supports_language_selection: false,
                 is_custom: false,
+                category: ModelCategory::Transcription,
             },
         );
 
@@ -349,6 +370,7 @@ impl ModelManager {
                 supported_languages: vec!["en".to_string()],
                 supports_language_selection: false,
                 is_custom: false,
+                category: ModelCategory::Transcription,
             },
         );
 
@@ -378,6 +400,7 @@ impl ModelManager {
                 supported_languages: vec!["en".to_string()],
                 supports_language_selection: false,
                 is_custom: false,
+                category: ModelCategory::Transcription,
             },
         );
 
@@ -407,6 +430,7 @@ impl ModelManager {
                 supported_languages: vec!["en".to_string()],
                 supports_language_selection: false,
                 is_custom: false,
+                category: ModelCategory::Transcription,
             },
         );
 
@@ -436,6 +460,7 @@ impl ModelManager {
                 supported_languages: vec!["en".to_string()],
                 supports_language_selection: false,
                 is_custom: false,
+                category: ModelCategory::Transcription,
             },
         );
 
@@ -471,6 +496,7 @@ impl ModelManager {
                 supported_languages: sense_voice_languages,
                 supports_language_selection: true,
                 is_custom: false,
+                category: ModelCategory::Transcription,
             },
         );
 
@@ -501,10 +527,11 @@ impl ModelManager {
                 supported_languages: gigaam_languages,
                 supports_language_selection: false,
                 is_custom: false,
+                category: ModelCategory::Transcription,
             },
         );
 
-        // Canary 180m Flash supported languages (4 languages)
+        // Canary 180m Flashsupported languages (4 languages)
         let canary_flash_languages: Vec<String> = vec!["en", "de", "es", "fr"]
             .into_iter()
             .map(String::from)
@@ -535,10 +562,11 @@ impl ModelManager {
                 supported_languages: canary_flash_languages,
                 supports_language_selection: true,
                 is_custom: false,
+                category: ModelCategory::Transcription,
             },
         );
 
-        // Canary 1B v2 supported languages (25 EU languages)
+        // Canary 1B v2supported languages (25 EU languages)
         let canary_1b_languages: Vec<String> = vec![
             "bg", "hr", "cs", "da", "nl", "en", "et", "fi", "fr", "de", "el", "hu", "it", "lv",
             "lt", "mt", "pl", "pt", "ro", "sk", "sl", "es", "sv", "ru", "uk",
@@ -572,6 +600,7 @@ impl ModelManager {
                 supported_languages: canary_1b_languages,
                 supports_language_selection: true,
                 is_custom: false,
+                category: ModelCategory::Transcription,
             },
         );
 
@@ -607,10 +636,12 @@ impl ModelManager {
                 supported_languages: cohere_languages,
                 supports_language_selection: true,
                 is_custom: false,
+                category: ModelCategory::Transcription,
             },
         );
 
-        // Auto-discover custom Whisper models (.bin files) in the models directory
+
+        // Auto-discover custom Whisper models(.bin files) in the models directory
         if let Err(e) = Self::discover_custom_whisper_models(&models_dir, &mut available_models) {
             warn!("Failed to discover custom models: {}", e);
         }
@@ -927,6 +958,7 @@ impl ModelManager {
                     supported_languages: vec![],
                     supports_language_selection: true,
                     is_custom: true,
+                    category: ModelCategory::Transcription,
                 },
             );
         }
@@ -1520,6 +1552,7 @@ mod tests {
                 supported_languages: vec!["en".to_string()],
                 supports_language_selection: true,
                 is_custom: false,
+                category: ModelCategory::Transcription,
             },
         );
 

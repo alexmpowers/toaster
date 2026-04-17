@@ -5,24 +5,27 @@
 /// in the editor UI.
 use crate::managers::editor::Word;
 
-/// Default filler words (English). Expand later via settings.
+/// Default filler words (English). Must stay in sync with
+/// `DEFAULT_DISCARD_WORDS` in `src/components/settings/DiscardWords.tsx`.
 pub const DEFAULT_FILLERS: &[&str] = &[
     "um",
     "uh",
+    "uh huh",
+    "hmm",
+    "mm",
+    "mhm",
     "er",
     "ah",
     "like",
     "you know",
-    "kind of",
-    "sort of",
-    "I guess",
+    "I mean",
     "basically",
     "actually",
     "literally",
+    "so",
     "right",
-    "okay",
-    "well",
-    "I mean",
+    "kind of",
+    "sort of",
 ];
 
 /// Minimum gap between words (in microseconds) to be considered a pause.
@@ -35,8 +38,10 @@ pub struct FillerConfig {
     /// Gap in microseconds that qualifies as a "long pause".
     pub pause_threshold_us: i64,
     /// If true, detected fillers are automatically marked deleted.
+    #[allow(dead_code)]
     pub auto_delete_fillers: bool,
     /// If true, detected pauses are automatically marked silenced.
+    #[allow(dead_code)]
     pub auto_silence_pauses: bool,
 }
 
@@ -52,6 +57,7 @@ impl Default for FillerConfig {
 }
 
 /// Results from analyzing a word list for fillers and pauses.
+#[cfg(test)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AnalysisResult {
     /// Indices of words identified as fillers.
@@ -350,6 +356,7 @@ pub fn tighten_gaps(words: &mut [Word], target_gap_us: i64) -> usize {
 }
 
 /// Analyze words and return fillers, pauses, and duplicates.
+#[cfg(test)]
 pub fn analyze(words: &[Word], config: &FillerConfig) -> AnalysisResult {
     AnalysisResult {
         filler_indices: detect_fillers(words, config),
@@ -575,13 +582,13 @@ mod tests {
     #[test]
     fn analyze_returns_fillers_and_pauses() {
         let words = vec![
-            word("so", 0, 200_000),       // "so" is NOT a filler (removed from list)
+            word("so", 0, 200_000),       // "so" IS a default filler
             word("um", 300_000, 500_000),  // filler
             word("hello", 600_000, 1_000_000),
             word("world", 3_000_000, 3_500_000), // 2s gap after "hello"
         ];
         let result = analyze(&words, &default_config());
-        assert_eq!(result.filler_indices, vec![1]); // only "um", not "so"
+        assert_eq!(result.filler_indices, vec![0, 1]); // both "so" and "um"
         assert_eq!(result.pauses, vec![(2, 2_000_000)]);
     }
 
@@ -959,7 +966,7 @@ mod tests {
         assert_eq!(
             remaining,
             vec![
-                "Yeah,", "so", "the", "best", "part", "about", "a", "lot",
+                "Yeah,", "the", "best", "part", "about", "a", "lot",
                 "of", "this", "is", "how", "it", "can", "really", "transform",
                 "the", "way", "you", "sound.", "And", "the", "difference",
                 "is", "gonna", "be", "noticeable", "on", "first", "use.",

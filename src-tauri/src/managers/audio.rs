@@ -103,13 +103,13 @@ const WHISPER_SAMPLE_RATE: usize = 16000;
 
 /* ──────────────────────────────────────────────────────────────── */
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum RecordingState {
     Idle,
     Recording { binding_id: String },
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum MicrophoneMode {
     AlwaysOn,
     OnDemand,
@@ -197,7 +197,7 @@ impl AudioRecordingManager {
         };
 
         let device_name = if use_clamshell_mic {
-            settings.clamshell_microphone.as_ref().unwrap()
+            settings.clamshell_microphone.as_ref()?
         } else {
             settings.selected_microphone.as_ref()?
         };
@@ -275,7 +275,12 @@ impl AudioRecordingManager {
                 )
                 .map_err(|e| anyhow::anyhow!("Failed to resolve VAD path: {}", e))?;
             *recorder_opt = Some(create_audio_recorder(
-                vad_path.to_str().unwrap(),
+                vad_path.to_str().ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "VAD model path contains invalid UTF-8: {}",
+                        vad_path.display()
+                    )
+                })?,
                 &self.app_handle,
             )?);
         }
@@ -463,16 +468,7 @@ impl AudioRecordingManager {
                     }
                 }
 
-                // Pad if very short
-                let s_len = samples.len();
-                // debug!("Got {} samples", s_len);
-                if s_len < WHISPER_SAMPLE_RATE && s_len > 0 {
-                    let mut padded = samples;
-                    padded.resize(WHISPER_SAMPLE_RATE * 5 / 4, 0.0);
-                    Some(padded)
-                } else {
-                    Some(samples)
-                }
+                Some(pad_short_samples(samples))
             }
             _ => None,
         }
@@ -507,5 +503,267 @@ impl AudioRecordingManager {
                 }
             }
         }
+    }
+}
+
+/// Pad samples shorter than one Whisper frame to avoid truncation artifacts.
+/// Empty buffers are returned as-is; buffers already at or above
+/// `WHISPER_SAMPLE_RATE` are returned unchanged.
+fn pad_short_samples(samples: Vec<f32>) -> Vec<f32> {
+    let len = samples.len();
+    if len < WHISPER_SAMPLE_RATE && len > 0 {
+        let mut padded = samples;
+        padded.resize(WHISPER_SAMPLE_RATE * 5 / 4, 0.0);
+        padded
+    } else {
+        samples
+    }
+}
+
+/* ════════════════════════════════════════════════════════════════ */
+/*                            Tests                                */
+/* ════════════════════════════════════════════════════════════════ */
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── RecordingState ────────────────────────────────────────────
+
+    #[test]
+    fn recording_state_defaults_to_idle() {
+        let state = RecordingState::Idle;
+        assert!(matches!(state, RecordingState::Idle));
+    }
+
+    #[test]
+    fn recording_state_carries_binding_id() {
+        let state = RecordingState::Recording {
+            binding_id: "key-a".to_string(),
+        };
+        if let RecordingState::Recording { binding_id } = &state {
+            assert_eq!(binding_id, "key-a");
+        } else {
+            panic!("Expected Recording variant");
+        }
+    }
+
+    #[test]
+    fn recording_state_clone_is_independent() {
+        let a = RecordingState::Recording {
+            binding_id: "b1".into(),
+        };
+        let b = a.clone();
+        assert_eq!(a, b);
+    }
+
+    #[test]
+    fn recording_state_idle_eq() {
+        assert_eq!(RecordingState::Idle, RecordingState::Idle);
+    }
+
+    #[test]
+    fn recording_state_different_bindings_not_eq() {
+        let a = RecordingState::Recording {
+            binding_id: "x".into(),
+        };
+        let b = RecordingState::Recording {
+            binding_id: "y".into(),
+        };
+        assert_ne!(a, b);
+    }
+
+    #[test]
+    fn recording_state_idle_vs_recording_not_eq() {
+        let idle = RecordingState::Idle;
+        let rec = RecordingState::Recording {
+            binding_id: "z".into(),
+        };
+        assert_ne!(idle, rec);
+    }
+
+    // ── MicrophoneMode ───────────────────────────────────────────
+
+    #[test]
+    fn microphone_mode_equality() {
+        assert_eq!(MicrophoneMode::AlwaysOn, MicrophoneMode::AlwaysOn);
+        assert_eq!(MicrophoneMode::OnDemand, MicrophoneMode::OnDemand);
+        assert_ne!(MicrophoneMode::AlwaysOn, MicrophoneMode::OnDemand);
+    }
+
+    #[test]
+    fn microphone_mode_clone() {
+        let m = MicrophoneMode::OnDemand;
+        assert_eq!(m.clone(), MicrophoneMode::OnDemand);
+    }
+
+    #[test]
+    fn microphone_mode_debug_format() {
+        let dbg = format!("{:?}", MicrophoneMode::AlwaysOn);
+        assert!(dbg.contains("AlwaysOn"));
+    }
+
+    // ── Constants ────────────────────────────────────────────────
+
+    #[test]
+    fn stream_idle_timeout_is_30s() {
+        assert_eq!(STREAM_IDLE_TIMEOUT, Duration::from_secs(30));
+    }
+
+    #[test]
+    fn whisper_sample_rate_is_16khz() {
+        assert_eq!(WHISPER_SAMPLE_RATE, 16_000);
+    }
+
+    // ── pad_short_samples ────────────────────────────────────────
+
+    #[test]
+    fn pad_empty_samples_returns_empty() {
+        let result = pad_short_samples(vec![]);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn pad_single_sample_pads_to_expected_length() {
+        let result = pad_short_samples(vec![0.5]);
+        assert_eq!(result.len(), WHISPER_SAMPLE_RATE * 5 / 4);
+        assert_eq!(result[0], 0.5);
+        // Padded region must be silence (0.0)
+        assert!(result[1..].iter().all(|&s| s == 0.0));
+    }
+
+    #[test]
+    fn pad_just_below_threshold_pads() {
+        let input = vec![0.1; WHISPER_SAMPLE_RATE - 1];
+        let result = pad_short_samples(input);
+        assert_eq!(result.len(), WHISPER_SAMPLE_RATE * 5 / 4);
+    }
+
+    #[test]
+    fn pad_at_threshold_does_not_pad() {
+        let input = vec![0.2; WHISPER_SAMPLE_RATE];
+        let result = pad_short_samples(input.clone());
+        assert_eq!(result.len(), WHISPER_SAMPLE_RATE);
+        assert_eq!(result, input);
+    }
+
+    #[test]
+    fn pad_above_threshold_unchanged() {
+        let input = vec![0.3; WHISPER_SAMPLE_RATE + 500];
+        let result = pad_short_samples(input.clone());
+        assert_eq!(result, input);
+    }
+
+    #[test]
+    fn pad_preserves_original_samples() {
+        let input: Vec<f32> = (0..100).map(|i| i as f32 * 0.01).collect();
+        let result = pad_short_samples(input.clone());
+        assert_eq!(&result[..100], &input[..]);
+    }
+
+    // ── State-machine guard logic (inline) ───────────────────────
+
+    #[test]
+    fn stop_recording_wrong_binding_returns_none() {
+        // Simulates the guard in stop_recording: mismatched binding_id
+        let state = RecordingState::Recording {
+            binding_id: "active-key".into(),
+        };
+        let requested = "other-key";
+
+        let result = match &state {
+            RecordingState::Recording { binding_id } if binding_id == requested => {
+                Some("would stop")
+            }
+            _ => None,
+        };
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn stop_recording_matching_binding_returns_some() {
+        let state = RecordingState::Recording {
+            binding_id: "my-key".into(),
+        };
+        let requested = "my-key";
+
+        let result = match &state {
+            RecordingState::Recording { binding_id } if binding_id == requested => {
+                Some("stopped")
+            }
+            _ => None,
+        };
+        assert_eq!(result, Some("stopped"));
+    }
+
+    #[test]
+    fn stop_recording_idle_returns_none() {
+        let state = RecordingState::Idle;
+        let result = match &state {
+            RecordingState::Recording { binding_id } if binding_id == "any" => Some("stopped"),
+            _ => None,
+        };
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn try_start_guards_against_double_recording() {
+        // Simulates the guard in try_start_recording
+        let state = RecordingState::Recording {
+            binding_id: "existing".into(),
+        };
+        let can_start = matches!(state, RecordingState::Idle);
+        assert!(!can_start);
+    }
+
+    #[test]
+    fn try_start_allows_from_idle() {
+        let state = RecordingState::Idle;
+        let can_start = matches!(state, RecordingState::Idle);
+        assert!(can_start);
+    }
+
+    // ── Mode-transition logic ────────────────────────────────────
+
+    #[test]
+    fn mode_transition_always_on_to_on_demand_detected() {
+        let cur = MicrophoneMode::AlwaysOn;
+        let new = MicrophoneMode::OnDemand;
+        let should_close = matches!((&cur, &new), (MicrophoneMode::AlwaysOn, MicrophoneMode::OnDemand));
+        assert!(should_close);
+    }
+
+    #[test]
+    fn mode_transition_on_demand_to_always_on_detected() {
+        let cur = MicrophoneMode::OnDemand;
+        let new = MicrophoneMode::AlwaysOn;
+        let should_open = matches!((&cur, &new), (MicrophoneMode::OnDemand, MicrophoneMode::AlwaysOn));
+        assert!(should_open);
+    }
+
+    #[test]
+    fn mode_transition_same_mode_is_noop() {
+        for mode in [MicrophoneMode::AlwaysOn, MicrophoneMode::OnDemand] {
+            let same = mode.clone();
+            let needs_action = matches!(
+                (&mode, &same),
+                (MicrophoneMode::AlwaysOn, MicrophoneMode::OnDemand)
+                    | (MicrophoneMode::OnDemand, MicrophoneMode::AlwaysOn)
+            );
+            assert!(!needs_action);
+        }
+    }
+
+    // ── is_recording helper ──────────────────────────────────────
+
+    #[test]
+    fn is_recording_matches_only_recording_variant() {
+        assert!(matches!(
+            RecordingState::Recording {
+                binding_id: "x".into()
+            },
+            RecordingState::Recording { .. }
+        ));
+        assert!(!matches!(RecordingState::Idle, RecordingState::Recording { .. }));
     }
 }

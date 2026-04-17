@@ -344,8 +344,11 @@ impl std::ops::DerefMut for SecretMap {
 /* still handy for composing the initial JSON in the store ------------- */
 #[derive(Serialize, Deserialize, Debug, Clone, Type)]
 pub struct AppSettings {
+    #[serde(default)]
     pub bindings: HashMap<String, ShortcutBinding>,
+    #[serde(default = "default_push_to_talk")]
     pub push_to_talk: bool,
+    #[serde(default)]
     pub audio_feedback: bool,
     #[serde(default = "default_audio_feedback_volume")]
     pub audio_feedback_volume: f32,
@@ -431,6 +434,7 @@ pub struct AppSettings {
     pub paste_delay_ms: u64,
     #[serde(default = "default_typing_tool")]
     pub typing_tool: TypingTool,
+    #[serde(default)]
     pub external_script_path: Option<String>,
     #[serde(default)]
     pub custom_filler_words: Option<Vec<String>>,
@@ -450,10 +454,44 @@ pub struct AppSettings {
     pub export_fade_in_ms: u32,
     #[serde(default)]
     pub export_fade_out_ms: u32,
+    #[serde(default = "default_caption_font_size")]
+    pub caption_font_size: u32,
+    #[serde(default = "default_caption_bg_color")]
+    pub caption_bg_color: String,
+    #[serde(default = "default_caption_text_color")]
+    pub caption_text_color: String,
+    #[serde(default = "default_caption_position")]
+    pub caption_position: u32,
+    #[serde(default = "default_settings_version")]
+    pub settings_version: u32,
 }
 
 fn default_model() -> String {
     "".to_string()
+}
+
+fn default_settings_version() -> u32 {
+    1
+}
+
+fn default_push_to_talk() -> bool {
+    true
+}
+
+fn default_caption_font_size() -> u32 {
+    24
+}
+
+fn default_caption_bg_color() -> String {
+    "#000000B3".to_string()
+}
+
+fn default_caption_text_color() -> String {
+    "#FFFFFF".to_string()
+}
+
+fn default_caption_position() -> u32 {
+    90
 }
 
 fn default_preferred_output_sample_rate() -> u32 {
@@ -956,12 +994,39 @@ pub fn get_default_settings() -> AppSettings {
         paste_delay_ms: default_paste_delay_ms(),
         typing_tool: default_typing_tool(),
         external_script_path: None,
-        custom_filler_words: None,
+        custom_filler_words: Some(vec![
+            "um".to_string(),
+            "uh".to_string(),
+            "uh huh".to_string(),
+            "hmm".to_string(),
+            "mm".to_string(),
+            "mhm".to_string(),
+            "er".to_string(),
+            "ah".to_string(),
+            "like".to_string(),
+            "you know".to_string(),
+            "I mean".to_string(),
+            "basically".to_string(),
+            "actually".to_string(),
+            "literally".to_string(),
+            "so".to_string(),
+            "right".to_string(),
+            "kind of".to_string(),
+            "sort of".to_string(),
+        ]),
         whisper_accelerator: WhisperAcceleratorSetting::default(),
         ort_accelerator: OrtAcceleratorSetting::default(),
         whisper_gpu_device: default_whisper_gpu_device(),
         extra_recording_buffer_ms: 0,
         normalize_audio_on_export: false,
+        export_volume_db: 0.0,
+        export_fade_in_ms: 0,
+        export_fade_out_ms: 0,
+        caption_font_size: default_caption_font_size(),
+        caption_bg_color: default_caption_bg_color(),
+        caption_text_color: default_caption_text_color(),
+        caption_position: default_caption_position(),
+        settings_version: default_settings_version(),
     }
 }
 
@@ -988,6 +1053,41 @@ impl AppSettings {
     }
 }
 
+fn validate_settings(settings: &mut AppSettings) -> bool {
+    let mut changed = false;
+
+    // Caption settings bounds
+    if settings.caption_position > 100 {
+        settings.caption_position = default_caption_position();
+        changed = true;
+    }
+    if settings.caption_font_size < 8 || settings.caption_font_size > 120 {
+        settings.caption_font_size = default_caption_font_size();
+        changed = true;
+    }
+
+    // Validate hex colors
+    let is_valid_hex = |s: &str| -> bool {
+        let h = s.trim_start_matches('#');
+        (h.len() == 6 || h.len() == 8) && h.chars().all(|c| c.is_ascii_hexdigit())
+    };
+    if !is_valid_hex(&settings.caption_text_color) {
+        settings.caption_text_color = default_caption_text_color();
+        changed = true;
+    }
+    if !is_valid_hex(&settings.caption_bg_color) {
+        settings.caption_bg_color = default_caption_bg_color();
+        changed = true;
+    }
+
+    // Audio export bounds
+    settings.export_volume_db = settings.export_volume_db.clamp(-60.0, 24.0);
+    settings.export_fade_in_ms = settings.export_fade_in_ms.min(30_000);
+    settings.export_fade_out_ms = settings.export_fade_out_ms.min(30_000);
+
+    changed
+}
+
 pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
     // Initialize store
     let store = app
@@ -1009,6 +1109,12 @@ pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
                         settings.bindings.insert(key, value);
                         updated = true;
                     }
+                }
+
+                // Seed custom_filler_words on upgrade from older settings
+                if settings.custom_filler_words.is_none() {
+                    settings.custom_filler_words = default_settings.custom_filler_words;
+                    updated = true;
                 }
 
                 if updated {
@@ -1045,6 +1151,14 @@ pub fn load_or_create_app_settings(app: &AppHandle) -> AppSettings {
         match serde_json::to_value(&settings) {
             Ok(val) => store.set("settings", val),
             Err(e) => warn!("Failed to serialize post-processed settings: {}", e),
+        }
+    }
+
+    if validate_settings(&mut settings) {
+        debug!("Settings validation corrected out-of-range values");
+        match serde_json::to_value(&settings) {
+            Ok(val) => store.set("settings", val),
+            Err(e) => warn!("Failed to serialize validated settings: {}", e),
         }
     }
 
@@ -1196,5 +1310,45 @@ mod tests {
     fn sanitize_post_process_model_rejects_control_characters() {
         let result = sanitize_post_process_model("llama3\nbad");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_validate_settings_clamps_position() {
+        let mut s = get_default_settings();
+        s.caption_position = 150;
+        validate_settings(&mut s);
+        assert_eq!(s.caption_position, default_caption_position());
+    }
+
+    #[test]
+    fn test_validate_settings_fixes_invalid_color() {
+        let mut s = get_default_settings();
+        s.caption_text_color = "not-a-color".to_string();
+        validate_settings(&mut s);
+        assert_eq!(s.caption_text_color, default_caption_text_color());
+    }
+
+    #[test]
+    fn test_validate_settings_allows_valid_colors() {
+        let mut s = get_default_settings();
+        s.caption_text_color = "#FF0000".to_string();
+        s.caption_bg_color = "#00FF00AA".to_string();
+        validate_settings(&mut s);
+        assert_eq!(s.caption_text_color, "#FF0000");
+        assert_eq!(s.caption_bg_color, "#00FF00AA");
+    }
+
+    #[test]
+    fn test_validate_settings_clamps_volume() {
+        let mut s = get_default_settings();
+        s.export_volume_db = 100.0;
+        validate_settings(&mut s);
+        assert_eq!(s.export_volume_db, 24.0);
+    }
+
+    #[test]
+    fn test_settings_version_present() {
+        let s = get_default_settings();
+        assert_eq!(s.settings_version, 1);
     }
 }

@@ -81,7 +81,10 @@ export const useModelStore = create<ModelsStore>()(
       try {
         const result = await commands.getAvailableModels();
         if (result.status === "ok") {
-          set({ models: result.data, error: null });
+          const userModels = result.data.filter(
+            (m) => m.category !== "System",
+          );
+          set({ models: userModels, error: null });
 
           // Sync downloading state from backend
           set(

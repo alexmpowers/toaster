@@ -6,13 +6,6 @@ import { Input } from "../ui/Input";
 import { Button } from "../ui/Button";
 import { SettingContainer } from "../ui/SettingContainer";
 
-const DEFAULT_DISCARD_WORDS = [
-  "um", "uh", "uh huh", "hmm", "mm", "mhm",
-  "like", "you know", "I mean", "basically",
-  "actually", "literally", "so", "right",
-  "kind of", "sort of",
-];
-
 interface DiscardWordsProps {
   descriptionMode?: "inline" | "tooltip";
   grouped?: boolean;
@@ -23,7 +16,8 @@ export const DiscardWords: React.FC<DiscardWordsProps> = React.memo(
     const { t } = useTranslation();
     const { getSetting, updateSetting, isUpdating } = useSettings();
     const [newWord, setNewWord] = useState("");
-    const discardWords: string[] = getSetting("custom_filler_words") ?? DEFAULT_DISCARD_WORDS;
+    const discardWords: string[] = getSetting("custom_filler_words") ?? [];
+    const allowWords: string[] = getSetting("custom_words") || [];
 
     const handleAddWord = () => {
       const trimmedWord = newWord.trim();
@@ -32,6 +26,14 @@ export const DiscardWords: React.FC<DiscardWordsProps> = React.memo(
         if (discardWords.includes(sanitizedWord)) {
           toast.error(
             t("settings.advanced.discardWords.duplicate", {
+              word: sanitizedWord,
+            }),
+          );
+          return;
+        }
+        if (allowWords.includes(sanitizedWord)) {
+          toast.error(
+            t("settings.advanced.discardWords.conflictWithAllow", {
               word: sanitizedWord,
             }),
           );

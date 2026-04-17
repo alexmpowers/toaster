@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
-import { AudioLines, Trash2, VolumeX, ChevronDown, ChevronUp } from "lucide-react";
+import { AudioLines, ChevronDown, ChevronUp } from "lucide-react";
 import { useEditorStore } from "@/stores/editorStore";
 
 interface PauseInfo {
@@ -14,6 +14,8 @@ interface FillerAnalysis {
   pauses: PauseInfo[];
   filler_count: number;
   pause_count: number;
+  duplicate_indices: number[];
+  duplicate_count: number;
 }
 
 interface FillerDashboardProps {
@@ -22,7 +24,7 @@ interface FillerDashboardProps {
 
 const FillerDashboard: React.FC<FillerDashboardProps> = ({ className = "" }) => {
   const { t } = useTranslation();
-  const { words, setWords, selectWord } = useEditorStore();
+  const { words, refreshFromBackend, selectWord } = useEditorStore();
   const [analysis, setAnalysis] = useState<FillerAnalysis | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -40,31 +42,18 @@ const FillerDashboard: React.FC<FillerDashboardProps> = ({ className = "" }) => 
     }
   }, []);
 
-  const handleDeleteFillers = useCallback(async () => {
-    try {
-      const count = await invoke<number>("delete_fillers", {});
-      if (count > 0) {
-        const updated = await invoke<typeof words>("editor_get_words", {});
-        await setWords(updated);
-      }
-      setAnalysis(null);
-    } catch (err) {
-      console.error("Delete fillers failed:", err);
-    }
-  }, [words, setWords]);
 
-  const handleSilencePauses = useCallback(async () => {
+  const handleRemoveAll = useCallback(async () => {
+    if (!analysis) return;
     try {
-      const count = await invoke<number>("silence_pauses", {});
-      if (count > 0) {
-        const updated = await invoke<typeof words>("editor_get_words", {});
-        await setWords(updated);
-      }
-      setAnalysis(null);
+      // Use iterative cleanup — handles cascading duplicates after filler removal
+      await invoke("cleanup_all", {});
+      await refreshFromBackend();
+      handleAnalyze();
     } catch (err) {
-      console.error("Silence pauses failed:", err);
+      console.error("Cleanup failed:", err);
     }
-  }, [words, setWords]);
+  }, [analysis, refreshFromBackend, handleAnalyze]);
 
   const handleClickFiller = useCallback(
     (index: number) => {
@@ -87,6 +76,20 @@ const FillerDashboard: React.FC<FillerDashboardProps> = ({ className = "" }) => 
 
   const sortedGroups = Object.entries(fillerGroups).sort((a, b) => b[1] - a[1]);
 
+  // Group duplicates by word text for summary
+  const duplicateGroups = analysis
+    ? analysis.duplicate_indices.reduce(
+        (acc, idx) => {
+          const text = words[idx]?.text?.toLowerCase() ?? "?";
+          acc[text] = (acc[text] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>,
+      )
+    : {};
+
+  const sortedDuplicateGroups = Object.entries(duplicateGroups).sort((a, b) => b[1] - a[1]);
+
   if (words.length === 0) return null;
 
   return (
@@ -101,27 +104,20 @@ const FillerDashboard: React.FC<FillerDashboardProps> = ({ className = "" }) => 
           <AudioLines size={14} />
           {isAnalyzing ? t("editor.analyzing") : t("editor.analyzeFillers")}
         </button>
-
-        {analysis && analysis.filler_count > 0 && (
-          <button
-            onClick={handleDeleteFillers}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-900/30 border border-red-500/30 rounded-lg text-xs text-red-400 hover:bg-red-900/50 transition-colors"
-          >
-            <Trash2 size={14} />
-            {t("editor.deleteFillers", { count: analysis.filler_count })}
-          </button>
-        )}
-
-        {analysis && analysis.pause_count > 0 && (
-          <button
-            onClick={handleSilencePauses}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-900/30 border border-yellow-500/30 rounded-lg text-xs text-yellow-400 hover:bg-yellow-900/50 transition-colors"
-          >
-            <VolumeX size={14} />
-            {t("editor.silencePauses", { count: analysis.pause_count })}
-          </button>
-        )}
       </div>
+
+      {/* Remove All button — single action for all cleanup */}
+      {analysis &&
+        (analysis.filler_count > 0 || analysis.duplicate_count > 0 || analysis.pauses.length > 0) && (
+          <button
+            onClick={handleRemoveAll}
+            className="w-full px-3 py-2 rounded bg-[#E8A838] text-black text-sm font-medium hover:bg-[#E8A838]/80"
+          >
+            {t("editor.removeAll", {
+              count: analysis.filler_count + analysis.duplicate_count + analysis.pauses.length,
+            })}
+          </button>
+        )}
 
       {/* Summary bar */}
       {analysis && (
@@ -131,10 +127,13 @@ const FillerDashboard: React.FC<FillerDashboardProps> = ({ className = "" }) => 
             className="w-full flex items-center justify-between px-3 py-2 text-xs text-mid-gray hover:bg-mid-gray/5 transition-colors"
           >
             <span>
-              {t("editor.fillerResults", {
-                fillers: analysis.filler_count,
-                pauses: analysis.pause_count,
-              })}
+              {analysis.filler_count === 0 && analysis.duplicate_count === 0 && analysis.pause_count === 0
+                ? t("editor.noIssuesFound")
+                : t("editor.cleanupMetrics", {
+                    fillers: analysis.filler_count,
+                    duplicates: analysis.duplicate_count,
+                    pauses: analysis.pause_count,
+                  })}
             </span>
             {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
@@ -153,7 +152,7 @@ const FillerDashboard: React.FC<FillerDashboardProps> = ({ className = "" }) => 
                         key={text}
                         className="px-2 py-0.5 rounded-full bg-red-900/20 text-red-400 text-[11px] border border-red-500/20"
                       >
-                        "{text}" × {count}
+                        {t("editor.fillerGroupChip", { text, count })}
                       </span>
                     ))}
                   </div>
@@ -185,6 +184,50 @@ const FillerDashboard: React.FC<FillerDashboardProps> = ({ className = "" }) => 
                 </div>
               )}
 
+              {/* Duplicate word groups */}
+              {sortedDuplicateGroups.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-[10px] uppercase tracking-wider text-mid-gray/60">
+                    {t("editor.duplicateWords")}
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {sortedDuplicateGroups.map(([text, count]) => (
+                      <span
+                        key={text}
+                        className="px-2 py-0.5 rounded-full bg-orange-900/20 text-orange-400 text-[11px] border border-orange-500/20"
+                      >
+                        {t("editor.fillerGroupChip", { text, count })}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Individual duplicate list */}
+              {analysis.duplicate_indices.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-[10px] uppercase tracking-wider text-mid-gray/60">
+                    {t("editor.clickToLocate")}
+                  </p>
+                  <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
+                    {analysis.duplicate_indices.map((idx) => {
+                      const w = words[idx];
+                      if (!w) return null;
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => handleClickFiller(idx)}
+                          className="px-1.5 py-0.5 rounded text-[11px] bg-orange-900/10 text-orange-300 hover:bg-orange-900/30 transition-colors border border-orange-500/10"
+                          title={`${(w.start_us / 1_000_000).toFixed(1)}s`}
+                        >
+                          {w.text}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Pause list */}
               {analysis.pauses.length > 0 && (
                 <div className="space-y-1">
@@ -201,7 +244,9 @@ const FillerDashboard: React.FC<FillerDashboardProps> = ({ className = "" }) => 
                           onClick={() => handleClickFiller(p.after_word_index)}
                           className="px-1.5 py-0.5 rounded text-[11px] bg-yellow-900/10 text-yellow-300 hover:bg-yellow-900/30 transition-colors border border-yellow-500/10"
                         >
-                          {durationSec}s {afterWord ? `after "${afterWord.text}"` : ""}
+                          {afterWord
+                            ? t("editor.pauseChipWithWord", { duration: durationSec, word: afterWord.text })
+                            : t("editor.pauseChip", { duration: durationSec })}
                         </button>
                       );
                     })}

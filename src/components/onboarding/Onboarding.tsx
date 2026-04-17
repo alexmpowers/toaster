@@ -21,7 +21,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onModelSelected }) => {
     downloadingModels,
     verifyingModels,
     extractingModels,
-    downloadProgress,
+    downloadProgress: modelDownloadProgress,
     downloadStats,
   } = useModelStore();
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
@@ -51,6 +51,10 @@ const Onboarding: React.FC<OnboardingProps> = ({ onModelSelected }) => {
           toast.error(t("onboarding.errors.selectModel"));
           setSelectedModelId(null);
         }
+      }).catch((error) => {
+        console.error("Model selection failed:", error);
+        toast.error(t("onboarding.errors.selectModel"));
+        setSelectedModelId(null);
       });
     }
   }, [
@@ -82,7 +86,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onModelSelected }) => {
   };
 
   const getModelDownloadProgress = (modelId: string): number | undefined => {
-    return downloadProgress[modelId]?.percentage;
+    return modelDownloadProgress[modelId]?.percentage;
   };
 
   const getModelDownloadSpeed = (modelId: string): number | undefined => {

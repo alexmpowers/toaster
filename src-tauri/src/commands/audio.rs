@@ -2,6 +2,7 @@ use crate::audio_feedback;
 use crate::audio_toolkit::audio::{list_input_devices, list_output_devices};
 use crate::managers::audio::{AudioRecordingManager, MicrophoneMode};
 use crate::settings::{get_settings, write_settings};
+use cpal::traits::{DeviceTrait, HostTrait};
 use log::warn;
 use serde::{Deserialize, Serialize};
 use specta::Type;
@@ -39,6 +40,29 @@ pub struct AudioDevice {
     pub index: String,
     pub name: String,
     pub is_default: bool,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Type)]
+pub struct PlaybackAudioContract {
+    pub selected_output_device: String,
+    pub selected_output_device_available: bool,
+    pub preferred_output_sample_rate: u32,
+    pub detected_output_sample_rate: Option<u32>,
+    pub normalized_output_sample_rate: u32,
+    pub mismatch_detected: bool,
+}
+
+fn normalize_selected_output_device(raw: Option<String>) -> Option<String> {
+    let trimmed = raw.unwrap_or_default().trim().to_string();
+    if trimmed.is_empty() || trimmed.eq_ignore_ascii_case("default") {
+        None
+    } else {
+        Some(trimmed)
+    }
+}
+
+fn clamp_sample_rate(sample_rate: u32) -> u32 {
+    sample_rate.clamp(8_000, 192_000)
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
@@ -270,6 +294,73 @@ pub fn get_selected_output_device(app: AppHandle) -> Result<String, String> {
 
 #[tauri::command]
 #[specta::specta]
+pub fn normalize_playback_audio_contract(app: AppHandle) -> Result<PlaybackAudioContract, String> {
+    let mut settings = get_settings(&app);
+    let requested_device =
+        normalize_selected_output_device(settings.selected_output_device.clone());
+    let preferred_sample_rate = clamp_sample_rate(settings.preferred_output_sample_rate);
+
+    let host = crate::audio_toolkit::get_cpal_host();
+    let mut selected_device = host.default_output_device();
+    let mut selected_output_device_available = true;
+    let mut selected_output_device_name = "Default".to_string();
+
+    if let Some(requested_name) = requested_device.clone() {
+        let mut found = None;
+        if let Ok(devices) = host.output_devices() {
+            for device in devices {
+                if let Ok(name) = device.name() {
+                    if name == requested_name {
+                        found = Some((device, name));
+                        break;
+                    }
+                }
+            }
+        }
+
+        if let Some((device, name)) = found {
+            selected_device = Some(device);
+            selected_output_device_name = name;
+        } else {
+            selected_output_device_available = false;
+            settings.selected_output_device = None;
+        }
+    }
+
+    let detected_output_sample_rate = selected_device.as_ref().and_then(|device| {
+        device
+            .default_output_config()
+            .ok()
+            .map(|cfg| cfg.sample_rate().0)
+    });
+
+    let normalized_output_sample_rate = detected_output_sample_rate
+        .map(clamp_sample_rate)
+        .unwrap_or(preferred_sample_rate);
+
+    let mismatch_detected = normalized_output_sample_rate != preferred_sample_rate;
+    if mismatch_detected || settings.preferred_output_sample_rate != preferred_sample_rate {
+        settings.preferred_output_sample_rate = normalized_output_sample_rate;
+    }
+
+    if requested_device.is_none() {
+        settings.selected_output_device = None;
+    }
+
+    write_settings(&app, settings);
+
+    Ok(PlaybackAudioContract {
+        selected_output_device: selected_output_device_name,
+        selected_output_device_available,
+        preferred_output_sample_rate: preferred_sample_rate,
+        detected_output_sample_rate,
+        normalized_output_sample_rate,
+        mismatch_detected,
+    })
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn play_test_sound(app: AppHandle, sound_type: String) {
     let sound = match sound_type.as_str() {
         "start" => audio_feedback::SoundType::Start,
@@ -309,4 +400,37 @@ pub fn get_clamshell_microphone(app: AppHandle) -> Result<String, String> {
 pub fn is_recording(app: AppHandle) -> bool {
     let audio_manager = app.state::<Arc<AudioRecordingManager>>();
     audio_manager.is_recording()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{clamp_sample_rate, normalize_selected_output_device};
+
+    #[test]
+    fn normalize_selected_output_device_treats_default_as_none() {
+        assert_eq!(normalize_selected_output_device(None), None);
+        assert_eq!(
+            normalize_selected_output_device(Some("default".to_string())),
+            None
+        );
+        assert_eq!(
+            normalize_selected_output_device(Some("Default".to_string())),
+            None
+        );
+    }
+
+    #[test]
+    fn normalize_selected_output_device_preserves_named_device() {
+        assert_eq!(
+            normalize_selected_output_device(Some("Speakers (USB)".to_string())),
+            Some("Speakers (USB)".to_string())
+        );
+    }
+
+    #[test]
+    fn clamp_sample_rate_bounds_values() {
+        assert_eq!(clamp_sample_rate(1_000), 8_000);
+        assert_eq!(clamp_sample_rate(48_000), 48_000);
+        assert_eq!(clamp_sample_rate(999_999), 192_000);
+    }
 }
