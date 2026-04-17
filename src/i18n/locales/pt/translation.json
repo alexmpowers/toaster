@@ -148,33 +148,6 @@
     },
     "general": {
       "title": "Geral",
-      "shortcut": {
-        "title": "Atalhos do Toaster",
-        "description": "Configure atalhos de teclado para iniciar a gravação de voz para texto",
-        "loading": "Carregando atalhos...",
-        "none": "Nenhum atalho configurado",
-        "notFound": "Atalho não encontrado",
-        "pressKeys": "Pressione as teclas...",
-        "bindings": {
-          "transcribe": {
-            "name": "Atalho de Transcrição",
-            "description": "O atalho de teclado para gravar e transcrever sua voz."
-          },
-          "cancel": {
-            "name": "Atalho de Cancelar",
-            "description": "O atalho de teclado para cancelar a gravação atual."
-          },
-          "transcribe_with_post_process": {
-            "name": "Tecla de Pós-Processamento",
-            "description": "Opcional: Uma tecla de atalho dedicada que sempre aplica pós-processamento com IA à sua transcrição."
-          }
-        },
-        "errors": {
-          "restore": "Falha ao restaurar atalho original",
-          "set": "Falha ao definir atalho: {{error}}",
-          "reset": "Falha ao redefinir atalho para o valor original"
-        }
-      },
       "language": {
         "title": "Idioma",
         "description": "Selecione o idioma para reconhecimento de fala. Auto detectará automaticamente o idioma, enquanto selecionar um idioma específico pode melhorar a precisão para esse idioma.",

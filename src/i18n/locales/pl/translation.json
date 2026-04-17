@@ -166,33 +166,6 @@
     },
     "general": {
       "title": "Ogólne",
-      "shortcut": {
-        "title": "Skróty Toaster",
-        "description": "Skonfiguruj skróty klawiaturowe do uruchamiania nagrywania mowy",
-        "loading": "Wczytywanie skrótów...",
-        "none": "Brak skonfigurowanych skrótów",
-        "notFound": "Nie znaleziono skrótu",
-        "pressKeys": "Naciśnij klawisze...",
-        "bindings": {
-          "transcribe": {
-            "name": "Skrót transkrypcji",
-            "description": "Skrót klawiaturowy do nagrywania i transkrypcji głosu."
-          },
-          "cancel": {
-            "name": "Skrót anulowania",
-            "description": "Skrót klawiaturowy do anulowania bieżącego nagrywania."
-          },
-          "transcribe_with_post_process": {
-            "name": "Skrót postprocessingu",
-            "description": "Opcjonalnie: Dedykowany skrót klawiszowy, który zawsze stosuje postprocessing AI do transkrypcji."
-          }
-        },
-        "errors": {
-          "restore": "Nie udało się przywrócić oryginalnego skrótu",
-          "set": "Nie udało się ustawić skrótu: {{error}}",
-          "reset": "Nie udało się zresetować skrótu do wartości domyślnej"
-        }
-      },
       "language": {
         "title": "Język",
         "description": "Wybierz język rozpoznawania mowy. Opcja Auto automatycznie określi język, a wybór konkretnego języka może poprawić dokładność.",

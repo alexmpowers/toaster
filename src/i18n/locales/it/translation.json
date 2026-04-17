@@ -166,33 +166,6 @@
     },
     "general": {
       "title": "Generale",
-      "shortcut": {
-        "title": "Scorciatoie di Toaster",
-        "description": "Configura le scorciatoie per attivare la trascrizione vocale",
-        "loading": "Caricamento delle scorciatoie...",
-        "none": "Nessuna scorciatoia configurata",
-        "notFound": "Scorciatoia non trovata",
-        "pressKeys": "Premi i tasti...",
-        "bindings": {
-          "transcribe": {
-            "name": "Scorciatoia Trascrizione",
-            "description": "La scorciatoia da tastiera per registrare e trascrivere la tua voce."
-          },
-          "cancel": {
-            "name": "Scorciatoia Annulla",
-            "description": "La scorciatoia da tastiera per annullare la registrazione in corso."
-          },
-          "transcribe_with_post_process": {
-            "name": "Tasto di post-elaborazione",
-            "description": "Facoltativo: Un tasto di scelta rapida dedicato che applica sempre la post-elaborazione IA alla trascrizione."
-          }
-        },
-        "errors": {
-          "restore": "Errore nel ripristino della scorciatoia originale",
-          "set": "Errore nella configurazione della scorciatoia: {{error}}",
-          "reset": "Errore nella reinizializzazione della scorciatoia al valore originale"
-        }
-      },
       "language": {
         "title": "Lingua",
         "description": "Scegli la lingua per il riconoscimento vocale. Auto la determinerà automaticamente, mentre scegliere una lingua specifica può migliorare l'accuratezza per quella lingua.",

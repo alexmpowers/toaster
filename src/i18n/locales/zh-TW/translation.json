@@ -148,33 +148,6 @@
     },
     "general": {
       "title": "一般",
-      "shortcut": {
-        "title": "Toaster 快捷鍵",
-        "description": "設定啟動語音轉文字錄製的鍵盤快捷鍵",
-        "loading": "載入快捷鍵中...",
-        "none": "未設定快捷鍵",
-        "notFound": "未找到快捷鍵",
-        "pressKeys": "請按鍵...",
-        "bindings": {
-          "transcribe": {
-            "name": "轉錄快捷鍵",
-            "description": "用於錄製和轉錄語音的鍵盤快捷鍵"
-          },
-          "cancel": {
-            "name": "取消快捷鍵",
-            "description": "用於取消目前錄製的鍵盤快捷鍵"
-          },
-          "transcribe_with_post_process": {
-            "name": "後處理快捷鍵",
-            "description": "可選：專用快捷鍵，使用時一律對轉錄結果套用 AI 後處理"
-          }
-        },
-        "errors": {
-          "restore": "無法還原原始快捷鍵",
-          "set": "無法設定快捷鍵: {{error}}",
-          "reset": "無法將快捷鍵重設為原始值"
-        }
-      },
       "language": {
         "title": "語言",
         "description": "選擇語音識別的語言。選擇自動將自動判定語言，選擇特定語言可以提高該語言的準確度",

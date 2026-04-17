@@ -166,33 +166,6 @@
     },
     "general": {
       "title": "Allgemein",
-      "shortcut": {
-        "title": "Toaster-Tastenkürzel",
-        "description": "Tastenkürzel für die Sprachaufnahme konfigurieren",
-        "loading": "Tastenkürzel werden geladen...",
-        "none": "Keine Tastenkürzel konfiguriert",
-        "notFound": "Tastenkürzel nicht gefunden",
-        "pressKeys": "Tasten drücken...",
-        "bindings": {
-          "transcribe": {
-            "name": "Transkriptions-Tastenkürzel",
-            "description": "Das Tastenkürzel zum Aufnehmen und Transkribieren Ihrer Stimme."
-          },
-          "cancel": {
-            "name": "Abbrechen-Tastenkürzel",
-            "description": "Das Tastenkürzel zum Abbrechen der aktuellen Aufnahme."
-          },
-          "transcribe_with_post_process": {
-            "name": "Nachbearbeitungs-Tastenkürzel",
-            "description": "Optional: Ein dediziertes Tastenkürzel, das immer die KI-Nachbearbeitung auf Ihre Transkription anwendet."
-          }
-        },
-        "errors": {
-          "restore": "Ursprüngliches Tastenkürzel konnte nicht wiederhergestellt werden",
-          "set": "Tastenkürzel konnte nicht gesetzt werden: {{error}}",
-          "reset": "Tastenkürzel konnte nicht auf Originalwert zurückgesetzt werden"
-        }
-      },
       "language": {
         "title": "Sprache",
         "description": "Wähle die Sprache für die Spracherkennung. Auto erkennt die Sprache automatisch, die Auswahl einer bestimmten Sprache kann die Genauigkeit verbessern.",

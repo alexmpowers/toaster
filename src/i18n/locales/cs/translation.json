@@ -166,33 +166,6 @@
     },
     "general": {
       "title": "Obecné",
-      "shortcut": {
-        "title": "Zkratky Toaster",
-        "description": "Nastavte klávesové zkratky pro spuštění nahrávání řeči na text",
-        "loading": "Načítám zkratky...",
-        "none": "Žádné zkratky nejsou nastavené",
-        "notFound": "Zkratka nenalezena",
-        "pressKeys": "Stiskněte klávesy...",
-        "bindings": {
-          "transcribe": {
-            "name": "Zkratka přepisu",
-            "description": "Klávesová zkratka pro nahrávání a přepis vašeho hlasu."
-          },
-          "cancel": {
-            "name": "Zkratka zrušení",
-            "description": "Klávesová zkratka pro zrušení aktuálního nahrávání."
-          },
-          "transcribe_with_post_process": {
-            "name": "Klávesa pro následné zpracování",
-            "description": "Volitelné: Vyhrazená klávesová zkratka, která vždy použije AI následné zpracování na váš přepis."
-          }
-        },
-        "errors": {
-          "restore": "Nepodařilo se obnovit původní zkratku",
-          "set": "Nepodařilo se nastavit zkratku: {{error}}",
-          "reset": "Nepodařilo se vrátit zkratku na původní hodnotu"
-        }
-      },
       "language": {
         "title": "Jazyk",
         "description": "Vyberte jazyk rozpoznávání řeči. Auto jazyk určí automaticky, zatímco výběr konkrétního jazyka může zlepšit přesnost.",
