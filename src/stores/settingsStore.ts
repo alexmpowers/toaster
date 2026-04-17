@@ -30,8 +30,6 @@ interface SettingsStore {
   refreshSettings: () => Promise<void>;
   refreshAudioDevices: () => Promise<void>;
   refreshOutputDevices: () => Promise<void>;
-  updateBinding: (id: string, binding: string) => Promise<void>;
-  resetBinding: (id: string) => Promise<void>;
   getSetting: <K extends keyof Settings>(key: K) => Settings[K] | undefined;
   isUpdatingKey: (key: string) => boolean;
   checkCustomSounds: () => Promise<void>;
@@ -312,87 +310,6 @@ export const useSettingsStore = create<SettingsStore>()(
         if (defaultValue !== undefined) {
           await get().updateSetting(key, defaultValue as any);
         }
-      }
-    },
-
-    // Update a specific binding
-    updateBinding: async (id, binding) => {
-      const { settings, setUpdating } = get();
-      const updateKey = `binding_${id}`;
-      const originalBinding = settings?.bindings?.[id]?.current_binding;
-
-      setUpdating(updateKey, true);
-
-      try {
-        // Optimistic update
-        set((state) => ({
-          settings: state.settings
-            ? {
-                ...state.settings,
-                bindings: {
-                  ...state.settings.bindings,
-                  [id]: {
-                    ...state.settings.bindings![id]!,
-                    current_binding: binding,
-                  },
-                },
-              }
-            : null,
-        }));
-
-        const result = await commands.changeBinding(id, binding);
-
-        // Check if the command executed successfully
-        if (result.status === "error") {
-          throw new Error(result.error);
-        }
-
-        // Check if the binding change was successful
-        if (!result.data.success) {
-          throw new Error(result.data.error || "Failed to update binding");
-        }
-      } catch (error) {
-        console.error(`Failed to update binding ${id}:`, error);
-
-        // Rollback on error
-        if (originalBinding && get().settings) {
-          set((state) => ({
-            settings: state.settings
-              ? {
-                  ...state.settings,
-                  bindings: {
-                    ...state.settings.bindings,
-                    [id]: {
-                      ...state.settings.bindings![id]!,
-                      current_binding: originalBinding,
-                    },
-                  },
-                }
-              : null,
-          }));
-        }
-
-        // Re-throw to let the caller know it failed
-        throw error;
-      } finally {
-        setUpdating(updateKey, false);
-      }
-    },
-
-    // Reset a specific binding
-    resetBinding: async (id) => {
-      const { setUpdating, refreshSettings } = get();
-      const updateKey = `binding_${id}`;
-
-      setUpdating(updateKey, true);
-
-      try {
-        await commands.resetBinding(id);
-        await refreshSettings();
-      } catch (error) {
-        console.error(`Failed to reset binding ${id}:`, error);
-      } finally {
-        setUpdating(updateKey, false);
       }
     },
 

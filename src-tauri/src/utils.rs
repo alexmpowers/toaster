@@ -1,6 +1,5 @@
 use crate::managers::audio::AudioRecordingManager;
 use crate::managers::transcription::TranscriptionManager;
-use crate::shortcut;
 use crate::TranscriptionCoordinator;
 use log::info;
 use std::sync::Arc;
@@ -14,9 +13,6 @@ pub fn emit_levels(app_handle: &AppHandle, levels: &Vec<f32>) {
 /// Handles cancelling both recording and transcription operations and updates UI state.
 pub fn cancel_current_operation(app: &AppHandle) {
     info!("Initiating operation cancellation...");
-
-    // Unregister the cancel shortcut asynchronously
-    shortcut::unregister_cancel_shortcut(app);
 
     // Cancel any ongoing recording
     let audio_manager = app.state::<Arc<AudioRecordingManager>>();

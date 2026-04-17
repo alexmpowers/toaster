@@ -13,8 +13,6 @@ const { mockCommands } = vi.hoisted(() => {
       getAvailableMicrophones: fn(),
       getAvailableOutputDevices: fn(),
       checkCustomSounds: fn(),
-      changeBinding: fn(),
-      resetBinding: fn(),
       changeUpdateChecksSetting: fn(),
       setSelectedMicrophone: fn(),
       setClamshellMicrophone: fn(),
@@ -416,83 +414,6 @@ describe("settingsStore", () => {
         start: true,
         stop: true,
       });
-    });
-  });
-
-  // ── updateBinding ────────────────────────────────────────────────
-  describe("updateBinding", () => {
-    const baseBindings = {
-      toggle: {
-        id: "toggle",
-        name: "Toggle",
-        current_binding: "Ctrl+Space",
-        default_binding: "Ctrl+Space",
-        description: "Toggle recording",
-      },
-    };
-
-    beforeEach(() => {
-      useSettingsStore.setState({
-        settings: makeSettings({ bindings: baseBindings }),
-      });
-    });
-
-    it("optimistically updates the binding and calls backend", async () => {
-      mockCommands.changeBinding.mockResolvedValue(
-        ok({ success: true, error: null }),
-      );
-
-      await useSettingsStore.getState().updateBinding("toggle", "Ctrl+M");
-
-      expect(
-        useSettingsStore.getState().settings?.bindings?.["toggle"]
-          ?.current_binding,
-      ).toBe("Ctrl+M");
-      expect(mockCommands.changeBinding).toHaveBeenCalledWith(
-        "toggle",
-        "Ctrl+M",
-      );
-    });
-
-    it("rolls back on backend error response", async () => {
-      mockCommands.changeBinding.mockResolvedValue(
-        ok({ success: false, error: "conflict" }),
-      );
-
-      await expect(
-        useSettingsStore.getState().updateBinding("toggle", "Ctrl+M"),
-      ).rejects.toThrow("conflict");
-
-      expect(
-        useSettingsStore.getState().settings?.bindings?.["toggle"]
-          ?.current_binding,
-      ).toBe("Ctrl+Space");
-    });
-
-    it("rolls back on command-level error", async () => {
-      mockCommands.changeBinding.mockResolvedValue(err("command error"));
-
-      await expect(
-        useSettingsStore.getState().updateBinding("toggle", "Ctrl+M"),
-      ).rejects.toThrow("command error");
-
-      expect(
-        useSettingsStore.getState().settings?.bindings?.["toggle"]
-          ?.current_binding,
-      ).toBe("Ctrl+Space");
-    });
-  });
-
-  // ── resetBinding ─────────────────────────────────────────────────
-  describe("resetBinding", () => {
-    it("calls resetBinding command then refreshes", async () => {
-      mockCommands.resetBinding.mockResolvedValue(undefined);
-      mockCommands.getAppSettings.mockResolvedValue(ok(makeSettings()));
-
-      await useSettingsStore.getState().resetBinding("toggle");
-
-      expect(mockCommands.resetBinding).toHaveBeenCalledWith("toggle");
-      expect(mockCommands.getAppSettings).toHaveBeenCalled();
     });
   });
 

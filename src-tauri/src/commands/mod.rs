@@ -141,28 +141,3 @@ pub fn resolve_local_cleanup_review(
         Err("No pending cleanup review request found".to_string())
     }
 }
-
-/// Marker state to track if shortcuts have been initialized.
-pub struct ShortcutsInitialized;
-
-/// Initialize keyboard shortcuts.
-/// On macOS, this should be called after accessibility permissions are granted.
-/// This is idempotent - calling it multiple times is safe.
-#[specta::specta]
-#[tauri::command]
-pub fn initialize_shortcuts(app: AppHandle) -> Result<(), String> {
-    // Check if already initialized
-    if app.try_state::<ShortcutsInitialized>().is_some() {
-        log::debug!("Shortcuts already initialized");
-        return Ok(());
-    }
-
-    // Initialize shortcuts
-    crate::shortcut::init_shortcuts(&app);
-
-    // Mark as initialized
-    app.manage(ShortcutsInitialized);
-
-    log::info!("Shortcuts initialized successfully");
-    Ok(())
-}

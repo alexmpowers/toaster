@@ -2,22 +2,45 @@
 //!
 //! These commands back the editor's settings UI (captions, export, language,
 //! whisper accelerator, post-process providers, filler words, etc.). They were
-//! historically housed in the `shortcut` module for no reason other than
-//! history; they have nothing to do with keyboard shortcuts. Moved here by
-//! p1-shortcut-split-settings.
-//!
-//! Binding-management commands (`change_binding`, `reset_binding`,
-//! `suspend_binding`, `resume_binding`) remain in `crate::shortcut` because
-//! they legitimately drive keyboard shortcut registration.
+//! historically housed in the `shortcut` module because Handy bundled
+//! everything under keyboard-shortcut handling; they have nothing to do with
+//! keyboard shortcuts. Moved here by p1-shortcut-split-settings.
 
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::settings::APPLE_INTELLIGENCE_DEFAULT_MODEL_ID;
 use crate::settings::{self, LLMPrompt, APPLE_INTELLIGENCE_PROVIDER_ID};
-use crate::shortcut::{
-    apply_and_reload_accelerator, register_shortcut, unregister_shortcut, validate_provider_exists,
-};
+
+/// Validate that a post-process provider exists in the user's settings.
+fn validate_provider_exists(
+    settings: &settings::AppSettings,
+    provider_id: &str,
+) -> Result<(), String> {
+    if !settings
+        .post_process_providers
+        .iter()
+        .any(|provider| provider.id == provider_id)
+    {
+        return Err(format!("Provider '{}' not found", provider_id));
+    }
+    Ok(())
+}
+
+/// Save accelerator settings, re-apply globals, and unload the model so it
+/// reloads with the new backend on next transcription.
+fn apply_and_reload_accelerator(app: &AppHandle, s: settings::AppSettings) {
+    settings::write_settings(app, s);
+    crate::managers::transcription::apply_accelerator_settings(app);
+
+    let tm = app.state::<std::sync::Arc<crate::managers::transcription::TranscriptionManager>>();
+    if tm.is_model_loaded() {
+        if let Err(e) = tm.unload_model() {
+            log::warn!("Failed to unload model after accelerator change: {e}");
+        }
+    }
+}
+
 
 #[tauri::command]
 #[specta::specta]
@@ -157,21 +180,7 @@ pub fn change_extra_recording_buffer_setting(app: AppHandle, ms: u64) -> Result<
 pub fn change_post_process_enabled_setting(app: AppHandle, enabled: bool) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
     settings.post_process_enabled = enabled;
-    settings::write_settings(&app, settings.clone());
-
-    // Register or unregister the post-processing shortcut
-    if let Some(binding) = settings
-        .bindings
-        .get("transcribe_with_post_process")
-        .cloned()
-    {
-        if enabled {
-            let _ = register_shortcut(&app, binding);
-        } else {
-            let _ = unregister_shortcut(&app, binding);
-        }
-    }
-
+    settings::write_settings(&app, settings);
     Ok(())
 }
 

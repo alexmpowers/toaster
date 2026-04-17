@@ -101,17 +101,6 @@ const AccessibilityOnboarding: React.FC<AccessibilityOnboardingProps> = ({
             checkMicrophonePermission(),
           ]);
 
-          // If accessibility is granted, initialize shortcuts
-          if (accessibilityGranted) {
-            try {
-              await Promise.all([
-                commands.initializeShortcuts(),
-              ]);
-            } catch (e) {
-              console.warn("Failed to initialize after permission grant:", e);
-            }
-          }
-
           const newState: PermissionsState = {
             accessibility: accessibilityGranted ? "granted" : "needed",
             microphone: microphoneGranted ? "granted" : "needed",
@@ -192,12 +181,6 @@ const AccessibilityOnboarding: React.FC<AccessibilityOnboardingProps> = ({
 
           if (accessibilityGranted && prev.accessibility !== "granted") {
             newState.accessibility = "granted";
-            // Initialize shortcuts when accessibility is granted
-            Promise.all([
-              commands.initializeShortcuts(),
-            ]).catch((e) => {
-              console.warn("Failed to initialize after permission grant:", e);
-            });
           }
 
           if (microphoneGranted && prev.microphone !== "granted") {

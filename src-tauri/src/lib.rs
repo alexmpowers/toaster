@@ -6,7 +6,6 @@ mod llm_client;
 mod managers;
 pub mod portable;
 mod settings;
-mod shortcut;
 mod signal_handle;
 mod transcription_coordinator;
 mod transcription_post_process;
@@ -209,10 +208,8 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     app_handle.manage(MediaStore(Mutex::new(MediaState::new())));
     app_handle.manage(LocalCleanupReviewState::new());
 
-    // Note: Shortcuts are NOT initialized here.
-    // The frontend is responsible for calling the `initialize_shortcuts` command
-    // after permissions are confirmed (on macOS) or after onboarding completes.
-    // This matches the pattern used for Enigo initialization.
+    // Note: Keyboard shortcuts have been removed (legacy Handy dictation surface).
+    // Toaster is a transcript editor and does not register global hotkeys.
 
     #[cfg(unix)]
     let signals = Signals::new(&[SIGUSR1, SIGUSR2])
@@ -274,8 +271,6 @@ pub fn run(cli_args: CliArgs) {
 
     let specta_builder = Builder::<tauri::Wry>::new()
         .commands(collect_commands![
-            shortcut::change_binding,
-            shortcut::reset_binding,
             commands::app_settings::change_translate_to_english_setting,
             commands::app_settings::change_selected_language_setting,
             commands::app_settings::change_debug_mode_setting,
@@ -299,8 +294,6 @@ pub fn run(cli_args: CliArgs) {
             commands::app_settings::change_caption_bg_color_setting,
             commands::app_settings::change_caption_text_color_setting,
             commands::app_settings::change_caption_position_setting,
-            shortcut::suspend_binding,
-            shortcut::resume_binding,
             commands::app_settings::change_lazy_stream_close_setting,
             commands::app_settings::change_normalize_audio_setting,
             commands::app_settings::change_export_volume_db_setting,
@@ -312,8 +305,6 @@ pub fn run(cli_args: CliArgs) {
             commands::app_settings::change_ort_accelerator_setting,
             commands::app_settings::change_whisper_gpu_device,
             commands::app_settings::get_available_accelerators,
-            shortcut::handy_keys::start_handy_keys_recording,
-            shortcut::handy_keys::stop_handy_keys_recording,
             trigger_update_check,
             show_main_window_command,
             commands::cancel_operation,
@@ -328,7 +319,6 @@ pub fn run(cli_args: CliArgs) {
             commands::open_app_data_dir,
             commands::check_apple_intelligence_available,
             commands::resolve_local_cleanup_review,
-            commands::initialize_shortcuts,
             commands::models::get_available_models,
             commands::models::get_model_info,
             commands::models::download_model,
@@ -472,7 +462,6 @@ pub fn run(cli_args: CliArgs) {
         .plugin(tauri_plugin_macos_permissions::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::default().build())
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_autostart::init(
             MacosLauncher::LaunchAgent,
             Some(vec![]),
