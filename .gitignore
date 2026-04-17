@@ -48,3 +48,6 @@ build/
 
 # Launch monitor logs (from scripts/launch-toaster-monitored.ps1)
 .launch-monitor/
+
+# Windows reserved-name artifacts (accidental PowerShell `> nul` redirects)
+/nul
