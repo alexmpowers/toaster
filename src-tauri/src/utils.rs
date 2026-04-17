@@ -15,13 +15,6 @@ pub fn show_processing_overlay(_app_handle: &AppHandle) {}
 pub fn hide_recording_overlay(_app_handle: &AppHandle) {}
 pub fn update_overlay_position(_app_handle: &AppHandle) {}
 
-/// Stub for the legacy dictation paste path. The clipboard module was removed
-/// with the dictation surface; callers in actions.rs are scheduled for removal
-/// by p1-remove-actions. Until then, this is a no-op that reports success.
-pub fn paste(_text: String, _app_handle: AppHandle) -> Result<(), String> {
-    Ok(())
-}
-
 pub fn emit_levels(app_handle: &AppHandle, levels: &Vec<f32>) {
     let _ = app_handle.emit("mic-level", levels);
 }

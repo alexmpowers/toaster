@@ -1,11 +1,8 @@
-use crate::actions::ACTION_MAP;
-use crate::managers::audio::AudioRecordingManager;
 use log::{debug, error, warn};
 use std::sync::mpsc::{self, Sender};
-use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 
 const DEBOUNCE: Duration = Duration::from_millis(30);
 
@@ -158,27 +155,13 @@ impl TranscriptionCoordinator {
     }
 }
 
-fn start(app: &AppHandle, stage: &mut Stage, binding_id: &str, hotkey_string: &str) {
-    let Some(action) = ACTION_MAP.get(binding_id) else {
-        warn!("No action in ACTION_MAP for '{binding_id}'");
-        return;
-    };
-    action.start(app, binding_id, hotkey_string);
-    if app
-        .try_state::<Arc<AudioRecordingManager>>()
-        .map_or(false, |a| a.is_recording())
-    {
-        *stage = Stage::Recording(binding_id.to_string());
-    } else {
-        debug!("Start for '{binding_id}' did not begin recording; staying idle");
-    }
+fn start(_app: &AppHandle, stage: &mut Stage, binding_id: &str, _hotkey_string: &str) {
+    // ACTION_MAP died with actions.rs. No-op until the coordinator itself is removed.
+    warn!("Coordinator start for '{binding_id}' ignored: dictation action map removed");
+    *stage = Stage::Idle;
 }
 
-fn stop(app: &AppHandle, stage: &mut Stage, binding_id: &str, hotkey_string: &str) {
-    let Some(action) = ACTION_MAP.get(binding_id) else {
-        warn!("No action in ACTION_MAP for '{binding_id}'");
-        return;
-    };
-    action.stop(app, binding_id, hotkey_string);
-    *stage = Stage::Processing;
+fn stop(_app: &AppHandle, stage: &mut Stage, binding_id: &str, _hotkey_string: &str) {
+    warn!("Coordinator stop for '{binding_id}' ignored: dictation action map removed");
+    *stage = Stage::Idle;
 }
