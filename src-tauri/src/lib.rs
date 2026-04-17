@@ -1,7 +1,6 @@
 mod actions;
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 mod apple_intelligence;
-mod audio_feedback;
 pub mod audio_toolkit;
 pub mod cli;
 mod clipboard;
@@ -282,8 +281,6 @@ pub fn run(cli_args: CliArgs) {
             shortcut::change_binding,
             shortcut::reset_binding,
             shortcut::change_ptt_setting,
-            shortcut::change_audio_feedback_setting,
-            shortcut::change_audio_feedback_volume_setting,
             shortcut::change_sound_theme_setting,
             shortcut::change_start_hidden_setting,
             shortcut::change_autostart_setting,
@@ -376,7 +373,6 @@ pub fn run(cli_args: CliArgs) {
             commands::audio::set_selected_output_device,
             commands::audio::get_selected_output_device,
             commands::audio::normalize_playback_audio_contract,
-            commands::audio::play_test_sound,
             commands::audio::check_custom_sounds,
             commands::audio::set_clamshell_microphone,
             commands::audio::get_clamshell_microphone,

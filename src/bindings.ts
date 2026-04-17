@@ -29,22 +29,6 @@ async changePttSetting(enabled: boolean) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async changeAudioFeedbackSetting(enabled: boolean) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_audio_feedback_setting", { enabled }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async changeAudioFeedbackVolumeSetting(volume: number) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_audio_feedback_volume_setting", { volume }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
 async changeSoundThemeSetting(theme: string) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_sound_theme_setting", { theme }) };
@@ -796,9 +780,6 @@ async normalizePlaybackAudioContract() : Promise<Result<PlaybackAudioContract, s
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
-},
-async playTestSound(soundType: string) : Promise<void> {
-    await TAURI_INVOKE("play_test_sound", { soundType });
 },
 async checkCustomSounds() : Promise<CustomSounds> {
     return await TAURI_INVOKE("check_custom_sounds");

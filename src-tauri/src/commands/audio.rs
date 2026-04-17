@@ -1,9 +1,7 @@
-use crate::audio_feedback;
 use crate::audio_toolkit::audio::{list_input_devices, list_output_devices};
 use crate::managers::audio::{AudioRecordingManager, MicrophoneMode};
 use crate::settings::{get_settings, write_settings};
 use cpal::traits::{DeviceTrait, HostTrait};
-use log::warn;
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use std::sync::Arc;
@@ -357,20 +355,6 @@ pub fn normalize_playback_audio_contract(app: AppHandle) -> Result<PlaybackAudio
         normalized_output_sample_rate,
         mismatch_detected,
     })
-}
-
-#[tauri::command]
-#[specta::specta]
-pub async fn play_test_sound(app: AppHandle, sound_type: String) {
-    let sound = match sound_type.as_str() {
-        "start" => audio_feedback::SoundType::Start,
-        "stop" => audio_feedback::SoundType::Stop,
-        _ => {
-            warn!("Unknown sound type: {}", sound_type);
-            return;
-        }
-    };
-    audio_feedback::play_test_sound(&app, sound);
 }
 
 #[tauri::command]

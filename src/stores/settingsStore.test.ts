@@ -13,7 +13,6 @@ const { mockCommands } = vi.hoisted(() => {
       getAvailableMicrophones: fn(),
       getAvailableOutputDevices: fn(),
       checkCustomSounds: fn(),
-      playTestSound: fn(),
       changeBinding: fn(),
       resetBinding: fn(),
       changeUpdateChecksSetting: fn(),
@@ -400,25 +399,6 @@ describe("settingsStore", () => {
       expect(useSettingsStore.getState().outputDevices).toEqual([
         { index: "default", name: "Default", is_default: true },
       ]);
-    });
-  });
-
-  // ── playTestSound ────────────────────────────────────────────────
-  describe("playTestSound", () => {
-    it("calls the backend command", async () => {
-      mockCommands.playTestSound.mockResolvedValue(undefined);
-
-      await useSettingsStore.getState().playTestSound("start");
-
-      expect(mockCommands.playTestSound).toHaveBeenCalledWith("start");
-    });
-
-    it("does not throw on failure", async () => {
-      mockCommands.playTestSound.mockRejectedValue(new Error("no audio"));
-
-      await expect(
-        useSettingsStore.getState().playTestSound("stop"),
-      ).resolves.not.toThrow();
     });
   });
 

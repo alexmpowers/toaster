@@ -34,7 +34,6 @@ interface SettingsStore {
   resetBinding: (id: string) => Promise<void>;
   getSetting: <K extends keyof Settings>(key: K) => Settings[K] | undefined;
   isUpdatingKey: (key: string) => boolean;
-  playTestSound: (soundType: "start" | "stop") => Promise<void>;
   checkCustomSounds: () => Promise<void>;
   setPostProcessProvider: (providerId: string) => Promise<void>;
   updatePostProcessSetting: (
@@ -238,15 +237,6 @@ export const useSettingsStore = create<SettingsStore>()(
       } catch (error) {
         console.error("Failed to load output devices:", error);
         set({ outputDevices: [DEFAULT_AUDIO_DEVICE] });
-      }
-    },
-
-    // Play a test sound
-    playTestSound: async (soundType: "start" | "stop") => {
-      try {
-        await commands.playTestSound(soundType);
-      } catch (error) {
-        console.error(`Failed to play test sound (${soundType}):`, error);
       }
     },
 

@@ -7,7 +7,6 @@ use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Manager};
 
 // Re-export all utility modules for easy access
-// pub use crate::audio_feedback::*;
 pub use crate::clipboard::*;
 
 // Overlay window was removed (legacy Handy dictation UI). These stubs remain

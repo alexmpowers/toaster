@@ -1,6 +1,5 @@
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 use crate::apple_intelligence;
-use crate::audio_feedback::{play_feedback_sound, play_feedback_sound_blocking, SoundType};
 use crate::audio_toolkit::{is_microphone_access_denied, is_no_input_device_error};
 use crate::managers::audio::AudioRecordingManager;
 use crate::managers::editor::LocalLlmWordProposal;
@@ -1469,14 +1468,9 @@ impl ShortcutAction for TranscribeAction {
 
         let mut recording_error: Option<String> = None;
         if is_always_on {
-            // Always-on mode: Play audio feedback immediately, then apply mute after sound finishes
-            debug!("Always-on mode: Playing audio feedback immediately");
+            debug!("Always-on mode: applying mute");
             let rm_clone = Arc::clone(&rm);
-            let app_clone = app.clone();
-            // The blocking helper exits immediately if audio feedback is disabled,
-            // so we can always reuse this thread to ensure mute happens right after playback.
             std::thread::spawn(move || {
-                play_feedback_sound_blocking(&app_clone, SoundType::Start);
                 rm_clone.apply_mute();
             });
 
@@ -1485,22 +1479,15 @@ impl ShortcutAction for TranscribeAction {
                 recording_error = Some(e);
             }
         } else {
-            // On-demand mode: Start recording first, then play audio feedback, then apply mute
-            // This allows the microphone to be activated before playing the sound
-            debug!("On-demand mode: Starting recording first, then audio feedback");
+            debug!("On-demand mode: Starting recording first, then apply mute");
             let recording_start_time = Instant::now();
             match rm.try_start_recording(&binding_id) {
                 Ok(()) => {
                     debug!("Recording started in {:?}", recording_start_time.elapsed());
-                    // Small delay to ensure microphone stream is active
-                    let app_clone = app.clone();
                     let rm_clone = Arc::clone(&rm);
                     std::thread::spawn(move || {
                         std::thread::sleep(std::time::Duration::from_millis(100));
-                        debug!("Handling delayed audio feedback/mute sequence");
-                        // Helper handles disabled audio feedback by returning early, so we reuse it
-                        // to keep mute sequencing consistent in every mode.
-                        play_feedback_sound_blocking(&app_clone, SoundType::Start);
+                        debug!("Handling delayed mute sequence");
                         rm_clone.apply_mute();
                     });
                 }
@@ -1556,11 +1543,8 @@ impl ShortcutAction for TranscribeAction {
 
         show_transcribing_overlay(app);
 
-        // Unmute before playing audio feedback so the stop sound is audible
+        // Unmute before finishing
         rm.remove_mute();
-
-        // Play audio feedback for recording stop
-        play_feedback_sound(app, SoundType::Stop);
 
         let binding_id = binding_id.to_string(); // Clone binding_id for the async task
         let post_process = self.post_process;
