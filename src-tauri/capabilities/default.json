@@ -10,7 +10,6 @@
     "updater:default",
     "process:default",
     "dialog:default",
-    "macos-permissions:default",
     "fs:read-files",
     "fs:allow-resource-read-recursive",
     {

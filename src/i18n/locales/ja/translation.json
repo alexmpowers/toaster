@@ -88,26 +88,6 @@
     "errors": {
       "loadModels": "利用可能なモデルの読み込みに失敗しました",
       "downloadModel": "モデルのダウンロードに失敗しました: {{error}}"
-    },
-    "permissions": {
-      "title": "権限が必要です",
-      "description": "Toasterが正常に動作するにはいくつかの権限が必要です。",
-      "microphone": {
-        "title": "マイクへのアクセス",
-        "description": "文字起こしのためにあなたの声を聞くために必要です。"
-      },
-      "accessibility": {
-        "title": "アクセシビリティへのアクセス",
-        "description": "アプリケーションに文字起こしテキストを入力するために必要です。"
-      },
-      "grant": "権限を許可",
-      "granted": "許可済み",
-      "waiting": "待機中...",
-      "allGranted": "準備完了！",
-      "errors": {
-        "checkFailed": "権限の確認に失敗しました。もう一度お試しください。",
-        "requestFailed": "権限のリクエストに失敗しました。もう一度お試しください。"
-      }
     }
   },
   "modelSelector": {
@@ -440,12 +420,6 @@
     "yes": "はい",
     "no": "いいえ",
     "noOptionsFound": "オプションが見つかりません"
-  },
-  "accessibility": {
-    "permissionsRequired": "アクセシビリティ権限が必要です",
-    "permissionsDescription": "Toasterが文字起こしテキストを入力するには、アクセシビリティ権限が必要です。",
-    "openSettings": "システム設定を開く",
-    "dismiss": "閉じる"
   },
   "errors": {
     "loadDirectory": "ディレクトリの読み込みエラー: {{error}}",

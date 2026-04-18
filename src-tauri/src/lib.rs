@@ -252,7 +252,6 @@ pub fn run(cli_args: CliArgs) {
             commands::audio::set_selected_output_device,
             commands::audio::get_selected_output_device,
             commands::audio::normalize_playback_audio_contract,
-            commands::audio::check_custom_sounds,
             commands::editor::editor_set_words,
             commands::editor::editor_apply_local_llm_proposals,
             commands::editor::editor_get_words,
@@ -307,12 +306,32 @@ pub fn run(cli_args: CliArgs) {
         .events(collect_events![managers::history::HistoryUpdatePayload,]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
-    specta_builder
-        .export(
-            Typescript::default().bigint(BigIntExportBehavior::Number),
-            "../src/bindings.ts",
-        )
-        .expect("Failed to export typescript bindings");
+    {
+        const BINDINGS_PATH: &str = "../src/bindings.ts";
+        specta_builder
+            .export(
+                Typescript::default().bigint(BigIntExportBehavior::Number),
+                BINDINGS_PATH,
+            )
+            .expect("Failed to export typescript bindings");
+
+        // Post-codegen: tauri-specta 2.0.0-rc.21 hardcodes `e as any` in the
+        // generated catch branches (see specta/tauri-specta#? — the flag is
+        // always true when the command returns a Result). Rewrite those
+        // sites to `e as string`, which matches every command's declared
+        // `Result<T, string>` error type and removes ~90 `any`s from the
+        // generated file. Frontend TS strict mode enforces this contract.
+        // TODO: drop this shim when upgrading tauri-specta to a release
+        // that lets us configure the cast target directly.
+        if let Ok(src) = std::fs::read_to_string(BINDINGS_PATH) {
+            let patched = src.replace("e  as any", "e as string");
+            if patched != src {
+                if let Err(err) = std::fs::write(BINDINGS_PATH, patched) {
+                    eprintln!("Failed to post-process bindings.ts: {err}");
+                }
+            }
+        }
+    }
 
     let invoke_handler = specta_builder.invoke_handler();
 
@@ -359,7 +378,6 @@ pub fn run(cli_args: CliArgs) {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_os::init())
-        .plugin(tauri_plugin_macos_permissions::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::default().build())
         .manage(cli_args.clone())

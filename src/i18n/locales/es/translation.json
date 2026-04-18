@@ -88,26 +88,6 @@
     "errors": {
       "loadModels": "Error al cargar los modelos disponibles",
       "downloadModel": "Error al descargar el modelo: {{error}}"
-    },
-    "permissions": {
-      "title": "Permisos Requeridos",
-      "description": "Toaster necesita algunos permisos para funcionar correctamente.",
-      "microphone": {
-        "title": "Acceso al Micrófono",
-        "description": "Necesario para escuchar tu voz para la transcripción."
-      },
-      "accessibility": {
-        "title": "Acceso de Accesibilidad",
-        "description": "Necesario para escribir el texto transcrito en tus aplicaciones."
-      },
-      "grant": "Conceder Permiso",
-      "granted": "Concedido",
-      "waiting": "Esperando...",
-      "allGranted": "¡Todo listo!",
-      "errors": {
-        "checkFailed": "Error al verificar permisos. Por favor, inténtalo de nuevo.",
-        "requestFailed": "Error al solicitar permiso. Por favor, inténtalo de nuevo."
-      }
     }
   },
   "modelSelector": {
@@ -440,12 +420,6 @@
     "yes": "Sí",
     "no": "No",
     "noOptionsFound": "No se encontraron opciones"
-  },
-  "accessibility": {
-    "permissionsRequired": "Se Requieren Permisos de Accesibilidad",
-    "permissionsDescription": "Toaster necesita permisos de accesibilidad para escribir texto transcrito.",
-    "openSettings": "Abrir Ajustes del Sistema",
-    "dismiss": "Descartar"
   },
   "errors": {
     "loadDirectory": "Error al cargar el directorio: {{error}}",

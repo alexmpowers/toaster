@@ -35,7 +35,6 @@ tauri-plugin-log = "2.7.1"
 tauri-plugin-opener = "2.5.2"
 tauri-plugin-store = "2.4.1"
 tauri-plugin-os = "2.3.2"
-tauri-plugin-macos-permissions = "2.3.0"
 tauri-plugin-process = "2.3.1"
 rusqlite_migration = "2.3"
 tauri-plugin-fs = "2.4.4"
@@ -89,14 +88,6 @@ transcribe-rs = { version = "0.3.3", features = ["whisper-metal"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 transcribe-rs = { version = "0.3.3", features = ["whisper-vulkan"] }
-
-# [patch.crates-io] removed after overlay window (tauri-nspanel) was deleted.
-# The fork at cjpais/tauri@handy-2.10.2 was carried for NSPanel support. Verify
-# unpatched builds work; if builds fail, restore and document why.
-# [patch.crates-io]
-# tauri-runtime = { git = "https://github.com/cjpais/tauri.git", branch = "handy-2.10.2" }
-# tauri-runtime-wry = { git = "https://github.com/cjpais/tauri.git", branch = "handy-2.10.2" }
-# tauri-utils = { git = "https://github.com/cjpais/tauri.git", branch = "handy-2.10.2" }
 
 [dev-dependencies]
 tempfile = "3"

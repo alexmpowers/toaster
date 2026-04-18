@@ -4,17 +4,12 @@ import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
 import { platform } from "@tauri-apps/plugin-os";
 import {
-  checkAccessibilityPermission,
-  checkMicrophonePermission,
-} from "tauri-plugin-macos-permissions-api";
-import {
   ModelStateEvent,
   RecordingErrorEvent,
 } from "./lib/types/events";
 import "./App.css";
-import AccessibilityPermissions from "./components/AccessibilityPermissions";
 import Footer from "./components/footer";
-import Onboarding, { AccessibilityOnboarding } from "./components/onboarding";
+import Onboarding from "./components/onboarding";
 import { Sidebar, SidebarSection, SECTIONS_CONFIG } from "./components/Sidebar";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useSettings } from "./hooks/useSettings";
@@ -22,7 +17,7 @@ import { useSettingsStore } from "./stores/settingsStore";
 import { commands } from "@/bindings";
 import { getLanguageDirection, initializeRTL } from "@/lib/utils/rtl";
 
-type OnboardingStep = "accessibility" | "model" | "done";
+type OnboardingStep = "model" | "done";
 
 const renderSettingsContent = (section: SidebarSection) => {
   const ActiveComponent =
@@ -35,9 +30,6 @@ function App() {
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep | null>(
     null,
   );
-  // Track if this is a returning user who just needs to grant permissions
-  // (vs a new user who needs full onboarding including model selection)
-  const [isReturningUser, setIsReturningUser] = useState(false);
   const [currentSection, setCurrentSection] =
     useState<SidebarSection>("editor");
   const { settings, updateSetting } = useSettings();
@@ -155,76 +147,16 @@ function App() {
     };
   }, [t]);
 
-  const revealMainWindowForPermissions = async () => {
-    try {
-      await commands.showMainWindowCommand();
-    } catch (e) {
-      console.warn("Failed to show main window for permission onboarding:", e);
-    }
-  };
-
   const checkOnboardingStatus = async () => {
     try {
       // Check if they have any models available
       const result = await commands.hasAnyModelsAvailable();
       const hasModels = result.status === "ok" && result.data;
-      const currentPlatform = platform();
-
-      if (hasModels) {
-        // Returning user - check if they need to grant permissions first
-        setIsReturningUser(true);
-
-        if (currentPlatform === "macos") {
-          try {
-            const [hasAccessibility, hasMicrophone] = await Promise.all([
-              checkAccessibilityPermission(),
-              checkMicrophonePermission(),
-            ]);
-            if (!hasAccessibility || !hasMicrophone) {
-              await revealMainWindowForPermissions();
-              setOnboardingStep("accessibility");
-              return;
-            }
-          } catch (e) {
-            console.warn("Failed to check macOS permissions:", e);
-            // If we can't check, proceed to main app and let them fix it there
-          }
-        }
-
-        if (currentPlatform === "windows") {
-          try {
-            const microphoneStatus =
-              await commands.getWindowsMicrophonePermissionStatus();
-            if (
-              microphoneStatus.supported &&
-              microphoneStatus.overall_access === "denied"
-            ) {
-              await revealMainWindowForPermissions();
-              setOnboardingStep("accessibility");
-              return;
-            }
-          } catch (e) {
-            console.warn("Failed to check Windows microphone permissions:", e);
-            // If we can't check, proceed to main app and let them fix it there
-          }
-        }
-
-        setOnboardingStep("done");
-      } else {
-        // New user - start full onboarding
-        setIsReturningUser(false);
-        setOnboardingStep("accessibility");
-      }
+      setOnboardingStep(hasModels ? "done" : "model");
     } catch (error) {
       console.error("Failed to check onboarding status:", error);
-      setOnboardingStep("accessibility");
+      setOnboardingStep("model");
     }
-  };
-
-  const handleAccessibilityComplete = () => {
-    // Returning users already have models, skip to main app
-    // New users need to select a model
-    setOnboardingStep(isReturningUser ? "done" : "model");
   };
 
   const handleModelSelected = () => {
@@ -235,10 +167,6 @@ function App() {
   // Still checking onboarding status
   if (onboardingStep === null) {
     return null;
-  }
-
-  if (onboardingStep === "accessibility") {
-    return <AccessibilityOnboarding onComplete={handleAccessibilityComplete} />;
   }
 
   if (onboardingStep === "model") {
@@ -275,7 +203,6 @@ function App() {
           <div className="flex-1 overflow-y-auto">
             <ErrorBoundary>
               <div className="flex flex-col items-center p-4 gap-4">
-                <AccessibilityPermissions />
                 {renderSettingsContent(currentSection)}
               </div>
             </ErrorBoundary>

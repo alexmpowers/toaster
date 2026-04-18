@@ -88,26 +88,6 @@
     "errors": {
       "loadModels": "Nepodařilo se načíst dostupné modely",
       "downloadModel": "Nepodařilo se stáhnout model: {{error}}"
-    },
-    "permissions": {
-      "title": "Vyžadována oprávnění",
-      "description": "Toaster potřebuje několik oprávnění pro správné fungování.",
-      "microphone": {
-        "title": "Přístup k mikrofonu",
-        "description": "Potřebný pro zachycení vašeho hlasu k přepisu."
-      },
-      "accessibility": {
-        "title": "Přístup k usnadnění",
-        "description": "Potřebný pro psaní přepsaného textu do vašich aplikací."
-      },
-      "grant": "Udělit oprávnění",
-      "granted": "Uděleno",
-      "waiting": "Čekání...",
-      "allGranted": "Vše připraveno!",
-      "errors": {
-        "checkFailed": "Nepodařilo se zkontrolovat oprávnění. Zkuste to prosím znovu.",
-        "requestFailed": "Nepodařilo se požádat o oprávnění. Zkuste to prosím znovu."
-      }
     }
   },
   "modelSelector": {
@@ -440,12 +420,6 @@
     "yes": "Ano",
     "no": "Ne",
     "noOptionsFound": "Nenalezeny žádné možnosti"
-  },
-  "accessibility": {
-    "permissionsRequired": "Vyžadována oprávnění usnadnění přístupu",
-    "permissionsDescription": "Toaster potřebuje oprávnění usnadnění přístupu, aby mohlo psát přepsaný text.",
-    "openSettings": "Otevřít Nastavení systému",
-    "dismiss": "Zavřít"
   },
   "errors": {
     "loadDirectory": "Chyba při načítání adresáře: {{error}}",

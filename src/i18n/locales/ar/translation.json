@@ -88,26 +88,6 @@
     "errors": {
       "loadModels": "فشل تحميل النماذج المتاحة",
       "downloadModel": "فشل تنزيل النموذج: {{error}}"
-    },
-    "permissions": {
-      "title": "الأذونات المطلوبة",
-      "description": ".يحتاج Toaster إلى بعض الأذونات ليعمل بشكل صحيح",
-      "microphone": {
-        "title": "الوصول إلى الميكروفون",
-        "description": ".مطلوب لسماع صوتك من أجل التفريغ الصوتي"
-      },
-      "accessibility": {
-        "title": "إمكانية الوصول",
-        "description": ".مطلوب لكتابة النص المفرغ في تطبيقاتك"
-      },
-      "grant": "منح الإذن",
-      "granted": "تم المنح",
-      "waiting": "...في الانتظار",
-      "allGranted": "كل شيء جاهز!",
-      "errors": {
-        "checkFailed": "فشل التحقق من الأذونات. يرجير المحاولة مرة أخرى.",
-        "requestFailed": "فشل طلب الإذن. يرجى المحاولة مرة أخرى."
-      }
     }
   },
   "modelSelector": {
@@ -440,12 +420,6 @@
     "yes": "نعم",
     "no": "لا",
     "noOptionsFound": "لم يتم العثور على خيارات"
-  },
-  "accessibility": {
-    "permissionsRequired": "أذونات إمكانية الوصول مطلوبة",
-    "permissionsDescription": ".يحتاج Toaster إلى أذونات إمكانية الوصول لكتابة النص المفرغ",
-    "openSettings": "فتح إعدادات النظام",
-    "dismiss": "تجاهل"
   },
   "errors": {
     "loadDirectory": "خطأ في تحميل المجلد: {{error}}",

@@ -88,26 +88,6 @@
     "errors": {
       "loadModels": "Misslyckades med att ladda tillgängliga modeller",
       "downloadModel": "Misslyckades med att ladda ner modell: {{error}}"
-    },
-    "permissions": {
-      "title": "Behörigheter krävs",
-      "description": "Toaster behöver ett par behörigheter för att fungera korrekt.",
-      "microphone": {
-        "title": "Mikrofonåtkomst",
-        "description": "Krävs för att höra din röst för transkription."
-      },
-      "accessibility": {
-        "title": "Hjälpmedelsåtkomst",
-        "description": "Krävs för att skriva transkriberad text i dina program."
-      },
-      "grant": "Bevilja behörighet",
-      "granted": "Beviljad",
-      "waiting": "Väntar...",
-      "allGranted": "Allt klart!",
-      "errors": {
-        "checkFailed": "Misslyckades med att kontrollera behörigheter. Försök igen.",
-        "requestFailed": "Misslyckades med att begära behörighet. Försök igen."
-      }
     }
   },
   "modelSelector": {
@@ -440,12 +420,6 @@
     "yes": "Ja",
     "no": "Nej",
     "noOptionsFound": "Inga alternativ hittades"
-  },
-  "accessibility": {
-    "permissionsRequired": "Behörigheter för hjälpmedel krävs",
-    "permissionsDescription": "Toaster behöver behörighet för hjälpmedel för att kunna skriva transkriberad text.",
-    "openSettings": "Öppna systeminställningar",
-    "dismiss": "Avvisa"
   },
   "errors": {
     "loadDirectory": "Fel vid laddning av mapp: {{error}}",

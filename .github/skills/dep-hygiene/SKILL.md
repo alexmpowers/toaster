@@ -1,101 +1,84 @@
 ---
 name: dep-hygiene
-description: 'Use before adding a dependency, after removing a module, and on any PR that claims "dead code cleanup". Enforces cargo machete / depcheck / knip gates so unused deps and orphaned modules do not accumulate.'
+description: 'Use before adding a Rust crate or npm package, after deleting a module, and on any PR that claims "dead code cleanup". Enforces cargo machete / knip / depcheck gates so orphaned Handy-era dependencies do not accumulate. Toaster-specific; runs alongside superpowers:systematic-debugging and superpowers:receiving-code-review.'
 ---
 
-# Dependency Hygiene
+# Dep Hygiene
 
-## Overview
-
-Toaster accumulated a large block of Handy-era dependencies (rdev, enigo, rodio, cpal, vad-rs, handy-keys, tauri-nspanel, gtk-layer-shell, …) that survived long after their consuming modules became dead. Unused deps inflate build time, attack surface, and cognitive load.
-
-**Core principle:** A dependency only exists because at least one live file imports it.
-
-## The Iron Law
+Toaster accumulated a large block of Handy-era dependencies (rdev, enigo,
+rodio, cpal, vad-rs, handy-keys, tauri-nspanel, gtk-layer-shell, …) that
+survived long after their consuming modules became dead. This skill keeps
+new code from recreating that drift.
 
 ```
 DELETING A MODULE = CHECKING ITS DEPS FOR ORPHAN STATUS,
 IN THE SAME PR.
 ```
 
+A dependency only exists because at least one live file imports it.
+
 ## Tools
 
-### Rust (`src-tauri/`)
+- **Rust:** `cargo machete` (declared-but-unused), `cargo tree -d` (duplicate
+  versions). Optional: `cargo udeps --all-targets` (nightly).
+- **Frontend:** `npx knip` (unused files, exports, deps) or `npx depcheck`.
 
-- `cargo machete` — lists crates declared in `Cargo.toml` that no `use` references. Install: `cargo install cargo-machete`.
-- `cargo tree -d` — shows duplicate versions of the same crate pulled in transitively.
-- `cargo udeps --all-targets` (nightly) — stricter than machete; catches unused via `cfg` gates. Optional.
+## Adding a dependency
 
-### Frontend (`/`)
+1. Justify in the PR body: which file imports it and why.
+2. Prefer an existing dep that already does the job.
+3. Avoid deps serving only a dictation-era feature — see `handy-legacy-pruning`.
+4. After adding, rerun `cargo check` / `npm run build`.
 
-- `npx knip` — finds unused files, exports, and dependencies in the TS/React tree.
-- `npx depcheck` — simpler alternative focused on `package.json`.
-
-## Gate Function
-
-**Adding a dependency:**
+## Removing a module
 
 ```
-1. JUSTIFY in the PR description: which file imports it, for what use.
-2. PREFER an existing dep that already does the job.
-3. AVOID deps that only serve a single dictation-era feature (see
-   handy-legacy-pruning skill).
-4. After adding: re-run cargo check / npm run build to confirm the bloat is real.
-```
-
-**Removing a module:**
-
-```
-1. rg "<removed-module-symbol>" src src-tauri/src   # confirm no stragglers
-2. cargo machete                                    # lists newly-orphaned crates
-3. Remove each orphaned crate from Cargo.toml
+1. rg "<removed-symbol>" src src-tauri/src     # no stragglers
+2. cargo machete                                # orphaned crates
+3. Remove each from Cargo.toml
 4. cargo check && cargo clippy && cargo test
-5. For frontend: npx knip
-6. Remove orphaned npm packages from package.json
+5. npx knip                                     # frontend if touched
+6. Remove orphaned npm packages
 7. npm install && npm run lint && npm run build
 ```
 
-**Reviewing a "cleanup" PR:**
+## Reviewing a "cleanup" PR
 
-```
-1. DEMAND cargo machete output in the PR body
-2. DEMAND knip/depcheck output if the frontend is touched
-3. If Cargo.toml / package.json is not reduced, ask why
-```
+- Demand `cargo machete` output in the PR body.
+- Demand `knip` / `depcheck` output if frontend is touched.
+- If `Cargo.toml` / `package.json` isn't reduced, ask why.
 
-## High-Value Targets (as of current audit)
+## Red flags
 
-Rust crates with Handy-era-only consumers — candidates for removal once their modules are deleted:
+- PR removes 1000 LOC of code but 0 lines of `Cargo.toml` / `package.json`.
+- Adding a dep "for one small helper" you could inline.
+- Adding a dep that duplicates a `tauri-*` plugin.
+- Silencing `cargo machete` with an allow-list without justification.
 
-- `rdev`, `enigo`, `handy-keys` — keyboard synth + hotkey capture (dictation)
-- `rodio` — recording start/stop sounds
-- `cpal` — live microphone capture
-- `vad-rs` — voice activity detection for recorder
-- `tauri-plugin-global-shortcut`, `tauri-plugin-autostart`, `tauri-plugin-single-instance`, `tauri-plugin-macos-permissions`
-- `tauri-nspanel`, `gtk-layer-shell`, `gtk` — overlay window implementations
-- `winreg` (Windows-only) — used by keyboard-impl detection only
+## High-value removal targets (2026-04 audit)
 
-npm packages:
+Rust crates with Handy-era-only consumers: `rdev`, `enigo`, `handy-keys`,
+`rodio`, `cpal`, `vad-rs`, `tauri-plugin-global-shortcut`,
+`tauri-plugin-autostart`, `tauri-plugin-single-instance`,
+`tauri-nspanel`, `gtk-layer-shell`, `gtk`,
+`winreg`.
 
-- `@tauri-apps/plugin-autostart` — dictation-only consumer
-- `@tauri-apps/plugin-global-shortcut` — review for editor use
-- `tauri-plugin-macos-permissions-api` — STILL LIVE (onboarding)
+npm: `@tauri-apps/plugin-autostart` (dictation-only consumer),
+`@tauri-apps/plugin-global-shortcut` (review for editor use).
 
-Patched dependencies:
+Removed (2026-04 prune batch): `tauri-plugin-macos-permissions` +
+`tauri-plugin-macos-permissions-api` — Toaster is a file-based transcript
+editor and does not record audio or inject keystrokes, so the macOS
+Accessibility + Microphone permission onboarding was dead code.
 
-- `[patch.crates-io] tauri-runtime* = cjpais/tauri handy-2.10.2` — re-test upstream after overlay/global-shortcut/nspanel removal.
+Patched deps: re-test upstream `tauri-runtime*` after overlay /
+global-shortcut / nspanel removal.
 
-## Red Flags — STOP
+## Related skills
 
-- PR removes 1000 LOC of code but 0 lines of `Cargo.toml` / `package.json`
-- Adding a dep "just for this one small helper" you could inline
-- Adding a dep that duplicates capability already provided by `tauri-*` plugins
-- Pinning a dep to a fork without a link to the upstream issue
-- Silencing `cargo machete` with an allow-list without justification in the PR
-
-## When To Apply
-
-- Every PR that adds or removes a dependency
-- Every PR that deletes a module
-- Every PR with "cleanup" / "prune" / "dead code" in the title
-- Before releasing — run `cargo machete` and `npx knip` as a final gate
+- `handy-legacy-pruning` — identifies which modules are dictation-only and
+  can be deleted, orphaning their deps.
+- `superpowers:systematic-debugging` — if a removal breaks something,
+  root-cause before rolling forward.
+- `superpowers:verification-before-completion` — cleanup PRs must show
+  `cargo machete` / `knip` output as evidence.

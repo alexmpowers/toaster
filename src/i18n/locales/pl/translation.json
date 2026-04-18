@@ -88,26 +88,6 @@
     "errors": {
       "loadModels": "Nie udało się wczytać dostępnych modeli",
       "downloadModel": "Nie udało się pobrać modelu: {{error}}"
-    },
-    "permissions": {
-      "title": "Wymagane uprawnienia",
-      "description": "Toaster potrzebuje kilku uprawnień, aby działać poprawnie.",
-      "microphone": {
-        "title": "Dostęp do mikrofonu",
-        "description": "Wymagany do słyszenia Twojego głosu w celu transkrypcji."
-      },
-      "accessibility": {
-        "title": "Dostęp do dostępności",
-        "description": "Wymagany do wpisywania transkrybowanego tekstu w Twoich aplikacjach."
-      },
-      "grant": "Przyznaj uprawnienie",
-      "granted": "Przyznano",
-      "waiting": "Oczekiwanie...",
-      "allGranted": "Wszystko gotowe!",
-      "errors": {
-        "checkFailed": "Nie udało się sprawdzić uprawnień. Spróbuj ponownie.",
-        "requestFailed": "Nie udało się poprosić o uprawnienie. Spróbuj ponownie."
-      }
     }
   },
   "modelSelector": {
@@ -440,12 +420,6 @@
     "yes": "Tak",
     "no": "Nie",
     "noOptionsFound": "Nie znaleziono opcji"
-  },
-  "accessibility": {
-    "permissionsRequired": "Wymagane uprawnienia dostępności",
-    "permissionsDescription": "Toaster potrzebuje uprawnień dostępności, aby wpisywać transkrybowany tekst.",
-    "openSettings": "Otwórz ustawienia systemowe",
-    "dismiss": "Zamknij"
   },
   "errors": {
     "loadDirectory": "Błąd wczytywania katalogu: {{error}}",

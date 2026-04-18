@@ -88,26 +88,6 @@
     "errors": {
       "loadModels": "無法載入可用模型",
       "downloadModel": "模型下載失敗: {{error}}"
-    },
-    "permissions": {
-      "title": "需要權限",
-      "description": "Toaster 需要一些權限才能正常運作",
-      "microphone": {
-        "title": "麥克風存取",
-        "description": "需要聽取您的語音進行轉錄"
-      },
-      "accessibility": {
-        "title": "輔助使用存取",
-        "description": "需要將轉錄文字輸入到您的應用程式中"
-      },
-      "grant": "授予權限",
-      "granted": "已授予",
-      "waiting": "等待中...",
-      "allGranted": "全部完成！",
-      "errors": {
-        "checkFailed": "檢查權限失敗，請重試",
-        "requestFailed": "請求權限失敗，請重試"
-      }
     }
   },
   "modelSelector": {
@@ -440,12 +420,6 @@
     "yes": "是",
     "no": "否",
     "noOptionsFound": "未找到選項"
-  },
-  "accessibility": {
-    "permissionsRequired": "需要輔助使用權限",
-    "permissionsDescription": "Toaster 需要輔助使用權限才能輸入轉錄的文字",
-    "openSettings": "開啟系統設定",
-    "dismiss": "關閉"
   },
   "errors": {
     "loadDirectory": "載入目錄時發生錯誤: {{error}}",

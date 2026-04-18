@@ -19,6 +19,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check:translations": "bun scripts/check-translations.ts",
+    "check:file-sizes": "bun scripts/check-file-sizes.ts",
     "postinstall": "bun scripts/check-nix-deps.ts"
   },
   "dependencies": {
@@ -39,7 +40,6 @@
     "react-select": "^5.8.0",
     "sonner": "^2.0.7",
     "tailwindcss": "^4.1.16",
-    "tauri-plugin-macos-permissions-api": "2.3.0",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

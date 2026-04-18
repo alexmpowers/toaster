@@ -88,26 +88,6 @@
     "errors": {
       "loadModels": "Mevcut modeller yüklenemedi",
       "downloadModel": "Model indirilemedi: {{error}}"
-    },
-    "permissions": {
-      "title": "İzinler Gerekli",
-      "description": "Toaster'nin düzgün çalışabilmesi için birkaç izne ihtiyacı var.",
-      "microphone": {
-        "title": "Mikrofon Erişimi",
-        "description": "Sesinizi transkripsiyon için alabilmek için gereklidir."
-      },
-      "accessibility": {
-        "title": "Erişilebilirlik Erişimi",
-        "description": "Transkribe edilen metni uygulamalarınıza yazabilmek için gereklidir."
-      },
-      "grant": "İzin Ver",
-      "granted": "Verildi",
-      "waiting": "Bekleniyor...",
-      "allGranted": "Her şey hazır!",
-      "errors": {
-        "checkFailed": "İzinler kontrol edilemedi. Lütfen tekrar deneyin.",
-        "requestFailed": "İzin isteği başarısız oldu. Lütfen tekrar deneyin."
-      }
     }
   },
   "modelSelector": {
@@ -440,12 +420,6 @@
     "yes": "Evet",
     "no": "Hayır",
     "noOptionsFound": "Seçenek bulunamadı"
-  },
-  "accessibility": {
-    "permissionsRequired": "Erişilebilirlik İzinleri Gerekli",
-    "permissionsDescription": "Toaster, transkribe edilen metni yazabilmek için erişilebilirlik izinlerine ihtiyaç duyar.",
-    "openSettings": "Sistem Ayarlarını Aç",
-    "dismiss": "Yoksay"
   },
   "errors": {
     "loadDirectory": "Dizin yüklenirken hata oluştu: {{error}}",
