@@ -19,7 +19,7 @@ use super::{DownloadCleanup, DownloadProgress, EngineType, ModelManager};
 impl ModelManager {
     pub async fn download_model(&self, model_id: &str) -> Result<()> {
         let model_info = {
-            let models = self.available_models.lock().unwrap();
+            let models = crate::lock_recovery::recover_lock(self.available_models.lock());
             models.get(model_id).cloned()
         };
 
@@ -56,7 +56,7 @@ impl ModelManager {
 
         // Mark as downloading
         {
-            let mut models = self.available_models.lock().unwrap();
+            let mut models = crate::lock_recovery::recover_lock(self.available_models.lock());
             if let Some(model) = models.get_mut(model_id) {
                 model.is_downloading = true;
             }
@@ -65,7 +65,7 @@ impl ModelManager {
         // Create cancellation flag for this download
         let cancel_flag = Arc::new(AtomicBool::new(false));
         {
-            let mut flags = self.cancel_flags.lock().unwrap();
+            let mut flags = crate::lock_recovery::recover_lock(self.cancel_flags.lock());
             flags.insert(model_id.to_string(), cancel_flag.clone());
         }
 
@@ -248,7 +248,7 @@ impl ModelManager {
         if model_info.is_directory {
             // Track that this model is being extracted
             {
-                let mut extracting = self.extracting_models.lock().unwrap();
+                let mut extracting = crate::lock_recovery::recover_lock(self.extracting_models.lock());
                 extracting.insert(model_id.to_string());
             }
 
@@ -285,7 +285,7 @@ impl ModelManager {
                 let _ = fs::remove_file(&partial_path);
                 // Remove from extracting set
                 {
-                    let mut extracting = self.extracting_models.lock().unwrap();
+                    let mut extracting = crate::lock_recovery::recover_lock(self.extracting_models.lock());
                     extracting.remove(model_id);
                 }
                 let _ = self.app_handle.emit(
@@ -324,7 +324,7 @@ impl ModelManager {
             info!("Successfully extracted archive for model: {}", model_id);
             // Remove from extracting set
             {
-                let mut extracting = self.extracting_models.lock().unwrap();
+                let mut extracting = crate::lock_recovery::recover_lock(self.extracting_models.lock());
                 extracting.remove(model_id);
             }
             // Emit extraction completed event
@@ -341,14 +341,14 @@ impl ModelManager {
         // additionally sets is_downloaded = true.
         cleanup.disarmed = true;
         {
-            let mut models = self.available_models.lock().unwrap();
+            let mut models = crate::lock_recovery::recover_lock(self.available_models.lock());
             if let Some(model) = models.get_mut(model_id) {
                 model.is_downloading = false;
                 model.is_downloaded = true;
                 model.partial_size = 0;
             }
         }
-        self.cancel_flags.lock().unwrap().remove(model_id);
+        crate::lock_recovery::recover_lock(self.cancel_flags.lock()).remove(model_id);
 
         // Emit completion event
         let _ = self.app_handle.emit("model-download-complete", model_id);

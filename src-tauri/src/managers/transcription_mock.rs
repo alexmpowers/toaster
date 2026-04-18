@@ -279,7 +279,7 @@ impl TranscriptionManager {
     /// production build uses the real `TranscriptionManager`.
     #[allow(dead_code)]
     pub fn set_mock(&self, mock: MockTranscription) {
-        *self.mock.lock().unwrap() = mock;
+        *crate::lock_recovery::recover_lock(self.mock.lock()) = mock;
     }
 
     pub fn is_model_loaded(&self) -> bool {
@@ -310,7 +310,7 @@ impl TranscriptionManager {
         &self,
         audio: Vec<f32>,
     ) -> Result<adapter::NormalizedTranscriptionResult> {
-        let mock = self.mock.lock().unwrap().clone();
+        let mock = crate::lock_recovery::recover_lock(self.mock.lock()).clone();
         let (text, segments) = match mock {
             MockTranscription::Empty => (String::new(), None),
             MockTranscription::Fixture { text, segments } => (text, Some(segments)),
