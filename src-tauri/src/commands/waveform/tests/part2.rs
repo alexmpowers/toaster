@@ -128,15 +128,7 @@ fn test_caption_style_720p_margin() {
 }
 
 // ---- FFmpeg build_export_args tests ----
-
-fn default_audio_opts() -> ExportAudioOptions {
-    ExportAudioOptions {
-        normalize_audio: false,
-        volume_db: 0.0,
-        fade_in_ms: 0,
-        fade_out_ms: 0,
-    }
-}
+// `default_audio_opts` lives in `super` (tests/mod.rs) so part1 can share it.
 
 #[test]
 fn test_build_export_args_single_segment_video() {

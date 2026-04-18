@@ -1,7 +1,18 @@
 use super::*;
-
-use super::*;
 use crate::managers::editor::{EditorState, TimingSegment, Word};
+
+/// Shared test helper: default `ExportAudioOptions` (no normalization, no
+/// volume change, no fades). Lives here so both `part1` and `part2` can use
+/// it without duplicating; both submodules pull it into scope via
+/// `use super::*;`.
+pub(super) fn default_audio_opts() -> ExportAudioOptions {
+    ExportAudioOptions {
+        normalize_audio: false,
+        volume_db: 0.0,
+        fade_in_ms: 0,
+        fade_out_ms: 0,
+    }
+}
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::process::Command;
