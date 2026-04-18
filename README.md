@@ -34,7 +34,7 @@ Core rule: backend managers own business logic; frontend orchestrates UI and inv
 
 ## Quick start (development)
 
-See [BUILD.md](BUILD.md) for platform setup.
+See [docs/build.md](docs/build.md) for platform setup.
 
 ### 1. Install deps
 

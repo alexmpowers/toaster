@@ -502,7 +502,12 @@ impl HistoryManager {
                  post_processed_text = ?2,
                  post_process_prompt = ?3
              WHERE id = ?4",
-            params![transcription_text, post_processed_text, post_process_prompt, id],
+            params![
+                transcription_text,
+                post_processed_text,
+                post_process_prompt,
+                id
+            ],
         )?;
 
         if updated == 0 {
@@ -836,7 +841,10 @@ mod tests {
 
         assert_eq!(entry.transcription_text, "raw transcript");
         assert!(entry.post_process_requested);
-        assert_eq!(entry.post_processed_text.as_deref(), Some("cleaned transcript"));
+        assert_eq!(
+            entry.post_processed_text.as_deref(),
+            Some("cleaned transcript")
+        );
         assert_eq!(entry.post_process_prompt.as_deref(), Some("fix grammar"));
     }
 
@@ -874,7 +882,10 @@ mod tests {
 
         assert_eq!(updated.id, original.id);
         assert_eq!(updated.transcription_text, "updated text");
-        assert_eq!(updated.post_processed_text.as_deref(), Some("post-processed result"));
+        assert_eq!(
+            updated.post_processed_text.as_deref(),
+            Some("post-processed result")
+        );
         assert_eq!(updated.post_process_prompt.as_deref(), Some("summarize"));
         // Unchanged fields should be preserved
         assert_eq!(updated.file_name, original.file_name);
@@ -885,13 +896,8 @@ mod tests {
     fn update_transcription_nonexistent_entry_returns_error() {
         let conn = setup_conn();
 
-        let result = HistoryManager::update_transcription_with_conn(
-            &conn,
-            9999,
-            "text",
-            None,
-            None,
-        );
+        let result =
+            HistoryManager::update_transcription_with_conn(&conn, 9999, "text", None, None);
 
         assert!(result.is_err());
         let err_msg = result.unwrap_err().to_string();
@@ -910,7 +916,10 @@ mod tests {
         let original = HistoryManager::get_latest_entry_with_conn(&conn)
             .expect("fetch")
             .expect("entry exists");
-        assert_eq!(original.post_processed_text.as_deref(), Some("old post-processed"));
+        assert_eq!(
+            original.post_processed_text.as_deref(),
+            Some("old post-processed")
+        );
 
         let updated = HistoryManager::update_transcription_with_conn(
             &conn,
@@ -933,13 +942,14 @@ mod tests {
         insert_entry(&conn, 200, "middle", None);
         insert_entry(&conn, 300, "newest", None);
 
-        let deleted = HistoryManager::cleanup_by_count_with_conn(&conn, 2)
-            .expect("cleanup");
+        let deleted = HistoryManager::cleanup_by_count_with_conn(&conn, 2).expect("cleanup");
         assert_eq!(deleted, 1);
 
         // Verify only 2 entries remain (the newest ones)
         let count: i64 = conn
-            .query_row("SELECT COUNT(*) FROM transcription_history", [], |row| row.get(0))
+            .query_row("SELECT COUNT(*) FROM transcription_history", [], |row| {
+                row.get(0)
+            })
             .expect("count");
         assert_eq!(count, 2);
 
@@ -969,8 +979,7 @@ mod tests {
         insert_entry(&conn, 300, "unsaved newer", None);
 
         // Cleanup with limit=1: should only remove unsaved entries beyond limit
-        let deleted = HistoryManager::cleanup_by_count_with_conn(&conn, 1)
-            .expect("cleanup");
+        let deleted = HistoryManager::cleanup_by_count_with_conn(&conn, 1).expect("cleanup");
         assert_eq!(deleted, 1);
 
         // Saved entry should still exist
@@ -985,7 +994,9 @@ mod tests {
 
         // Total entries: 1 saved + 1 unsaved (newest) = 2
         let count: i64 = conn
-            .query_row("SELECT COUNT(*) FROM transcription_history", [], |row| row.get(0))
+            .query_row("SELECT COUNT(*) FROM transcription_history", [], |row| {
+                row.get(0)
+            })
             .expect("count");
         assert_eq!(count, 2);
     }
@@ -996,12 +1007,13 @@ mod tests {
         insert_entry(&conn, 100, "first", None);
         insert_entry(&conn, 200, "second", None);
 
-        let deleted = HistoryManager::cleanup_by_count_with_conn(&conn, 5)
-            .expect("cleanup");
+        let deleted = HistoryManager::cleanup_by_count_with_conn(&conn, 5).expect("cleanup");
         assert_eq!(deleted, 0);
 
         let count: i64 = conn
-            .query_row("SELECT COUNT(*) FROM transcription_history", [], |row| row.get(0))
+            .query_row("SELECT COUNT(*) FROM transcription_history", [], |row| {
+                row.get(0)
+            })
             .expect("count");
         assert_eq!(count, 2);
     }
@@ -1013,12 +1025,13 @@ mod tests {
         insert_entry(&conn, 200, "second", None);
         insert_entry(&conn, 300, "third", None);
 
-        let deleted = HistoryManager::cleanup_by_count_with_conn(&conn, 0)
-            .expect("cleanup");
+        let deleted = HistoryManager::cleanup_by_count_with_conn(&conn, 0).expect("cleanup");
         assert_eq!(deleted, 3);
 
         let count: i64 = conn
-            .query_row("SELECT COUNT(*) FROM transcription_history", [], |row| row.get(0))
+            .query_row("SELECT COUNT(*) FROM transcription_history", [], |row| {
+                row.get(0)
+            })
             .expect("count");
         assert_eq!(count, 0);
     }

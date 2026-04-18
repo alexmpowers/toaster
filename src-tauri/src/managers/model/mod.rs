@@ -30,14 +30,12 @@ pub enum EngineType {
     Cohere,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type, PartialEq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type, PartialEq, Default)]
 pub enum ModelCategory {
     #[default]
     Transcription,
     System,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct ModelInfo {
@@ -62,6 +60,33 @@ pub struct ModelInfo {
     pub is_custom: bool,            // Whether this is a user-provided custom model
     #[serde(default)]
     pub category: ModelCategory,
+}
+
+impl ModelInfo {
+    /// Native input sample rate (Hz) for this model. Derived from the engine
+    /// type rather than stored, because every engine in `transcribe-rs` today
+    /// accepts 16 kHz — and adding a per-literal field would churn every
+    /// `ModelInfo` builder. When adapters start declaring non-16 kHz rates
+    /// (see `ModelCapabilities::native_input_sample_rate_hz`), this method
+    /// should route through the adapter and eventually become a stored field.
+    ///
+    /// Falls back to `ASR_INPUT_SAMPLE_RATE_HZ_DEFAULT` (16 kHz) for
+    /// engine types without a declared rate.
+    pub fn input_sample_rate_hz(&self) -> u32 {
+        use crate::audio_toolkit::constants::ASR_INPUT_SAMPLE_RATE_HZ_DEFAULT;
+        match self.engine_type {
+            EngineType::Whisper
+            | EngineType::Parakeet
+            | EngineType::Moonshine
+            | EngineType::MoonshineStreaming
+            | EngineType::SenseVoice
+            | EngineType::GigaAM
+            | EngineType::Canary
+            | EngineType::Cohere => 16_000,
+            #[allow(unreachable_patterns)]
+            _ => ASR_INPUT_SAMPLE_RATE_HZ_DEFAULT,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -638,7 +663,6 @@ impl ModelManager {
             },
         );
 
-
         // Auto-discover custom Whisper models(.bin files) in the models directory
         if let Err(e) = Self::discover_custom_whisper_models(&models_dir, &mut available_models) {
             warn!("Failed to discover custom models: {}", e);
@@ -971,7 +995,6 @@ impl ModelManager {
     fn verify_sha256(path: &Path, expected_sha256: Option<&str>, model_id: &str) -> Result<()> {
         hash::verify_sha256(path, expected_sha256, model_id)
     }
-
 
     pub async fn download_model(&self, model_id: &str) -> Result<()> {
         let model_info = {

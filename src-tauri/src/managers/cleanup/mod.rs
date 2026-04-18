@@ -1,24 +1,22 @@
-// Extracted from actions.rs by p1-extract-process-transcription (scripts/_split_actions.py).
-// Holds the live transcription post-processing pipeline. Dictation state
-// machine stays in actions.rs until p1-remove-actions deletes it.
+// Transcript cleanup post-processing.
+//
+// Preserved subset of the former `transcription_post_process` module after
+// p3-prune-handy-transcription-post-process. Holds the cleanup-contract
+// schema (CleanupContractResponse / CleanupInvariantClaims), the validation
+// logic that enforces it, the Chinese-variant conversion, and the
+// `process_transcription_output` entry point still used by the history-retry
+// command. Dictation-era paths (low-confidence span routing,
+// local-cleanup-review UI round-trip, Apple Intelligence provider branch,
+// streaming-segment confidence heuristics) were removed with the rest of the
+// Handy dictation surface.
 
-use crate::managers::editor::LocalLlmWordProposal;
-use crate::settings::{get_settings, AppSettings, APPLE_INTELLIGENCE_PROVIDER_ID};
+use crate::settings::{get_settings, AppSettings};
 use ferrous_opencc::{config::BuiltinConfig, OpenCC};
 use log::{debug, error, warn};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::time::Duration;
-use tauri::{AppHandle, Emitter, Manager};
-use transcribe_rs::TranscriptionSegment;
-#[derive(Clone, serde::Serialize)]
-struct LocalCleanupReviewRequestEvent {
-    request_id: String,
-    original_text: String,
-    cleaned_text: String,
-}
-
-const LOCAL_CLEANUP_REVIEW_TIMEOUT_SECS: u64 = 45;
+use tauri::AppHandle;
 
 const TRANSCRIPTION_FIELD: &str = "transcription";
 const CLEANUP_CONTRACT_VERSION: &str = "transcript_cleanup_contract_v1";
@@ -275,6 +273,11 @@ fn dominant_script(text: &str) -> Option<ScriptGroup> {
         .and_then(|(script, count)| if count >= 3 { Some(script) } else { None })
 }
 
+fn normalize_word_for_match(word: &str) -> String {
+    word.trim_matches(|c: char| !c.is_alphanumeric())
+        .to_lowercase()
+}
+
 fn normalized_words(text: &str) -> Vec<String> {
     text.split_whitespace()
         .map(normalize_word_for_match)
@@ -371,6 +374,21 @@ fn missing_protected_tokens(original: &str, candidate: &str) -> Vec<String> {
     }
     missing.sort();
     missing
+}
+
+fn normalized_word_set(text: &str) -> HashSet<String> {
+    normalized_words(text).into_iter().collect()
+}
+
+fn lexical_overlap_ratio(left: &str, right: &str) -> f32 {
+    let left_set = normalized_word_set(left);
+    let right_set = normalized_word_set(right);
+    if left_set.is_empty() || right_set.is_empty() {
+        return 0.0;
+    }
+
+    let shared = left_set.intersection(&right_set).count();
+    shared as f32 / left_set.len().max(right_set.len()) as f32
 }
 
 fn validate_cleanup_candidate(
@@ -499,341 +517,6 @@ fn validate_cleanup_candidate(
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct WordRange {
-    start: usize,
-    end: usize,
-}
-
-#[derive(Debug, Clone, Copy)]
-struct WordToken {
-    start: usize,
-    end: usize,
-}
-
-fn collect_word_tokens(text: &str) -> Vec<WordToken> {
-    let mut tokens = Vec::new();
-    let mut word_start: Option<usize> = None;
-
-    for (idx, ch) in text.char_indices() {
-        if ch.is_whitespace() {
-            if let Some(start) = word_start.take() {
-                tokens.push(WordToken { start, end: idx });
-            }
-        } else if word_start.is_none() {
-            word_start = Some(idx);
-        }
-    }
-
-    if let Some(start) = word_start {
-        tokens.push(WordToken {
-            start,
-            end: text.len(),
-        });
-    }
-
-    tokens
-}
-
-fn normalize_word_for_match(word: &str) -> String {
-    word.trim_matches(|c: char| !c.is_alphanumeric())
-        .to_lowercase()
-}
-
-fn words_match_loosely(left: &str, right: &str) -> bool {
-    if left.is_empty() || right.is_empty() {
-        return false;
-    }
-    left == right
-        || left.starts_with(right)
-        || right.starts_with(left)
-        || left.trim_matches(|c: char| !c.is_alphanumeric()) == right
-}
-
-fn has_repeated_word_run(words: &[String]) -> bool {
-    if words.len() < 3 {
-        return false;
-    }
-
-    let mut run = 1usize;
-    for pair in words.windows(2) {
-        if pair[0] == pair[1] {
-            run += 1;
-            if run >= 3 {
-                return true;
-            }
-        } else {
-            run = 1;
-        }
-    }
-
-    false
-}
-
-fn merge_and_bound_word_ranges(
-    mut ranges: Vec<WordRange>,
-    total_words: usize,
-    max_words_per_span: usize,
-    max_spans: usize,
-) -> Vec<WordRange> {
-    if ranges.is_empty() || total_words == 0 || max_words_per_span == 0 {
-        return Vec::new();
-    }
-
-    ranges.sort_by_key(|range| range.start);
-    let mut merged: Vec<WordRange> = Vec::new();
-
-    for mut range in ranges {
-        range.start = range.start.min(total_words);
-        range.end = range.end.min(total_words);
-        if range.end <= range.start {
-            continue;
-        }
-
-        if let Some(last) = merged.last_mut() {
-            if range.start <= last.end {
-                last.end = last.end.max(range.end);
-                continue;
-            }
-        }
-
-        merged.push(range);
-    }
-
-    let mut bounded = Vec::new();
-    for range in merged {
-        let mut cursor = range.start;
-        while cursor < range.end {
-            let chunk_end = (cursor + max_words_per_span).min(range.end);
-            bounded.push(WordRange {
-                start: cursor,
-                end: chunk_end,
-            });
-            if bounded.len() >= max_spans {
-                return bounded;
-            }
-            cursor = chunk_end;
-        }
-    }
-
-    bounded
-}
-
-fn extract_low_confidence_word_ranges(
-    transcription: &str,
-    segments: Option<&[TranscriptionSegment]>,
-) -> Vec<WordRange> {
-    // transcribe-rs segments currently expose start/end/text but no explicit
-    // probability score. We derive a conservative confidence proxy from how
-    // well each segment text aligns to the filtered final transcript, then
-    // combine that with safe heuristics (mismatch density, repeated words,
-    // implausible speech rate) to pick spans worth local LLM cleanup.
-    const LOOKAHEAD_WORDS: usize = 24;
-    const LOW_ALIGNMENT_CONFIDENCE: f32 = 0.72;
-    const MAX_WORDS_PER_SPAN: usize = 40;
-    const MAX_SPANS: usize = 8;
-
-    let Some(segments) = segments else {
-        return Vec::new();
-    };
-
-    if segments.is_empty() {
-        return Vec::new();
-    }
-
-    let tokens = collect_word_tokens(transcription);
-    if tokens.is_empty() {
-        return Vec::new();
-    }
-
-    let normalized_tokens: Vec<String> = tokens
-        .iter()
-        .map(|token| normalize_word_for_match(&transcription[token.start..token.end]))
-        .collect();
-
-    let mut cursor = 0usize;
-    let mut ranges = Vec::new();
-
-    for segment in segments {
-        let segment_words: Vec<String> = segment
-            .text
-            .split_whitespace()
-            .map(normalize_word_for_match)
-            .filter(|word| !word.is_empty())
-            .collect();
-        if segment_words.is_empty() {
-            continue;
-        }
-
-        let range_start = cursor.min(normalized_tokens.len());
-        let mut matched = 0usize;
-        let mut unmatched = 0usize;
-        let mut last_match: Option<usize> = None;
-
-        for segment_word in &segment_words {
-            if cursor >= normalized_tokens.len() {
-                unmatched += 1;
-                continue;
-            }
-
-            let search_end = (cursor + LOOKAHEAD_WORDS).min(normalized_tokens.len());
-            let found_at = normalized_tokens
-                .iter()
-                .enumerate()
-                .skip(cursor)
-                .take(search_end.saturating_sub(cursor))
-                .find_map(|(idx, token)| {
-                    if words_match_loosely(token, segment_word) {
-                        Some(idx)
-                    } else {
-                        None
-                    }
-                });
-
-            if let Some(idx) = found_at {
-                matched += 1;
-                last_match = Some(idx);
-                cursor = idx + 1;
-            } else {
-                unmatched += 1;
-            }
-        }
-
-        let estimated_end = (range_start + segment_words.len()).min(normalized_tokens.len());
-        cursor = cursor.max(estimated_end).min(normalized_tokens.len());
-
-        let range_end = match last_match {
-            Some(last) => (last + 1).max(estimated_end),
-            None => estimated_end.max((range_start + 1).min(normalized_tokens.len())),
-        };
-
-        if range_end <= range_start {
-            continue;
-        }
-
-        let alignment_confidence = matched as f32 / segment_words.len().max(1) as f32;
-        let low_confidence = alignment_confidence < LOW_ALIGNMENT_CONFIDENCE;
-        let mismatch_heavy = unmatched >= 2 && unmatched >= matched.max(1);
-        let repeated_words = has_repeated_word_run(&segment_words);
-        let duration_s = (segment.end - segment.start).max(0.0);
-        let words_per_second = if duration_s > 0.05 {
-            segment_words.len() as f32 / duration_s
-        } else {
-            f32::INFINITY
-        };
-        let unlikely_speech_rate = words_per_second.is_finite()
-            && (words_per_second > 6.0 || (segment_words.len() >= 3 && words_per_second < 0.25));
-
-        if low_confidence || mismatch_heavy || repeated_words || unlikely_speech_rate {
-            ranges.push(WordRange {
-                start: range_start,
-                end: range_end,
-            });
-        }
-    }
-
-    merge_and_bound_word_ranges(
-        ranges,
-        normalized_tokens.len(),
-        MAX_WORDS_PER_SPAN,
-        MAX_SPANS,
-    )
-}
-
-fn normalized_word_set(text: &str) -> HashSet<String> {
-    normalized_words(text).into_iter().collect()
-}
-
-fn lexical_overlap_ratio(left: &str, right: &str) -> f32 {
-    let left_set = normalized_word_set(left);
-    let right_set = normalized_word_set(right);
-    if left_set.is_empty() || right_set.is_empty() {
-        return 0.0;
-    }
-
-    let shared = left_set.intersection(&right_set).count();
-    shared as f32 / left_set.len().max(right_set.len()) as f32
-}
-
-fn merge_span_rewrites(
-    transcription: &str,
-    tokens: &[WordToken],
-    replacements: &[LocalLlmWordProposal],
-) -> String {
-    if replacements.is_empty() {
-        return transcription.to_string();
-    }
-
-    let mut byte_replacements: Vec<(usize, usize, String)> = Vec::new();
-    for replacement in replacements {
-        if replacement.start_word_index >= replacement.end_word_index
-            || replacement.end_word_index > tokens.len()
-        {
-            continue;
-        }
-        let start = tokens[replacement.start_word_index].start;
-        let end = tokens[replacement.end_word_index - 1].end;
-        if end <= start || end > transcription.len() {
-            continue;
-        }
-        if replacement.replacement_words.is_empty() {
-            continue;
-        }
-        let replacement_text = replacement.replacement_words.join(" ");
-        byte_replacements.push((start, end, replacement_text));
-    }
-
-    if byte_replacements.is_empty() {
-        return transcription.to_string();
-    }
-
-    byte_replacements.sort_by_key(|(start, _, _)| *start);
-
-    let mut merged = String::with_capacity(transcription.len());
-    let mut cursor = 0usize;
-    for (start, end, replacement) in byte_replacements {
-        if start < cursor {
-            continue;
-        }
-        merged.push_str(&transcription[cursor..start]);
-        merged.push_str(&replacement);
-        cursor = end;
-    }
-    merged.push_str(&transcription[cursor..]);
-    merged
-}
-
-fn build_safe_span_proposal(
-    range: WordRange,
-    validated_span: &str,
-) -> Result<LocalLlmWordProposal, String> {
-    let expected_words = range.end.saturating_sub(range.start);
-    if expected_words == 0 {
-        return Err("proposal range is empty".to_string());
-    }
-
-    let replacement_words: Vec<String> = validated_span
-        .split_whitespace()
-        .map(|word| word.trim().to_string())
-        .filter(|word| !word.is_empty())
-        .collect();
-    if replacement_words.len() != expected_words {
-        return Err(format!(
-            "replacement word count mismatch for range {}..{}: expected {}, got {}",
-            range.start,
-            range.end,
-            expected_words,
-            replacement_words.len()
-        ));
-    }
-
-    Ok(LocalLlmWordProposal {
-        start_word_index: range.start,
-        end_word_index: range.end,
-        replacement_words,
-    })
-}
-
 async fn post_process_transcription(settings: &AppSettings, transcription: &str) -> Option<String> {
     let provider = match settings.active_post_process_provider().cloned() {
         Some(provider) => provider,
@@ -896,8 +579,7 @@ async fn post_process_transcription(settings: &AppSettings, transcription: &str)
         .cloned()
         .unwrap_or_default();
 
-    let local_openai_provider = crate::settings::is_local_post_process_provider(&provider)
-        && provider.id != APPLE_INTELLIGENCE_PROVIDER_ID;
+    let local_openai_provider = crate::settings::is_local_post_process_provider(&provider);
     let protected_tokens = extract_protected_tokens(transcription);
     let protected_tokens_for_prompt = dedupe_tokens(&protected_tokens);
     if !protected_tokens_for_prompt.is_empty() {
@@ -934,13 +616,6 @@ async fn post_process_transcription(settings: &AppSettings, transcription: &str)
         let system_prompt =
             build_cleanup_contract_system_prompt(&prompt, &protected_tokens_for_prompt);
         let user_content = transcription.to_string();
-
-        // Apple Intelligence bridge removed — the provider entry is kept in
-        // settings for backwards compatibility but produces no output.
-        if provider.id == APPLE_INTELLIGENCE_PROVIDER_ID {
-            debug!("Apple Intelligence provider selected but native bridge is removed");
-            return None;
-        }
 
         let json_schema = build_cleanup_contract_schema();
 
@@ -1109,83 +784,10 @@ async fn post_process_transcription(settings: &AppSettings, transcription: &str)
     None
 }
 
-async fn post_process_low_confidence_spans(
-    settings: &AppSettings,
-    transcription: &str,
-    segments: Option<&[TranscriptionSegment]>,
-) -> Option<String> {
-    let tokens = collect_word_tokens(transcription);
-    if tokens.is_empty() {
-        debug!("Post-processing skipped because transcription has no words");
-        return None;
-    }
-
-    let span_ranges = extract_low_confidence_word_ranges(transcription, segments);
-    if span_ranges.is_empty() {
-        debug!("Post-processing skipped because no low-confidence spans were detected");
-        return None;
-    }
-
-    let mut replacements: Vec<LocalLlmWordProposal> = Vec::new();
-    for range in span_ranges {
-        let span_start = tokens[range.start].start;
-        let span_end = tokens[range.end - 1].end;
-        if span_end <= span_start || span_end > transcription.len() {
-            warn!(
-                "Skipping malformed post-process span {}..{} ({}..{} bytes)",
-                range.start, range.end, span_start, span_end
-            );
-            continue;
-        }
-
-        let original_span = &transcription[span_start..span_end];
-        match post_process_transcription(settings, original_span).await {
-            Some(processed_span) => {
-                match validate_cleanup_candidate(original_span, &processed_span, None) {
-                    Ok(validated_span) => match build_safe_span_proposal(range, &validated_span) {
-                        Ok(proposal) => replacements.push(proposal),
-                        Err(validation_error) => {
-                            warn!(
-                                    "Rejected span proposal for range {}..{}: {}. Preserving original text.",
-                                    range.start, range.end, validation_error
-                                );
-                        }
-                    },
-                    Err(validation_error) => {
-                        warn!(
-                            "Rejected unsafe post-process rewrite for span {}..{}: {}. Preserving original text.",
-                            range.start, range.end, validation_error
-                        );
-                    }
-                }
-            }
-            None => {
-                debug!(
-                    "Post-processing failed for span {}..{}; preserving original text",
-                    range.start, range.end
-                );
-            }
-        }
-    }
-
-    if replacements.is_empty() {
-        debug!("No safe span rewrites were produced; preserving original transcription");
-        return None;
-    }
-
-    let merged = merge_span_rewrites(transcription, &tokens, &replacements);
-    if merged == transcription {
-        None
-    } else {
-        Some(merged)
-    }
-}
-
 async fn maybe_convert_chinese_variant(
     settings: &AppSettings,
     transcription: &str,
 ) -> Option<String> {
-    // Check if language is set to Simplified or Traditional Chinese
     let is_simplified = settings.selected_language == "zh-Hans";
     let is_traditional = settings.selected_language == "zh-Hant";
 
@@ -1199,12 +801,9 @@ async fn maybe_convert_chinese_variant(
         settings.selected_language
     );
 
-    // Use OpenCC to convert based on selected language
     let config = if is_simplified {
-        // Convert Traditional Chinese to Simplified Chinese
         BuiltinConfig::Tw2sp
     } else {
-        // Convert Simplified Chinese to Traditional Chinese
         BuiltinConfig::S2tw
     };
 
@@ -1233,62 +832,6 @@ fn has_meaningful_text_diff(original: &str, cleaned: &str) -> bool {
     normalize_diff_text(original) != normalize_diff_text(cleaned)
 }
 
-async fn request_local_cleanup_review(
-    app: &AppHandle,
-    original_text: &str,
-    cleaned_text: &str,
-) -> Option<bool> {
-    let review_state = match app.try_state::<crate::LocalCleanupReviewState>() {
-        Some(state) => state,
-        None => {
-            warn!("Cleanup review state is unavailable; skipping review prompt");
-            return None;
-        }
-    };
-
-    let (request_id, decision_rx) = review_state.register();
-
-    if let Some(main_window) = app.get_webview_window("main") {
-        let _ = main_window.show();
-        let _ = main_window.set_focus();
-    }
-
-    let emit_result = app.emit(
-        "local-cleanup-review-request",
-        LocalCleanupReviewRequestEvent {
-            request_id: request_id.clone(),
-            original_text: original_text.to_string(),
-            cleaned_text: cleaned_text.to_string(),
-        },
-    );
-    if let Err(err) = emit_result {
-        review_state.remove(&request_id);
-        warn!("Failed to emit cleanup review request: {}", err);
-        return None;
-    }
-
-    match tokio::time::timeout(
-        Duration::from_secs(LOCAL_CLEANUP_REVIEW_TIMEOUT_SECS),
-        decision_rx,
-    )
-    .await
-    {
-        Ok(Ok(accept)) => Some(accept),
-        Ok(Err(_)) => {
-            warn!("Cleanup review channel closed before receiving a decision");
-            None
-        }
-        Err(_) => {
-            review_state.remove(&request_id);
-            warn!(
-                "Cleanup review timed out after {}s; defaulting to original transcript",
-                LOCAL_CLEANUP_REVIEW_TIMEOUT_SECS
-            );
-            None
-        }
-    }
-}
-
 pub(crate) struct ProcessedTranscription {
     pub post_processed_text: Option<String>,
     pub post_process_prompt: Option<String>,
@@ -1297,7 +840,6 @@ pub(crate) struct ProcessedTranscription {
 pub(crate) async fn process_transcription_output(
     app: &AppHandle,
     transcription: &str,
-    segments: Option<&[TranscriptionSegment]>,
     post_process: bool,
 ) -> ProcessedTranscription {
     let settings = get_settings(app);
@@ -1311,41 +853,19 @@ pub(crate) async fn process_transcription_output(
 
     if post_process {
         let pre_post_process_text = final_text.clone();
-        let use_low_confidence_routing = settings
-            .active_post_process_provider()
-            .map(crate::settings::is_local_post_process_provider)
-            .unwrap_or(false);
-
-        let processed_text = if use_low_confidence_routing {
-            post_process_low_confidence_spans(&settings, &final_text, segments).await
-        } else {
-            post_process_transcription(&settings, &final_text).await
-        };
+        let processed_text = post_process_transcription(&settings, &final_text).await;
 
         if let Some(processed_text) = processed_text {
-            let has_meaningful_diff =
-                has_meaningful_text_diff(&pre_post_process_text, &processed_text);
+            if has_meaningful_text_diff(&pre_post_process_text, &processed_text) {
+                post_processed_text = Some(processed_text.clone());
 
-            if has_meaningful_diff {
-                let accepted = if use_low_confidence_routing {
-                    request_local_cleanup_review(app, &pre_post_process_text, &processed_text)
-                        .await
-                        .unwrap_or(false)
-                } else {
-                    true
-                };
-
-                if accepted {
-                    post_processed_text = Some(processed_text.clone());
-
-                    if let Some(prompt_id) = &settings.post_process_selected_prompt_id {
-                        if let Some(prompt) = settings
-                            .post_process_prompts
-                            .iter()
-                            .find(|prompt| &prompt.id == prompt_id)
-                        {
-                            post_process_prompt = Some(prompt.prompt.clone());
-                        }
+                if let Some(prompt_id) = &settings.post_process_selected_prompt_id {
+                    if let Some(prompt) = settings
+                        .post_process_prompts
+                        .iter()
+                        .find(|prompt| &prompt.id == prompt_id)
+                    {
+                        post_process_prompt = Some(prompt.prompt.clone());
                     }
                 }
             }
@@ -1364,14 +884,6 @@ pub(crate) async fn process_transcription_output(
 mod tests {
     use super::*;
 
-    fn segment(start: f32, end: f32, text: &str) -> TranscriptionSegment {
-        TranscriptionSegment {
-            start,
-            end,
-            text: text.to_string(),
-        }
-    }
-
     fn valid_contract_response(cleaned_transcription: &str) -> CleanupContractResponse {
         CleanupContractResponse {
             contract_version: CLEANUP_CONTRACT_VERSION.to_string(),
@@ -1383,93 +895,6 @@ mod tests {
                 protected_tokens_preserved: true,
             },
         }
-    }
-
-    #[test]
-    fn extracts_low_confidence_ranges_from_mismatched_segments() {
-        let transcription = "hello wurld this is stable";
-        let segments = vec![
-            segment(0.0, 1.0, "hello world"),
-            segment(1.0, 2.0, "this is stable"),
-        ];
-
-        let ranges = extract_low_confidence_word_ranges(transcription, Some(&segments));
-
-        assert_eq!(ranges, vec![WordRange { start: 0, end: 2 }]);
-    }
-
-    #[test]
-    fn extracts_low_confidence_ranges_from_repeated_word_heuristic() {
-        let transcription = "uh uh uh okay stable";
-        let segments = vec![
-            segment(0.0, 1.2, "uh uh uh okay"),
-            segment(1.2, 1.8, "stable"),
-        ];
-
-        let ranges = extract_low_confidence_word_ranges(transcription, Some(&segments));
-
-        assert_eq!(ranges, vec![WordRange { start: 0, end: 4 }]);
-    }
-
-    #[test]
-    fn merge_span_rewrites_preserves_non_target_text() {
-        let transcription = "alpha beta  gamma delta";
-        let tokens = collect_word_tokens(transcription);
-        let rewritten = merge_span_rewrites(
-            transcription,
-            &tokens,
-            &[LocalLlmWordProposal {
-                start_word_index: 1,
-                end_word_index: 3,
-                replacement_words: vec!["BETA".to_string(), "GAMMA".to_string()],
-            }],
-        );
-
-        assert_eq!(rewritten, "alpha BETA GAMMA delta");
-        assert!(rewritten.starts_with("alpha "));
-        assert!(rewritten.ends_with(" delta"));
-    }
-
-    #[test]
-    fn safe_span_proposal_rejects_word_count_mismatch() {
-        let error = build_safe_span_proposal(WordRange { start: 0, end: 2 }, "single")
-            .expect_err("proposal should be rejected when replacement word count mismatches");
-
-        assert!(error.contains("word count mismatch"));
-    }
-
-    #[test]
-    fn safe_span_proposal_rejects_beginning_word_deletion() {
-        let error = build_safe_span_proposal(WordRange { start: 0, end: 3 }, "world today")
-            .expect_err("proposal should reject beginning-word deletion");
-
-        assert!(error.contains("replacement word count mismatch"));
-        assert!(error.contains("expected 3, got 2"));
-    }
-
-    #[test]
-    fn merge_span_rewrites_handles_punctuation_adjacent_edits() {
-        let transcription = "Helo, wrld! Keep-this stable.";
-        let tokens = collect_word_tokens(transcription);
-        let rewritten = merge_span_rewrites(
-            transcription,
-            &tokens,
-            &[
-                LocalLlmWordProposal {
-                    start_word_index: 0,
-                    end_word_index: 1,
-                    replacement_words: vec!["Hello,".to_string()],
-                },
-                LocalLlmWordProposal {
-                    start_word_index: 1,
-                    end_word_index: 2,
-                    replacement_words: vec!["world!".to_string()],
-                },
-            ],
-        );
-
-        assert_eq!(rewritten, "Hello, world! Keep-this stable.");
-        assert!(rewritten.ends_with("Keep-this stable."));
     }
 
     #[test]

@@ -35,7 +35,7 @@ Cover all six domains on every run. Do not skip domains; mark them "clean" if no
   - `CLAUDE.md`
   - `.github/copilot-instructions.md`
   - `CRUSH.md`
-  - `README.md` / `BUILD.md` / `PRD.md` (where overlap occurs)
+  - `README.md` / `docs/build.md` / `PRD.md` (where overlap occurs)
 - Flag every contradiction with file:line references from both sides.
 
 ### 4. Dependency bloat

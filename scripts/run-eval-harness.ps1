@@ -8,7 +8,7 @@
     agent (see .github/agents/eval-harness-runner.md):
 
       1. Rust precision eval        -> cargo test precision_eval
-      2. Midstream replay validation -> scripts/run-live-midstream-validation.ps1
+      2. Audio-boundary eval         -> scripts/eval-audio-boundary.ps1
       3. Export parity eval          -> scripts/eval-edit-quality.ps1
 
     Evals that require running app state or fixtures that are not yet
@@ -18,8 +18,8 @@
 .PARAMETER OutputJson
     Path to write the JSON report. Defaults to .eval-output/eval-harness-report.json.
 
-.PARAMETER SkipMidstream
-    Skip the midstream replay check (useful on CI without app runtime).
+.PARAMETER SkipAudioBoundary
+    Skip the audio-boundary check (useful when boundary fixtures are missing).
 
 .PARAMETER SkipExportParity
     Skip the export parity check (useful when fixtures / baseline missing).
@@ -31,7 +31,7 @@
 [CmdletBinding()]
 param(
     [string]$OutputJson = (Join-Path $PSScriptRoot '..\.eval-output\eval-harness-report.json'),
-    [switch]$SkipMidstream,
+    [switch]$SkipAudioBoundary,
     [switch]$SkipExportParity
 )
 
@@ -96,36 +96,38 @@ $evals += New-EvalEntry `
     -Details $precisionDetails `
     -Notes $precisionNotes
 
-# --- 2. Midstream replay ---------------------------------------------------
+# --- 2. Audio-boundary eval -----------------------------------------------
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
-$midstreamScript = Join-Path $RepoRoot 'scripts\run-live-midstream-validation.ps1'
-$midstreamMedia = $env:TOASTER_LIVE_MEDIA_PATH
-if ($SkipMidstream.IsPresent) {
-    $midstreamStatus = 'skip'
-    $midstreamNotes = '-SkipMidstream flag set'
-} elseif (-not (Test-Path $midstreamScript)) {
-    $midstreamStatus = 'skip'
-    $midstreamNotes = 'script not present'
-} elseif ([string]::IsNullOrWhiteSpace($midstreamMedia) -or -not (Test-Path $midstreamMedia)) {
-    $midstreamStatus = 'skip'
-    $midstreamNotes = 'TOASTER_LIVE_MEDIA_PATH not set or not found; see p5-eval-midstream-ci'
+$boundaryScript = Join-Path $RepoRoot 'scripts\eval-audio-boundary.ps1'
+$boundaryFixturesRoot = Join-Path $RepoRoot 'src-tauri\tests\fixtures\boundary'
+$boundaryDetails = @{}
+if ($SkipAudioBoundary.IsPresent) {
+    $boundaryStatus = 'skip'
+    $boundaryNotes = '-SkipAudioBoundary flag set'
+} elseif (-not (Test-Path $boundaryScript)) {
+    $boundaryStatus = 'skip'
+    $boundaryNotes = 'eval-audio-boundary.ps1 not present'
+} elseif (-not (Test-Path $boundaryFixturesRoot)) {
+    $boundaryStatus = 'skip'
+    $boundaryNotes = 'boundary fixtures not present; run scripts/generate-boundary-fixtures.ps1'
 } else {
     try {
-        & pwsh -NoProfile -File $midstreamScript -MediaPath $midstreamMedia | Out-Null
-        $midstreamStatus = if ($LASTEXITCODE -eq 0) { 'pass' } else { 'fail' }
-        $midstreamNotes = ''
+        & pwsh -NoProfile -File $boundaryScript | Out-Null
+        $boundaryStatus = if ($LASTEXITCODE -eq 0) { 'pass' } else { 'fail' }
+        $boundaryNotes = ''
     } catch {
-        $midstreamStatus = 'error'
-        $midstreamNotes = $_.Exception.Message
+        $boundaryStatus = 'error'
+        $boundaryNotes = $_.Exception.Message
     }
 }
 $sw.Stop()
 $evals += New-EvalEntry `
-    -Name 'midstream' `
-    -Command 'scripts/run-live-midstream-validation.ps1' `
-    -Status $midstreamStatus `
+    -Name 'audio_boundary' `
+    -Command 'scripts/eval-audio-boundary.ps1' `
+    -Status $boundaryStatus `
     -DurationS ($sw.Elapsed.TotalSeconds) `
-    -Notes $midstreamNotes
+    -Details $boundaryDetails `
+    -Notes $boundaryNotes
 
 # --- 3. Export parity ------------------------------------------------------
 $sw = [System.Diagnostics.Stopwatch]::StartNew()

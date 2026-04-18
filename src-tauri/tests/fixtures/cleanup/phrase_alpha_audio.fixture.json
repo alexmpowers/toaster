@@ -1,0 +1,32 @@
+{
+  "_comment": "Real-audio cleanup fixture built on src-tauri/tests/fixtures/parity/phrase_alpha.wav. The WAV is 5 sine-burst words with real silent gaps between them. We expose a 6-entry oracle that covers both audible word windows and one silent gap window, marking BOTH a real (audible) filler and a phantom (silent) filler. This lets the audio-aware 'deleted_region_audible' criterion act as a tiebreaker: two candidates that score identically on filler-removal recall and content preservation can still be ranked by whether they deleted audible speech or dead air. The 'rule_v1_perfect' candidate deletes both fillers. 'deletes_real_filler' deletes only the audible filler (correctly removing speech). 'deletes_phantom_filler' deletes only the silent gap (a no-op at best, a timing-drift bug at worst). On audio-aware scoring, real_filler must rank above phantom_filler. Without audio the two would tie.",
+  "fixture": "phrase_alpha_audio",
+  "audio_path": "../parity/phrase_alpha.wav",
+  "oracle_words": [
+    { "text": "hello",   "start_us":       0, "end_us":  420000, "is_filler": false, "in_quote": false },
+    { "text": "world",   "start_us":  500000, "end_us":  860000, "is_filler": true,  "in_quote": false },
+    { "text": "[gap]",   "start_us":  860000, "end_us":  980000, "is_filler": true,  "in_quote": false },
+    { "text": "this",    "start_us":  980000, "end_us": 1260000, "is_filler": false, "in_quote": false },
+    { "text": "is",      "start_us": 1360000, "end_us": 1560000, "is_filler": false, "in_quote": false },
+    { "text": "toaster", "start_us": 1650000, "end_us": 2190000, "is_filler": false, "in_quote": false }
+  ],
+  "desired_kept_indices": [0, 3, 4, 5],
+  "candidates": [
+    {
+      "name": "rule_v1_perfect",
+      "kept_indices": [0, 3, 4, 5]
+    },
+    {
+      "name": "deletes_real_filler",
+      "kept_indices": [0, 2, 3, 4, 5]
+    },
+    {
+      "name": "deletes_phantom_filler",
+      "kept_indices": [0, 1, 3, 4, 5]
+    },
+    {
+      "name": "underdelete",
+      "kept_indices": [0, 1, 2, 3, 4, 5]
+    }
+  ]
+}

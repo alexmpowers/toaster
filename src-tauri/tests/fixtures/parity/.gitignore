@@ -1,0 +1,13 @@
+# Only the final .wav + oracle.json + oracle.meta.json are committed.
+# Intermediate oracle generation artifacts (Gentle/WhisperX/MFA/whisper.cpp
+# character-aligned dumps) are deterministic outputs of the documented
+# invocations in oracle.meta.json — do not commit them.
+*.aligned.json
+*.ctm
+*.TextGrid
+*.lab
+gentle-output/
+whisperx-output/
+mfa-output/
+whisper-maxlen1.jsonl
+*.intermediate.*

@@ -71,7 +71,7 @@ When this skill graduates from "manual" to "gated", the following are expected t
 
 - `cargo test precision_eval -- --nocapture`
 - `pwsh scripts/eval-edit-quality.ps1` against the fixture, compared to baseline
-- `pwsh scripts/run-live-midstream-validation.ps1` in headless mode
+- `pwsh scripts/eval-audio-boundary.ps1` against checked-in boundary fixtures
 
 Track progress under the `eval-precision-fixture`, `eval-midstream-ci`, and `eval-export-parity` todos.
 

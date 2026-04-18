@@ -21,10 +21,11 @@ use transcribe_rs::{
         Quantization,
     },
     whisper_cpp::{WhisperEngine, WhisperInferenceParams},
-    SpeechModel, TranscribeOptions, TranscriptionSegment,
+    SpeechModel, TranscribeOptions,
 };
 
 mod accelerators;
+pub mod adapter;
 #[allow(unused_imports)]
 pub use accelerators::{
     apply_accelerator_settings, get_available_accelerators, AvailableAccelerators, GpuDeviceOption,
@@ -368,7 +369,6 @@ impl TranscriptionManager {
                 })?;
                 LoadedEngine::Cohere(engine)
             }
-
         };
 
         // Update the current engine and model ID
@@ -429,10 +429,7 @@ impl TranscriptionManager {
         current_model.clone()
     }
 
-    pub fn transcribe(
-        &self,
-        audio: Vec<f32>,
-    ) -> Result<(String, Option<Vec<TranscriptionSegment>>)> {
+    pub fn transcribe(&self, audio: Vec<f32>) -> Result<adapter::NormalizedTranscriptionResult> {
         #[cfg(debug_assertions)]
         if std::env::var("HANDY_FORCE_TRANSCRIPTION_FAILURE").is_ok() {
             return Err(anyhow::anyhow!(
@@ -450,7 +447,13 @@ impl TranscriptionManager {
         if audio.is_empty() {
             debug!("Empty audio vector");
             self.maybe_unload_immediately("empty audio");
-            return Ok((String::new(), None));
+            return Ok(adapter::NormalizedTranscriptionResult {
+                words: Vec::new(),
+                text: String::new(),
+                segments: None,
+                language: "und".to_string(),
+                word_timestamps_authoritative: false,
+            });
         }
 
         // Check if model is loaded, if not try to load it
@@ -504,6 +507,26 @@ impl TranscriptionManager {
             }
         };
 
+        // Resolve the adapter for the current model. Capabilities drive the
+        // prompt-injection vs fuzzy-correction branch below (replacing the
+        // old `is_whisper` bool) and `normalize_language` replaces the
+        // per-engine `zh-Hans` / `auto` match arms.
+        let engine_type_for_adapter = self
+            .model_manager
+            .get_model_info(&settings.selected_model)
+            .map(|info| info.engine_type.clone());
+        let adapter: &'static dyn adapter::TranscriptionModelAdapter =
+            match &engine_type_for_adapter {
+                Some(et) => adapter::adapter_for_engine(et),
+                // Fall back to Whisper's adapter — historical default. This
+                // branch only fires if ModelManager can't find the model at
+                // all, which usually means the settings file points at a
+                // deleted model; `transcribe_with` below will still fail
+                // with a clearer error.
+                None => adapter::adapter_for_engine(&EngineType::Whisper),
+            };
+        let normalized_language = adapter.normalize_language(&validated_language);
+
         // Perform transcription with the appropriate engine.
         // We use catch_unwind to prevent engine panics from poisoning the mutex,
         // which would make the app hang indefinitely on subsequent operations.
@@ -529,21 +552,8 @@ impl TranscriptionManager {
                 || -> Result<transcribe_rs::TranscriptionResult> {
                     match &mut engine {
                         LoadedEngine::Whisper(whisper_engine) => {
-                            let whisper_language = if validated_language == "auto" {
-                                None
-                            } else {
-                                let normalized = if validated_language == "zh-Hans"
-                                    || validated_language == "zh-Hant"
-                                {
-                                    "zh".to_string()
-                                } else {
-                                    validated_language.clone()
-                                };
-                                Some(normalized)
-                            };
-
                             let params = WhisperInferenceParams {
-                                language: whisper_language,
+                                language: normalized_language.clone(),
                                 translate: settings.translate_to_english,
                                 initial_prompt: if settings.custom_words.is_empty() {
                                     None
@@ -577,16 +587,8 @@ impl TranscriptionManager {
                                 anyhow::anyhow!("Moonshine streaming transcription failed: {}", e)
                             }),
                         LoadedEngine::SenseVoice(sense_voice_engine) => {
-                            let language = match validated_language.as_str() {
-                                "zh" | "zh-Hans" | "zh-Hant" => Some("zh".to_string()),
-                                "en" => Some("en".to_string()),
-                                "ja" => Some("ja".to_string()),
-                                "ko" => Some("ko".to_string()),
-                                "yue" => Some("yue".to_string()),
-                                _ => None,
-                            };
                             let params = SenseVoiceParams {
-                                language,
+                                language: normalized_language.clone(),
                                 use_itn: Some(true),
                             };
                             sense_voice_engine
@@ -599,13 +601,8 @@ impl TranscriptionManager {
                             .transcribe(&audio, &TranscribeOptions::default())
                             .map_err(|e| anyhow::anyhow!("GigaAM transcription failed: {}", e)),
                         LoadedEngine::Canary(canary_engine) => {
-                            let lang = if validated_language == "auto" {
-                                None
-                            } else {
-                                Some(validated_language.clone())
-                            };
                             let options = TranscribeOptions {
-                                language: lang,
+                                language: normalized_language.clone(),
                                 translate: settings.translate_to_english,
                                 ..Default::default()
                             };
@@ -614,17 +611,8 @@ impl TranscriptionManager {
                                 .map_err(|e| anyhow::anyhow!("Canary transcription failed: {}", e))
                         }
                         LoadedEngine::Cohere(cohere_engine) => {
-                            let lang = if validated_language == "auto" {
-                                None
-                            } else if validated_language == "zh-Hans"
-                                || validated_language == "zh-Hant"
-                            {
-                                Some("zh".to_string())
-                            } else {
-                                Some(validated_language.clone())
-                            };
                             let options = TranscribeOptions {
-                                language: lang,
+                                language: normalized_language.clone(),
                                 ..Default::default()
                             };
                             cohere_engine
@@ -684,32 +672,26 @@ impl TranscriptionManager {
             }
         };
 
-        // Apply word correction if custom words are configured.
-        // Skip for Whisper models since custom words are already passed as initial_prompt.
-        let is_whisper = self
-            .model_manager
-            .get_model_info(&settings.selected_model)
-            .map(|info| matches!(info.engine_type, EngineType::Whisper))
-            .unwrap_or(false);
-
-        let segments = result.segments;
-
-        let corrected_result = if !settings.custom_words.is_empty() && !is_whisper {
+        // Apply word correction if custom words are configured. Adapters with
+        // `supports_prompt_injection = true` (Whisper) biased via
+        // `initial_prompt` already, so fuzzy correction is skipped for them.
+        // This replaces the old `is_whisper` bool check.
+        let corrected_text = if !settings.custom_words.is_empty()
+            && adapter.capabilities().supports_fuzzy_word_correction
+        {
             apply_custom_words(
                 &result.text,
                 &settings.custom_words,
                 settings.word_correction_threshold,
             )
         } else {
-            result.text
+            result.text.clone()
         };
 
-        // Filter out filler words and hallucinations
-        let filtered_result = filter_transcription_output(
-            &corrected_result,
-            &settings.app_language,
-            &settings.custom_filler_words,
-        );
+        // Filter out stutter artifacts / excess whitespace. Filler words are
+        // kept — the editor's Clean Up feature is responsible for removing
+        // them on user confirmation.
+        let filtered_text = filter_transcription_output(&corrected_text);
 
         let et = std::time::Instant::now();
         let translation_note = if settings.translate_to_english {
@@ -723,17 +705,50 @@ impl TranscriptionManager {
             translation_note
         );
 
-        let final_result = filtered_result;
-
-        if final_result.is_empty() {
+        if filtered_text.is_empty() {
             info!("Transcription result is empty");
         } else {
-            info!("Transcription result: {}", final_result);
+            info!("Transcription result: {}", filtered_text);
         }
 
         self.maybe_unload_immediately("transcription");
 
-        Ok((final_result, segments))
+        // Normalize through the adapter, then overwrite the text blob with
+        // the post-filtered version. `raw_for_adapt` keeps the engine-reported
+        // segment timings intact for downstream `build_words_from_segments`.
+        let raw_for_adapt = transcribe_rs::TranscriptionResult {
+            text: filtered_text,
+            segments: result.segments,
+        };
+        let audio_info = adapter::AudioInfo::from_samples(
+            audio.len(),
+            adapter.capabilities().native_input_sample_rate_hz,
+            1,
+        );
+        let normalized = adapter.adapt(raw_for_adapt, audio_info)?;
+        info!(
+            "Transcription normalized: language={} word_timestamps_authoritative={}",
+            normalized.language, normalized.word_timestamps_authoritative
+        );
+        // TEMP-BLEED-DEBUG: dump word timings for splice-bleed investigation.
+        // Remove once bleed-phase1-timings is complete.
+        if let Ok(path) = std::env::var("TOASTER_DUMP_WORDS_PATH") {
+            let mut buf = String::from("[\n");
+            for (i, w) in normalized.words.iter().enumerate() {
+                let comma = if i + 1 < normalized.words.len() { "," } else { "" };
+                let text_escaped = w.text.replace('\\', "\\\\").replace('"', "\\\"");
+                buf.push_str(&format!(
+                    "  {{\"i\":{},\"text\":\"{}\",\"start_us\":{},\"end_us\":{},\"confidence\":{}}}{}\n",
+                    i, text_escaped, w.start_us, w.end_us, w.confidence, comma
+                ));
+            }
+            buf.push_str("]\n");
+            match std::fs::write(&path, &buf) {
+                Ok(_) => info!("TEMP-BLEED-DEBUG: wrote {} words to {}", normalized.words.len(), path),
+                Err(e) => info!("TEMP-BLEED-DEBUG: failed to write {}: {}", path, e),
+            }
+        }
+        Ok(normalized)
     }
 }
 
@@ -982,7 +997,10 @@ mod tests {
         let idle_ms = now_ms.saturating_sub(last_activity_ms);
         let limit_ms = limit_seconds * 1000;
 
-        assert!(idle_ms > limit_ms, "should detect idle after 400s > 300s limit");
+        assert!(
+            idle_ms > limit_ms,
+            "should detect idle after 400s > 300s limit"
+        );
     }
 
     #[test]
@@ -994,7 +1012,10 @@ mod tests {
         let idle_ms = now_ms.saturating_sub(last_activity_ms);
         let limit_ms = limit_seconds * 1000;
 
-        assert!(idle_ms <= limit_ms, "should not detect idle after 100s < 300s limit");
+        assert!(
+            idle_ms <= limit_ms,
+            "should not detect idle after 100s < 300s limit"
+        );
     }
 
     #[test]

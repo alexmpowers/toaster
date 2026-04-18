@@ -1,0 +1,553 @@
+{
+  "fixture": "toaster_example_candidates",
+  "source_media": "extras/toaster_example.mp4",
+  "audio_path": "toaster_example_extracted.wav",
+  "notes": [
+    "Human oracle derived from user labeling captured on 2026-04-17.",
+    "Timings approximate; suitable for pacing + clarity scoring.",
+    "expected_winner = human_oracle because it is the only candidate that (a) picks the human-chosen survivors, (b) drops non-filler glue words like 'And'/'like'/'kind'/'of'.",
+    "aspirational=true: backend does not yet score content-pacing, so tournament winner may differ. Gap is surfaced in the report but does not fail CI."
+  ],
+  "aspirational": true,
+  "groups": [
+    {
+      "id": "the_the_the_A",
+      "member_indices": [
+        2,
+        4,
+        5
+      ]
+    },
+    {
+      "id": "best_best",
+      "member_indices": [
+        6,
+        7
+      ]
+    },
+    {
+      "id": "the_the_the_B",
+      "member_indices": [
+        27,
+        29,
+        30
+      ]
+    }
+  ],
+  "oracle_words": [
+    {
+      "text": "Yeah,",
+      "start_us": 390000,
+      "end_us": 952000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "so",
+      "start_us": 952000,
+      "end_us": 1250000,
+      "human_label": "delete",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "the",
+      "start_us": 1250000,
+      "end_us": 1520000,
+      "human_label": "delete",
+      "is_filler": false,
+      "group_id": "the_the_the_A"
+    },
+    {
+      "text": "um",
+      "start_us": 1520000,
+      "end_us": 1980000,
+      "human_label": "delete",
+      "is_filler": true,
+      "group_id": null
+    },
+    {
+      "text": "the",
+      "start_us": 1980000,
+      "end_us": 2240000,
+      "human_label": "delete",
+      "is_filler": false,
+      "group_id": "the_the_the_A"
+    },
+    {
+      "text": "the",
+      "start_us": 2240000,
+      "end_us": 2560000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": "the_the_the_A"
+    },
+    {
+      "text": "best",
+      "start_us": 2560000,
+      "end_us": 3010000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": "best_best"
+    },
+    {
+      "text": "best",
+      "start_us": 3010000,
+      "end_us": 3450000,
+      "human_label": "delete",
+      "is_filler": false,
+      "group_id": "best_best"
+    },
+    {
+      "text": "part",
+      "start_us": 3450000,
+      "end_us": 3890000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "about",
+      "start_us": 3890000,
+      "end_us": 4280000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "a",
+      "start_us": 4280000,
+      "end_us": 4360000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "lot",
+      "start_us": 4360000,
+      "end_us": 4600000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "of",
+      "start_us": 4600000,
+      "end_us": 4720000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "this",
+      "start_us": 4720000,
+      "end_us": 5060000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "is",
+      "start_us": 5060000,
+      "end_us": 5210000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "how",
+      "start_us": 5210000,
+      "end_us": 5420000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "it",
+      "start_us": 5420000,
+      "end_us": 5560000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "can",
+      "start_us": 5560000,
+      "end_us": 5790000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "really",
+      "start_us": 5790000,
+      "end_us": 6260000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "transform",
+      "start_us": 6260000,
+      "end_us": 6970000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "the",
+      "start_us": 6970000,
+      "end_us": 7140000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "way",
+      "start_us": 7140000,
+      "end_us": 7380000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "you",
+      "start_us": 7380000,
+      "end_us": 7560000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "sound.",
+      "start_us": 7560000,
+      "end_us": 7832000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "And",
+      "start_us": 14500000,
+      "end_us": 14760000,
+      "human_label": "delete",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "um",
+      "start_us": 14760000,
+      "end_us": 15200000,
+      "human_label": "delete",
+      "is_filler": true,
+      "group_id": null
+    },
+    {
+      "text": "like",
+      "start_us": 15200000,
+      "end_us": 15480000,
+      "human_label": "delete",
+      "is_filler": true,
+      "group_id": null
+    },
+    {
+      "text": "the",
+      "start_us": 15480000,
+      "end_us": 15760000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": "the_the_the_B"
+    },
+    {
+      "text": "uh",
+      "start_us": 15760000,
+      "end_us": 16180000,
+      "human_label": "delete",
+      "is_filler": true,
+      "group_id": null
+    },
+    {
+      "text": "the",
+      "start_us": 16180000,
+      "end_us": 16440000,
+      "human_label": "delete",
+      "is_filler": false,
+      "group_id": "the_the_the_B"
+    },
+    {
+      "text": "the",
+      "start_us": 16440000,
+      "end_us": 16720000,
+      "human_label": "delete",
+      "is_filler": false,
+      "group_id": "the_the_the_B"
+    },
+    {
+      "text": "difference",
+      "start_us": 16720000,
+      "end_us": 17520000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "is",
+      "start_us": 17520000,
+      "end_us": 17700000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "gonna",
+      "start_us": 17700000,
+      "end_us": 18030000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "be",
+      "start_us": 18030000,
+      "end_us": 18200000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "noticeable",
+      "start_us": 18200000,
+      "end_us": 18920000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "kind",
+      "start_us": 18920000,
+      "end_us": 19180000,
+      "human_label": "delete",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "of",
+      "start_us": 19180000,
+      "end_us": 19340000,
+      "human_label": "delete",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "on",
+      "start_us": 19340000,
+      "end_us": 19540000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "first",
+      "start_us": 19540000,
+      "end_us": 19860000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    },
+    {
+      "text": "use.",
+      "start_us": 19860000,
+      "end_us": 21079000,
+      "human_label": "keep",
+      "is_filler": false,
+      "group_id": null
+    }
+  ],
+  "desired_kept_indices": [
+    0,
+    5,
+    6,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    27,
+    31,
+    32,
+    33,
+    34,
+    35,
+    38,
+    39,
+    40
+  ],
+  "expected_winner": "human_oracle",
+  "candidates": [
+    {
+      "name": "human_oracle",
+      "kept_indices": [
+        0,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        27,
+        31,
+        32,
+        33,
+        34,
+        35,
+        38,
+        39,
+        40
+      ]
+    },
+    {
+      "name": "smart_planned",
+      "kept_indices": [
+        0,
+        1,
+        5,
+        6,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        27,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ]
+    },
+    {
+      "name": "toaster_today",
+      "kept_indices": [
+        0,
+        1,
+        2,
+        6,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        27,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ]
+    },
+    {
+      "name": "keep_everything",
+      "kept_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40
+      ]
+    }
+  ]
+}

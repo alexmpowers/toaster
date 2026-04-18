@@ -1,18 +1,23 @@
 //! FFmpeg audio extraction helpers.
 //!
 //! Extracted from `transcribe_file/mod.rs`. Pure, stateless FFmpeg-shell
-//! helper that converts arbitrary media to a 16 kHz mono WAV suitable for
-//! whisper / transcribe-rs.
+//! helper that converts arbitrary media to a mono WAV at the sample rate
+//! declared by the selected ASR model.
 
 use log::info;
 
 /// FFmpeg audio extraction timeout (10 minutes).
 const EXTRACT_AUDIO_TIMEOUT_SECS: u64 = 600;
 
-/// Extract audio from any media file to a temporary 16kHz mono WAV using FFmpeg.
+/// Extract audio from any media file to a temporary mono WAV using FFmpeg.
 /// Returns the path to the temporary WAV file.
-pub(super) fn extract_audio_to_wav(
+///
+/// `sample_rate_hz` controls the `-ar` argument; pass the value from the
+/// active model (`ModelInfo::input_sample_rate_hz()`) so each engine gets
+/// PCM at the rate it expects.
+pub(super) fn extract_audio_to_wav_at_rate(
     input_path: &std::path::Path,
+    sample_rate_hz: u32,
 ) -> Result<std::path::PathBuf, String> {
     let temp_dir = std::env::temp_dir().join("toaster_audio");
     std::fs::create_dir_all(&temp_dir).map_err(|e| format!("Failed to create temp dir: {}", e))?;
@@ -25,10 +30,12 @@ pub(super) fn extract_audio_to_wav(
             .as_millis()
     ));
 
+    let sample_rate_str = sample_rate_hz.to_string();
     info!(
-        "Extracting audio from {} to {}",
+        "Extracting audio from {} to {} ({} Hz mono)",
         input_path.display(),
-        wav_path.display()
+        wav_path.display(),
+        sample_rate_hz
     );
 
     let mut child = std::process::Command::new("ffmpeg")
@@ -40,7 +47,7 @@ pub(super) fn extract_audio_to_wav(
             "-acodec",
             "pcm_s16le",
             "-ar",
-            "16000",
+            &sample_rate_str,
             "-ac",
             "1",
             wav_path.to_string_lossy().as_ref(),

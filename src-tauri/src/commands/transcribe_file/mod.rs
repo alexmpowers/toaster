@@ -3,12 +3,15 @@ use std::sync::Arc;
 use tauri::{AppHandle, Manager, State};
 use transcribe_rs::TranscriptionSegment;
 
+use crate::audio_toolkit::timing::{
+    round_f64_to_i64, seconds_to_us as timing_seconds_to_us, us_to_sample as timing_us_to_sample,
+};
 use crate::commands::editor::EditorStore;
 use crate::managers::editor::Word;
 use crate::managers::transcription::TranscriptionManager;
 
 mod extract;
-use extract::{extract_audio_to_wav, is_wav_file};
+use extract::{extract_audio_to_wav_at_rate, is_wav_file};
 
 const SAMPLE_RATE_HZ: f64 = 16000.0;
 /// Maximum transcription duration in seconds (4 hours).
@@ -30,16 +33,25 @@ fn rms(samples: &[f32]) -> f32 {
     (sum_sq / samples.len() as f32).sqrt()
 }
 
+/// Convert a sample index to microseconds at `SAMPLE_RATE_HZ`.
+///
+/// Delegates to [`crate::audio_toolkit::timing`] which uses
+/// nearest-integer rounding (todo `p0-rounding-policy`). The previous
+/// implementation truncated, which biased every conversion toward earlier
+/// samples and accumulated drift on µs↔sample round-trips.
 fn sample_to_us(sample_idx: usize) -> i64 {
-    (sample_idx as f64 / SAMPLE_RATE_HZ * 1_000_000.0) as i64
+    crate::audio_toolkit::timing::sample_to_us(sample_idx, SAMPLE_RATE_HZ)
 }
 
+/// Convert microseconds to a sample index at `SAMPLE_RATE_HZ`, clamped to
+/// `[0, total_samples - 1]`.
+///
+/// The clamp to `total_samples - 1` is *intentional* truncation — it
+/// guarantees the result is a valid frame index for indexing into the
+/// PCM buffer. The µs→sample math itself uses nearest-integer rounding
+/// per the policy in [`crate::audio_toolkit::timing`].
 fn us_to_sample(timestamp_us: i64, total_samples: usize) -> usize {
-    if total_samples == 0 {
-        return 0;
-    }
-    let sample = (timestamp_us.max(0) as f64 / 1_000_000.0 * SAMPLE_RATE_HZ) as usize;
-    sample.min(total_samples.saturating_sub(1))
+    crate::audio_toolkit::timing::us_to_sample_clamped(timestamp_us, SAMPLE_RATE_HZ, total_samples)
 }
 
 fn snap_to_zero_crossing(samples: &[f32], target: usize, half_window: usize) -> usize {
@@ -134,9 +146,13 @@ fn boundary_has_interpolated_pattern(
         || (boundary_idx + 2 < words.len() && meta[boundary_idx + 2].interpolated)
 }
 
-/// Confidence-gated local re-alignment pass for suspicious boundaries.
-/// Uses short local windows only, so runtime is bounded and independent of
-/// global transcript length.
+/// **Safety net; primary timing comes from forced alignment.** After the
+/// DP aligner in [`crate::audio_toolkit::forced_alignment`] places interior
+/// boundaries inside each ASR segment, this pass runs as a narrow,
+/// confidence-gated re-align for boundaries that still look suspicious
+/// (low confidence, abrupt duration jump, boundary in a high-energy
+/// region, interpolated pattern). It uses short local windows only, so
+/// runtime is bounded and independent of global transcript length.
 fn realign_suspicious_spans(
     words: &mut [Word],
     samples: &[f32],
@@ -154,7 +170,7 @@ fn realign_suspicious_spans(
     const LOW_CONF_THRESHOLD: f32 = 0.45;
     const MAX_REALIGN_BOUNDARIES: usize = 256;
 
-    let half_window_samples = (LOCAL_WINDOW_US as f64 / 1_000_000.0 * SAMPLE_RATE_HZ) as usize;
+    let half_window_samples = timing_us_to_sample(LOCAL_WINDOW_US, SAMPLE_RATE_HZ);
     let mut adjusted = 0usize;
 
     for i in 0..words.len() - 1 {
@@ -228,11 +244,14 @@ fn realign_suspicious_spans(
 //
 // `samples` must be 16 kHz mono f32 audio.
 
-/// Pre-correction for proportional char-weight boundaries: when one word in an
-/// adjacent pair is very short (<200 ms), scan ±200 ms around the boundary for
-/// the lowest-energy point and snap the boundary there.  This fixes the
-/// systematic late-bias that proportional distribution creates for short words
-/// like "a", "I", "new" next to longer neighbours.
+/// **Safety net; primary timing comes from forced alignment.** Runs after
+/// the DP aligner as a pre-correction for legacy char-proportional
+/// boundaries that may still surface through the fallback path in
+/// `build_words_from_segments`: when one word in an adjacent pair is very
+/// short (<200 ms), scan ±200 ms around the boundary for the lowest-energy
+/// point and snap the boundary there.  This fixes the systematic late-bias
+/// that proportional distribution creates for short words like "a", "I",
+/// "new" next to longer neighbours.
 ///
 /// `samples` must be 16 kHz mono f32 audio.
 fn correct_short_word_boundaries(words: &mut [Word], samples: &[f32]) {
@@ -254,8 +273,8 @@ fn correct_short_word_boundaries(words: &mut [Word], samples: &[f32]) {
         }
 
         let boundary_us = words[i].end_us;
-        let center_sample = ((boundary_us as f64 / 1_000_000.0) * SAMPLE_RATE) as usize;
-        let half_window = ((SEARCH_US as f64 / 1_000_000.0) * SAMPLE_RATE) as usize;
+        let center_sample = timing_us_to_sample(boundary_us, SAMPLE_RATE);
+        let half_window = timing_us_to_sample(SEARCH_US, SAMPLE_RATE);
 
         let search_start = center_sample.saturating_sub(half_window);
         let search_end = (center_sample + half_window).min(samples.len());
@@ -281,7 +300,7 @@ fn correct_short_word_boundaries(words: &mut [Word], samples: &[f32]) {
             pos += RMS_WINDOW / 2;
         }
 
-        let refined_us = ((min_pos as f64 / SAMPLE_RATE) * 1_000_000.0) as i64;
+        let refined_us = crate::audio_toolkit::timing::sample_to_us(min_pos, SAMPLE_RATE);
 
         // Only apply if it preserves minimum word durations
         let min_word_us = 10_000; // 10ms
@@ -294,6 +313,12 @@ fn correct_short_word_boundaries(words: &mut [Word], samples: &[f32]) {
     }
 }
 
+/// **Safety net; primary timing comes from forced alignment.** Runs after
+/// the DP aligner to nudge any boundary that still lands in a non-minimum
+/// energy region (can happen on long segments where the aligner converged
+/// on a local optimum, or on segments where the fallback char-proportional
+/// path fired). Two-stage: RMS scan to find the local energy minimum, then
+/// zero-crossing snap to avoid click-at-cut.
 fn refine_word_boundaries(words: &mut [Word], samples: &[f32]) {
     if words.len() < 2 || samples.is_empty() {
         return;
@@ -326,8 +351,8 @@ fn refine_word_boundaries(words: &mut [Word], samples: &[f32]) {
         };
 
         // Search window in samples
-        let center_sample = (boundary_us as f64 / 1_000_000.0 * SAMPLE_RATE_HZ) as usize;
-        let half_window_samples = (window_us as f64 / 1_000_000.0 * SAMPLE_RATE_HZ) as usize;
+        let center_sample = timing_us_to_sample(boundary_us, SAMPLE_RATE_HZ);
+        let half_window_samples = timing_us_to_sample(window_us, SAMPLE_RATE_HZ);
 
         let search_start = center_sample.saturating_sub(half_window_samples);
         let search_end = (center_sample + half_window_samples).min(samples.len());
@@ -415,13 +440,15 @@ fn refine_word_boundaries(words: &mut [Word], samples: &[f32]) {
 
 /// Align the start of segment-leading words to the true speech onset.
 ///
-/// Whisper's segment `start` time often lands at or slightly after the first
-/// phoneme rather than at the acoustic onset (the pre-voice burst of a
-/// plosive, the initial fricative noise, etc.).  When the leading word is
-/// subsequently deleted, audio before `start_us` that still contains speech
-/// energy leaks through.
+/// **Safety net; primary timing comes from forced alignment.** The DP
+/// aligner pins `word[0].start` to the engine-reported `seg_start_us`
+/// verbatim. Whisper's segment `start` often lands at or slightly after
+/// the first phoneme rather than at the acoustic onset (the pre-voice
+/// burst of a plosive, the initial fricative noise, etc.).  When the
+/// leading word is subsequently deleted, audio before `start_us` that
+/// still contains speech energy leaks through.
 ///
-/// This function scans backwards from the first word's nominal start to find
+/// This pass scans backwards from the first word's nominal start to find
 /// the earliest sample whose short-term energy exceeds a threshold derived
 /// from the word's body.  The word's `start_us` is then shifted to that
 /// onset point (snapped to a zero-crossing for click-free cuts).
@@ -470,7 +497,7 @@ fn align_onset_boundaries(words: &mut [Word], samples: &[f32]) {
         let onset_threshold = body_energy * 0.15;
 
         // Search backwards from nominal start
-        let onset_search_samples = (ONSET_SEARCH_US as f64 / 1_000_000.0 * SAMPLE_RATE_HZ) as usize;
+        let onset_search_samples = timing_us_to_sample(ONSET_SEARCH_US, SAMPLE_RATE_HZ);
         let search_start = nominal_start_sample.saturating_sub(onset_search_samples);
         // Don't cross into the previous word
         let earliest_allowed = if i > 0 {
@@ -524,11 +551,23 @@ fn align_onset_boundaries(words: &mut [Word], samples: &[f32]) {
 
 /// Build word-level timestamps from transcription segments.
 ///
-/// Each segment has a start/end time and text. We split each segment's text
-/// into words and distribute timestamps proportionally by character length.
-/// This produces timestamps that are accurate to within a segment (~30s chunks
-/// from Whisper), with proportional distribution within each segment being
-/// much better than global even distribution.
+/// Primary alignment is the DP-based forced aligner in
+/// [`crate::audio_toolkit::forced_alignment`]: for each ASR segment, the
+/// interior boundaries are placed at the frames that minimize the sum of
+/// local acoustic energy and deviation from their char-proportional expected
+/// position. The segment endpoints themselves come from the ASR engine and
+/// are treated as authoritative.
+///
+/// **Fallback to char-proportional split.** When the aligner declines a
+/// segment (returns `None`) — e.g. the slice is too short to produce enough
+/// energy frames, or no valid interior search window exists — we fall back
+/// to the legacy character-proportional distribution. This keeps behavior
+/// defined for degenerate segments and for future engines whose adapter
+/// reports `word_timestamps_authoritative == false` but whose audio slice
+/// is too small to align. The downstream safety-net passes
+/// (`correct_short_word_boundaries`, `refine_word_boundaries`,
+/// `align_onset_boundaries`, and `realign_suspicious_spans` at the call
+/// site) run regardless and may refine both paths further.
 fn build_words_from_segments(
     full_text: &str,
     segments: &[TranscriptionSegment],
@@ -546,15 +585,20 @@ fn build_words_from_segments(
         return (words, meta);
     }
 
-    // Build a flat list of (word, start_us, end_us) from segments first
+    // Build a flat list of (word, start_us, end_us) from segments first.
+    // For each segment we prefer the DP forced aligner; if it declines we
+    // fall through to the legacy char-proportional split.
     let mut segment_words: Vec<(String, i64, i64)> = Vec::new();
     for seg in segments {
         let seg_text = seg.text.trim();
         if seg_text.is_empty() {
             continue;
         }
-        let seg_start_us = (seg.start as f64 * 1_000_000.0) as i64;
-        let seg_end_us = (seg.end as f64 * 1_000_000.0) as i64;
+        // Half-open convention: a segment covers [seg_start_us, seg_end_us).
+        // Both ends are rounded with the same nearest-integer policy so the
+        // duration `end - start` is not biased by mixing floor+ceil.
+        let seg_start_us = timing_seconds_to_us(seg.start as f64);
+        let seg_end_us = timing_seconds_to_us(seg.end as f64);
         let seg_duration_us = seg_end_us - seg_start_us;
 
         let seg_words: Vec<&str> = seg_text.split_whitespace().collect();
@@ -562,13 +606,26 @@ fn build_words_from_segments(
             continue;
         }
 
-        // Minimum effective character weight per word.  Using 1 gives each
-        // word its true proportional share — short words like "a" or "I"
-        // get a 1-char share instead of an inflated 3-char share, which
-        // avoids pushing subsequent word boundaries too late on fast speech.
-        const MIN_WORD_CHAR_WEIGHT: usize = 1;
+        // Primary path: DP forced alignment against frame-level RMS.
+        if let Some(aligned) = crate::audio_toolkit::forced_alignment::align_words_in_segment(
+            &seg_words,
+            seg_start_us,
+            seg_end_us,
+            samples,
+            SAMPLE_RATE_HZ,
+        ) {
+            for (sw, (ws, we)) in seg_words.iter().zip(aligned.into_iter()) {
+                segment_words.push(((*sw).to_string(), ws, we));
+            }
+            continue;
+        }
 
-        // Total character count for proportional distribution
+        // Fallback path: char-proportional split. Fires when the aligner
+        // cannot run (segment too short, too few frames, or slice outside
+        // the sample buffer). Kept so degenerate segments still produce
+        // *some* ordered output; downstream refinement may fix the worst
+        // of it.
+        const MIN_WORD_CHAR_WEIGHT: usize = 1;
         let total_chars: usize = seg_words
             .iter()
             .map(|w| w.len().max(MIN_WORD_CHAR_WEIGHT))
@@ -577,7 +634,7 @@ fn build_words_from_segments(
         let mut cursor_us = seg_start_us;
         for (j, sw) in seg_words.iter().enumerate() {
             let char_fraction = sw.len().max(MIN_WORD_CHAR_WEIGHT) as f64 / total_chars as f64;
-            let word_duration_us = (seg_duration_us as f64 * char_fraction) as i64;
+            let word_duration_us = round_f64_to_i64(seg_duration_us as f64 * char_fraction);
 
             let word_start = cursor_us;
             let word_end = if j == seg_words.len() - 1 {
@@ -748,7 +805,6 @@ fn sanitize_word_timestamps(words: &mut [Word], total_duration_us: i64) {
     }
 }
 
-
 /// Transcribe any audio or video file and populate the editor with word-level results.
 ///
 /// For WAV files, reads samples directly. For all other formats (MP4, MP3, etc.),
@@ -766,11 +822,25 @@ pub async fn transcribe_media_file(
         return Err(format!("File not found: {}", path));
     }
 
+    // Look up the model's declared native input sample rate. Falls back to
+    // the default (16 kHz) when the model isn't known or no manager exists;
+    // matches the old hardcoded `-ar 16000`.
+    let asr_sample_rate_hz: u32 = {
+        let settings = crate::settings::get_settings(&app);
+        app.try_state::<Arc<crate::managers::model::ModelManager>>()
+            .and_then(|mm| mm.get_model_info(&settings.selected_model))
+            .map(|info| info.input_sample_rate_hz())
+            .unwrap_or(crate::audio_toolkit::constants::ASR_INPUT_SAMPLE_RATE_HZ_DEFAULT)
+    };
+
     // For non-WAV files, extract audio via FFmpeg first
     let (wav_path, is_temp) = if is_wav_file(file_path) {
         (file_path.to_path_buf(), false)
     } else {
-        (extract_audio_to_wav(file_path)?, true)
+        (
+            extract_audio_to_wav_at_rate(file_path, asr_sample_rate_hz)?,
+            true,
+        )
     };
 
     // Guard: check file size / estimated duration before loading into memory
@@ -820,8 +890,9 @@ pub async fn transcribe_media_file(
         // The transcribe() call below will wait on the loading condvar
     }
 
-    // Transcribe — now returns segments with real timestamps
-    let (text, segments) = tm
+    // Transcribe — now returns a NormalizedTranscriptionResult with the
+    // engine's raw segment timings preserved alongside the filtered text.
+    let normalized = tm
         .transcribe(samples.clone())
         .map_err(|e| {
             let msg = e.to_string();
@@ -831,75 +902,48 @@ pub async fn transcribe_media_file(
                 format!("Transcription failed: {}", msg)
             }
         })?;
+    let text = normalized.text;
+    let segments = normalized.segments;
 
     if text.is_empty() {
         return Err("Transcription produced no text".to_string());
     }
 
     // Build words with real timestamps from transcription segments.
-    // Segments have start/end in seconds — we distribute words within each
-    // segment proportionally by character count (a reasonable proxy for speech
-    // duration). This is far more accurate than the previous approach of
-    // dividing total audio duration evenly across all words.
+    // Primary: DP forced alignment inside each engine-reported segment
+    // (see `audio_toolkit::forced_alignment`). Interior boundaries are
+    // placed at the frames that minimize local RMS energy plus a quadratic
+    // deviation penalty from their char-proportional expected position,
+    // replacing the legacy char-proportional synthesis as the primary source
+    // of per-word timing for engines whose adapter reports
+    // `word_timestamps_authoritative = false` (todo
+    // `p1-authoritative-flag-actionable`).
+    //
+    // The adapter layer (`managers::transcription::adapter`) is the single
+    // contract enforcement point: every engine MUST produce at least
+    // segment-level timestamps. If an engine genuinely can't, the fix is
+    // forced alignment *in the adapter*, not equal-duration synthesis
+    // downstream. See todos `p1-adapter-trait` and
+    // `p3-abandon-even-dist-fallback`, and the "equal-duration timestamp
+    // synthesis" prohibition in AGENTS.md.
     let sample_rate = 16000.0_f64;
-    let total_duration_us = ((samples.len() as f64 / sample_rate) * 1_000_000.0) as i64;
+    let total_duration_us = crate::audio_toolkit::timing::sample_to_us(samples.len(), sample_rate);
 
-    // Detect whether the ASR engine provided word-level timestamps.
-    // If so, use segments directly; otherwise use proportional distribution.
-    let segments_are_word_level = segments.as_ref().is_some_and(|segs| {
-        if segs.is_empty() {
-            return false;
-        }
-        // If most segments contain exactly 1 word, the engine provided word-level timestamps
-        let single_word_count = segs
-            .iter()
-            .filter(|s| s.text.split_whitespace().count() == 1)
-            .count();
-        single_word_count as f64 / segs.len() as f64 > 0.8
-    });
-
-    if segments_are_word_level {
-        info!(
-            "ASR engine provided word-level timestamps ({} segments)",
-            segments.as_ref().map_or(0, |s| s.len())
+    let segs = segments.as_ref().ok_or_else(|| {
+        "Transcription engine produced no segment-level timestamps; adapter must always \
+         return at least segment-level timing. See p1-adapter-trait."
+            .to_string()
+    })?;
+    if segs.is_empty() {
+        return Err(
+            "Transcription engine returned an empty segment list; adapter must always \
+             return at least segment-level timing. See p1-adapter-trait."
+                .to_string(),
         );
     }
 
-    let (mut words, align_meta): (Vec<Word>, Option<Vec<WordAlignmentMeta>>) = if let Some(
-        ref segs,
-    ) = segments
-    {
-        // Fallback: proportional distribution within ASR segments
-        let (words, meta) = build_words_from_segments(&text, segs, &samples);
-        (words, Some(meta))
-    } else {
-        // Fallback: no segments available (some engines don't provide them).
-        // Distribute words evenly across total duration (legacy behavior).
-        let raw_words: Vec<&str> = text.split_whitespace().collect();
-        warn!(
-                "Transcription engine returned no segments; using legacy even timestamp distribution for {} words",
-                raw_words.len()
-            );
-        let word_duration_us = if raw_words.is_empty() {
-            0
-        } else {
-            total_duration_us / raw_words.len() as i64
-        };
-        let fallback_words: Vec<Word> = raw_words
-            .iter()
-            .enumerate()
-            .map(|(i, w)| Word {
-                text: w.to_string(),
-                start_us: i as i64 * word_duration_us,
-                end_us: (i as i64 + 1) * word_duration_us,
-                deleted: false,
-                silenced: false,
-                confidence: -1.0,
-                speaker_id: -1,
-            })
-            .collect();
-        (fallback_words, None)
-    };
+    let (mut words, align_meta_vec) = build_words_from_segments(&text, segs, &samples);
+    let align_meta: Option<Vec<WordAlignmentMeta>> = Some(align_meta_vec);
 
     // Sanitize timestamps: clamp to audio duration, enforce monotonic
     // non-overlapping progression, and ensure minimal non-zero durations.
@@ -1203,7 +1247,7 @@ mod tests {
         // silence gap (300–350ms = 300_000–350_000 µs).
         let boundary = words[0].end_us;
         assert!(
-            boundary >= 280_000 && boundary <= 380_000,
+            (280_000..=380_000).contains(&boundary),
             "boundary between 'I' and 'said' should be near silence gap \
              (300–350ms), got {} µs",
             boundary
@@ -1230,6 +1274,7 @@ mod tests {
 ///   1. `samples[result] * samples[result+1] <= 0.0` at every exported cut point.
 ///   2. RMS in a 2 ms window around each seam < 10 % of signal peak RMS.
 ///   3. Adjacent keep-segments share exactly one boundary sample (no gap/overlap).
+///
 /// Add a `seam_rms_at_boundary(samples, cut_sample, window_samples) -> f32`
 /// helper and assert `seam_rms < 0.05 * peak_rms` for each cut.
 #[cfg(test)]
@@ -1431,7 +1476,7 @@ mod precision_benchmarks {
         );
         // The minimum centre should land inside or near the silence gap.
         assert!(
-            min_pos >= 700 && min_pos <= 900,
+            (700..=900).contains(&min_pos),
             "energy minimum centre should be near the silence gap, got sample {}",
             min_pos
         );
@@ -1540,9 +1585,9 @@ mod precision_benchmarks {
         // — not enough for the 3% MIN_DIP_RATIO, but the coarticulated fallback
         // should still move the boundary toward lower energy.
         let mut samples = vec![0.4_f32; 8_000]; // 500ms at 16kHz
-        // Create a gradual energy taper around 100ms (earlier than proportional)
-        for s in 1500..1700 {
-            samples[s] = 0.35; // slight dip — less than 3% of 0.4
+                                                // Create a gradual energy taper around 100ms (earlier than proportional)
+        for s in samples[1500..1700].iter_mut() {
+            *s = 0.35; // slight dip — less than 3% of 0.4
         }
 
         let original_boundary = words[0].end_us;
@@ -1588,7 +1633,7 @@ mod precision_benchmarks {
             w("nine", 3_600_000, 4_200_000, 0.9),
             w("ten", 4_100_000, 12_000_000, 0.9), // end beyond total
         ];
-        let n_samples = (total_duration_us as f64 / 1_000_000.0 * SAMPLE_RATE_HZ) as usize;
+        let n_samples = timing_us_to_sample(total_duration_us, SAMPLE_RATE_HZ);
         let samples = vec![0.3_f32; n_samples];
 
         sanitize_word_timestamps(&mut words, total_duration_us);
@@ -1619,7 +1664,7 @@ mod precision_benchmarks {
                 )
             })
             .collect();
-        let n_samples = (total_duration_us as f64 / 1_000_000.0 * SAMPLE_RATE_HZ) as usize;
+        let n_samples = timing_us_to_sample(total_duration_us, SAMPLE_RATE_HZ);
         let samples = vec![0.4_f32; n_samples];
 
         sanitize_word_timestamps(&mut words, total_duration_us);

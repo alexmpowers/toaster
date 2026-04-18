@@ -1,0 +1,31 @@
+{
+  "sample_rate": 48000,
+  "source": "overlap_01.wav",
+  "clean_edit": "overlap_01_edited_clean.wav",
+  "leaky_edit": "overlap_01_edited_leaky.wav",
+  "preview": "overlap_01_preview.wav",
+  "stems_dir": "overlap_01_stems",
+  "deleted_word_stem": "overlap_01_stems/word_02.wav",
+  "keep_segments": [
+    {
+      "start": 0.0,
+      "end": 0.68
+    },
+    {
+      "start": 1.0,
+      "end": 1.6
+    }
+  ],
+  "seams_in_edit": [
+    {
+      "index": 0,
+      "sample": 32640
+    }
+  ],
+  "expected_final_transcript": [
+    "four_forty",
+    "the_1",
+    "eight_eighty"
+  ],
+  "notes": "Regression guard for forced-alignment overlap on repeated adjacent tokens ('the the'). word_01.end_us=700_000 overlaps word_02.start_us=680_000; deleting word_02 must clamp seg1 end to word_02.start_us, not word_01.end_us. Leaky variant simulates pre-clamp bug (20 ms of 660 Hz word_02 onset leaks into the edit). word_00=440Hz 'A', word_01/word_02=660Hz 'the the', word_03=880Hz 'B'. Regenerate via _generate_overlap_01.py."
+}

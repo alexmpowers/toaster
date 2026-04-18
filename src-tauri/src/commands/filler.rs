@@ -103,10 +103,7 @@ pub fn analyze_fillers(
 /// Auto-delete all detected filler words in the transcript.
 #[tauri::command]
 #[specta::specta]
-pub fn delete_fillers(
-    app: tauri::AppHandle,
-    store: State<EditorStore>,
-) -> Result<usize, String> {
+pub fn delete_fillers(app: tauri::AppHandle, store: State<EditorStore>) -> Result<usize, String> {
     let settings = crate::settings::get_settings(&app);
     let filler_list = settings.custom_filler_words.clone().unwrap_or_default();
 
@@ -257,6 +254,7 @@ pub struct CleanupResult {
 pub fn cleanup_all(
     app: tauri::AppHandle,
     store: State<EditorStore>,
+    media_store: State<'_, crate::managers::media::MediaStore>,
     min_pause_us: Option<i64>,
     max_gap_us: Option<i64>,
 ) -> Result<CleanupResult, String> {
@@ -271,6 +269,31 @@ pub fn cleanup_all(
     let _threshold = min_pause_us.unwrap_or(filler::DEFAULT_PAUSE_THRESHOLD_US);
     let _max_gap = max_gap_us.unwrap_or(filler::DEFAULT_MAX_GAP_US);
 
+    // Audio-aware survivor selection requires the source audio. When a
+    // media file is loaded we decode once up front and reuse it for every
+    // cleanup pass; when it isn't we fall back to the positional rule so
+    // offline unit tests keep working. The live app always has media
+    // loaded, so this is the expected path in practice.
+    let smart_audio: Option<(Vec<f32>, u32)> = {
+        let media_path = {
+            let media = media_store.0.lock().unwrap();
+            media.current().map(|m| m.path.clone())
+        };
+        match media_path {
+            Some(path) => match crate::commands::disfluency::decode_media_audio(&path) {
+                Ok(samples) => Some((samples, 16_000u32)),
+                Err(e) => {
+                    log::warn!(
+                        "cleanup_all: audio decode failed, falling back to positional collapse: {}",
+                        e
+                    );
+                    None
+                }
+            },
+            None => None,
+        }
+    };
+
     let mut state = store.0.lock().unwrap();
     state.push_undo_snapshot();
 
@@ -279,7 +302,7 @@ pub fn cleanup_all(
     let mut passes: usize = 0;
     const MAX_PASSES: usize = 10;
 
-    // Iterative loop: delete fillers → delete new duplicates → repeat
+    // Iterative loop: delete fillers → collapse repeat groups → repeat
     // Use direct word mutation to avoid undo snapshot per word
     loop {
         passes += 1;
@@ -298,8 +321,20 @@ pub fn cleanup_all(
             changed = true;
         }
 
-        // Detect and delete duplicates (may have emerged after filler deletion)
-        let dup_indices = filler::detect_duplicates(state.get_words());
+        // Collapse repeat groups. Audio-aware when we have samples; when
+        // we don't, `detect_duplicates` returns the positional second-
+        // word rule as a documented fallback.
+        let dup_indices: Vec<usize> = match smart_audio.as_ref() {
+            Some((samples, sr)) => {
+                let (_decisions, indices) = crate::commands::disfluency::plan_smart_collapse(
+                    state.get_words(),
+                    samples,
+                    *sr,
+                );
+                indices
+            }
+            None => filler::detect_duplicates(state.get_words()),
+        };
         if !dup_indices.is_empty() {
             let words = state.get_words_mut();
             for &idx in &dup_indices {

@@ -176,23 +176,20 @@ pub fn detect_fillers(words: &[Word], config: &FillerConfig) -> Vec<usize> {
                 .collect::<Vec<_>>()
                 .join(" ");
 
-            if filler_set
-                .iter()
-                .any(|(exact, fuzzy, len)| {
-                    if *len != window {
-                        return false;
-                    }
-                    if *exact == phrase {
-                        return true;
-                    }
-                    // Fuzzy match for single-word fillers
-                    if window == 1 {
-                        let norm_phrase = normalize_filler(&phrase);
-                        return *fuzzy == norm_phrase;
-                    }
-                    false
-                })
-            {
+            if filler_set.iter().any(|(exact, fuzzy, len)| {
+                if *len != window {
+                    return false;
+                }
+                if *exact == phrase {
+                    return true;
+                }
+                // Fuzzy match for single-word fillers
+                if window == 1 {
+                    let norm_phrase = normalize_filler(&phrase);
+                    return *fuzzy == norm_phrase;
+                }
+                false
+            }) {
                 for offset in 0..window {
                     indices.push(active[ai + offset]);
                 }
@@ -207,9 +204,10 @@ pub fn detect_fillers(words: &[Word], config: &FillerConfig) -> Vec<usize> {
             // explicit for clarity).
             let norm = normalize(&words[wi].text);
             let fuzzy_norm = normalize_filler(&norm);
-            if filler_set.iter().any(|(exact, fuzzy, len)| {
-                *len == 1 && (*exact == norm || *fuzzy == fuzzy_norm)
-            }) {
+            if filler_set
+                .iter()
+                .any(|(exact, fuzzy, len)| *len == 1 && (*exact == norm || *fuzzy == fuzzy_norm))
+            {
                 indices.push(wi);
             }
         }
@@ -583,7 +581,7 @@ mod tests {
     fn analyze_returns_fillers_and_pauses() {
         let words = vec![
             word("so", 0, 200_000),       // "so" IS a default filler
-            word("um", 300_000, 500_000),  // filler
+            word("um", 300_000, 500_000), // filler
             word("hello", 600_000, 1_000_000),
             word("world", 3_000_000, 3_500_000), // 2s gap after "hello"
         ];
@@ -782,18 +780,24 @@ mod tests {
     #[test]
     fn trim_handles_empty_and_single() {
         let mut empty: Vec<Word> = vec![];
-        assert_eq!(trim_pauses(&mut empty, DEFAULT_PAUSE_THRESHOLD_US, DEFAULT_MAX_GAP_US), 0);
+        assert_eq!(
+            trim_pauses(&mut empty, DEFAULT_PAUSE_THRESHOLD_US, DEFAULT_MAX_GAP_US),
+            0
+        );
 
         let mut single = vec![word("hello", 0, 500_000)];
-        assert_eq!(trim_pauses(&mut single, DEFAULT_PAUSE_THRESHOLD_US, DEFAULT_MAX_GAP_US), 0);
+        assert_eq!(
+            trim_pauses(&mut single, DEFAULT_PAUSE_THRESHOLD_US, DEFAULT_MAX_GAP_US),
+            0
+        );
     }
 
     #[test]
     fn trim_multiple_pauses_accumulate() {
         let mut words = vec![
             word("a", 0, 500_000),
-            word("b", 2_500_000, 3_000_000),    // 2s gap
-            word("c", 5_000_000, 5_500_000),    // 2s gap after b
+            word("b", 2_500_000, 3_000_000), // 2s gap
+            word("c", 5_000_000, 5_500_000), // 2s gap after b
         ];
         let count = trim_pauses(&mut words, DEFAULT_PAUSE_THRESHOLD_US, DEFAULT_MAX_GAP_US);
         assert_eq!(count, 2);
@@ -833,8 +837,8 @@ mod tests {
     fn tighten_cumulative_shift() {
         let mut words = vec![
             word("a", 0, 500_000),
-            word("b", 1_000_000, 1_500_000),  // 500ms gap → excess 250ms
-            word("c", 2_500_000, 3_000_000),  // 1000ms gap → excess 750ms
+            word("b", 1_000_000, 1_500_000), // 500ms gap → excess 250ms
+            word("c", 2_500_000, 3_000_000), // 1000ms gap → excess 750ms
         ];
         let count = tighten_gaps(&mut words, DEFAULT_TIGHTEN_TARGET_US);
         assert_eq!(count, 2);
@@ -894,47 +898,47 @@ mod tests {
         // like the uh the the difference is gonna be noticeable kind of on
         // first use."
         let mut words = vec![
-            word("Yeah,", 0, 400_000),           // 0
-            word("so", 500_000, 700_000),         // 1
-            word("the", 800_000, 1_000_000),      // 2
-            word("um", 1_100_000, 1_300_000),     // 3  ← filler
-            word("the", 1_400_000, 1_600_000),    // 4  ← dup
-            word("the", 1_700_000, 1_900_000),    // 5  ← dup
-            word("best", 2_000_000, 2_200_000),   // 6
-            word("best", 2_300_000, 2_500_000),   // 7  ← dup
-            word("part", 2_600_000, 2_800_000),   // 8
-            word("about", 2_900_000, 3_100_000),  // 9
-            word("a", 3_200_000, 3_300_000),      // 10
-            word("lot", 3_400_000, 3_600_000),    // 11
-            word("of", 3_700_000, 3_800_000),     // 12
-            word("this", 3_900_000, 4_100_000),   // 13
-            word("is", 4_200_000, 4_400_000),     // 14
-            word("how", 4_500_000, 4_700_000),    // 15
-            word("it", 4_800_000, 4_900_000),     // 16
-            word("can", 5_000_000, 5_200_000),    // 17
-            word("really", 5_300_000, 5_500_000), // 18
-            word("transform", 5_600_000, 5_900_000), // 19
-            word("the", 6_000_000, 6_200_000),    // 20
-            word("way", 6_300_000, 6_500_000),    // 21
-            word("you", 6_600_000, 6_800_000),    // 22
-            word("sound.", 6_900_000, 7_200_000), // 23
-            word("And", 7_400_000, 7_600_000),    // 24
-            word("um", 7_700_000, 7_900_000),     // 25 ← filler
-            word("like", 8_000_000, 8_200_000),   // 26 ← filler
-            word("the", 8_300_000, 8_500_000),    // 27
-            word("uh", 8_600_000, 8_800_000),     // 28 ← filler
-            word("the", 8_900_000, 9_100_000),    // 29 ← dup
-            word("the", 9_200_000, 9_400_000),    // 30 ← dup
-            word("difference", 9_500_000, 9_900_000), // 31
-            word("is", 10_000_000, 10_200_000),   // 32
-            word("gonna", 10_300_000, 10_500_000), // 33
-            word("be", 10_600_000, 10_800_000),   // 34
+            word("Yeah,", 0, 400_000),                  // 0
+            word("so", 500_000, 700_000),               // 1
+            word("the", 800_000, 1_000_000),            // 2
+            word("um", 1_100_000, 1_300_000),           // 3  ← filler
+            word("the", 1_400_000, 1_600_000),          // 4  ← dup
+            word("the", 1_700_000, 1_900_000),          // 5  ← dup
+            word("best", 2_000_000, 2_200_000),         // 6
+            word("best", 2_300_000, 2_500_000),         // 7  ← dup
+            word("part", 2_600_000, 2_800_000),         // 8
+            word("about", 2_900_000, 3_100_000),        // 9
+            word("a", 3_200_000, 3_300_000),            // 10
+            word("lot", 3_400_000, 3_600_000),          // 11
+            word("of", 3_700_000, 3_800_000),           // 12
+            word("this", 3_900_000, 4_100_000),         // 13
+            word("is", 4_200_000, 4_400_000),           // 14
+            word("how", 4_500_000, 4_700_000),          // 15
+            word("it", 4_800_000, 4_900_000),           // 16
+            word("can", 5_000_000, 5_200_000),          // 17
+            word("really", 5_300_000, 5_500_000),       // 18
+            word("transform", 5_600_000, 5_900_000),    // 19
+            word("the", 6_000_000, 6_200_000),          // 20
+            word("way", 6_300_000, 6_500_000),          // 21
+            word("you", 6_600_000, 6_800_000),          // 22
+            word("sound.", 6_900_000, 7_200_000),       // 23
+            word("And", 7_400_000, 7_600_000),          // 24
+            word("um", 7_700_000, 7_900_000),           // 25 ← filler
+            word("like", 8_000_000, 8_200_000),         // 26 ← filler
+            word("the", 8_300_000, 8_500_000),          // 27
+            word("uh", 8_600_000, 8_800_000),           // 28 ← filler
+            word("the", 8_900_000, 9_100_000),          // 29 ← dup
+            word("the", 9_200_000, 9_400_000),          // 30 ← dup
+            word("difference", 9_500_000, 9_900_000),   // 31
+            word("is", 10_000_000, 10_200_000),         // 32
+            word("gonna", 10_300_000, 10_500_000),      // 33
+            word("be", 10_600_000, 10_800_000),         // 34
             word("noticeable", 10_900_000, 11_300_000), // 35
-            word("kind", 11_400_000, 11_600_000), // 36 ← filler (kind of)
-            word("of", 11_700_000, 11_900_000),   // 37 ← filler (kind of)
-            word("on", 12_000_000, 12_200_000),   // 38
-            word("first", 12_300_000, 12_500_000), // 39
-            word("use.", 12_600_000, 12_800_000), // 40
+            word("kind", 11_400_000, 11_600_000),       // 36 ← filler (kind of)
+            word("of", 11_700_000, 11_900_000),         // 37 ← filler (kind of)
+            word("on", 12_000_000, 12_200_000),         // 38
+            word("first", 12_300_000, 12_500_000),      // 39
+            word("use.", 12_600_000, 12_800_000),       // 40
         ];
 
         let config = default_config();
@@ -966,10 +970,35 @@ mod tests {
         assert_eq!(
             remaining,
             vec![
-                "Yeah,", "the", "best", "part", "about", "a", "lot",
-                "of", "this", "is", "how", "it", "can", "really", "transform",
-                "the", "way", "you", "sound.", "And", "the", "difference",
-                "is", "gonna", "be", "noticeable", "on", "first", "use.",
+                "Yeah,",
+                "the",
+                "best",
+                "part",
+                "about",
+                "a",
+                "lot",
+                "of",
+                "this",
+                "is",
+                "how",
+                "it",
+                "can",
+                "really",
+                "transform",
+                "the",
+                "way",
+                "you",
+                "sound.",
+                "And",
+                "the",
+                "difference",
+                "is",
+                "gonna",
+                "be",
+                "noticeable",
+                "on",
+                "first",
+                "use.",
             ]
         );
 
@@ -1003,9 +1032,6 @@ mod tests {
         }
 
         // Sanity: we should have at least 2 segments (gap around deleted regions)
-        assert!(
-            !segments.is_empty(),
-            "expected non-empty keep-segments"
-        );
+        assert!(!segments.is_empty(), "expected non-empty keep-segments");
     }
 }

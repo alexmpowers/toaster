@@ -1,0 +1,38 @@
+{
+  "_comment": "Cleanup verifier fixture. The input is a transcript with three explicit fillers (indices 0, 4, 6) and one filler inside a quote (index 2, 'um', quoted — must NOT be deleted). The desired_kept_indices encode the ground-truth cleaning: remove the three non-quoted fillers, keep everything else. Candidates exercise the classic failure modes: perfect, over-delete (also removes content), under-delete (leaves a filler), and quote-violation (removes the quoted 'um'). The cleanup verifier tournament must rank 'rule_v1_perfect' first.",
+  "fixture": "intro_with_quote",
+  "audio_path": null,
+  "oracle_words": [
+    { "text": "um",       "start_us":       0, "end_us":  180000, "is_filler": true,  "in_quote": false },
+    { "text": "so",       "start_us":  240000, "end_us":  420000, "is_filler": false, "in_quote": false },
+    { "text": "he",       "start_us":  480000, "end_us":  620000, "is_filler": false, "in_quote": false },
+    { "text": "said",     "start_us":  680000, "end_us":  900000, "is_filler": false, "in_quote": false },
+    { "text": "\"um\"",   "start_us":  960000, "end_us": 1120000, "is_filler": true,  "in_quote": true  },
+    { "text": "right",    "start_us": 1180000, "end_us": 1380000, "is_filler": false, "in_quote": false },
+    { "text": "then",     "start_us": 1440000, "end_us": 1640000, "is_filler": false, "in_quote": false },
+    { "text": "uh",       "start_us": 1700000, "end_us": 1880000, "is_filler": true,  "in_quote": false },
+    { "text": "we",       "start_us": 1940000, "end_us": 2080000, "is_filler": false, "in_quote": false },
+    { "text": "left",     "start_us": 2140000, "end_us": 2400000, "is_filler": false, "in_quote": false },
+    { "text": "you",      "start_us": 2460000, "end_us": 2600000, "is_filler": false, "in_quote": false },
+    { "text": "know",     "start_us": 2660000, "end_us": 2860000, "is_filler": true,  "in_quote": false }
+  ],
+  "desired_kept_indices": [1, 2, 3, 4, 5, 6, 8, 9, 10],
+  "candidates": [
+    {
+      "name": "rule_v1_perfect",
+      "kept_indices": [1, 2, 3, 4, 5, 6, 8, 9, 10]
+    },
+    {
+      "name": "aggressive_overdelete",
+      "kept_indices": [1, 2, 3, 4, 5, 6, 9, 10]
+    },
+    {
+      "name": "conservative_underdelete",
+      "kept_indices": [0, 1, 2, 3, 4, 5, 6, 8, 9, 10]
+    },
+    {
+      "name": "quote_violation",
+      "kept_indices": [1, 2, 3, 5, 6, 8, 9, 10]
+    }
+  ]
+}

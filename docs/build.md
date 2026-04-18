@@ -77,28 +77,6 @@ It runs environment setup, starts `npm run tauri dev`, and prints:
 - `launch_logs_stdout=...` and `launch_logs_stderr=...` (captured logs)
 - `launch_status=launched_ok|launched_with_errors|failed_to_launch`
 
-### Automated midstream live validation (no manual playback loop)
-
-Run the backend media-pipeline harness against a real file (defaults to `C:\Users\alexm\Downloads\AddReleaseItem.mp4`):
-
-```powershell
-.\scripts\run-live-midstream-validation.ps1
-```
-
-Override media path/output directory:
-
-```powershell
-.\scripts\run-live-midstream-validation.ps1 -MediaPath "C:\path\to\file.mp4" -OutputDir "C:\temp\toaster-live-validation"
-```
-
-Optionally set the local Whisper model file used by the ASR leakage oracle:
-
-```powershell
-.\scripts\run-live-midstream-validation.ps1 -AsrModelPath "C:\path\to\ggml-small.bin"
-```
-
-The run writes `live-validation-report.json` to the output directory with objective pass/fail metrics (duration parity, boundary parity, seam artifact checks, ASR leakage oracle). The ASR oracle fails explicitly if `TOASTER_LIVE_ASR_MODEL_PATH` is missing or invalid.
-
 ### Offline local LLM eval gate (cleanup + precision + ASR oracle)
 
 Run the combined offline rollout gate:

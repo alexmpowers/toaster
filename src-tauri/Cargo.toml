@@ -45,6 +45,8 @@ cpal = "0.16.0"
 anyhow = "1.0.95"
 rubato = "0.16.2"
 hound = "3.5.1"
+ebur128 = "0.1"
+rustfft = "6"
 log = "0.4.25"
 env_filter = "0.1.0"
 tokio = "1.43.0"
@@ -65,6 +67,7 @@ specta = "=2.0.0-rc.22"
 specta-typescript = "0.0.9"
 tauri-specta = { version = "=2.0.0-rc.21", features = ["derive", "typescript"] }
 tauri-plugin-dialog = "2.6"
+fontdue = "0.9"
 
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]

@@ -29,7 +29,7 @@ pub use sanitize::{
     sanitize_post_process_model,
 };
 pub use types::{
-    AppSettings, LLMPrompt, LogLevel, ModelUnloadTimeout, OrtAcceleratorSetting,
+    AppSettings, CaptionFontFamily, LLMPrompt, LogLevel, ModelUnloadTimeout, OrtAcceleratorSetting,
     PostProcessProvider, RecordingRetentionPeriod, WhisperAcceleratorSetting,
 };
 

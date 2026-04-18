@@ -175,7 +175,7 @@ describe("settingsStore", () => {
   // ── getSetting / isUpdatingKey ──────────────────────────────────
   describe("getSetting / isUpdatingKey", () => {
     it("returns undefined when settings are null", () => {
-      expect(useSettingsStore.getState().getSetting("push_to_talk")).toBeUndefined();
+      expect(useSettingsStore.getState().getSetting("debug_mode")).toBeUndefined();
     });
 
     it("returns the value when settings exist", () => {

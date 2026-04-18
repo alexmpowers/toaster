@@ -336,15 +336,6 @@
         "cancel": "Cancel",
         "selectToEdit": "Select a prompt above to view and edit its details.",
         "createFirst": "Click 'Create New Prompt' above to create your first post-processing prompt."
-      },
-      "review": {
-        "title": "Review Local Cleanup",
-        "description": "Choose whether to apply the cleaned transcript before final output.",
-        "originalLabel": "Original Transcript",
-        "cleanedLabel": "Cleaned Transcript",
-        "reject": "Reject",
-        "accept": "Accept",
-        "resolveError": "Failed to submit your cleanup decision."
       }
     },
     "history": {

@@ -1,6 +1,6 @@
 ---
 name: eval-harness-runner
-description: 'Use to run the Toaster precision / midstream / export evals with one command and produce a pass/fail JSON consumable by CI. Wraps scripts/eval-edit-quality.ps1, scripts/run-live-midstream-validation.ps1, and the cargo precision test.'
+description: 'Use to run the Toaster precision / boundary / export evals with one command and produce a pass/fail JSON consumable by CI. Wraps scripts/eval-edit-quality.ps1, scripts/eval-audio-boundary.ps1, and the cargo precision test.'
 model: inherit
 ---
 
@@ -31,15 +31,15 @@ cargo test precision_eval -- --nocapture
 
 Record: pass/fail, number of assertions, runtime.
 
-### 3. Midstream-deletion replay
+### 3. Audio-boundary eval
 
 ```powershell
-pwsh scripts/run-live-midstream-validation.ps1
+pwsh scripts/eval-audio-boundary.ps1
 ```
 
-If the script requires the app running, launch it first via `.\scripts\launch-toaster-monitored.ps1 -ObservationSeconds 120` and wait for the ready signal.
+Runs the five sample-resolution gates (leak xcorr, seam z-score, preview↔export parity, WER, sample-boundary quantization) against the checked-in `phrase_01` and `multicut_01` fixtures. Headless — no app, no proprietary assets.
 
-Record: pass/fail, any "audible remnant" flags, cycle count completed.
+Record: pass/fail per fixture, worst-seam metrics, fixture variant.
 
 ### 4. Export parity
 
@@ -83,9 +83,9 @@ Produce `eval-harness-report.json` with the shape:
       "notes": ""
     },
     {
-      "name": "midstream",
+      "name": "audio_boundary",
       "status": "pass|fail|skip|error",
-      "details": { "cycles_completed": 5, "remnants_detected": 0 }
+      "details": { "fixtures": ["phrase_01", "multicut_01"], "failed_gates": [] }
     },
     {
       "name": "export_parity",

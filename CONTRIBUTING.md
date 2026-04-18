@@ -10,7 +10,7 @@ Thanks for contributing.
 
 ## Development setup
 
-See [BUILD.md](BUILD.md) for full setup.
+See [docs/build.md](docs/build.md) for full setup.
 
 Quick path:
 
@@ -59,5 +59,5 @@ npm run lint
 If behavior or workflows changed, update relevant docs in the same PR:
 
 - `README.md`
-- `BUILD.md`
+- `docs/build.md`
 - `AGENTS.md` / `.github/copilot-instructions.md` when agent behavior guidance changed

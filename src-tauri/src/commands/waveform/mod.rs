@@ -6,17 +6,41 @@ use tauri::{AppHandle, State};
 use crate::commands::editor::EditorStore;
 use crate::managers::editor::{EditorState, TimingContractSnapshot};
 use crate::managers::media::MediaStore;
+use crate::managers::splice::boundaries::{
+    snap_segments_energy_biased, DEFAULT_ENERGY_RADIUS_US, DEFAULT_SNAP_RADIUS_US,
+};
 
 mod preview_cache;
 use preview_cache::{
-    cleanup_preview_cache, edit_version_token, invalidate_preview_cache_entries,
-    preview_cache_dir, preview_generation_token, preview_output_path, source_media_fingerprint,
-    urlencoding,
+    cleanup_preview_cache, edit_version_token, invalidate_preview_cache_entries, preview_cache_dir,
+    preview_generation_token, preview_output_path, source_media_fingerprint, urlencoding,
 };
 
-const EXPORT_SEAM_FADE_US: i64 = 10_000;
-const PREVIEW_SEAM_FADE_US: i64 = 0;
+/// Seam fade applied symmetrically on both the preview and export paths.
+/// 20 ms matches one AAC MDCT window (~23 ms at 44.1 kHz), so the codec sees a
+/// full frame of continuous material across every edit seam. Per AGENTS.md's
+/// dual-path rule this is a single constant — preview and export MUST NOT
+/// drift (previously EXPORT_SEAM_FADE_US=10ms vs PREVIEW_SEAM_FADE_US=0 was a
+/// dual-path violation). See todo p0-waveform-boundary-policy.
+const SEAM_FADE_US: i64 = 20_000;
+
 const FIRST_BOUNDARY_FADE_US: i64 = 2_000;
+
+/// Pre-speech padding removed from the outer edges of the first/last kept
+/// segment when the transcription engine is known to include significant
+/// leading/trailing silence in its word timestamps (notably Parakeet).
+/// Whisper and unknown engines get 0 µs — the previous unconditional 300 ms
+/// trim was amputating the first/last kept word on those engines. Callers
+/// that know they're in Parakeet territory pass PARAKEET_OUTER_TRIM_US; all
+/// others pass 0. See todo p0-waveform-boundary-policy.
+//
+// Forward-looking infrastructure from todo p0-waveform-boundary-policy. No
+// caller passes this constant yet because the engine type isn't plumbed
+// through EditorState; it will be consumed once the adapter trait lands.
+// TODO(p1-adapter-trait): wire engine_type through EditorState and pass this
+// constant from the Parakeet-aware site.
+#[allow(dead_code)]
+const PARAKEET_OUTER_TRIM_US: i64 = 300_000;
 /// FFmpeg preview render timeout (10 minutes).
 const PREVIEW_RENDER_TIMEOUT: Duration = Duration::from_secs(600);
 /// FFmpeg export timeout (30 minutes).
@@ -46,7 +70,7 @@ fn is_valid_hex_color(s: &str) -> bool {
     (h.len() == 6 || h.len() == 8) && h.chars().all(|c| c.is_ascii_hexdigit())
 }
 
-fn probe_video_dimensions(path: &str) -> Option<(u32, u32)> {
+pub(crate) fn probe_video_dimensions(path: &str) -> Option<(u32, u32)> {
     let output = std::process::Command::new("ffprobe")
         .args([
             "-v",
@@ -246,7 +270,7 @@ fn build_audio_segment_filter(
 }
 
 fn build_audio_concat_filter(segments: &[(i64, i64)]) -> String {
-    build_audio_concat_filter_with_fade(segments, EXPORT_SEAM_FADE_US)
+    build_audio_concat_filter_with_fade(segments, SEAM_FADE_US)
 }
 
 fn build_audio_concat_filter_with_fade(segments: &[(i64, i64)], seam_fade_us: i64) -> String {
@@ -258,6 +282,78 @@ fn build_audio_concat_filter_with_fade(segments: &[(i64, i64)], seam_fade_us: i6
     let a_inputs: String = (0..n).map(|i| format!("[a{i}]")).collect();
     filter_parts.push(format!("{a_inputs}concat=n={n}:v=0:a=1[outa]"));
     filter_parts.join("; ")
+}
+
+/// Project silenced source-time ranges onto the edited timeline.
+///
+/// Silenced ranges live in source-time (returned by
+/// `EditorState::get_silenced_ranges`); this function clips each range to
+/// the portion(s) that survive inside the keep-segments and rewrites them
+/// into the post-concat edit-time space that the silence filter uses.
+///
+/// Overlapping or adjacent output ranges are merged so the emitted
+/// `volume=enable='between(...)'` chain never double-applies to the same
+/// sample window.
+fn silenced_edit_time_ranges(
+    silenced_source_ranges: &[(i64, i64)],
+    keep_segments: &[(i64, i64)],
+) -> Vec<(i64, i64)> {
+    let mut out = Vec::new();
+    let mut elapsed: i64 = 0;
+    for (ks, ke) in keep_segments {
+        let seg_dur = (ke - ks).max(0);
+        for (ss, se) in silenced_source_ranges {
+            let lo = (*ss).max(*ks);
+            let hi = (*se).min(*ke);
+            if hi > lo {
+                out.push((elapsed + (lo - ks), elapsed + (hi - ks)));
+            }
+        }
+        elapsed += seg_dur;
+    }
+    out.sort_by_key(|r| r.0);
+    let mut merged: Vec<(i64, i64)> = Vec::new();
+    for (s, e) in out {
+        if let Some(last) = merged.last_mut() {
+            if s <= last.1 {
+                last.1 = last.1.max(e);
+                continue;
+            }
+        }
+        merged.push((s, e));
+    }
+    merged
+}
+
+/// Build a `volume=enable='between(t,S,E)':volume=0` chain that mutes each
+/// supplied edit-time range on the final post-concat audio stream.
+///
+/// Silenced ranges are purely multiplicative (volume=0), so they compose
+/// cleanly with the seam-fade policy applied inside the per-segment atrim
+/// branches — silenced audio inside a keep-segment rides over the segment
+/// interior, not the seam, so there is no double-fade risk.
+fn silence_filter_chain(edit_ranges: &[(i64, i64)]) -> Option<String> {
+    if edit_ranges.is_empty() {
+        return None;
+    }
+    let filters: Vec<String> = edit_ranges
+        .iter()
+        .map(|(s, e)| {
+            let ss = *s as f64 / 1_000_000.0;
+            let ee = *e as f64 / 1_000_000.0;
+            format!("volume=enable='between(t,{ss:.6},{ee:.6})':volume=0")
+        })
+        .collect();
+    Some(filters.join(","))
+}
+
+/// Append a silence gate chain to an existing `[outa]`-sinking filter_complex
+/// graph, renaming the current sink and re-terminating at `[outa]`.
+fn append_silence_gate(filter: &mut String, edit_ranges: &[(i64, i64)]) {
+    if let Some(gate) = silence_filter_chain(edit_ranges) {
+        *filter = filter.replace("[outa]", "[outa_raw]");
+        filter.push_str(&format!("; [outa_raw]{gate}[outa]"));
+    }
 }
 
 /// Canonical keep-segments for preview/export paths.
@@ -306,6 +402,21 @@ fn canonical_keep_segments_for_media(
     state: &EditorState,
     experimental_simplify_mode: bool,
 ) -> Vec<(i64, i64)> {
+    // Default: no outer trim (Whisper / unknown engines — see todo
+    // p0-waveform-boundary-policy). Callers that know they're running a
+    // transcription engine whose word timestamps include significant
+    // pre-speech padding (Parakeet) should use
+    // `canonical_keep_segments_for_media_with_options` and pass
+    // `PARAKEET_OUTER_TRIM_US`. Seam fades ride inside kept segments (see
+    // `build_audio_segment_filter`); no seam-edge extension is applied.
+    canonical_keep_segments_for_media_with_options(state, experimental_simplify_mode, 0)
+}
+
+fn canonical_keep_segments_for_media_with_options(
+    state: &EditorState,
+    experimental_simplify_mode: bool,
+    outer_trim_us: i64,
+) -> Vec<(i64, i64)> {
     let snapshot = state.timing_contract_snapshot();
     let legacy_segments = state.get_keep_segments();
     let mut raw =
@@ -337,20 +448,20 @@ fn canonical_keep_segments_for_media(
         }
     }
 
-    // Trim outer boundaries to reduce leading/trailing silence padding
-    // from ASR word timestamps (Parakeet includes significant pre-speech padding).
-    // Use aggressive trim (up to 50% of first/last segment, capped at 300ms)
-    // since the outer edges are most likely to have dead air.
-    const MAX_OUTER_TRIM_US: i64 = 300_000; // cap at 300ms
-    if !normalized.is_empty() {
+    // Outer-edge trim: only applied when the caller knows the transcription
+    // engine pads the first/last word with silence (Parakeet). See todo
+    // p0-waveform-boundary-policy — the previous unconditional 300 ms trim
+    // was amputating the first/last kept word on Whisper and any other
+    // engine.
+    if outer_trim_us > 0 && !normalized.is_empty() {
         let first = &mut normalized[0];
         let seg_dur = first.1 - first.0;
-        let trim = (seg_dur / 2).min(MAX_OUTER_TRIM_US);
+        let trim = (seg_dur / 2).min(outer_trim_us);
         first.0 += trim;
 
         let last = normalized.last_mut().unwrap();
         let seg_dur = last.1 - last.0;
-        let trim = (seg_dur / 2).min(MAX_OUTER_TRIM_US);
+        let trim = (seg_dur / 2).min(outer_trim_us);
         last.1 -= trim;
     }
 
@@ -371,10 +482,62 @@ fn map_edit_time_to_source_time_from_segments(edit_time_us: i64, segments: &[(i6
     segments.last().map_or(0, |&(_, end)| end)
 }
 
+/// Snap every `(start_us, end_us)` pair to the nearest **energy valley**
+/// (plus zero-crossing) in the decoded source audio.
+///
+/// Zero-crossing snap alone eliminates the *click* at a seam but still lands
+/// the boundary at whichever ZC is arithmetically closest — which, right at
+/// the trailing edge of a deleted phoneme, is often a few ms *inside* that
+/// phoneme. The result is faint bleed-through of the deleted sound ("uh"
+/// after "And uh" → "And").
+///
+/// This energy-biased variant widens the search to ±`DEFAULT_ENERGY_RADIUS_US`
+/// (20 ms), picks the quietest short frame, then snaps that to the nearest
+/// zero-crossing within ±`DEFAULT_SNAP_RADIUS_US`. In voiced-only audio with
+/// no energy gradient the behaviour degenerates back to plain ZC snap.
+///
+/// Decodes the media exactly once (via `ffmpeg -f f32le`), so preview and
+/// export pay the same decode cost they already pay during the current
+/// render. Returns the input segments unchanged if decode fails — **never**
+/// regresses the current behavior.
+fn snap_segments_against_media(
+    segments: &[(i64, i64)],
+    media_path: &Path,
+) -> Vec<(i64, i64)> {
+    if segments.len() < 2 {
+        return segments.to_vec();
+    }
+    match crate::commands::disfluency::decode_media_audio(media_path) {
+        Ok(samples) => {
+            let snapped = snap_segments_energy_biased(
+                segments,
+                &samples,
+                16_000,
+                DEFAULT_ENERGY_RADIUS_US,
+                DEFAULT_SNAP_RADIUS_US,
+            );
+            if snapped.is_empty() {
+                segments.to_vec()
+            } else {
+                snapped
+            }
+        }
+        Err(e) => {
+            warn!(
+                "Zero-crossing snap skipped for {}: decode failed ({}). Falling back to original segments.",
+                media_path.display(),
+                e
+            );
+            segments.to_vec()
+        }
+    }
+}
+
 fn build_preview_render_args(
     input_path: &Path,
     output_path: &Path,
     segments: &[(i64, i64)],
+    silenced_source_ranges: &[(i64, i64)],
 ) -> Vec<String> {
     let mut args: Vec<String> = vec![
         "-y".to_string(),
@@ -383,7 +546,10 @@ fn build_preview_render_args(
         "-vn".to_string(),
     ];
 
-    let filter = build_audio_concat_filter_with_fade(segments, PREVIEW_SEAM_FADE_US);
+    // Preview and export share the same seam fade policy (dual-path rule).
+    let mut filter = build_audio_concat_filter_with_fade(segments, SEAM_FADE_US);
+    let silenced_edit_ranges = silenced_edit_time_ranges(silenced_source_ranges, segments);
+    append_silence_gate(&mut filter, &silenced_edit_ranges);
     args.extend([
         "-filter_complex".to_string(),
         filter,
@@ -473,9 +639,9 @@ fn build_export_args(
     segments: &[(i64, i64)],
     has_video: bool,
     audio_opts: &ExportAudioOptions,
-    srt_path: Option<&str>,
-    caption_style: &str,
-    video_size: Option<(u32, u32)>,
+    subtitle_path: Option<&str>,
+    fonts_dir: Option<&str>,
+    silenced_source_ranges: &[(i64, i64)],
 ) -> Vec<String> {
     let mut args: Vec<String> = vec!["-y".to_string(), "-i".to_string(), input_path.to_string()];
 
@@ -484,30 +650,46 @@ fn build_export_args(
         .map(|(s, e)| (e - s).max(0) as f64 / 1_000_000.0)
         .sum();
 
+    let silenced_edit_ranges = silenced_edit_time_ranges(silenced_source_ranges, segments);
+    let silence_gate = silence_filter_chain(&silenced_edit_ranges);
+
     if segments.len() == 1 {
         // Single segment — simple trim with re-encode for sample-accurate cuts
         let (start, end) = segments[0];
         extend_single_segment_export_args(&mut args, start, end, has_video);
-        if let Some(post_filter) = build_audio_post_filters(audio_opts, total_duration_s) {
-            args.extend(["-af".to_string(), post_filter]);
+        let post_filter = build_audio_post_filters(audio_opts, total_duration_s);
+        let combined_af = match (silence_gate.as_ref(), post_filter) {
+            (Some(gate), Some(pf)) => Some(format!("{gate},{pf}")),
+            (Some(gate), None) => Some(gate.clone()),
+            (None, Some(pf)) => Some(pf),
+            (None, None) => None,
+        };
+        if let Some(af) = combined_af {
+            args.extend(["-af".to_string(), af]);
         }
         // Burn-in subtitles via -vf for single-segment video exports
         if has_video {
-            if let Some(srt) = srt_path {
-                let escaped = escape_srt_path_for_ffmpeg(srt);
-                let size_param = match video_size {
-                    Some((w, h)) => format!(":original_size={w}x{h}"),
+            if let Some(sub) = subtitle_path {
+                let escaped = escape_srt_path_for_ffmpeg(sub);
+                let fonts_param = match fonts_dir {
+                    Some(dir) => format!(":fontsdir='{}'", escape_srt_path_for_ffmpeg(dir)),
                     None => String::new(),
                 };
                 args.extend([
                     "-vf".to_string(),
-                    format!("subtitles='{escaped}':force_style='{caption_style}'{size_param}"),
+                    format!("subtitles='{escaped}'{fonts_param}"),
                 ]);
             }
         }
     } else {
         // Multiple segments — filter_complex with trim/atrim + concat
         let post_filters = build_audio_post_filters(audio_opts, total_duration_s);
+        let combined_post = match (silence_gate.as_ref(), post_filters) {
+            (Some(gate), Some(pf)) => Some(format!("{gate},{pf}")),
+            (Some(gate), None) => Some(gate.clone()),
+            (None, Some(pf)) => Some(pf),
+            (None, None) => None,
+        };
 
         if has_video {
             let mut filter_parts = Vec::new();
@@ -518,17 +700,11 @@ fn build_export_args(
                 filter_parts.push(format!(
                     "[0:v]trim=start={start_s:.6}:end={end_s:.6},setpts=PTS-STARTPTS[v{i}]"
                 ));
-                filter_parts.push(build_audio_segment_filter(
-                    i,
-                    n,
-                    *start,
-                    *end,
-                    EXPORT_SEAM_FADE_US,
-                ));
+                filter_parts.push(build_audio_segment_filter(i, n, *start, *end, SEAM_FADE_US));
             }
             let v_inputs: String = (0..n).map(|i| format!("[v{i}]")).collect();
             let a_inputs: String = (0..n).map(|i| format!("[a{i}]")).collect();
-            if let Some(ref pf) = post_filters {
+            if let Some(ref pf) = combined_post {
                 filter_parts.push(format!(
                     "{v_inputs}concat=n={n}:v=1:a=0[outv]; {a_inputs}concat=n={n}:v=0:a=1[outa_raw]; [outa_raw]{pf}[outa]"
                 ));
@@ -539,14 +715,14 @@ fn build_export_args(
             }
 
             // Burn-in subtitles: chain after [outv] in filter_complex
-            let video_map_label = if let Some(srt) = srt_path {
-                let escaped = escape_srt_path_for_ffmpeg(srt);
-                let size_param = match video_size {
-                    Some((w, h)) => format!(":original_size={w}x{h}"),
+            let video_map_label = if let Some(sub) = subtitle_path {
+                let escaped = escape_srt_path_for_ffmpeg(sub);
+                let fonts_param = match fonts_dir {
+                    Some(dir) => format!(":fontsdir='{}'", escape_srt_path_for_ffmpeg(dir)),
                     None => String::new(),
                 };
                 filter_parts.push(format!(
-                    "[outv]subtitles='{escaped}':force_style='{caption_style}'{size_param}[outvs]"
+                    "[outv]subtitles='{escaped}'{fonts_param}[outvs]"
                 ));
                 "[outvs]"
             } else {
@@ -564,7 +740,7 @@ fn build_export_args(
             ]);
         } else {
             let mut filter = build_audio_concat_filter(segments);
-            if let Some(ref pf) = post_filters {
+            if let Some(ref pf) = combined_post {
                 filter = filter.replace("[outa]", "[outa_raw]");
                 filter.push_str(&format!("; [outa_raw]{pf}[outa]"));
             }
@@ -580,7 +756,6 @@ fn build_export_args(
     args.push(output_path.to_string());
     args
 }
-
 
 #[tauri::command]
 #[specta::specta]
@@ -630,6 +805,12 @@ pub fn get_keep_segments(
 /// This produces a filter_complex command that can be run with FFmpeg CLI
 /// to trim and concatenate the kept portions of the source media.
 ///
+/// Note: this diagnostic script reflects keep-segments only. Silenced words
+/// (from `EditorState::get_silenced_ranges`) are applied inside the live
+/// preview/export paths via a post-concat `volume=enable='between(...)'`
+/// gate (see `silence_filter_chain`) and are intentionally not reproduced
+/// here — the script is a debug aid, not a render-parity artifact.
+///
 /// Usage: `ffmpeg -i <input> -filter_complex "<output>" -map "[outv]" -map "[outa]" <output_file>`
 #[tauri::command]
 #[specta::specta]
@@ -668,10 +849,12 @@ pub fn generate_ffmpeg_edit_script(
         for (i, (start, end)) in segments.iter().enumerate() {
             let start_s = *start as f64 / 1_000_000.0;
             let end_s = *end as f64 / 1_000_000.0;
+            // Audio leg uses the same seam-fade policy as preview/export so
+            // the generated recipe matches the live render (AGENTS.md
+            // dual-path rule; todo p0-waveform-boundary-policy).
+            let audio_filter = build_audio_segment_filter(i, n, *start, *end, SEAM_FADE_US);
             filter_parts.push(format!(
-                "[0:v]trim=start={:.6}:end={:.6},setpts=PTS-STARTPTS[v{i}]; \
-                 [0:a]atrim=start={:.6}:end={:.6},asetpts=PTS-STARTPTS[a{i}]",
-                start_s, end_s, start_s, end_s
+                "[0:v]trim=start={start_s:.6}:end={end_s:.6},setpts=PTS-STARTPTS[v{i}]; {audio_filter}"
             ));
         }
 
@@ -695,6 +878,15 @@ pub fn generate_ffmpeg_edit_script(
 ///
 /// When words are deleted, the edited timeline is shorter than the source.
 /// This maps a position on the edit timeline to the corresponding source time.
+///
+/// Always drives the mapping from `canonical_keep_segments_for_media` — the
+/// same function the preview render (`render_temp_preview_audio`) and export
+/// use — so the cursor and the audio it's scrubbing over stay sample-aligned
+/// regardless of `experimental_simplify_mode`. The previous default path
+/// routed through `EditorState::map_edit_time_to_source_time`, which uses raw
+/// legacy keep-segments and drifted against the rendered audio whenever the
+/// two pipelines disagreed on seam placement. See splice-logic synthesis
+/// report.
 #[tauri::command]
 #[specta::specta]
 pub fn map_edit_to_source_time(
@@ -704,15 +896,11 @@ pub fn map_edit_to_source_time(
 ) -> Result<i64, String> {
     let experimental_simplify_mode = settings_experimental_simplify_mode_enabled(&app);
     let state = store.0.lock().unwrap();
-    if experimental_simplify_mode {
-        let segments = canonical_keep_segments_for_media(&state, true);
-        Ok(map_edit_time_to_source_time_from_segments(
-            edit_time_us,
-            &segments,
-        ))
-    } else {
-        Ok(state.map_edit_time_to_source_time(edit_time_us))
-    }
+    let segments = canonical_keep_segments_for_media(&state, experimental_simplify_mode);
+    Ok(map_edit_time_to_source_time_from_segments(
+        edit_time_us,
+        &segments,
+    ))
 }
 
 /// Render (or reuse) a temporary preview audio artifact for the current edit state.
@@ -725,12 +913,15 @@ pub async fn render_temp_preview_audio(
 ) -> Result<PreviewRenderMetadata, String> {
     let experimental_simplify_mode = settings_experimental_simplify_mode_enabled(&app);
     let render_started_at = Instant::now();
-    let segments = {
+    let (segments, silenced_ranges) = {
         let state = store.0.lock().unwrap();
-        canonical_keep_segments_for_media(&state, experimental_simplify_mode)
+        (
+            canonical_keep_segments_for_media(&state, experimental_simplify_mode),
+            state.get_silenced_ranges(),
+        )
     };
 
-    let edit_version = edit_version_token(&segments);
+    let edit_version = edit_version_token(&segments, &silenced_ranges);
 
     let media_info = {
         let state = media_store.0.lock().unwrap();
@@ -797,7 +988,13 @@ pub async fn render_temp_preview_audio(
             .unwrap_or(false);
 
     if !cache_hit {
-        let args = build_preview_render_args(&media.path, &output_path, &segments);
+        let snapped_segments = snap_segments_against_media(&segments, &media.path);
+        let args = build_preview_render_args(
+            &media.path,
+            &output_path,
+            &snapped_segments,
+            &silenced_ranges,
+        );
 
         let render_result = tokio::time::timeout(
             PREVIEW_RENDER_TIMEOUT,
@@ -873,11 +1070,12 @@ pub async fn export_edited_media(
     burn_captions: Option<bool>,
 ) -> Result<String, String> {
     let experimental_simplify_mode = settings_experimental_simplify_mode_enabled(&app);
-    let (segments, words) = {
+    let (segments, words, silenced_ranges) = {
         let state = store.0.lock().unwrap();
         let segs = canonical_keep_segments_for_media(&state, experimental_simplify_mode);
         let w = state.get_words().to_vec();
-        (segs, w)
+        let silenced = state.get_silenced_ranges();
+        (segs, w, silenced)
     };
 
     if segments.is_empty() {
@@ -897,20 +1095,31 @@ pub async fn export_edited_media(
         .to_lowercase();
     let has_video = matches!(ext.as_str(), "mp4" | "mkv" | "mov" | "avi" | "webm" | "flv");
 
-    // Generate temp SRT for burn-in captions when requested on video exports
-    let srt_temp_path = if burn_captions.unwrap_or(false) && has_video {
-        let config = crate::managers::export::ExportConfig::default();
-        let srt_content =
-            crate::managers::export::export_srt_for_edited_timeline(&words, &segments, &config);
-        let srt_file = std::path::Path::new(&output_path).with_extension("burn_captions.srt");
-        std::fs::write(&srt_file, &srt_content)
-            .map_err(|e| format!("Failed to write temp SRT: {}", e))?;
-        Some(srt_file)
+    // Generate temp ASS for burn-in captions when requested on video exports.
+    // The ASS file is produced from the authoritative `CaptionBlock` stream so
+    // the export matches the preview exactly — rounded corners, Inter/Roboto
+    // font, pixel-width wrapping, and consistent padding. See
+    // `managers::captions::ass` for the document schema.
+    let video_dims = probe_video_dimensions(input.to_str().unwrap_or(""));
+    let frame_size = video_dims.unwrap_or_else(|| {
+        log::warn!("Could not probe video dimensions for caption layout, assuming 1920x1080");
+        (1920, 1080)
+    });
+
+    let settings = crate::settings::get_settings(&app);
+    let ass_temp_path = if burn_captions.unwrap_or(false) && has_video {
+        let blocks = crate::commands::export::build_caption_blocks_for_export(
+            &words, &segments, &settings, frame_size,
+        );
+        let doc = crate::managers::captions::blocks_to_ass(&blocks);
+        let ass_file = std::path::Path::new(&output_path).with_extension("burn_captions.ass");
+        std::fs::write(&ass_file, &doc)
+            .map_err(|e| format!("Failed to write temp ASS: {}", e))?;
+        Some(ass_file)
     } else {
         None
     };
 
-    let settings = crate::settings::get_settings(&app);
     let audio_opts = ExportAudioOptions {
         normalize_audio: settings.normalize_audio_on_export,
         volume_db: settings.export_volume_db.clamp(-60.0, 24.0),
@@ -918,47 +1127,22 @@ pub async fn export_edited_media(
         fade_out_ms: settings.export_fade_out_ms.min(30_000),
     };
 
-    let caption_position = settings.caption_position.clamp(0, 100);
-    let caption_font_size = settings.caption_font_size.clamp(8, 120);
-    let caption_text_color = if is_valid_hex_color(&settings.caption_text_color) {
-        &settings.caption_text_color
-    } else {
-        "#FFFFFF"
-    };
-    let caption_bg_color = if is_valid_hex_color(&settings.caption_bg_color) {
-        &settings.caption_bg_color
-    } else {
-        "#000000B3"
-    };
+    let fonts_dir = crate::commands::export::bundled_fonts_dir(&app);
+    let fonts_dir_str = fonts_dir.as_ref().map(|p| p.to_string_lossy().to_string());
 
-    let video_dims = probe_video_dimensions(input.to_str().unwrap_or(""));
-    let video_height = match video_dims {
-        Some((_, h)) => h,
-        None => {
-            log::warn!("Could not probe video dimensions for caption positioning, assuming 720p");
-            720
-        }
-    };
-    let caption_style = build_caption_style(
-        caption_text_color,
-        caption_bg_color,
-        caption_font_size,
-        caption_position,
-        video_height,
-    );
-
-    let srt_path_str = srt_temp_path
+    let ass_path_str = ass_temp_path
         .as_ref()
         .map(|p| p.to_string_lossy().to_string());
+    let snapped_segments = snap_segments_against_media(&segments, input);
     let args = build_export_args(
         &input_path,
         &output_path,
-        &segments,
+        &snapped_segments,
         has_video,
         &audio_opts,
-        srt_path_str.as_deref(),
-        &caption_style,
-        video_dims,
+        ass_path_str.as_deref(),
+        fonts_dir_str.as_deref(),
+        &silenced_ranges,
     );
 
     log::info!("Running FFmpeg export: ffmpeg {}", args.join(" "));
@@ -971,9 +1155,9 @@ pub async fn export_edited_media(
     )
     .await;
 
-    // Clean up temp SRT regardless of export outcome
-    if let Some(ref srt_file) = srt_temp_path {
-        let _ = std::fs::remove_file(srt_file);
+    // Clean up temp ASS regardless of export outcome
+    if let Some(ref ass_file) = ass_temp_path {
+        let _ = std::fs::remove_file(ass_file);
     }
 
     let output = match export_result {
@@ -1198,7 +1382,7 @@ mod tests {
         }
         values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
         let mid = values.len() / 2;
-        if values.len() % 2 == 0 {
+        if values.len().is_multiple_of(2) {
             (values[mid - 1] + values[mid]) / 2.0
         } else {
             values[mid]
@@ -1531,17 +1715,37 @@ mod tests {
         report
     }
 
-    fn collect_live_validation_failure_reasons(
+    /// Inputs for [`collect_live_validation_failure_reasons`]. Bundled into a
+    /// struct so adding new metrics doesn't balloon the function signature
+    /// past clippy's `too_many_arguments` threshold (see todo
+    /// p0-waveform-boundary-policy — the duration/tolerance/seam knobs pushed
+    /// the signature to 9 args).
+    struct LiveValidationFailureInputs<'a> {
         preview_duration_error_us: i64,
         export_duration_error_us: i64,
         preview_duration_tolerance_us: i64,
         export_duration_tolerance_us: i64,
         boundary_metric_pass: bool,
         seam_metric_pass: bool,
-        seam_ratios: &[f32],
+        seam_ratios: &'a [f32],
         seam_max_ratio: f32,
-        asr_leakage_oracle: &AsrLeakageOracleReport,
+        asr_leakage_oracle: &'a AsrLeakageOracleReport,
+    }
+
+    fn collect_live_validation_failure_reasons(
+        inputs: LiveValidationFailureInputs<'_>,
     ) -> Vec<String> {
+        let LiveValidationFailureInputs {
+            preview_duration_error_us,
+            export_duration_error_us,
+            preview_duration_tolerance_us,
+            export_duration_tolerance_us,
+            boundary_metric_pass,
+            seam_metric_pass,
+            seam_ratios,
+            seam_max_ratio,
+            asr_leakage_oracle,
+        } = inputs;
         let mut reasons = Vec::new();
         if preview_duration_error_us > preview_duration_tolerance_us {
             reasons.push(format!(
@@ -1703,7 +1907,50 @@ mod tests {
         ]);
 
         let segments = canonical_keep_segments_for_media(&state, false);
-        // Outer boundary trim (50% capped at 300ms) adjusts first.start and last.end
+        // Seams land exactly on the deleted-word boundaries. Seam fade is
+        // applied inside the kept segments by `build_audio_segment_filter`
+        // and never pulls deleted audio back across the cut.
+        assert_eq!(segments, vec![(0, 1_000_000), (2_000_000, 3_000_000)]);
+    }
+
+    #[test]
+    fn canonical_keep_segments_with_parakeet_outer_trim_removes_outer_padding() {
+        let mut state = EditorState::new();
+        state.set_words(vec![
+            Word {
+                text: "alpha".to_string(),
+                start_us: 0,
+                end_us: 1_000_000,
+                deleted: false,
+                silenced: false,
+                confidence: 0.9,
+                speaker_id: 0,
+            },
+            Word {
+                text: "beta".to_string(),
+                start_us: 1_000_000,
+                end_us: 2_000_000,
+                deleted: true,
+                silenced: false,
+                confidence: 0.9,
+                speaker_id: 0,
+            },
+            Word {
+                text: "gamma".to_string(),
+                start_us: 2_000_000,
+                end_us: 3_000_000,
+                deleted: false,
+                silenced: false,
+                confidence: 0.9,
+                speaker_id: 0,
+            },
+        ]);
+
+        // Parakeet opt-in: 300 ms outer trim. Exercises the with_options
+        // API to cover the outer-trim path (the only remaining tunable on
+        // this function after CUT_GUARD_US was removed).
+        let segments =
+            canonical_keep_segments_for_media_with_options(&state, false, PARAKEET_OUTER_TRIM_US);
         assert_eq!(segments, vec![(300_000, 1_000_000), (2_000_000, 2_700_000)]);
     }
 
@@ -1737,6 +1984,117 @@ mod tests {
             .iter()
             .all(|(start_us, end_us)| *start_us >= 0 && end_us > start_us));
         assert!(segments.windows(2).all(|w| w[0].1 <= w[1].0));
+    }
+
+    #[test]
+    fn canonical_keep_segments_never_extend_past_deleted_neighbour() {
+        // Regression: an earlier guard-band knob used to extend kept segments
+        // 20 ms into the deleted region on each side of every seam, which
+        // reintroduced the onset/offset of the deleted word. With the knob
+        // removed, no neighbouring segment may intersect the deleted
+        // interval.
+        let deleted_start = 1_000_000_i64;
+        let deleted_end = 2_000_000_i64;
+        let mut state = EditorState::new();
+        state.set_words(vec![
+            Word {
+                text: "alpha".to_string(),
+                start_us: 0,
+                end_us: deleted_start,
+                deleted: false,
+                silenced: false,
+                confidence: 0.9,
+                speaker_id: 0,
+            },
+            Word {
+                text: "the".to_string(),
+                start_us: deleted_start,
+                end_us: deleted_end,
+                deleted: true,
+                silenced: false,
+                confidence: 0.9,
+                speaker_id: 0,
+            },
+            Word {
+                text: "gamma".to_string(),
+                start_us: deleted_end,
+                end_us: 3_000_000,
+                deleted: false,
+                silenced: false,
+                confidence: 0.9,
+                speaker_id: 0,
+            },
+        ]);
+
+        let segments = canonical_keep_segments_for_media(&state, false);
+        for seg in &segments {
+            let intersects = seg.0 < deleted_end && seg.1 > deleted_start;
+            assert!(
+                !intersects,
+                "segment {seg:?} intersects deleted interval ({deleted_start}, {deleted_end})"
+            );
+        }
+        // And specifically: the outgoing seam ends at the deleted start and
+        // the incoming seam begins at the deleted end.
+        assert_eq!(segments, vec![(0, deleted_start), (deleted_end, 3_000_000)]);
+    }
+
+    #[test]
+    fn cursor_mapping_matches_canonical_pipeline() {
+        // Locks in the fix to `map_edit_to_source_time`: the default
+        // (non-experimental) cursor path must read from the same segments the
+        // rendered preview/export audio was concatenated from. If these two
+        // ever disagree the cursor and audio drift apart by `Σ guard × seams`.
+        let mut state = EditorState::new();
+        state.set_words(vec![
+            Word {
+                text: "alpha".to_string(),
+                start_us: 0,
+                end_us: 1_000_000,
+                deleted: false,
+                silenced: false,
+                confidence: 0.9,
+                speaker_id: 0,
+            },
+            Word {
+                text: "beta".to_string(),
+                start_us: 1_000_000,
+                end_us: 2_000_000,
+                deleted: true,
+                silenced: false,
+                confidence: 0.9,
+                speaker_id: 0,
+            },
+            Word {
+                text: "gamma".to_string(),
+                start_us: 2_000_000,
+                end_us: 3_000_000,
+                deleted: false,
+                silenced: false,
+                confidence: 0.9,
+                speaker_id: 0,
+            },
+        ]);
+
+        let segments = canonical_keep_segments_for_media(&state, false);
+        // Sample a handful of edit-time cursor positions that straddle the
+        // internal seam (edit_time 1_000_000 is the seam itself).
+        for edit_time_us in [
+            0, 250_000, 999_999, 1_000_000, 1_000_001, 1_500_000, 1_999_999,
+        ] {
+            let via_canonical = map_edit_time_to_source_time_from_segments(edit_time_us, &segments);
+            // Derive what the Tauri command returns by calling the same
+            // shared helper the command body uses (we can't invoke the
+            // #[tauri::command] directly in a unit test without an AppHandle).
+            let via_command_body = map_edit_time_to_source_time_from_segments(
+                edit_time_us,
+                &canonical_keep_segments_for_media(&state, false),
+            );
+            assert_eq!(
+                via_canonical, via_command_body,
+                "cursor mapping diverged from canonical pipeline at edit_time_us={edit_time_us}"
+            );
+        }
     }
 
     #[test]
@@ -1792,7 +2150,7 @@ mod tests {
     fn single_segment_preview_uses_filter_complex_trim_pipeline() {
         let input = Path::new("input.mp4");
         let output = Path::new("preview.m4a");
-        let args = build_preview_render_args(input, output, &[(1_000_000, 2_500_000)]);
+        let args = build_preview_render_args(input, output, &[(1_000_000, 2_500_000)], &[]);
 
         assert!(args.windows(2).any(|w| w[0] == "-filter_complex"));
         assert!(args.windows(2).any(|w| w[0] == "-map" && w[1] == "[outa]"));
@@ -1815,7 +2173,7 @@ mod tests {
         let input = Path::new("input.mp4");
         let output = Path::new("preview.m4a");
         let segments = [(0, 1_000_000), (2_000_000, 3_500_000)];
-        let args = build_preview_render_args(input, output, &segments);
+        let args = build_preview_render_args(input, output, &segments, &[]);
 
         let filter = args
             .windows(2)
@@ -1825,8 +2183,43 @@ mod tests {
 
         assert_eq!(
             filter,
-            "[0:a]atrim=start=0.000000:end=1.000000,asetpts=PTS-STARTPTS[a0]; [0:a]atrim=start=2.000000:end=3.500000,asetpts=PTS-STARTPTS[a1]; [a0][a1]concat=n=2:v=0:a=1[outa]"
+            "[0:a]atrim=start=0.000000:end=1.000000,asetpts=PTS-STARTPTS,afade=t=out:st=0.980000:d=0.020000[a0]; [0:a]atrim=start=2.000000:end=3.500000,asetpts=PTS-STARTPTS,afade=t=in:st=0:d=0.020000[a1]; [a0][a1]concat=n=2:v=0:a=1[outa]"
         );
+    }
+
+    #[test]
+    fn preview_and_export_share_identical_seam_fade_policy() {
+        // Dual-path rule (AGENTS.md) + todo p0-waveform-boundary-policy:
+        // given the same input segments, the preview render and the
+        // audio-only export path must produce the same filter_complex graph.
+        let segments = [(0, 1_000_000), (2_000_000, 3_500_000)];
+        let preview_args =
+            build_preview_render_args(Path::new("in.mp4"), Path::new("out.m4a"), &segments, &[]);
+        let export_args = build_export_args(
+            "in.mp4",
+            "out.m4a",
+            &segments,
+            false,
+            &default_audio_opts(),
+            None,
+            None,
+            &[],);
+
+        let preview_filter = preview_args
+            .windows(2)
+            .find(|w| w[0] == "-filter_complex")
+            .map(|w| w[1].clone())
+            .expect("preview must emit -filter_complex");
+        let export_filter = export_args
+            .windows(2)
+            .find(|w| w[0] == "-filter_complex")
+            .map(|w| w[1].clone())
+            .expect("audio-only export must emit -filter_complex");
+
+        assert_eq!(preview_filter, export_filter);
+        // Both paths must reference the unified 20 ms seam fade, not the
+        // legacy asymmetric 0 ms / 10 ms split.
+        assert!(preview_filter.contains("d=0.020000"));
     }
 
     #[test]
@@ -1925,17 +2318,17 @@ mod tests {
             error: Some("mock oracle failure".to_string()),
         };
 
-        let reasons = collect_live_validation_failure_reasons(
-            250_000,
-            320_000,
-            180_000,
-            220_000,
-            false,
-            false,
-            &[2.0, 24.0],
-            20.0,
-            &asr_report,
-        );
+        let reasons = collect_live_validation_failure_reasons(LiveValidationFailureInputs {
+            preview_duration_error_us: 250_000,
+            export_duration_error_us: 320_000,
+            preview_duration_tolerance_us: 180_000,
+            export_duration_tolerance_us: 220_000,
+            boundary_metric_pass: false,
+            seam_metric_pass: false,
+            seam_ratios: &[2.0, 24.0],
+            seam_max_ratio: 20.0,
+            asr_leakage_oracle: &asr_report,
+        });
 
         assert!(reasons
             .iter()
@@ -1972,23 +2365,30 @@ mod tests {
             error: None,
         };
 
-        let reasons = collect_live_validation_failure_reasons(
-            100_000,
-            150_000,
-            180_000,
-            220_000,
-            true,
-            true,
-            &[0.4, 0.7],
-            20.0,
-            &asr_report,
-        );
+        let reasons = collect_live_validation_failure_reasons(LiveValidationFailureInputs {
+            preview_duration_error_us: 100_000,
+            export_duration_error_us: 150_000,
+            preview_duration_tolerance_us: 180_000,
+            export_duration_tolerance_us: 220_000,
+            boundary_metric_pass: true,
+            seam_metric_pass: true,
+            seam_ratios: &[0.4, 0.7],
+            seam_max_ratio: 20.0,
+            asr_leakage_oracle: &asr_report,
+        });
 
         assert!(reasons.is_empty());
     }
 
     #[test]
-    #[ignore = "requires local media fixture; run via scripts/run-live-midstream-validation.ps1"]
+    // Kept as a manual-only backend harness invoked by the offline rollout gate
+    // `scripts/run-local-llm-eval-gate.ps1`. Requires a local media file
+    // (`TOASTER_LIVE_MEDIA_PATH`) and a local Whisper model file
+    // (`TOASTER_LIVE_ASR_MODEL_PATH`) — neither is checked into the repo, so
+    // this can never run as a headless CI gate. See AGENTS.md `eval-harness-
+    // runner` entry: the CI boundary/parity gates are covered by
+    // `scripts/eval-audio-boundary.ps1` + `scripts/eval-edit-quality.ps1`.
+    #[ignore = "requires local media + Whisper model; run via scripts/run-local-llm-eval-gate.ps1"]
     fn live_validation_backend_media_pipeline() {
         const PREVIEW_DURATION_TOLERANCE_US: i64 = 180_000;
         const EXPORT_DURATION_TOLERANCE_US: i64 = 220_000;
@@ -2031,7 +2431,7 @@ mod tests {
             .unwrap_or_else(|| "mp4".to_string());
         let export_path = output_root.join(format!("live-export.{export_ext}"));
 
-        let preview_args = build_preview_render_args(&media, &preview_path, &segments);
+        let preview_args = build_preview_render_args(&media, &preview_path, &segments, &[]);
         run_ffmpeg(&preview_args).expect("preview render ffmpeg failed");
 
         let has_video = matches!(
@@ -2045,9 +2445,8 @@ mod tests {
             has_video,
             &ExportAudioOptions::default(),
             None,
-            "",
             None,
-        );
+            &[],);
         run_ffmpeg(&export_args).expect("export render ffmpeg failed");
 
         let preview_duration_us =
@@ -2090,17 +2489,18 @@ mod tests {
             source_duration_us,
         );
         let asr_metric_pass = asr_leakage_oracle.pass;
-        let failure_reasons = collect_live_validation_failure_reasons(
-            preview_duration_error_us,
-            export_duration_error_us,
-            PREVIEW_DURATION_TOLERANCE_US,
-            EXPORT_DURATION_TOLERANCE_US,
-            boundary_metric_pass,
-            seam_metric_pass,
-            &seam_ratios,
-            SEAM_MAX_RATIO,
-            &asr_leakage_oracle,
-        );
+        let failure_reasons =
+            collect_live_validation_failure_reasons(LiveValidationFailureInputs {
+                preview_duration_error_us,
+                export_duration_error_us,
+                preview_duration_tolerance_us: PREVIEW_DURATION_TOLERANCE_US,
+                export_duration_tolerance_us: EXPORT_DURATION_TOLERANCE_US,
+                boundary_metric_pass,
+                seam_metric_pass,
+                seam_ratios: &seam_ratios,
+                seam_max_ratio: SEAM_MAX_RATIO,
+                asr_leakage_oracle: &asr_leakage_oracle,
+            });
 
         let overall_pass =
             duration_metric_pass && boundary_metric_pass && seam_metric_pass && asr_metric_pass;
@@ -2299,9 +2699,8 @@ mod tests {
             true,
             &default_audio_opts(),
             None,
-            "FontSize=24",
             None,
-        );
+            &[],);
         assert!(args.contains(&"-y".to_string()));
         assert!(args.contains(&"-i".to_string()));
         assert!(args.contains(&"input.mp4".to_string()));
@@ -2317,19 +2716,21 @@ mod tests {
             true,
             &default_audio_opts(),
             Some("C:\\path\\to\\captions.srt"),
-            "FontSize=24,BorderStyle=3",
             None,
-        );
+            &[],);
         let vf_idx = args.iter().position(|a| a == "-vf");
-        assert!(vf_idx.is_some(), "Single segment video with captions should have -vf flag");
+        assert!(
+            vf_idx.is_some(),
+            "Single segment video with captions should have -vf flag"
+        );
         let filter = &args[vf_idx.unwrap() + 1];
         assert!(
             filter.contains("subtitles="),
             "Filter should contain subtitles directive, got: {filter}"
         );
         assert!(
-            filter.contains("force_style='FontSize=24,BorderStyle=3'"),
-            "Filter should include caption style, got: {filter}"
+            !filter.contains("force_style"),
+            "New pipeline embeds styling in the ASS document; force_style must be gone, got: {filter}"
         );
     }
 
@@ -2343,16 +2744,18 @@ mod tests {
             true,
             &default_audio_opts(),
             None,
-            "FontSize=24",
             None,
-        );
+            &[],);
         assert!(
             args.contains(&"-filter_complex".to_string()),
             "Multi-segment should use filter_complex"
         );
         let fc_idx = args.iter().position(|a| a == "-filter_complex").unwrap();
         let filter = &args[fc_idx + 1];
-        assert!(filter.contains("concat=n=2"), "Should concat 2 segments, got: {filter}");
+        assert!(
+            filter.contains("concat=n=2"),
+            "Should concat 2 segments, got: {filter}"
+        );
         assert!(filter.contains("[v0]"), "Should reference video segment 0");
         assert!(filter.contains("[v1]"), "Should reference video segment 1");
     }
@@ -2367,9 +2770,8 @@ mod tests {
             true,
             &default_audio_opts(),
             Some("C:\\captions.srt"),
-            "FontSize=24,BorderStyle=3",
             None,
-        );
+            &[],);
         let fc_idx = args.iter().position(|a| a == "-filter_complex").unwrap();
         let filter = &args[fc_idx + 1];
         assert!(
@@ -2399,7 +2801,10 @@ mod tests {
         let escaped = escape_srt_path_for_ffmpeg("C:\\Users\\test\\file.srt");
         assert_eq!(escaped, "C\\:/Users/test/file.srt");
         let escaped2 = escape_srt_path_for_ffmpeg("D:\\test.srt");
-        assert_eq!(escaped2, "D\\:/test.srt", "Colons should be escaped for FFmpeg filter syntax");
+        assert_eq!(
+            escaped2, "D\\:/test.srt",
+            "Colons should be escaped for FFmpeg filter syntax"
+        );
         // Unix-style path with no special chars passes through
         let escaped3 = escape_srt_path_for_ffmpeg("/tmp/captions.srt");
         assert_eq!(escaped3, "/tmp/captions.srt");
@@ -2414,9 +2819,8 @@ mod tests {
             false,
             &default_audio_opts(),
             None,
-            "",
             None,
-        );
+            &[],);
         // Audio-only should not contain -vf or video filter
         assert!(
             !args.contains(&"-vf".to_string()),
@@ -2429,27 +2833,26 @@ mod tests {
     }
 
     #[test]
-    fn test_single_segment_captions_include_original_size() {
+    fn test_single_segment_captions_use_fontsdir_when_provided() {
         let args = build_export_args(
             "input.mp4",
             "output.mp4",
             &[(0, 5_000_000)],
             true,
             &default_audio_opts(),
-            Some("C:\\path\\to\\captions.srt"),
-            "FontSize=24,MarginV=108",
-            Some((1920, 1080)),
-        );
+            Some("C:\\path\\to\\captions.ass"),
+            Some("C:\\fonts"),
+            &[],);
         let vf_idx = args.iter().position(|a| a == "-vf").unwrap();
         let filter = &args[vf_idx + 1];
         assert!(
-            filter.contains("original_size=1920x1080"),
-            "Single segment subtitle filter must include original_size to match preview coordinates, got: {filter}"
+            filter.contains("fontsdir="),
+            "Single segment subtitle filter must include fontsdir when bundled fonts available, got: {filter}"
         );
     }
 
     #[test]
-    fn test_multi_segment_captions_include_original_size() {
+    fn test_multi_segment_captions_use_fontsdir_when_provided() {
         let segments = vec![(0, 2_000_000), (3_000_000, 5_000_000)];
         let args = build_export_args(
             "input.mp4",
@@ -2457,35 +2860,182 @@ mod tests {
             &segments,
             true,
             &default_audio_opts(),
-            Some("C:\\captions.srt"),
-            "FontSize=24,MarginV=72",
-            Some((1280, 720)),
-        );
+            Some("C:\\captions.ass"),
+            Some("C:\\fonts"),
+            &[],);
         let fc_idx = args.iter().position(|a| a == "-filter_complex").unwrap();
         let filter = &args[fc_idx + 1];
         assert!(
-            filter.contains("original_size=1280x720"),
-            "Multi-segment subtitle filter must include original_size, got: {filter}"
+            filter.contains("fontsdir="),
+            "Multi-segment subtitle filter must include fontsdir when bundled fonts available, got: {filter}"
         );
     }
 
     #[test]
-    fn test_captions_without_video_size_omit_original_size() {
+    fn test_captions_without_fonts_dir_omit_fontsdir() {
         let args = build_export_args(
             "input.mp4",
             "output.mp4",
             &[(0, 5_000_000)],
             true,
             &default_audio_opts(),
-            Some("C:\\captions.srt"),
-            "FontSize=24",
+            Some("C:\\captions.ass"),
             None,
-        );
+            &[],);
         let vf_idx = args.iter().position(|a| a == "-vf").unwrap();
         let filter = &args[vf_idx + 1];
         assert!(
-            !filter.contains("original_size"),
-            "Without video_size, original_size should not appear, got: {filter}"
+            !filter.contains("fontsdir"),
+            "Without fonts_dir, fontsdir= should not appear, got: {filter}"
         );
+    }
+
+    // ---- Silenced ranges (p3-resolve-silenced-flag) ----
+
+    #[test]
+    fn silenced_edit_time_ranges_maps_single_segment() {
+        // Silenced word fully inside a single keep-segment: edit-time offset
+        // is (source_time - seg_start).
+        let silenced = [(1_500_000, 2_000_000)];
+        let keep = [(1_000_000, 3_000_000)];
+        let ranges = silenced_edit_time_ranges(&silenced, &keep);
+        assert_eq!(ranges, vec![(500_000, 1_000_000)]);
+    }
+
+    #[test]
+    fn silenced_edit_time_ranges_drops_ranges_outside_keep() {
+        // Silenced word in deleted region (between segments) drops out.
+        let silenced = [(2_500_000, 2_800_000)];
+        let keep = [(0, 2_000_000), (3_000_000, 4_000_000)];
+        let ranges = silenced_edit_time_ranges(&silenced, &keep);
+        assert!(ranges.is_empty());
+    }
+
+    #[test]
+    fn silenced_edit_time_ranges_accumulates_across_keep_segments() {
+        // Two silenced words, one per keep-segment. Edit-time for the second
+        // keep-segment starts at the total duration of previous segment(s).
+        let silenced = [(500_000, 700_000), (3_100_000, 3_400_000)];
+        let keep = [(0, 2_000_000), (3_000_000, 4_000_000)];
+        let ranges = silenced_edit_time_ranges(&silenced, &keep);
+        // First word: 500k..700k in source, seg_start=0, edit=500k..700k.
+        // Second word: 3_100k..3_400k, seg_start=3_000k, elapsed=2_000k,
+        // edit=2_100k..2_400k.
+        assert_eq!(ranges, vec![(500_000, 700_000), (2_100_000, 2_400_000)]);
+    }
+
+    #[test]
+    fn silenced_edit_time_ranges_merges_adjacent() {
+        let silenced = [(0, 500_000), (500_000, 1_000_000)];
+        let keep = [(0, 2_000_000)];
+        let ranges = silenced_edit_time_ranges(&silenced, &keep);
+        assert_eq!(ranges, vec![(0, 1_000_000)]);
+    }
+
+    #[test]
+    fn build_export_args_emits_volume_gate_for_silenced_word() {
+        // Single-segment export with one silenced word in the middle:
+        // should emit -af volume=enable='between(t,...)':volume=0.
+        let args = build_export_args(
+            "input.wav",
+            "output.mp3",
+            &[(1_000_000, 3_000_000)],
+            false,
+            &default_audio_opts(),
+            None,
+            None,
+            &[(1_500_000, 2_000_000)],);
+        let af_idx = args
+            .iter()
+            .position(|a| a == "-af")
+            .expect("expected -af flag for silenced word");
+        let filter = &args[af_idx + 1];
+        assert!(
+            filter.contains("volume=enable='between(t,0.500000,1.000000)':volume=0"),
+            "expected volume gate between 0.5s and 1.0s edit-time, got: {filter}"
+        );
+    }
+
+    #[test]
+    fn build_export_args_multi_segment_audio_silences_word() {
+        // Multi-segment audio-only export: gate must be chained post-concat
+        // using [outa_raw] -> [outa] routing so the edit-time coordinates
+        // match the concatenated stream.
+        let args = build_export_args(
+            "input.wav",
+            "output.mp3",
+            &[(0, 1_000_000), (2_000_000, 3_000_000)],
+            false,
+            &default_audio_opts(),
+            None,
+            None,
+            &[(2_400_000, 2_700_000)], // inside second keep-segment
+        );
+        let fc_idx = args
+            .iter()
+            .position(|a| a == "-filter_complex")
+            .expect("expected filter_complex for multi-segment export");
+        let filter = &args[fc_idx + 1];
+        assert!(
+            filter
+                .contains("[outa_raw]volume=enable='between(t,1.400000,1.700000)':volume=0[outa]"),
+            "expected silence gate on post-concat stream, got: {filter}"
+        );
+    }
+
+    #[test]
+    fn preview_and_export_silence_gate_parity() {
+        // Dual-path rule: silenced words must produce identical audio filter
+        // graphs for preview and audio-only export (same seam fade policy
+        // already tested in preview_and_export_share_identical_seam_fade_policy).
+        let segments = [(0, 1_000_000), (2_000_000, 3_500_000)];
+        let silenced = [(500_000, 800_000), (2_200_000, 2_400_000)];
+        let preview_args = build_preview_render_args(
+            Path::new("in.mp4"),
+            Path::new("out.m4a"),
+            &segments,
+            &silenced,
+        );
+        let export_args = build_export_args(
+            "in.mp4",
+            "out.m4a",
+            &segments,
+            false,
+            &default_audio_opts(),
+            None,
+            None,
+            &silenced,);
+        let preview_filter = preview_args
+            .windows(2)
+            .find(|w| w[0] == "-filter_complex")
+            .map(|w| w[1].clone())
+            .expect("preview must emit -filter_complex");
+        let export_filter = export_args
+            .windows(2)
+            .find(|w| w[0] == "-filter_complex")
+            .map(|w| w[1].clone())
+            .expect("audio-only export must emit -filter_complex");
+        assert_eq!(preview_filter, export_filter);
+        assert!(preview_filter.contains("volume=enable="));
+    }
+
+    #[test]
+    fn build_export_args_no_silence_keeps_existing_filter_graph() {
+        // Regression: when silenced_source_ranges is empty, the emitted
+        // filter graph must be byte-identical to the pre-p3 output.
+        let segments = [(0, 1_000_000), (2_000_000, 3_500_000)];
+        let args = build_export_args(
+            "in.mp4",
+            "out.m4a",
+            &segments,
+            false,
+            &default_audio_opts(),
+            None,
+            None,
+            &[],);
+        let fc_idx = args.iter().position(|a| a == "-filter_complex").unwrap();
+        let filter = &args[fc_idx + 1];
+        assert!(!filter.contains("volume="));
+        assert!(!filter.contains("[outa_raw]"));
     }
 }

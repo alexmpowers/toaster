@@ -290,8 +290,30 @@ pub struct AppSettings {
     pub caption_text_color: String,
     #[serde(default = "default_caption_position")]
     pub caption_position: u32,
+    #[serde(default)]
+    pub caption_font_family: CaptionFontFamily,
+    #[serde(default = "default_caption_radius_px")]
+    pub caption_radius_px: u32,
+    #[serde(default = "default_caption_padding_x_px")]
+    pub caption_padding_x_px: u32,
+    #[serde(default = "default_caption_padding_y_px")]
+    pub caption_padding_y_px: u32,
+    #[serde(default = "default_caption_max_width_percent")]
+    pub caption_max_width_percent: u32,
     #[serde(default = "default_settings_version")]
     pub settings_version: u32,
+}
+
+/// Font family choice for captions. The preview CSS and the exported ASS
+/// both read from this enum so they stay in visual sync.
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default, specta::Type,
+)]
+pub enum CaptionFontFamily {
+    #[default]
+    Inter,
+    Roboto,
+    SystemUi,
 }
 
 impl AppSettings {

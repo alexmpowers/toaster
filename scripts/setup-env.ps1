@@ -47,8 +47,33 @@ $ucrtVersion = Get-ChildItem $ucrtBase -Directory -ErrorAction SilentlyContinue 
 if ($msvcVersion -and $ucrtVersion) {
     $msvcInclude = "$msvcBase\$msvcVersion\include"
     $ucrtInclude = "$ucrtBase\$ucrtVersion\ucrt"
-    $env:BINDGEN_EXTRA_CLANG_ARGS = "-I`"$msvcInclude`" -I`"$ucrtInclude`""
+
+    # Locate clang's own builtin header directory (contains stdbool.h, stdint.h, etc.).
+    # Must come FIRST on the include path: MSVC's <stdbool.h> / <stdint.h> rely on
+    # clang builtin headers when libclang parses with --target=*-windows-msvc.
+    # Without this, bindgen fails with "'stdbool.h' file not found" and whisper-rs-sys
+    # falls back to stale bundled bindings → struct-layout assertion overflow errors.
+    $clangBuiltinInclude = $null
+    $clangLibDir = "C:\Program Files\LLVM\lib\clang"
+    if (Test-Path $clangLibDir) {
+        $clangVer = Get-ChildItem $clangLibDir -Directory -ErrorAction SilentlyContinue |
+            Sort-Object { [int]($_.Name -replace '\D','') } -Descending |
+            Select-Object -First 1 -ExpandProperty Name
+        if ($clangVer) {
+            $candidate = "$clangLibDir\$clangVer\include"
+            if (Test-Path "$candidate\stdbool.h") { $clangBuiltinInclude = $candidate }
+        }
+    }
+
+    $bindgenArgs = @("--target=x86_64-pc-windows-msvc")
+    if ($clangBuiltinInclude) { $bindgenArgs += "-I`"$clangBuiltinInclude`"" }
+    $bindgenArgs += "-I`"$msvcInclude`""
+    $bindgenArgs += "-I`"$ucrtInclude`""
+    $env:BINDGEN_EXTRA_CLANG_ARGS = $bindgenArgs -join " "
     Write-Host "Bindgen includes configured" -ForegroundColor Green
+    if (-not $clangBuiltinInclude) {
+        Write-Host "  WARNING: clang builtin include dir not found; bindgen may fail" -ForegroundColor Yellow
+    }
 }
 
 # Verify toolchain

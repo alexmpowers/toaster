@@ -5,7 +5,6 @@ mod llm_client;
 mod managers;
 pub mod portable;
 mod settings;
-mod transcription_post_process;
 mod utils;
 
 pub use cli::CliArgs;
@@ -20,10 +19,8 @@ use managers::history::HistoryManager;
 use managers::media::{MediaState, MediaStore};
 use managers::model::ModelManager;
 use managers::transcription::TranscriptionManager;
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
+use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::{Arc, Mutex};
-use tokio::sync::oneshot;
 
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_plugin_log::{Builder as LogBuilder, RotationStrategy, Target, TargetKind};
@@ -33,58 +30,6 @@ use crate::settings::get_settings;
 // Global atomic to store the file log level filter
 // We use u8 to store the log::LevelFilter as a number
 pub static FILE_LOG_LEVEL: AtomicU8 = AtomicU8::new(log::LevelFilter::Debug as u8);
-
-pub struct LocalCleanupReviewState {
-    pending: Mutex<HashMap<String, oneshot::Sender<bool>>>,
-    next_id: AtomicU64,
-}
-
-impl Default for LocalCleanupReviewState {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl LocalCleanupReviewState {
-    pub fn new() -> Self {
-        Self {
-            pending: Mutex::new(HashMap::new()),
-            next_id: AtomicU64::new(1),
-        }
-    }
-
-    pub fn register(&self) -> (String, oneshot::Receiver<bool>) {
-        let request_id = format!(
-            "cleanup-review-{}",
-            self.next_id.fetch_add(1, Ordering::Relaxed)
-        );
-        let (tx, rx) = oneshot::channel();
-        if let Ok(mut pending) = self.pending.lock() {
-            pending.insert(request_id.clone(), tx);
-        }
-        (request_id, rx)
-    }
-
-    pub fn resolve(&self, request_id: &str, accept: bool) -> bool {
-        let sender = self
-            .pending
-            .lock()
-            .ok()
-            .and_then(|mut pending| pending.remove(request_id));
-        if let Some(tx) = sender {
-            let _ = tx.send(accept);
-            true
-        } else {
-            false
-        }
-    }
-
-    pub fn remove(&self, request_id: &str) {
-        if let Ok(mut pending) = self.pending.lock() {
-            pending.remove(request_id);
-        }
-    }
-}
 
 fn level_filter_from_u8(value: u8) -> log::LevelFilter {
     match value {
@@ -198,7 +143,6 @@ fn initialize_core_logic(app_handle: &AppHandle) {
     app_handle.manage(history_manager.clone());
     app_handle.manage(EditorStore(Mutex::new(EditorState::new())));
     app_handle.manage(MediaStore(Mutex::new(MediaState::new())));
-    app_handle.manage(LocalCleanupReviewState::new());
 
     // Note: Keyboard shortcuts and Unix signal handlers have been removed
     // (legacy Handy dictation surface). Toaster is a transcript editor
@@ -290,7 +234,6 @@ pub fn run(cli_args: CliArgs) {
             commands::open_log_dir,
             commands::open_app_data_dir,
             commands::check_apple_intelligence_available,
-            commands::resolve_local_cleanup_review,
             commands::models::get_available_models,
             commands::models::get_model_info,
             commands::models::download_model,
@@ -331,6 +274,7 @@ pub fn run(cli_args: CliArgs) {
             commands::export::export_transcript,
             commands::export::export_transcript_to_file,
             commands::export::get_caption_segments,
+            commands::export::get_caption_blocks,
             commands::transcribe_file::transcribe_media_file,
             commands::waveform::generate_waveform_peaks,
             commands::waveform::get_keep_segments,
@@ -346,6 +290,7 @@ pub fn run(cli_args: CliArgs) {
             commands::filler::trim_pauses,
             commands::filler::tighten_gaps,
             commands::filler::cleanup_all,
+            commands::disfluency::cleanup_smart_duplicates,
             commands::project::save_project,
             commands::project::load_project,
             commands::transcription::set_model_unload_timeout,
@@ -477,14 +422,16 @@ pub fn run(cli_args: CliArgs) {
 
             Ok(())
         })
-        .on_window_event(|window, event| if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-            api.prevent_close();
-            let _res = window.hide();
+        .on_window_event(|window, event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _res = window.hide();
 
-            #[cfg(target_os = "macos")]
-            {
-                // No tray: keep the dock icon visible so the user can reopen
-                let _ = window;
+                #[cfg(target_os = "macos")]
+                {
+                    // No tray: keep the dock icon visible so the user can reopen
+                    let _ = window;
+                }
             }
         })
         .invoke_handler(invoke_handler)

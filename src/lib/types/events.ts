@@ -9,9 +9,3 @@ export interface RecordingErrorEvent {
   error_type: string;
   detail?: string;
 }
-
-export interface LocalCleanupReviewRequestEvent {
-  request_id: string;
-  original_text: string;
-  cleaned_text: string;
-}

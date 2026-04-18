@@ -29,7 +29,7 @@ If a rule exists in more than one place, the copies will drift. Do not introduce
 | `CRUSH.md` | Pointer for Crush | "See AGENTS.md" + tooling-specific notes only |
 | `README.md` | Human-oriented project overview | User-facing description, quick start; must not contradict AGENTS.md |
 | `PRD.md` | Product requirements | Vision / scope / acceptance criteria |
-| `BUILD.md` | Platform build setup | Toolchain details referenced from AGENTS.md |
+| `docs/build.md` | Platform build setup | Toolchain details referenced from AGENTS.md |
 
 ## Gate Function
 

@@ -1,0 +1,13 @@
+{
+  "_comment": "Golden-synthetic NormalizedTranscriptionResult for phrase_alpha.wav simulating a Parakeet adapter run (native word-level timings, authoritative=true). Generated deterministically from the oracle with +/- 5-12 ms per-boundary jitter to emulate realistic native-timing noise while staying well within the parity gates (median <= 20 ms, p95 <= 40 ms). Regenerate from a real adapter run when the eval-harness-runner agent can drive the app headlessly against these fixtures.",
+  "words": [
+    { "text": "hello",   "start_us": 8000,    "end_us": 425000,  "confidence": 0.94 },
+    { "text": "world",   "start_us": 495000,  "end_us": 867000,  "confidence": 0.91 },
+    { "text": "this",    "start_us": 985000,  "end_us": 1255000, "confidence": 0.93 },
+    { "text": "is",      "start_us": 1364000, "end_us": 1552000, "confidence": 0.90 },
+    { "text": "toaster", "start_us": 1642000, "end_us": 2198000, "confidence": 0.95 }
+  ],
+  "language": "en-US",
+  "word_timestamps_authoritative": true,
+  "input_sample_rate_hz": 16000
+}

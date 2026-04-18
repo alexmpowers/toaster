@@ -1,0 +1,37 @@
+{
+  "sample_rate": 48000,
+  "export": "multicut_01_export.wav",
+  "preview": "multicut_01_preview.wav",
+  "seams_in_edit": [
+    {
+      "index": 0,
+      "sample": 14400
+    },
+    {
+      "index": 1,
+      "sample": 28800
+    },
+    {
+      "index": 2,
+      "sample": 43200
+    }
+  ],
+  "keep_segments": [
+    {
+      "start": 0.0,
+      "end": 0.3
+    },
+    {
+      "start": 0.0,
+      "end": 0.3
+    },
+    {
+      "start": 0.0,
+      "end": 0.3
+    },
+    {
+      "start": 0.0,
+      "end": 0.3
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "_comment": "Cleanup verifier fixture with a long pause between sentences. Pauses (gaps > 1.5s) are legitimate artifacts, not fillers — a good cleaner leaves them alone. The single filler at index 3 should be the only deletion. Candidates: perfect; over-delete that also trims the pause by shifting neighbor timing (kept_indices still correct but produces a weird result — we simulate by testing a variant that drops the pre-pause word); quote-less variant. This fixture also audio-free; audio-aware scoring relies on intro_with_quote_audio.",
+  "fixture": "two_sentences_with_pause",
+  "audio_path": null,
+  "oracle_words": [
+    { "text": "okay",    "start_us":        0, "end_us":  300000, "is_filler": false, "in_quote": false },
+    { "text": "so",      "start_us":   360000, "end_us":  520000, "is_filler": false, "in_quote": false },
+    { "text": "here",    "start_us":   580000, "end_us":  780000, "is_filler": false, "in_quote": false },
+    { "text": "um",      "start_us":   840000, "end_us": 1020000, "is_filler": true,  "in_quote": false },
+    { "text": "we",      "start_us":  1080000, "end_us": 1220000, "is_filler": false, "in_quote": false },
+    { "text": "go",      "start_us":  1280000, "end_us": 1500000, "is_filler": false, "in_quote": false },
+    { "text": "next",    "start_us":  3200000, "end_us": 3460000, "is_filler": false, "in_quote": false },
+    { "text": "chapter", "start_us":  3520000, "end_us": 3980000, "is_filler": false, "in_quote": false }
+  ],
+  "desired_kept_indices": [0, 1, 2, 4, 5, 6, 7],
+  "candidates": [
+    {
+      "name": "rule_v1_perfect",
+      "kept_indices": [0, 1, 2, 4, 5, 6, 7]
+    },
+    {
+      "name": "trims_pause_neighbor",
+      "kept_indices": [0, 1, 2, 4, 5, 7]
+    },
+    {
+      "name": "underdelete",
+      "kept_indices": [0, 1, 2, 3, 4, 5, 6, 7]
+    }
+  ]
+}

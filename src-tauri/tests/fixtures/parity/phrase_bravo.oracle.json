@@ -1,0 +1,37 @@
+[
+  {
+    "word": "the",
+    "start_us": 0,
+    "end_us": 180000
+  },
+  {
+    "word": "quick",
+    "start_us": 260000,
+    "end_us": 520000
+  },
+  {
+    "word": "brown",
+    "start_us": 590000,
+    "end_us": 900000
+  },
+  {
+    "word": "fox",
+    "start_us": 1350000,
+    "end_us": 1650000
+  },
+  {
+    "word": "jumps",
+    "start_us": 1750000,
+    "end_us": 2090000
+  },
+  {
+    "word": "over",
+    "start_us": 2190000,
+    "end_us": 2470000
+  },
+  {
+    "word": "lazily",
+    "start_us": 2550000,
+    "end_us": 3110000
+  }
+]

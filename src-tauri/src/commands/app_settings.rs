@@ -41,7 +41,6 @@ fn apply_and_reload_accelerator(app: &AppHandle, s: settings::AppSettings) {
     }
 }
 
-
 #[tauri::command]
 #[specta::specta]
 pub fn change_translate_to_english_setting(app: AppHandle, enabled: bool) -> Result<(), String> {

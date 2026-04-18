@@ -1,0 +1,124 @@
+{
+  "_comment": "Disfluency ranker fixture. Two repetition groups: g1 = words [0,1] ('the the'), g2 = words [2,3] ('best best'). Each group has one clearly articulated survivor and one mumbled one, encoded by the synthesized amplitude. The audio-aware survivor_clarity criterion must score candidates that keep {1, 2, 4} higher than candidates that keep {0, 3, 4}, even though both produce identical word counts and both collapse each group to exactly one survivor.",
+  "fixture": "repeated_the_best",
+  "audio_path": "./repeated_the_best.wav",
+  "oracle_words": [
+    {
+      "text": "the",
+      "start_us": 0,
+      "end_us": 260000,
+      "group_id": "g1",
+      "is_disfluency": true,
+      "in_quote": false,
+      "clarity_hint": 0.08
+    },
+    {
+      "text": "the",
+      "start_us": 340000,
+      "end_us": 640000,
+      "group_id": "g1",
+      "is_disfluency": true,
+      "in_quote": false,
+      "clarity_hint": 0.55
+    },
+    {
+      "text": "best",
+      "start_us": 760000,
+      "end_us": 1100000,
+      "group_id": "g2",
+      "is_disfluency": true,
+      "in_quote": false,
+      "clarity_hint": 0.6
+    },
+    {
+      "text": "best",
+      "start_us": 1220000,
+      "end_us": 1540000,
+      "group_id": "g2",
+      "is_disfluency": true,
+      "in_quote": false,
+      "clarity_hint": 0.1
+    },
+    {
+      "text": "part",
+      "start_us": 1680000,
+      "end_us": 2140000,
+      "group_id": null,
+      "is_disfluency": false,
+      "in_quote": false,
+      "clarity_hint": 0.55
+    }
+  ],
+  "desired_kept_indices": [
+    1,
+    2,
+    4
+  ],
+  "groups": [
+    {
+      "id": "g1",
+      "member_indices": [
+        0,
+        1
+      ]
+    },
+    {
+      "id": "g2",
+      "member_indices": [
+        2,
+        3
+      ]
+    }
+  ],
+  "candidates": [
+    {
+      "name": "clear_survivors",
+      "kept_indices": [
+        1,
+        2,
+        4
+      ]
+    },
+    {
+      "name": "unclear_survivors",
+      "kept_indices": [
+        0,
+        3,
+        4
+      ]
+    },
+    {
+      "name": "mixed_survivors",
+      "kept_indices": [
+        0,
+        2,
+        4
+      ]
+    },
+    {
+      "name": "no_collapse",
+      "kept_indices": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "name": "over_collapse",
+      "kept_indices": [
+        1,
+        4
+      ]
+    },
+    {
+      "name": "drops_content",
+      "kept_indices": [
+        1,
+        2
+      ]
+    }
+  ],
+  "expected_winner": "clear_survivors"
+}

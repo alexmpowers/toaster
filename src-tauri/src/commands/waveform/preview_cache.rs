@@ -233,11 +233,23 @@ pub(super) fn source_media_fingerprint(path: &Path) -> Result<String, String> {
     Ok(fnv1a_64_hex(&key))
 }
 
-pub(super) fn edit_version_token(segments: &[(i64, i64)]) -> String {
+pub(super) fn edit_version_token(
+    segments: &[(i64, i64)],
+    silenced_ranges: &[(i64, i64)],
+) -> String {
     use std::hash::Hasher;
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     hasher.write_u64(segments.len() as u64);
     for (start_us, end_us) in segments {
+        hasher.write_i64(*start_us);
+        hasher.write_i64(*end_us);
+    }
+    // Silenced ranges affect the rendered audio but not the timeline
+    // duration, so they must participate in the cache key or preview stays
+    // stale after a silence toggle.
+    hasher.write_u8(0xFE);
+    hasher.write_u64(silenced_ranges.len() as u64);
+    for (start_us, end_us) in silenced_ranges {
         hasher.write_i64(*start_us);
         hasher.write_i64(*end_us);
     }

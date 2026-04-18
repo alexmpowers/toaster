@@ -1,0 +1,38 @@
+{
+  "sample_rate": 48000,
+  "source": "phrase_01.wav",
+  "clean_edit": "phrase_01_edited_clean.wav",
+  "leaky_edit": "phrase_01_edited_leaky.wav",
+  "preview": "phrase_01_preview.wav",
+  "stems_dir": "phrase_01_stems",
+  "deleted_word_stem": "phrase_01_stems/word_02.wav",
+  "keep_segments": [
+    {
+      "start": 0.0,
+      "end": 0.3
+    },
+    {
+      "start": 0.3,
+      "end": 0.4
+    },
+    {
+      "start": 0.8,
+      "end": 1.1
+    }
+  ],
+  "seams_in_edit": [
+    {
+      "index": 0,
+      "sample": 14400
+    },
+    {
+      "index": 1,
+      "sample": 19200
+    }
+  ],
+  "expected_final_transcript": [
+    "four_forty",
+    "eight_eighty"
+  ],
+  "notes": "Synthetic tone phrase. word_01=440Hz, word_02=660Hz, word_03=880Hz."
+}

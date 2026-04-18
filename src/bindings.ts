@@ -5,54 +5,6 @@
 
 
 export const commands = {
-async changeBinding(id: string, binding: string) : Promise<Result<BindingResponse, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_binding", { id, binding }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async resetBinding(id: string) : Promise<Result<BindingResponse, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("reset_binding", { id }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async changePttSetting(enabled: boolean) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_ptt_setting", { enabled }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async changeSoundThemeSetting(theme: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_sound_theme_setting", { theme }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async changeStartHiddenSetting(enabled: boolean) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_start_hidden_setting", { enabled }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async changeAutostartSetting(enabled: boolean) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_autostart_setting", { enabled }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
 async changeTranslateToEnglishSetting(enabled: boolean) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_translate_to_english_setting", { enabled }) };
@@ -69,14 +21,6 @@ async changeSelectedLanguageSetting(language: string) : Promise<Result<null, str
     else return { status: "error", error: e  as any };
 }
 },
-async changeOverlayPositionSetting(position: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_overlay_position_setting", { position }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
 async changeDebugModeSetting(enabled: boolean) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_debug_mode_setting", { enabled }) };
@@ -88,46 +32,6 @@ async changeDebugModeSetting(enabled: boolean) : Promise<Result<null, string>> {
 async changeWordCorrectionThresholdSetting(threshold: number) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_word_correction_threshold_setting", { threshold }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async changePasteDelayMsSetting(ms: number) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_paste_delay_ms_setting", { ms }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async changePasteMethodSetting(method: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_paste_method_setting", { method }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async changeExternalScriptPathSetting(path: string | null) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_external_script_path_setting", { path }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async changeAutoSubmitSetting(enabled: boolean) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_auto_submit_setting", { enabled }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async changeAutoSubmitKeySetting(key: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_auto_submit_key_setting", { key }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -277,45 +181,6 @@ async changeCaptionPositionSetting(position: number) : Promise<Result<null, stri
     else return { status: "error", error: e  as any };
 }
 },
-/**
- * Temporarily unregister a binding while the user is editing it in the UI.
- * This avoids firing the action while keys are being recorded.
- */
-async suspendBinding(id: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("suspend_binding", { id }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Re-register the binding after the user has finished editing.
- */
-async resumeBinding(id: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("resume_binding", { id }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async changeMuteWhileRecordingSetting(enabled: boolean) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_mute_while_recording_setting", { enabled }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async changeAppendTrailingSpaceSetting(enabled: boolean) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_append_trailing_space_setting", { enabled }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
 async changeLazyStreamCloseSetting(enabled: boolean) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_lazy_stream_close_setting", { enabled }) };
@@ -372,34 +237,6 @@ async changeUpdateChecksSetting(enabled: boolean) : Promise<Result<null, string>
     else return { status: "error", error: e  as any };
 }
 },
-/**
- * Change the keyboard implementation with runtime switching.
- * This will unregister all shortcuts from the old implementation,
- * validate shortcuts for the new implementation (resetting invalid ones to defaults),
- * and register them with the new implementation.
- */
-async changeKeyboardImplementationSetting(implementation: string) : Promise<Result<ImplementationChangeResult, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_keyboard_implementation_setting", { implementation }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Get the current keyboard implementation
- */
-async getKeyboardImplementation() : Promise<string> {
-    return await TAURI_INVOKE("get_keyboard_implementation");
-},
-async changeShowTrayIconSetting(enabled: boolean) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_show_tray_icon_setting", { enabled }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
 async changeWhisperAcceleratorSetting(accelerator: WhisperAcceleratorSetting) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_whisper_accelerator_setting", { accelerator }) };
@@ -424,38 +261,8 @@ async changeWhisperGpuDevice(device: number) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-/**
- * Return which accelerators and GPU devices are available for this build.
- * 
- * First-call cost is dominated by enumerating GPU devices through the
- * whisper.cpp Metal/Vulkan backend, which loads dynamic libraries and
- * probes hardware. Run it on the blocking pool so the webview thread
- * stays responsive — see also the startup pre-warm in `lib.rs`.
- */
 async getAvailableAccelerators() : Promise<AvailableAccelerators> {
     return await TAURI_INVOKE("get_available_accelerators");
-},
-/**
- * Start key recording mode
- */
-async startHandyKeysRecording(bindingId: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("start_handy_keys_recording", { bindingId }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Stop key recording mode
- */
-async stopHandyKeysRecording() : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("stop_handy_keys_recording") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
 },
 async triggerUpdateCheck() : Promise<Result<null, string>> {
     try {
@@ -544,32 +351,11 @@ async openAppDataDir() : Promise<Result<null, string>> {
 }
 },
 /**
- * Check if Apple Intelligence is available on this device.
- * Called by the frontend when the user selects Apple Intelligence provider.
+ * Apple Intelligence support was removed; the command is retained so the
+ * frontend keeps compiling and simply reports "not available" everywhere.
  */
 async checkAppleIntelligenceAvailable() : Promise<boolean> {
     return await TAURI_INVOKE("check_apple_intelligence_available");
-},
-async resolveLocalCleanupReview(requestId: string, accept: boolean) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("resolve_local_cleanup_review", { requestId, accept }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Initialize keyboard shortcuts.
- * On macOS, this should be called after accessibility permissions are granted.
- * This is idempotent - calling it multiple times is safe.
- */
-async initializeShortcuts() : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("initialize_shortcuts") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
 },
 async getAvailableModels() : Promise<Result<ModelInfo[], string>> {
     try {
@@ -678,17 +464,17 @@ async getAvailableMicrophones() : Promise<Result<AudioDevice[], string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async setSelectedOutputDevice(deviceName: string) : Promise<Result<null, string>> {
+async getAvailableOutputDevices() : Promise<Result<AudioDevice[], string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("set_selected_output_device", { deviceName }) };
+    return { status: "ok", data: await TAURI_INVOKE("get_available_output_devices") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
 },
-async getAvailableOutputDevices() : Promise<Result<AudioDevice[], string>> {
+async setSelectedOutputDevice(deviceName: string) : Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("get_available_output_devices") };
+    return { status: "ok", data: await TAURI_INVOKE("set_selected_output_device", { deviceName }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -806,11 +592,25 @@ async exportTranscriptToFile(format: ExportFormat, path: string, maxCharsPerLine
 /**
  * Return all caption segments with their time ranges.
  * 
- * The frontend caches these and performs a simple time-range lookup on each
- * frame, keeping the hot-path fast while the segmentation logic stays here.
+ * Kept for callers that only need SRT/VTT-style text segments (one line
+ * per segment, no geometry). The preview + export caption rendering path
+ * uses `get_caption_blocks` which carries per-line wrap and pixel
+ * geometry authoritative for both surfaces.
  */
 async getCaptionSegments() : Promise<CaptionSegment[]> {
     return await TAURI_INVOKE("get_caption_segments");
+},
+/**
+ * Compute laid-out caption blocks consumed verbatim by the live preview.
+ * 
+ * The blocks carry per-line wrapped text plus every geometry value in
+ * video pixels, so the preview scales them by `rendered / frame_height`
+ * and renders a visual match of the export. Pass
+ * `TimelineDomain::Source` for preview over the un-edited video;
+ * `TimelineDomain::Edited` remaps to the concatenated output clock.
+ */
+async getCaptionBlocks(domain: TimelineDomain) : Promise<CaptionBlock[]> {
+    return await TAURI_INVOKE("get_caption_blocks", { domain });
 },
 /**
  * Transcribe any audio or video file and populate the editor with word-level results.
@@ -857,6 +657,12 @@ async getKeepSegments() : Promise<Result<KeepSegment[], string>> {
  * This produces a filter_complex command that can be run with FFmpeg CLI
  * to trim and concatenate the kept portions of the source media.
  * 
+ * Note: this diagnostic script reflects keep-segments only. Silenced words
+ * (from `EditorState::get_silenced_ranges`) are applied inside the live
+ * preview/export paths via a post-concat `volume=enable='between(...)'`
+ * gate (see `silence_filter_chain`) and are intentionally not reproduced
+ * here — the script is a debug aid, not a render-parity artifact.
+ * 
  * Usage: `ffmpeg -i <input> -filter_complex "<output>" -map "[outv]" -map "[outa]" <output_file>`
  */
 async generateFfmpegEditScript(inputPath: string) : Promise<Result<string, string>> {
@@ -872,6 +678,15 @@ async generateFfmpegEditScript(inputPath: string) : Promise<Result<string, strin
  * 
  * When words are deleted, the edited timeline is shorter than the source.
  * This maps a position on the edit timeline to the corresponding source time.
+ * 
+ * Always drives the mapping from `canonical_keep_segments_for_media` — the
+ * same function the preview render (`render_temp_preview_audio`) and export
+ * use — so the cursor and the audio it's scrubbing over stay sample-aligned
+ * regardless of `experimental_simplify_mode`. The previous default path
+ * routed through `EditorState::map_edit_time_to_source_time`, which uses raw
+ * legacy keep-segments and drifted against the rendered audio whenever the
+ * two pipelines disagreed on seam placement. See splice-logic synthesis
+ * report.
  */
 async mapEditToSourceTime(editTimeUs: number) : Promise<Result<number, string>> {
     try {
@@ -991,6 +806,24 @@ async cleanupAll(minPauseUs: number | null, maxGapUs: number | null) : Promise<R
 }
 },
 /**
+ * Collapse every adjacent repetition group in the current transcript
+ * by keeping the **clearest** take and deleting the rest. Returns per-
+ * group detail so the UI can highlight what was decided and why.
+ * 
+ * If no media is loaded or audio decode fails, the command refuses to
+ * run rather than silently falling back to the positional rule. That
+ * refusal is intentional — positional "keep the first" behavior is
+ * still available via the legacy `delete_duplicates` command.
+ */
+async cleanupSmartDuplicates() : Promise<Result<SmartCleanupResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("cleanup_smart_duplicates") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Save the current project to a .toaster file.
  */
 async saveProject(path: string, name: string | null) : Promise<Result<null, string>> {
@@ -1086,18 +919,6 @@ async updateRecordingRetentionPeriod(period: string) : Promise<Result<null, stri
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
-},
-/**
- * Stub implementation for non-macOS platforms
- * Always returns false since laptop detection is macOS-specific
- */
-async isLaptop() : Promise<Result<boolean, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("is_laptop") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
 }
 }
 
@@ -1116,11 +937,50 @@ historyUpdatePayload: "history-update-payload"
 
 /** user-defined types **/
 
-export type AppSettings = { bindings?: Partial<{ [key in string]: ShortcutBinding }>; push_to_talk?: boolean; audio_feedback?: boolean; audio_feedback_volume?: number; sound_theme?: SoundTheme; start_hidden?: boolean; autostart_enabled?: boolean; update_checks_enabled?: boolean; selected_model?: string; selected_output_device?: string | null; preferred_output_sample_rate?: number; translate_to_english?: boolean; selected_language?: string; overlay_position?: OverlayPosition; debug_mode?: boolean; log_level?: LogLevel; custom_words?: string[]; model_unload_timeout?: ModelUnloadTimeout; word_correction_threshold?: number; history_limit?: number; recording_retention_period?: RecordingRetentionPeriod; paste_method?: PasteMethod; clipboard_handling?: ClipboardHandling; auto_submit?: boolean; auto_submit_key?: AutoSubmitKey; post_process_enabled?: boolean; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: SecretMap; post_process_models?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; post_process_selected_prompt_id?: string | null; append_trailing_space?: boolean; app_language?: string; experimental_enabled?: boolean; experimental_simplify_mode?: boolean; lazy_stream_close?: boolean; keyboard_implementation?: KeyboardImplementation; show_tray_icon?: boolean; paste_delay_ms?: number; typing_tool?: TypingTool; external_script_path?: string | null; custom_filler_words?: string[] | null; whisper_accelerator?: WhisperAcceleratorSetting; ort_accelerator?: OrtAcceleratorSetting; whisper_gpu_device?: number; normalize_audio_on_export?: boolean; export_volume_db?: number; export_fade_in_ms?: number; export_fade_out_ms?: number; caption_font_size?: number; caption_bg_color?: string; caption_text_color?: string; caption_position?: number; settings_version?: number }
+export type AppSettings = { bindings?: Partial<{ [key in string]: ShortcutBinding }>; start_hidden?: boolean; update_checks_enabled?: boolean; selected_model?: string; selected_output_device?: string | null; preferred_output_sample_rate?: number; translate_to_english?: boolean; selected_language?: string; debug_mode?: boolean; log_level?: LogLevel; custom_words?: string[]; model_unload_timeout?: ModelUnloadTimeout; word_correction_threshold?: number; history_limit?: number; recording_retention_period?: RecordingRetentionPeriod; post_process_enabled?: boolean; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: SecretMap; post_process_models?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; post_process_selected_prompt_id?: string | null; app_language?: string; experimental_enabled?: boolean; experimental_simplify_mode?: boolean; lazy_stream_close?: boolean; custom_filler_words?: string[] | null; whisper_accelerator?: WhisperAcceleratorSetting; ort_accelerator?: OrtAcceleratorSetting; whisper_gpu_device?: number; normalize_audio_on_export?: boolean; export_volume_db?: number; export_fade_in_ms?: number; export_fade_out_ms?: number; caption_font_size?: number; caption_bg_color?: string; caption_text_color?: string; caption_position?: number; caption_font_family?: CaptionFontFamily; caption_radius_px?: number; caption_padding_x_px?: number; caption_padding_y_px?: number; caption_max_width_percent?: number; settings_version?: number }
 export type AudioDevice = { index: string; name: string; is_default: boolean }
-export type AutoSubmitKey = "enter" | "ctrl_enter" | "cmd_enter"
 export type AvailableAccelerators = { whisper: string[]; ort: string[]; gpu_devices: GpuDeviceOption[] }
-export type BindingResponse = { success: boolean; binding: ShortcutBinding | null; error: string | null }
+/**
+ * Authoritative caption unit consumed verbatim by preview and export.
+ */
+export type CaptionBlock = { index: number; start_us: number; end_us: number; 
+/**
+ * Already-wrapped visual lines; render one per row.
+ */
+lines: string[]; 
+/**
+ * CSS font-family stack for the preview (export uses `font_ass_name`).
+ */
+font_css: string; 
+/**
+ * ASS `Fontname=` value for libass.
+ */
+font_ass_name: string; font_size_px: number; text_color: Rgba; background: Rgba; padding_x_px: number; padding_y_px: number; radius_px: number; 
+/**
+ * Distance from the bottom of the frame to the bottom edge of the
+ * caption box, in video pixels.
+ */
+margin_v_px: number; 
+/**
+ * Pixel width of the widest line (glyph advance sum). Preview uses
+ * this to size the pill to the text; export uses it to size the ASS
+ * `\p1` rectangle.
+ */
+text_width_px: number; 
+/**
+ * Per-line box height in video pixels (includes leading).
+ */
+line_height_px: number; 
+/**
+ * Frame dimensions this layout was computed against; the preview
+ * divides by these to scale to the rendered `<video>`.
+ */
+frame_width: number; frame_height: number }
+/**
+ * Font family choice for captions. The preview CSS and the exported ASS
+ * both read from this enum so they stay in visual sync.
+ */
+export type CaptionFontFamily = "Inter" | "Roboto" | "SystemUi"
 /**
  * A caption segment for SRT/VTT output and live preview.
  */
@@ -1134,7 +994,6 @@ export type CaptionSegment = { index: number; start_us: number; end_us: number; 
  * duplicates are found, then trims pauses.
  */
 export type CleanupResult = { fillers_removed: number; duplicates_removed: number; pauses_trimmed: number; gaps_tightened: number; passes: number }
-export type ClipboardHandling = "dont_modify" | "copy_to_clipboard"
 export type CustomSounds = { start: boolean; stop: boolean }
 /**
  * Atomic frontend projection of editor state after a backend transaction.
@@ -1161,18 +1020,9 @@ export type GpuDeviceOption = { id: number; name: string; total_vram_mb: number 
 export type HistoryEntry = { id: number; file_name: string; timestamp: number; saved: boolean; title: string; transcription_text: string; post_processed_text: string | null; post_process_prompt: string | null; post_process_requested: boolean }
 export type HistoryUpdatePayload = { action: "added"; entry: HistoryEntry } | { action: "updated"; entry: HistoryEntry } | { action: "deleted"; id: number } | { action: "toggled"; id: number }
 /**
- * Result of changing keyboard implementation
- */
-export type ImplementationChangeResult = { success: boolean; 
-/**
- * List of binding IDs that were reset to defaults due to incompatibility
- */
-reset_bindings: string[] }
-/**
  * A keep-segment: contiguous non-deleted region of the source media.
  */
 export type KeepSegment = { start_us: number; end_us: number }
-export type KeyboardImplementation = "tauri" | "handy_keys"
 export type LLMPrompt = { id: string; name: string; prompt: string }
 export type LocalLlmApplyResponse = { projection: EditorProjection; apply_result: LocalLlmApplyResult }
 /**
@@ -1216,9 +1066,7 @@ export type ModelInfo = { id: string; name: string; description: string; filenam
 export type ModelLoadStatus = { is_loaded: boolean; current_model: string | null }
 export type ModelUnloadTimeout = "never" | "immediately" | "min_2" | "min_5" | "min_10" | "min_15" | "hour_1" | "sec_15"
 export type OrtAcceleratorSetting = "auto" | "cpu" | "cuda" | "directml" | "rocm"
-export type OverlayPosition = "none" | "top" | "bottom"
 export type PaginatedHistory = { entries: HistoryEntry[]; has_more: boolean }
-export type PasteMethod = "ctrl_v" | "direct" | "none" | "shift_insert" | "ctrl_shift_v" | "external_script"
 export type PauseInfo = { after_word_index: number; gap_duration_us: number }
 export type PermissionAccess = "allowed" | "denied" | "unknown"
 export type PlaybackAudioContract = { selected_output_device: string; selected_output_device_available: boolean; preferred_output_sample_rate: number; detected_output_sample_rate: number | null; normalized_output_sample_rate: number; mismatch_detected: boolean }
@@ -1226,9 +1074,52 @@ export type PostProcessProvider = { id: string; label: string; base_url: string;
 export type PreviewRenderMetadata = { status: PreviewRenderStatus; preview_file_path: string | null; preview_url_safe_path: string | null; source_media_fingerprint: string | null; edit_version: string; generation_token: string; cache_hit: boolean }
 export type PreviewRenderStatus = "ready" | "no_segments" | "missing_media"
 export type RecordingRetentionPeriod = "never" | "preserve_limit" | "days_3" | "weeks_2" | "months_3"
+export type Rgba = { r: number; g: number; b: number; a: number }
 export type SecretMap = Partial<{ [key in string]: string }>
 export type ShortcutBinding = { id: string; name: string; description: string; default_binding: string; current_binding: string }
-export type SoundTheme = "marimba" | "pop" | "custom"
+export type SmartCleanupResult = { groups_collapsed: number; words_deleted: number; decisions: SmartGroupDecision[]; 
+/**
+ * Sample rate used when scoring (16000 when audio was available, 0
+ * when the command ran without audio and refused to fall back).
+ */
+sample_rate: number }
+/**
+ * Per-group decision exposed to the UI.
+ */
+export type SmartGroupDecision = { 
+/**
+ * Lowercase, punctuation-stripped repeated token (e.g. "the").
+ */
+token: string; 
+/**
+ * Word indices that formed the repeat group, in transcript order.
+ */
+members: number[]; 
+/**
+ * Index (into the word list) chosen as the survivor.
+ */
+survivor_index: number; 
+/**
+ * Indices marked deleted by this decision.
+ */
+deleted_indices: number[]; 
+/**
+ * Articulation score of the survivor in `[0, 1]`.
+ */
+survivor_score: number; 
+/**
+ * Articulation score of every member, aligned with `members`.
+ */
+member_scores: number[] }
+/**
+ * Which time axis the caller wants timestamps in.
+ * 
+ * * `Source` — the original media clock. Used by the live preview, which
+ * plays the un-concatenated source video.
+ * * `Edited` — the concatenated output clock. Used by the export so the
+ * burned-in captions land on the right video frames after cuts.
+ */
+export type TimelineDomain = "Source" | "Edited"
 /**
  * Diagnostics snapshot for edit-time/source-time contract validation.
  */
@@ -1261,7 +1152,6 @@ warning: string | null }
  * A keep-segment represented in microseconds.
  */
 export type TimingSegment = { start_us: number; end_us: number }
-export type TypingTool = "auto" | "wtype" | "kwtype" | "dotool" | "ydotool" | "xdotool"
 export type WhisperAcceleratorSetting = "auto" | "cpu" | "gpu"
 export type WindowsMicrophonePermissionStatus = { supported: boolean; overall_access: PermissionAccess; device_access: PermissionAccess; app_access: PermissionAccess; desktop_app_access: PermissionAccess }
 export type Word = { text: string; 
@@ -1286,7 +1176,7 @@ speaker_id: number }
 
 import {
 	invoke as TAURI_INVOKE,
-	Channel as _TAURI_CHANNEL,
+	Channel as TAURI_CHANNEL,
 } from "@tauri-apps/api/core";
 import * as TAURI_API_EVENT from "@tauri-apps/api/event";
 import { type WebviewWindow as __WebviewWindow__ } from "@tauri-apps/api/webviewWindow";

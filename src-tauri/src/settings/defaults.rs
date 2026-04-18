@@ -6,7 +6,7 @@
 //! smaller helpers.
 
 use super::types::{
-    AppSettings, LLMPrompt, LogLevel, ModelUnloadTimeout, OrtAcceleratorSetting,
+    AppSettings, CaptionFontFamily, LLMPrompt, LogLevel, ModelUnloadTimeout, OrtAcceleratorSetting,
     PostProcessProvider, RecordingRetentionPeriod, SecretMap, ShortcutBinding,
     WhisperAcceleratorSetting,
 };
@@ -38,6 +38,22 @@ pub(super) fn default_caption_text_color() -> String {
 }
 
 pub(super) fn default_caption_position() -> u32 {
+    90
+}
+
+pub(super) fn default_caption_radius_px() -> u32 {
+    4
+}
+
+pub(super) fn default_caption_padding_x_px() -> u32 {
+    12
+}
+
+pub(super) fn default_caption_padding_y_px() -> u32 {
+    4
+}
+
+pub(super) fn default_caption_max_width_percent() -> u32 {
     90
 }
 
@@ -414,6 +430,11 @@ pub fn get_default_settings() -> AppSettings {
         caption_bg_color: default_caption_bg_color(),
         caption_text_color: default_caption_text_color(),
         caption_position: default_caption_position(),
+        caption_font_family: CaptionFontFamily::default(),
+        caption_radius_px: default_caption_radius_px(),
+        caption_padding_x_px: default_caption_padding_x_px(),
+        caption_padding_y_px: default_caption_padding_y_px(),
+        caption_max_width_percent: default_caption_max_width_percent(),
         settings_version: default_settings_version(),
     }
 }
@@ -441,6 +462,23 @@ pub(super) fn validate_settings(settings: &mut AppSettings) -> bool {
     }
     if !is_valid_hex(&settings.caption_bg_color) {
         settings.caption_bg_color = default_caption_bg_color();
+        changed = true;
+    }
+
+    if settings.caption_radius_px > 64 {
+        settings.caption_radius_px = default_caption_radius_px();
+        changed = true;
+    }
+    if settings.caption_padding_x_px > 128 {
+        settings.caption_padding_x_px = default_caption_padding_x_px();
+        changed = true;
+    }
+    if settings.caption_padding_y_px > 128 {
+        settings.caption_padding_y_px = default_caption_padding_y_px();
+        changed = true;
+    }
+    if settings.caption_max_width_percent < 20 || settings.caption_max_width_percent > 100 {
+        settings.caption_max_width_percent = default_caption_max_width_percent();
         changed = true;
     }
 

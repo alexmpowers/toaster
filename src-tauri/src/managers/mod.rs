@@ -1,3 +1,6 @@
+pub mod captions;
+pub mod cleanup;
+pub mod disfluency;
 pub mod editor;
 pub mod export;
 pub mod filler;
@@ -5,4 +8,5 @@ pub mod history;
 pub mod media;
 pub mod model;
 pub mod project;
+pub mod splice;
 pub mod transcription;

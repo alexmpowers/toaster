@@ -2,14 +2,12 @@ import { useEffect, useState, useRef } from "react";
 import { toast, Toaster } from "sonner";
 import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
-import { invoke } from "@tauri-apps/api/core";
 import { platform } from "@tauri-apps/plugin-os";
 import {
   checkAccessibilityPermission,
   checkMicrophonePermission,
 } from "tauri-plugin-macos-permissions-api";
 import {
-  LocalCleanupReviewRequestEvent,
   ModelStateEvent,
   RecordingErrorEvent,
 } from "./lib/types/events";
@@ -18,7 +16,6 @@ import AccessibilityPermissions from "./components/AccessibilityPermissions";
 import Footer from "./components/footer";
 import Onboarding, { AccessibilityOnboarding } from "./components/onboarding";
 import { Sidebar, SidebarSection, SECTIONS_CONFIG } from "./components/Sidebar";
-import { Button } from "./components/ui";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useSettings } from "./hooks/useSettings";
 import { useSettingsStore } from "./stores/settingsStore";
@@ -52,9 +49,6 @@ function App() {
     (state) => state.refreshOutputDevices,
   );
   const hasCompletedPostOnboardingInit = useRef(false);
-  const [cleanupReview, setCleanupReview] =
-    useState<LocalCleanupReviewRequestEvent | null>(null);
-  const [isResolvingCleanupReview, setIsResolvingCleanupReview] = useState(false);
 
   useEffect(() => {
     checkOnboardingStatus();
@@ -160,36 +154,6 @@ function App() {
       unlisten.then((fn) => fn());
     };
   }, [t]);
-
-  useEffect(() => {
-    const unlisten = listen<LocalCleanupReviewRequestEvent>(
-      "local-cleanup-review-request",
-      (event) => {
-        setIsResolvingCleanupReview(false);
-        setCleanupReview(event.payload);
-      },
-    );
-    return () => {
-      unlisten.then((fn) => fn());
-    };
-  }, []);
-
-  const resolveCleanupReview = async (accept: boolean) => {
-    if (!cleanupReview || isResolvingCleanupReview) return;
-    setIsResolvingCleanupReview(true);
-    try {
-      await invoke("resolve_local_cleanup_review", {
-        requestId: cleanupReview.request_id,
-        accept,
-      });
-    } catch (error) {
-      console.error("Failed to resolve cleanup review:", error);
-      toast.error(t("settings.postProcessing.review.resolveError"));
-    } finally {
-      setCleanupReview(null);
-      setIsResolvingCleanupReview(false);
-    }
-  };
 
   const revealMainWindowForPermissions = async () => {
     try {
@@ -298,60 +262,6 @@ function App() {
           },
         }}
       />
-      {cleanupReview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="bg-background border border-mid-gray/20 rounded-xl p-4 w-full max-w-5xl space-y-4">
-            <div>
-              <h2 className="text-base font-semibold">
-                {t("settings.postProcessing.review.title")}
-              </h2>
-              <p className="text-sm text-mid-gray">
-                {t("settings.postProcessing.review.description")}
-              </p>
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="space-y-2">
-                <p className="text-xs uppercase tracking-wide text-mid-gray">
-                  {t("settings.postProcessing.review.originalLabel")}
-                </p>
-                <div className="border border-mid-gray/20 rounded-lg p-3 bg-mid-gray/5 max-h-64 overflow-y-auto">
-                  <pre className="text-sm whitespace-pre-wrap break-words font-sans">
-                    {cleanupReview.original_text}
-                  </pre>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <p className="text-xs uppercase tracking-wide text-mid-gray">
-                  {t("settings.postProcessing.review.cleanedLabel")}
-                </p>
-                <div className="border border-mid-gray/20 rounded-lg p-3 bg-mid-gray/5 max-h-64 overflow-y-auto">
-                  <pre className="text-sm whitespace-pre-wrap break-words font-sans">
-                    {cleanupReview.cleaned_text}
-                  </pre>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button
-                onClick={() => resolveCleanupReview(false)}
-                variant="secondary"
-                size="md"
-                disabled={isResolvingCleanupReview}
-              >
-                {t("settings.postProcessing.review.reject")}
-              </Button>
-              <Button
-                onClick={() => resolveCleanupReview(true)}
-                variant="primary"
-                size="md"
-                disabled={isResolvingCleanupReview}
-              >
-                {t("settings.postProcessing.review.accept")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
       {/* Main content area that takes remaining space */}
       <div className="flex-1 flex overflow-hidden">
         <ErrorBoundary>

@@ -1,0 +1,27 @@
+[
+  {
+    "word": "hello",
+    "start_us": 0,
+    "end_us": 420000
+  },
+  {
+    "word": "world",
+    "start_us": 500000,
+    "end_us": 860000
+  },
+  {
+    "word": "this",
+    "start_us": 980000,
+    "end_us": 1260000
+  },
+  {
+    "word": "is",
+    "start_us": 1360000,
+    "end_us": 1560000
+  },
+  {
+    "word": "toaster",
+    "start_us": 1650000,
+    "end_us": 2190000
+  }
+]

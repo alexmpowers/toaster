@@ -1,5 +1,6 @@
 pub mod app_settings;
 pub mod audio;
+pub mod disfluency;
 pub mod editor;
 pub mod export;
 pub mod filler;
@@ -12,7 +13,7 @@ pub mod transcription;
 pub mod waveform;
 use crate::settings::{get_settings, write_settings, AppSettings, LogLevel};
 use crate::utils::cancel_current_operation;
-use tauri::{AppHandle, Manager};
+use tauri::AppHandle;
 use tauri_plugin_opener::OpenerExt;
 
 #[tauri::command]
@@ -125,19 +126,4 @@ pub fn open_app_data_dir(app: AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub fn check_apple_intelligence_available() -> bool {
     false
-}
-
-#[specta::specta]
-#[tauri::command]
-pub fn resolve_local_cleanup_review(
-    app: AppHandle,
-    request_id: String,
-    accept: bool,
-) -> Result<(), String> {
-    let review_state = app.state::<crate::LocalCleanupReviewState>();
-    if review_state.resolve(&request_id, accept) {
-        Ok(())
-    } else {
-        Err("No pending cleanup review request found".to_string())
-    }
 }

@@ -52,3 +52,15 @@ build/
 
 # Windows reserved-name artifacts (accidental PowerShell `> nul` redirects)
 /nul
+
+# Audio-boundary eval outputs (scripts/eval-audio-boundary.ps1)
+evals/audio-boundary/
+
+# Multi-backend parity eval outputs
+evals/multi-backend-parity/
+
+# LLM-as-a-Verifier parity eval outputs (scripts/eval-verifier.ps1)
+evals/verifier-parity/
+evals/verifier-cleanup/
+evals/verifier-captions/
+evals/verifier-disfluency/

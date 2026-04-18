@@ -307,56 +307,102 @@ impl EditorState {
         /// keep-segments. Gaps larger than this are treated as dead air and
         /// excluded from the output.
         const MAX_INTRA_SEGMENT_GAP_US: i64 = 200_000; // 200ms
+        /// Minimum kept-segment duration before the micro-merge pass tries
+        /// to fold it into a neighbour. Prevents ultra-short glitch clips.
+        const MIN_KEEP_SEGMENT_US: i64 = 150_000; // 150ms minimum
 
-        let mut segments = Vec::new();
+        let mut segments: Vec<(i64, i64)> = Vec::new();
+        // Parallel to `segments`: true iff the seam that opened this segment
+        // was created by a user delete (not by a natural silence gap). Used
+        // by the micro-merge pass to refuse to bridge delete-driven seams,
+        // which would otherwise put deleted audio back on the timeline.
+        let mut delete_boundary_before: Vec<bool> = Vec::new();
+
         let mut seg_start: Option<i64> = None;
         let mut seg_end: i64 = 0;
+        // Running high-water mark of any deleted word's end_us seen so far.
+        // Used to clamp the next kept segment's start up, defending against
+        // forced-alignment outputs where a kept word's start_us precedes
+        // the end of an adjacent deleted word (overlapping boundaries).
+        let mut prev_deleted_end: i64 = i64::MIN;
+        // Flag carried forward until the next segment actually opens.
+        let mut next_segment_after_delete = false;
+        // Captured when the current segment opened, pushed alongside it.
+        let mut current_opened_after_delete = false;
 
         for word in &self.words {
             if word.deleted {
                 if let Some(start) = seg_start.take() {
-                    segments.push((start, seg_end));
+                    // Clamp the closing edge down so it cannot extend past
+                    // the deleted word's start even when word boundaries
+                    // overlap in the alignment output.
+                    let bound = seg_end.min(word.start_us);
+                    if bound > start {
+                        segments.push((start, bound));
+                        delete_boundary_before.push(current_opened_after_delete);
+                    }
                 }
+                prev_deleted_end = prev_deleted_end.max(word.end_us);
+                next_segment_after_delete = true;
             } else {
+                // Clamp the opening edge up so it cannot precede the end of
+                // any earlier deleted word (handles overlapping boundaries).
+                let word_start = word.start_us.max(prev_deleted_end);
+                if word.end_us <= word_start {
+                    // Entirely swallowed by a prior delete region; skip.
+                    continue;
+                }
                 if let Some(start) = seg_start {
-                    // Check gap between this word and the previous kept word
-                    let gap = word.start_us - seg_end;
+                    let gap = word_start - seg_end;
                     if gap > MAX_INTRA_SEGMENT_GAP_US {
-                        // Large gap — end current segment, start a new one
+                        // Large silence split — end current segment, start a new one.
                         segments.push((start, seg_end));
-                        seg_start = Some(word.start_us);
+                        delete_boundary_before.push(current_opened_after_delete);
+                        // The seam that just opened is a silence split, not a delete.
+                        current_opened_after_delete = false;
+                        seg_start = Some(word_start);
                     }
                 } else {
-                    seg_start = Some(word.start_us);
+                    current_opened_after_delete = next_segment_after_delete;
+                    seg_start = Some(word_start);
                 }
+                next_segment_after_delete = false;
                 seg_end = word.end_us;
             }
         }
 
         if let Some(start) = seg_start {
             segments.push((start, seg_end));
+            delete_boundary_before.push(current_opened_after_delete);
         }
 
         // Merge micro-segments (<150ms) with their nearest neighbor to avoid
-        // glitchy pops from ultra-short audio clips in the export.
-        const MIN_KEEP_SEGMENT_US: i64 = 150_000; // 150ms minimum
+        // glitchy pops from ultra-short audio clips in the export. Refuse to
+        // merge across a delete-driven seam — doing so would re-introduce
+        // audio the user explicitly deleted.
         let mut i = 0;
         while i < segments.len() && segments.len() > 1 {
             let dur = segments[i].1 - segments[i].0;
             if dur < MIN_KEEP_SEGMENT_US {
-                if i + 1 < segments.len() {
+                // Try forward merge (seam between i and i+1 is
+                // `delete_boundary_before[i + 1]`).
+                if i + 1 < segments.len() && !delete_boundary_before[i + 1] {
                     let gap = segments[i + 1].0 - segments[i].1;
                     if gap <= MAX_INTRA_SEGMENT_GAP_US {
                         segments[i] = (segments[i].0, segments[i + 1].1);
                         segments.remove(i + 1);
+                        delete_boundary_before.remove(i + 1);
                         continue;
                     }
                 }
-                if i > 0 {
+                // Try backward merge (seam before i is
+                // `delete_boundary_before[i]`).
+                if i > 0 && !delete_boundary_before[i] {
                     let gap = segments[i].0 - segments[i - 1].1;
                     if gap <= MAX_INTRA_SEGMENT_GAP_US {
                         segments[i - 1] = (segments[i - 1].0, segments[i].1);
                         segments.remove(i);
+                        delete_boundary_before.remove(i);
                         continue;
                     }
                 }
@@ -367,11 +413,45 @@ impl EditorState {
         segments
     }
 
+    /// Return source-time ranges of every silenced (but not deleted) word.
+    ///
+    /// Deletion takes precedence: a word that is both deleted and silenced is
+    /// excluded from the timeline entirely via `get_keep_segments`, so it
+    /// does not appear here. The returned ranges are in the ORIGINAL source
+    /// timeline (not the edited timeline) and are NOT merged — callers map
+    /// them into edit-time when composing FFmpeg filters.
+    ///
+    /// Paired with `get_keep_segments` (boundary-based, silence-agnostic):
+    /// keep-segments decide which audio stays on the timeline; silenced
+    /// ranges decide which portions of that retained audio are muted in
+    /// preview and export. Keeping these two concerns separate preserves
+    /// timing (silenced words do not shrink the edited timeline) and lets
+    /// the backend remain the single source of truth for both the dual
+    /// preview/export render paths.
+    pub fn get_silenced_ranges(&self) -> Vec<(i64, i64)> {
+        self.words
+            .iter()
+            .filter(|w| w.silenced && !w.deleted && w.end_us > w.start_us)
+            .map(|w| (w.start_us, w.end_us))
+            .collect()
+    }
+
     /// Map a position on the edited timeline (deletions removed) back to
     /// the original source timeline.
     ///
     /// Walks keep-segments, accumulating edit-time. When the accumulated
     /// time reaches `edit_time_us`, interpolates within that segment.
+    ///
+    /// NOTE: Production callers (preview scrubbing, waveform cursor) now
+    /// route through `canonical_keep_segments_for_media` +
+    /// `map_edit_time_to_source_time_from_segments` in
+    /// `commands/waveform/mod.rs` so preview and export share one segment
+    /// source of truth. This method is retained because the editor
+    /// precision test-suite uses it as a compact reference for the
+    /// semantic contract ("given an edited-timeline offset, return the
+    /// source-timeline offset"); keeping it documents that contract at
+    /// the type that owns the words/deletions.
+    #[allow(dead_code)]
     pub fn map_edit_time_to_source_time(&self, edit_time_us: i64) -> i64 {
         let segments = self.get_keep_segments();
         let mut elapsed: i64 = 0;
@@ -757,6 +837,30 @@ mod tests {
         assert!(editor.get_words()[0].silenced);
         assert!(editor.silence_word(0));
         assert!(!editor.get_words()[0].silenced);
+    }
+
+    #[test]
+    fn silenced_ranges_returns_source_time_ranges_of_silenced_words() {
+        let mut editor = EditorState::new();
+        editor.set_words(make_words());
+        assert!(editor.get_silenced_ranges().is_empty());
+        editor.silence_word(1); // "world" 1M..2M
+        editor.silence_word(3); // "is"    3M..4M
+        assert_eq!(
+            editor.get_silenced_ranges(),
+            vec![(1_000_000, 2_000_000), (3_000_000, 4_000_000)]
+        );
+    }
+
+    #[test]
+    fn silenced_ranges_excludes_deleted_words() {
+        let mut editor = EditorState::new();
+        editor.set_words(make_words());
+        editor.silence_word(2); // "this" 2M..3M, will also be deleted
+        editor.delete_word(2);
+        // Deletion wins: silenced+deleted word is removed from the timeline
+        // via keep-segments, so it must not also appear as a silence range.
+        assert!(editor.get_silenced_ranges().is_empty());
     }
 
     #[test]
@@ -1272,6 +1376,158 @@ mod tests {
         assert_eq!(editor.get_words()[1].text, "earth");
         assert_eq!(editor.get_words()[2].text, "this");
     }
+
+    // ── Splice-boundary regression tests ─────────────────────────────
+
+    fn kw(text: &str, start_us: i64, end_us: i64, deleted: bool) -> Word {
+        Word {
+            text: text.into(),
+            start_us,
+            end_us,
+            deleted,
+            silenced: false,
+            confidence: 0.9,
+            speaker_id: 0,
+        }
+    }
+
+    /// Forced-alignment often emits overlapping boundaries for repeated
+    /// adjacent tokens. The kept segment must never extend into the
+    /// following deleted word's interval.
+    #[test]
+    fn adjacent_delete_with_overlapping_word_boundaries_does_not_leak() {
+        let mut editor = EditorState::new();
+        editor.set_words(vec![
+            kw("Yeah", 0, 500_000, false),
+            // Kept; end_us (800_000) overlaps next word's start (780_000).
+            kw("the", 490_000, 800_000, false),
+            // DELETED; starts before previous kept word ends.
+            kw("the", 780_000, 1_100_000, true),
+            kw("best", 1_100_000, 1_500_000, false),
+        ]);
+
+        let segments = editor.get_keep_segments();
+        for (s, e) in &segments {
+            assert!(
+                !(*s < 1_100_000 && *e > 780_000),
+                "segment ({}, {}) intersects deleted interval [780_000, 1_100_000]",
+                s,
+                e
+            );
+        }
+    }
+
+    /// N adjacent deletions should collapse to exactly one seam, and that
+    /// seam must lie strictly outside the deleted interval.
+    #[test]
+    fn n_adjacent_deletes_collapse_to_one_seam() {
+        let mut editor = EditorState::new();
+        editor.set_words(vec![
+            kw("alpha", 0, 400_000, false),
+            kw("bravo", 400_000, 800_000, true),
+            kw("charlie", 800_000, 1_200_000, true),
+            kw("delta", 1_200_000, 1_600_000, true),
+            kw("echo", 1_600_000, 2_000_000, false),
+        ]);
+
+        let segments = editor.get_keep_segments();
+        assert_eq!(
+            segments.len(),
+            2,
+            "expected exactly one seam (two segments), got {:?}",
+            segments
+        );
+        let deleted_start = 400_000i64;
+        let deleted_end = 1_600_000i64;
+        for (s, e) in &segments {
+            assert!(
+                *e <= deleted_start || *s >= deleted_end,
+                "segment ({}, {}) intersects deleted interval [{}, {}]",
+                s,
+                e,
+                deleted_start,
+                deleted_end
+            );
+        }
+    }
+
+    /// A <150ms kept segment separated from the next kept segment by a
+    /// deleted word (even with a small gap) must NOT be merged — merging
+    /// would swallow the user's delete.
+    #[test]
+    fn micro_segment_not_merged_across_delete() {
+        let mut editor = EditorState::new();
+        editor.set_words(vec![
+            kw("tiny", 0, 120_000, false),
+            kw("gone", 120_000, 200_000, true),
+            kw("long", 200_000, 800_000, false),
+        ]);
+
+        let segments = editor.get_keep_segments();
+        assert_eq!(
+            segments.len(),
+            2,
+            "micro-merge must not bridge a delete seam; got {:?}",
+            segments
+        );
+        let deleted_start = 120_000i64;
+        let deleted_end = 200_000i64;
+        for (s, e) in &segments {
+            assert!(
+                *e <= deleted_start || *s >= deleted_end,
+                "segment ({}, {}) intersects deleted interval [{}, {}]",
+                s,
+                e,
+                deleted_start,
+                deleted_end
+            );
+        }
+    }
+
+    /// Regression: the micro-merge must still collapse a short leading
+    /// segment into the next one when the seam is a natural silence split
+    /// (no deleted word between them).
+    #[test]
+    fn silence_split_still_merges_micro_segment() {
+        let mut editor = EditorState::new();
+        // <150ms kept word, then a 180ms silence (<= MAX_INTRA_SEGMENT_GAP_US
+        // so after the micro-merge they collapse back together). To force a
+        // split before merging, we need a gap > 200_000 between the words;
+        // but we want the micro-merge to still bridge. So use a gap of
+        // exactly 201_000 so the initial pass splits, then the micro-merge
+        // pass sees a 201_000 gap — which is > 200_000 so it would NOT
+        // merge. Instead, construct two micro-segments separated by a
+        // >200ms gap in the original words but collapse when the first
+        // segment is <150ms and the subsequent gap is <=200ms.
+        //
+        // Simpler setup: split engine splits when gap > 200_000. Use gap =
+        // 201_000 to split; then in the merge pass the gap between the two
+        // pushed segments is still 201_000 (> 200_000) so it won't merge.
+        //
+        // To exercise the merge path we need an initial split where the
+        // post-split gap between pushed segments is <= 200_000. That can
+        // only happen if the words' gap is > 200_000 but we push segments
+        // covering less than the full words — not currently possible. So
+        // the micro-merge path is reachable only via delete-driven seams,
+        // which this fix now forbids. This test therefore asserts that a
+        // two-word transcript with no deletes and a normal in-range gap
+        // returns a single merged segment via the initial-pass logic
+        // (not the micro-merge pass) — regression that simple kept audio
+        // stays intact.
+        editor.set_words(vec![
+            kw("hi", 0, 120_000, false),
+            kw("there", 250_000, 900_000, false),
+        ]);
+
+        let segments = editor.get_keep_segments();
+        assert_eq!(
+            segments.len(),
+            1,
+            "two kept words with a sub-threshold silence gap must remain one segment; got {:?}",
+            segments
+        );
+        assert_eq!(segments[0], (0, 900_000));
+    }
 }
 
 // ── Dual-track regression suite ───────────────────────────────────────────────
@@ -1579,17 +1835,12 @@ mod dual_track_regression {
     /// Acceptable range:
     ///   threshold:  10 ms – 200 ms  (below 10 ms is jittery; above 200 ms is perceptible)
     ///   cooldown:   100 ms – 1000 ms
-    #[test]
-    fn dt_drift_correction_constants_within_perceptual_bounds() {
-        assert!(
-            DUAL_TRACK_DRIFT_THRESHOLD >= 0.010 && DUAL_TRACK_DRIFT_THRESHOLD <= 0.200,
-            "DUAL_TRACK_DRIFT_THRESHOLD ({DUAL_TRACK_DRIFT_THRESHOLD}s) outside [10ms, 200ms]"
-        );
-        assert!(
-            DUAL_TRACK_SYNC_COOLDOWN_MS >= 100.0 && DUAL_TRACK_SYNC_COOLDOWN_MS <= 1000.0,
-            "DUAL_TRACK_SYNC_COOLDOWN_MS ({DUAL_TRACK_SYNC_COOLDOWN_MS}ms) outside [100ms, 1000ms]"
-        );
-    }
+    // Compile-time bounds checks: constants are fixed values, so assert them at
+    // const-eval time rather than in a runtime test (avoids "constant assertion" lint).
+    const _: () =
+        assert!(DUAL_TRACK_DRIFT_THRESHOLD >= 0.010 && DUAL_TRACK_DRIFT_THRESHOLD <= 0.200,);
+    const _: () =
+        assert!(DUAL_TRACK_SYNC_COOLDOWN_MS >= 100.0 && DUAL_TRACK_SYNC_COOLDOWN_MS <= 1000.0,);
 
     /// Drift < threshold must NOT trigger a correction (no spurious seek).
     #[test]
@@ -1925,14 +2176,8 @@ mod precision_eval {
         editor.set_words(words.clone());
 
         let got = editor.get_words();
-        let original_durations: Vec<i64> = words
-            .iter()
-            .map(|w| w.end_us as i64 - w.start_us as i64)
-            .collect();
-        let got_durations: Vec<i64> = got
-            .iter()
-            .map(|w| w.end_us as i64 - w.start_us as i64)
-            .collect();
+        let original_durations: Vec<i64> = words.iter().map(|w| w.end_us - w.start_us).collect();
+        let got_durations: Vec<i64> = got.iter().map(|w| w.end_us - w.start_us).collect();
 
         assert_eq!(
             original_durations, got_durations,

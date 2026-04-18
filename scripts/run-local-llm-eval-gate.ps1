@@ -170,13 +170,13 @@ $precisionBenchmarkSubcheck = Invoke-GateSubcheck `
 
 $asrSubcheck = Invoke-GateSubcheck `
     -Id "asr-leakage-oracle-live-validation" `
-    -Criteria "scripts/run-live-midstream-validation.ps1 exits 0 and emits a report with asr_metric_pass=true" `
-    -WorkingDirectory $repoRoot `
+    -Criteria "cargo test commands::waveform::tests::live_validation_backend_media_pipeline (ignored) exits 0 and emits a report with asr_metric_pass=true" `
+    -WorkingDirectory $srcTauriDir `
     -CommandBlock {
-    & (Join-Path $PSScriptRoot "run-live-midstream-validation.ps1") `
-        -MediaPath $MediaPath `
-        -AsrModelPath $AsrModelPath `
-        -OutputDir $liveValidationDir
+    $env:TOASTER_LIVE_MEDIA_PATH = $MediaPath
+    $env:TOASTER_LIVE_OUTPUT_DIR = $liveValidationDir
+    $env:TOASTER_LIVE_ASR_MODEL_PATH = $AsrModelPath
+    cargo test commands::waveform::tests::live_validation_backend_media_pipeline -- --ignored --nocapture
 }
 
 $liveValidationReportPath = Join-Path $liveValidationDir "live-validation-report.json"

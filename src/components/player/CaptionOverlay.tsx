@@ -1,121 +1,136 @@
-import React, { useMemo, useEffect, useRef, useCallback } from "react";
-import type { Word } from "@/bindings";
+import React, { useEffect, useMemo, useState } from "react";
+import type { CaptionBlock, Rgba, Word } from "@/bindings";
 import { commands } from "@/bindings";
-import { useSettingsStore } from "@/stores/settingsStore";
 
 interface CaptionOverlayProps {
   currentTime: number;
   words: Word[];
   enabled: boolean;
-}
-
-interface CachedSegment {
-  start_us: number;
-  end_us: number;
-  text: string;
+  videoRef?: React.RefObject<HTMLVideoElement | null>;
 }
 
 /**
- * Parse a hex color string (e.g. #000000B3) into an rgba() CSS value.
+ * Find the block active at the given time via binary search.
  */
-function hexToRgba(hex: string): string {
-  const h = hex.replace("#", "");
-  const r = parseInt(h.slice(0, 2), 16) || 0;
-  const g = parseInt(h.slice(2, 4), 16) || 0;
-  const b = parseInt(h.slice(4, 6), 16) || 0;
-  const a = h.length > 6 ? parseInt(h.slice(6, 8), 16) / 255 : 1;
-  return `rgba(${r},${g},${b},${a.toFixed(2)})`;
-}
-
-/**
- * Find the caption segment active at the given time via binary search.
- */
-function findSegmentAtTime(
-  segments: CachedSegment[],
+function findBlockAtTime(
+  blocks: CaptionBlock[],
   timeUs: number,
-): string | null {
+): CaptionBlock | null {
   let lo = 0;
-  let hi = segments.length - 1;
+  let hi = blocks.length - 1;
   while (lo <= hi) {
     const mid = (lo + hi) >>> 1;
-    const seg = segments[mid];
-    if (timeUs < seg.start_us) {
+    const b = blocks[mid];
+    if (timeUs < b.start_us) {
       hi = mid - 1;
-    } else if (timeUs > seg.end_us) {
+    } else if (timeUs > b.end_us) {
       lo = mid + 1;
     } else {
-      return seg.text;
+      return b;
     }
   }
   return null;
 }
 
+function rgbaToCss(c: Rgba): string {
+  return `rgba(${c.r},${c.g},${c.b},${(c.a / 255).toFixed(3)})`;
+}
+
+/**
+ * Caption overlay that consumes the authoritative `CaptionBlock`
+ * stream from the backend. Geometry is in video pixels; we scale to
+ * the rendered `<video>` element so the preview visually matches the
+ * burned-in export pixel-for-pixel (same font, same wrap, same
+ * rounded-corner pill, same padding). See
+ * `managers/captions/layout.rs` for the single source of truth.
+ */
 const CaptionOverlay: React.FC<CaptionOverlayProps> = ({
   currentTime,
   words,
   enabled,
+  videoRef,
 }) => {
-  const getSetting = useSettingsStore((s) => s.getSetting);
-  const segmentsRef = useRef<CachedSegment[]>([]);
+  const [blocks, setBlocks] = useState<CaptionBlock[]>([]);
+  const [renderedSize, setRenderedSize] = useState<{ w: number; h: number }>({
+    w: 0,
+    h: 0,
+  });
 
-  // Stable identity for word list to avoid spurious fetches
-  const wordsFingerprint = useMemo(() => {
-    return words
-      .map((w) => `${w.text}|${w.deleted}|${w.silenced}`)
-      .join(",");
-  }, [words]);
+  const wordsFingerprint = useMemo(
+    () => words.map((w) => `${w.text}|${w.deleted}|${w.silenced}`).join(","),
+    [words],
+  );
 
-  const fetchSegments = useCallback(async () => {
-    try {
-      const segments = await commands.getCaptionSegments();
-      segmentsRef.current = segments;
-    } catch {
-      // Command not available yet (e.g. during startup)
-    }
-  }, []);
-
+  // Refetch blocks when the word list changes.
   useEffect(() => {
-    if (enabled && words.length > 0) {
-      fetchSegments();
-    } else {
-      segmentsRef.current = [];
+    let cancelled = false;
+    if (!enabled || words.length === 0) {
+      setBlocks([]);
+      return;
     }
-  }, [enabled, wordsFingerprint, fetchSegments]);
+    commands
+      .getCaptionBlocks("Source")
+      .then((next) => {
+        if (!cancelled) setBlocks(next);
+      })
+      .catch(() => {
+        // Command may fail during startup if media isn't loaded yet.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, wordsFingerprint, words.length]);
 
-  const fontSize = (getSetting("caption_font_size") as number) ?? 24;
-  const bgColor = (getSetting("caption_bg_color") as string) ?? "#000000B3";
-  const textColor = (getSetting("caption_text_color") as string) ?? "#FFFFFF";
-  const position = (getSetting("caption_position") as number) ?? 90;
+  // Track the rendered `<video>` size so we can scale video-pixel
+  // geometry into CSS pixels. Falls back to the layout's frame size
+  // (1:1 scale) when no video ref is provided.
+  useEffect(() => {
+    const video = videoRef?.current;
+    if (!video) return;
+    const update = () => {
+      const rect = video.getBoundingClientRect();
+      setRenderedSize({ w: rect.width, h: rect.height });
+    };
+    update();
+    const obs = new ResizeObserver(update);
+    obs.observe(video);
+    return () => obs.disconnect();
+  }, [videoRef]);
 
-  const captionText = useMemo(() => {
-    if (!enabled || segmentsRef.current.length === 0) return null;
-    const currentTimeUs = currentTime * 1_000_000;
-    return findSegmentAtTime(segmentsRef.current, currentTimeUs);
-  }, [enabled, currentTime]);
+  const block = useMemo(() => {
+    if (!enabled || blocks.length === 0) return null;
+    return findBlockAtTime(blocks, currentTime * 1_000_000);
+  }, [enabled, currentTime, blocks]);
 
-  if (!captionText) return null;
+  if (!block) return null;
 
-  const bottomPercent = `${100 - position}%`;
+  // Scale: video-pixel → CSS-pixel. If we don't know the rendered
+  // size yet, render at 1:1 (still correct geometry).
+  const scale =
+    renderedSize.h > 0 ? renderedSize.h / block.frame_height : 1;
+
+  const boxStyle: React.CSSProperties = {
+    position: "absolute",
+    left: "50%",
+    bottom: `${block.margin_v_px * scale}px`,
+    transform: "translateX(-50%)",
+    background: rgbaToCss(block.background),
+    color: rgbaToCss(block.text_color),
+    fontFamily: block.font_css,
+    fontSize: `${block.font_size_px * scale}px`,
+    lineHeight: `${block.line_height_px * scale}px`,
+    padding: `${block.padding_y_px * scale}px ${block.padding_x_px * scale}px`,
+    borderRadius: `${block.radius_px * scale}px`,
+    pointerEvents: "none",
+    textAlign: "center",
+    whiteSpace: "pre",
+  };
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        bottom: bottomPercent,
-        left: "50%",
-        transform: "translateX(-50%)",
-        background: hexToRgba(bgColor),
-        color: textColor,
-        padding: "4px 12px",
-        borderRadius: "4px",
-        fontSize: `${fontSize}px`,
-        pointerEvents: "none",
-        maxWidth: "90%",
-        textAlign: "center",
-        whiteSpace: "pre-wrap",
-      }}
-    >
-      {captionText}
+    <div style={boxStyle}>
+      {block.lines.map((line, i) => (
+        <div key={i}>{line}</div>
+      ))}
     </div>
   );
 };

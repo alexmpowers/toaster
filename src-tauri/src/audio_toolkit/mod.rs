@@ -1,6 +1,8 @@
 pub mod audio;
 pub mod constants;
+pub mod forced_alignment;
 pub mod text;
+pub mod timing;
 pub mod utils;
 
 pub use audio::{
