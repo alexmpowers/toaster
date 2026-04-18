@@ -8,7 +8,7 @@ pub mod fonts;
 pub mod layout;
 
 pub use ass::blocks_to_ass;
-pub use fonts::{FontMetricsHandle, FontRegistry};
+pub use fonts::FontRegistry;
 pub use layout::{
     build_blocks, CaptionBlock, CaptionLayoutConfig, Rgba, TimelineDomain,
 };

@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { useSettings } from "../../hooks/useSettings";
 import { SettingContainer } from "../ui/SettingContainer";
 import { ColorPicker } from "../ui/ColorPicker";
+import { Select } from "../ui/Select";
+import type { CaptionFontFamily } from "@/bindings";
 
 interface CaptionSettingsProps {
   descriptionMode?: "inline" | "tooltip";
@@ -142,6 +144,12 @@ export const CaptionSettings: React.FC<CaptionSettingsProps> = React.memo(
     const fontSize = (getSetting("caption_font_size") as number) ?? 24;
     const bgColorHex = (getSetting("caption_bg_color") as string) ?? "#000000B3";
     const textColor = (getSetting("caption_text_color") as string) ?? "#FFFFFF";
+    const fontFamily =
+      (getSetting("caption_font_family") as CaptionFontFamily) ?? "Inter";
+    const radiusPx = (getSetting("caption_radius_px") as number) ?? 8;
+    const paddingX = (getSetting("caption_padding_x_px") as number) ?? 16;
+    const paddingY = (getSetting("caption_padding_y_px") as number) ?? 8;
+    const maxWidth = (getSetting("caption_max_width_percent") as number) ?? 80;
 
     // Extract transparency from bg color hex alpha (last 2 chars)
     const bgColorBase = bgColorHex.slice(0, 7);
@@ -232,6 +240,90 @@ export const CaptionSettings: React.FC<CaptionSettingsProps> = React.memo(
             value={textColor}
             onChange={(color) => updateSetting("caption_text_color", color)}
             disabled={isUpdating("caption_text_color")}
+          />
+        </SettingContainer>
+
+        <SettingContainer
+          title={t("settings.advanced.captionSettings.fontFamily")}
+          description={t("settings.advanced.captionSettings.fontFamilyDescription")}
+          descriptionMode={descriptionMode}
+          grouped={grouped}
+        >
+          <Select
+            value={fontFamily}
+            options={[
+              { value: "Inter", label: t("settings.advanced.captionSettings.fontInter") },
+              { value: "Roboto", label: t("settings.advanced.captionSettings.fontRoboto") },
+              { value: "SystemUi", label: t("settings.advanced.captionSettings.fontSystemUi") },
+            ]}
+            onChange={(v) => {
+              if (v) updateSetting("caption_font_family", v as CaptionFontFamily);
+            }}
+            disabled={isUpdating("caption_font_family")}
+          />
+        </SettingContainer>
+
+        <SettingContainer
+          title={t("settings.advanced.captionSettings.cornerRadius")}
+          description={t("settings.advanced.captionSettings.cornerRadiusDescription")}
+          descriptionMode={descriptionMode}
+          grouped={grouped}
+        >
+          <SliderWithInput
+            value={radiusPx}
+            min={0}
+            max={48}
+            suffix="px"
+            onChange={(v) => updateSetting("caption_radius_px", v)}
+            disabled={isUpdating("caption_radius_px")}
+          />
+        </SettingContainer>
+
+        <SettingContainer
+          title={t("settings.advanced.captionSettings.paddingHorizontal")}
+          description={t("settings.advanced.captionSettings.paddingHorizontalDescription")}
+          descriptionMode={descriptionMode}
+          grouped={grouped}
+        >
+          <SliderWithInput
+            value={paddingX}
+            min={0}
+            max={64}
+            suffix="px"
+            onChange={(v) => updateSetting("caption_padding_x_px", v)}
+            disabled={isUpdating("caption_padding_x_px")}
+          />
+        </SettingContainer>
+
+        <SettingContainer
+          title={t("settings.advanced.captionSettings.paddingVertical")}
+          description={t("settings.advanced.captionSettings.paddingVerticalDescription")}
+          descriptionMode={descriptionMode}
+          grouped={grouped}
+        >
+          <SliderWithInput
+            value={paddingY}
+            min={0}
+            max={32}
+            suffix="px"
+            onChange={(v) => updateSetting("caption_padding_y_px", v)}
+            disabled={isUpdating("caption_padding_y_px")}
+          />
+        </SettingContainer>
+
+        <SettingContainer
+          title={t("settings.advanced.captionSettings.maxWidth")}
+          description={t("settings.advanced.captionSettings.maxWidthDescription")}
+          descriptionMode={descriptionMode}
+          grouped={grouped}
+        >
+          <SliderWithInput
+            value={maxWidth}
+            min={20}
+            max={100}
+            suffix="%"
+            onChange={(v) => updateSetting("caption_max_width_percent", v)}
+            disabled={isUpdating("caption_max_width_percent")}
           />
         </SettingContainer>
       </>

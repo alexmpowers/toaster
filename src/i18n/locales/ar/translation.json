@@ -211,6 +211,21 @@
         "add": "إضافة",
         "remove": "إزالة {{word}}",
         "duplicate": "\"{{word}}\" موجود بالفعل"
+      },
+      "captionSettings": {
+        "fontFamily": "Caption font",
+        "fontFamilyDescription": "Typeface used for burned-in captions. Inter and Roboto are bundled so the preview and export render identically on every machine.",
+        "fontInter": "Inter (default)",
+        "fontRoboto": "Roboto",
+        "fontSystemUi": "System UI",
+        "cornerRadius": "Corner radius",
+        "cornerRadiusDescription": "How rounded the caption pill corners are. Set to 0 for a hard-edged rectangle.",
+        "paddingHorizontal": "Horizontal padding",
+        "paddingHorizontalDescription": "Extra space between the caption text and the left / right edges of the background pill.",
+        "paddingVertical": "Vertical padding",
+        "paddingVerticalDescription": "Extra space between the caption text and the top / bottom edges of the background pill.",
+        "maxWidth": "Maximum width",
+        "maxWidthDescription": "How wide the caption is allowed to grow before it wraps onto a second line, as a percentage of the video frame."
       }
     },
     "postProcessing": {
