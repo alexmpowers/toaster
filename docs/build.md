@@ -195,11 +195,28 @@ one ("Ninja"), CMake aborts with:
 > Does not match the generator used previously: Ninja
 > Either remove the CMakeCache.txt file and CMakeFiles directory or choose a different binary directory.
 
-One-time fix after correcting the env:
+One-time fix after correcting the env (or any time you suspect a stale
+whisper-rs-sys cache, see next section):
 
 ```powershell
-Get-ChildItem src-tauri\target\debug\build -Filter "whisper-rs-sys-*" -Directory |
-    ForEach-Object { Remove-Item -Recurse -Force $_.FullName }
+.\scripts\clean-whisper-cache.ps1
 ```
 
+That helper nukes both the build artifacts AND the cargo fingerprint dir,
+under both `debug/` and `release/`. Either alone is insufficient — cargo
+will short-circuit re-running build.rs if only one is missing.
+
 You should not need this again once `Platform` is stripped properly.
+
+### whisper-rs-sys does not advertise `CMAKE_GENERATOR` to cargo
+
+`whisper-rs-sys/build.rs` declares `cargo:rerun-if-env-changed` only for
+`BINDGEN_EXTRA_CLANG_ARGS*` and `VULKAN_SDK`. It does **not** declare
+`CMAKE_GENERATOR`, `Platform`, or `CMAKE_GENERATOR_PLATFORM`. Consequence:
+once a build fails under a bad env, the failure is cached forever from
+cargo's point of view, and re-running cargo with corrected env vars will
+still hit the same broken `CMakeCache.txt`. Different cargo subcommands
+(`check` vs `test`, with different feature flags) hash to different
+`whisper-rs-sys-<hash>` directories, so a `cargo check` that succeeds
+does not guarantee `cargo test` will too. Use `scripts\clean-whisper-cache.ps1`
+to wipe all of them at once when in doubt.
