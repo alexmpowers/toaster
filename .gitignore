@@ -28,6 +28,10 @@ dist-ssr
 
 .claude/
 
+# Python bytecode
+__pycache__/
+*.pyc
+
 /target/
 recording_*
 .crush/
