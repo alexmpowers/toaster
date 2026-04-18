@@ -19,6 +19,69 @@ use crate::commands::editor::EditorStore;
 use crate::managers::editor::EditorState;
 use crate::managers::media::MediaStore;
 
+/// Generate waveform peaks from a WAV audio file.
+///
+/// Returns `peak_count` normalized peak values (0.0–1.0) suitable for rendering
+/// a bar-chart waveform. Falls back gracefully if the file cannot be decoded.
+#[tauri::command]
+#[specta::specta]
+pub fn generate_waveform_peaks(
+    path: String,
+    peak_count: Option<usize>,
+) -> Result<Vec<f32>, String> {
+    let count = peak_count.unwrap_or(300);
+    if count == 0 {
+        return Err("peak_count must be > 0".to_string());
+    }
+
+    let file_path = std::path::Path::new(&path);
+    if !file_path.exists() {
+        return Err(format!("File not found: {}", path));
+    }
+
+    // Read WAV samples via hound
+    let samples = crate::audio_toolkit::read_wav_samples(file_path)
+        .map_err(|e| format!("Failed to read audio: {}", e))?;
+
+    if samples.is_empty() {
+        return Ok(vec![0.0; count]);
+    }
+
+    // Downsample into peaks
+    let block_size = samples.len() / count;
+    if block_size == 0 {
+        // Fewer samples than peaks — pad with zeros
+        let mut peaks: Vec<f32> = samples.iter().map(|s| s.abs()).collect();
+        peaks.resize(count, 0.0);
+        return Ok(normalize_peaks(peaks));
+    }
+
+    let mut peaks = Vec::with_capacity(count);
+    for i in 0..count {
+        let start = i * block_size;
+        let end = if i == count - 1 {
+            samples.len()
+        } else {
+            (i + 1) * block_size
+        };
+        let max = samples[start..end]
+            .iter()
+            .map(|s| s.abs())
+            .fold(0.0_f32, f32::max);
+        peaks.push(max);
+    }
+
+    Ok(normalize_peaks(peaks))
+}
+
+pub(super) fn normalize_peaks(mut peaks: Vec<f32>) -> Vec<f32> {
+    let global_max = peaks.iter().copied().fold(0.01_f32, f32::max);
+    for p in &mut peaks {
+        *p /= global_max;
+    }
+    peaks
+}
+
 #[tauri::command]
 #[specta::specta]
 pub fn invalidate_temp_preview_cache(

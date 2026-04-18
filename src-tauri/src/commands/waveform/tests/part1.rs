@@ -2,6 +2,7 @@ use super::*;
 
 #[test]
 fn normalize_peaks_scales_to_one() {
+    use super::commands::normalize_peaks;
     let peaks = vec![0.0, 0.5, 1.0, 0.25];
     let result = normalize_peaks(peaks);
     assert!((result[2] - 1.0).abs() < 0.001);
@@ -10,6 +11,7 @@ fn normalize_peaks_scales_to_one() {
 
 #[test]
 fn normalize_peaks_all_zero() {
+    use super::commands::normalize_peaks;
     let peaks = vec![0.0, 0.0, 0.0];
     let result = normalize_peaks(peaks);
     // global_max floor is 0.01, so all are 0/0.01 = 0

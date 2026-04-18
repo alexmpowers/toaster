@@ -1,19 +1,17 @@
-use log::{debug, info, warn};
+use log::{debug, warn};
 use std::path::Path;
-use std::time::{Duration, Instant};
-use tauri::{AppHandle, State};
+use std::time::Duration;
+use tauri::AppHandle;
 
-use crate::commands::editor::EditorStore;
 use crate::managers::editor::{EditorState, TimingContractSnapshot};
-use crate::managers::media::MediaStore;
 use crate::managers::splice::boundaries::{
     snap_segments_energy_biased, DEFAULT_ENERGY_RADIUS_US, DEFAULT_SNAP_RADIUS_US,
 };
 
 mod preview_cache;
 use preview_cache::{
-    cleanup_preview_cache, edit_version_token, invalidate_preview_cache_entries, preview_cache_dir,
-    preview_generation_token, preview_output_path, source_media_fingerprint, urlencoding,
+    edit_version_token, preview_generation_token, preview_output_path, source_media_fingerprint,
+    urlencoding,
 };
 
 /// Seam fade applied symmetrically on both the preview and export paths.
@@ -154,69 +152,6 @@ pub struct PreviewRenderMetadata {
     pub edit_version: String,
     pub generation_token: String,
     pub cache_hit: bool,
-}
-
-/// Generate waveform peaks from a WAV audio file.
-///
-/// Returns `peak_count` normalized peak values (0.0–1.0) suitable for rendering
-/// a bar-chart waveform. Falls back gracefully if the file cannot be decoded.
-#[tauri::command]
-#[specta::specta]
-pub fn generate_waveform_peaks(
-    path: String,
-    peak_count: Option<usize>,
-) -> Result<Vec<f32>, String> {
-    let count = peak_count.unwrap_or(300);
-    if count == 0 {
-        return Err("peak_count must be > 0".to_string());
-    }
-
-    let file_path = std::path::Path::new(&path);
-    if !file_path.exists() {
-        return Err(format!("File not found: {}", path));
-    }
-
-    // Read WAV samples via hound
-    let samples = crate::audio_toolkit::read_wav_samples(file_path)
-        .map_err(|e| format!("Failed to read audio: {}", e))?;
-
-    if samples.is_empty() {
-        return Ok(vec![0.0; count]);
-    }
-
-    // Downsample into peaks
-    let block_size = samples.len() / count;
-    if block_size == 0 {
-        // Fewer samples than peaks — pad with zeros
-        let mut peaks: Vec<f32> = samples.iter().map(|s| s.abs()).collect();
-        peaks.resize(count, 0.0);
-        return Ok(normalize_peaks(peaks));
-    }
-
-    let mut peaks = Vec::with_capacity(count);
-    for i in 0..count {
-        let start = i * block_size;
-        let end = if i == count - 1 {
-            samples.len()
-        } else {
-            (i + 1) * block_size
-        };
-        let max = samples[start..end]
-            .iter()
-            .map(|s| s.abs())
-            .fold(0.0_f32, f32::max);
-        peaks.push(max);
-    }
-
-    Ok(normalize_peaks(peaks))
-}
-
-fn normalize_peaks(mut peaks: Vec<f32>) -> Vec<f32> {
-    let global_max = peaks.iter().copied().fold(0.01_f32, f32::max);
-    for p in &mut peaks {
-        *p /= global_max;
-    }
-    peaks
 }
 
 /// Minimum segment duration (in µs) that is eligible for fades.
