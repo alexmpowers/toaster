@@ -12,7 +12,6 @@ use tauri::{AppHandle, State};
 
 use super::preview_cache::{
     cleanup_preview_cache, invalidate_preview_cache_entries, preview_cache_dir,
-    temp_preview_path_for_inputs,
 };
 use super::*;
 use crate::commands::editor::EditorStore;

@@ -3,6 +3,9 @@
 use log::{info, warn};
 use transcribe_rs::TranscriptionSegment;
 
+use super::alignment::{
+    align_onset_boundaries, correct_short_word_boundaries, refine_word_boundaries,
+};
 use super::{WordAlignmentMeta, SAMPLE_RATE_HZ};
 use crate::audio_toolkit::timing::{round_f64_to_i64, seconds_to_us as timing_seconds_to_us};
 use crate::managers::editor::Word;

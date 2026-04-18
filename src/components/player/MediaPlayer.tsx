@@ -1,65 +1,32 @@
-import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { commands } from "@/bindings";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useEditorStore } from "@/stores/editorStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import {
   DUAL_TRACK_DRIFT_THRESHOLD,
   DUAL_TRACK_SYNC_COOLDOWN_MS,
-  getDeletedRanges,
-  getDeletedRangesFromKeepSegments,
   editTimeToSourceTime,
   snapOutOfDeletedRange,
   type TimeSegment,
 } from "@/lib/utils/timeline";
 import { usePreviewCache } from "./usePreviewCache";
+import { useTimingContract } from "./useTimingContract";
+import {
+  ONE_FRAME_EPSILON_FALLBACK,
+  computeNextDeletedSkip,
+  useDeletedRangeSkip,
+} from "./useDeletedRangeSkip";
 import PlaybackControls from "./PlaybackControls";
 import CaptionOverlay from "./CaptionOverlay";
+
+// Re-export for backward compatibility with existing consumers (tests, etc.).
+export { ONE_FRAME_EPSILON_FALLBACK, computeNextDeletedSkip };
 
 interface MediaPlayerProps {
   className?: string;
   onTimeUpdate?: (time: number) => void;
   captionsEnabled?: boolean;
-}
-
-/**
- * Fallback one-frame epsilon in seconds (≈20.8 µs at 48 kHz), used to step
- * playback just past the inclusive end-of-range sample when no audio sample
- * rate is known. Seeking to `range.end + ε` ensures the final sample of the
- * deleted word is not played.
- */
-export const ONE_FRAME_EPSILON_FALLBACK = 1 / 48000;
-
-/**
- * Pure helper — compute the next deleted-range boundary we need to skip past.
- *
- * Given the current playback time (in seconds), a set of deleted ranges, and
- * the current `playbackRate`, return the range we must skip next along with
- * the wall-clock delay (in ms) until playback will reach its start. If the
- * current time is already inside a range, `delayMs` is 0 and we should skip
- * immediately.
- *
- * Returns `null` when there is nothing more to skip (end of timeline).
- *
- * `deletedRanges` may be unsorted; the function picks the earliest-starting
- * range whose end is strictly after `currentTime`.
- */
-export function computeNextDeletedSkip(
-  currentTime: number,
-  deletedRanges: ReadonlyArray<TimeSegment>,
-  playbackRate: number,
-): { range: TimeSegment; delayMs: number } | null {
-  if (!(playbackRate > 0)) return null;
-  let best: TimeSegment | null = null;
-  for (const r of deletedRanges) {
-    if (!(r.end > r.start)) continue;
-    if (r.end <= currentTime) continue;
-    if (!best || r.start < best.start) best = r;
-  }
-  if (!best) return null;
-  const delaySec = Math.max(0, best.start - currentTime) / playbackRate;
-  return { range: best, delayMs: delaySec * 1000 };
 }
 
 const MediaPlayer: React.FC<MediaPlayerProps> = ({
@@ -118,9 +85,6 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     experimentalSimplifyMode,
   });
 
-  const [backendDeletedRanges, setBackendDeletedRanges] = useState<TimeSegment[] | null>(null);
-  const [backendKeepSegments, setBackendKeepSegments] = useState<TimeSegment[]>([]);
-  const backendFetchSeq = useRef(0);
   const lastSkipTargetRef = useRef(0);
   const lastObservedTimeRef = useRef(0);
   /** Real-clock timestamp (ms) of the last drift correction applied to the video element */
@@ -130,9 +94,11 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   /** Tracks whether fallback/live-skip mode is active for the play/pause effect. */
   const fallbackSkipModeRef = useRef(false);
 
-  // Memoize deleted ranges so they aren't rebuilt every frame
-  const deletedRanges = useMemo(() => getDeletedRanges(words, duration), [words, duration]);
-  const activeDeletedRanges = backendDeletedRanges ?? deletedRanges;
+  const { activeDeletedRanges, backendKeepSegments } = useTimingContract({
+    words,
+    duration,
+    timingContract,
+  });
 
   // Keep refs current so the play/pause effect can read them without adding
   // them to its dependency array (which would restart playback on every edit).
@@ -142,65 +108,6 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
   useEffect(() => {
     fallbackSkipModeRef.current = previewEdits && !isPreviewCacheActive;
   }, [previewEdits, isPreviewCacheActive]);
-
-  useEffect(() => {
-    let isCancelled = false;
-    const seq = ++backendFetchSeq.current;
-
-    if (words.length === 0) {
-      setBackendDeletedRanges([]);
-      setBackendKeepSegments([]);
-      return;
-    }
-
-    if (timingContract) {
-      const keepSegments =
-        timingContract.keep_segments?.length > 0
-          ? timingContract.keep_segments
-          : timingContract.quantized_keep_segments ?? [];
-      setBackendDeletedRanges(getDeletedRangesFromKeepSegments(words, keepSegments));
-      const normalized = keepSegments
-        .map((s) => ({ start: s.start_us / 1_000_000, end: s.end_us / 1_000_000 }))
-        .filter((s) => s.end > s.start)
-        .sort((a, b) => a.start - b.start);
-      setBackendKeepSegments(normalized);
-
-      if (!timingContract.keep_segments_valid && timingContract.warning) {
-        console.warn(
-          `[timing-contract] revision=${timingContract.timeline_revision} warning=${timingContract.warning}`,
-        );
-      }
-      return;
-    }
-
-    const refreshKeepSegments = async () => {
-      try {
-        const result = await commands.getKeepSegments();
-        if (isCancelled || seq !== backendFetchSeq.current) return;
-        if (result.status === "ok") {
-          setBackendDeletedRanges(getDeletedRangesFromKeepSegments(words, result.data));
-          const normalized = result.data
-            .map((s) => ({ start: s.start_us / 1_000_000, end: s.end_us / 1_000_000 }))
-            .filter((s) => s.end > s.start)
-            .sort((a, b) => a.start - b.start);
-          setBackendKeepSegments(normalized);
-          return;
-        }
-      } catch {
-        // Fallback to local deleted-ranges heuristic below
-      }
-
-      if (!isCancelled && seq === backendFetchSeq.current) {
-        setBackendDeletedRanges(null);
-        setBackendKeepSegments([]);
-      }
-    };
-
-    void refreshKeepSegments();
-    return () => {
-      isCancelled = true;
-    };
-  }, [words, timingContract]);
 
   // Sync seek requests from the store to the media element(s)
   const lastSeekVersion = useRef(0);
@@ -391,105 +298,8 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     };
   }, [isPlaying, activePlaybackSrc, isDualTrackVideoPreview, setPlaying, volume]);
 
-  // Scheduled boundary-skip timer. Primary defense against deleted-range bleed:
-  // we schedule a `setTimeout` to fire exactly when playback reaches the next
-  // deleted range, then seek past its inclusive end. The RAF loop below
-  // remains as a safety fallback in case the timer is throttled or missed.
-  const scheduledSkipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    // Scheduled skip is the fallback/live-skip path only: when preview edits
-    // are on but no cached preview is available, and we're not in dual-track
-    // video-preview mode (which uses the preview audio element + keep
-    // segments for authoritative time).
-    if (
-      !isPlaying ||
-      !previewEdits ||
-      isPreviewCacheActive ||
-      isDualTrackVideoPreview ||
-      activeDeletedRanges.length === 0 ||
-      !(playbackRate > 0)
-    ) {
-      if (scheduledSkipTimerRef.current !== null) {
-        clearTimeout(scheduledSkipTimerRef.current);
-        scheduledSkipTimerRef.current = null;
-      }
-      return;
-    }
-
-    let cancelled = false;
-    const END_EPSILON = 0.005;
-
-    const scheduleNextSkip = () => {
-      if (cancelled) return;
-      const el = mediaRef.current;
-      if (!el) return;
-      const time = el.currentTime;
-      const next = computeNextDeletedSkip(time, activeDeletedRanges, playbackRate);
-      if (!next) return;
-
-      const fire = () => {
-        scheduledSkipTimerRef.current = null;
-        if (cancelled) return;
-        const elNow = mediaRef.current;
-        if (!elNow) return;
-
-        // Re-check current time: the timer may have fired a few ms early/late.
-        // Only skip if we're inside or past the start of the range.
-        const timeNow = elNow.currentTime;
-        if (timeNow >= next.range.end) {
-          // Already past it (e.g. a user seek landed beyond). Just reschedule.
-          scheduleNextSkip();
-          return;
-        }
-
-        // Exclusive-end semantics: seek to `range.end + ε` so the final sample
-        // of the deleted word is skipped rather than played. We prefer the
-        // true audio sample rate if the media element exposes one; otherwise
-        // fall back to 1/48000 (~20.8 µs).
-        const elAny = elNow as HTMLMediaElement & { mozSampleRate?: number };
-        const sr =
-          typeof elAny.mozSampleRate === "number" && elAny.mozSampleRate > 0
-            ? elAny.mozSampleRate
-            : 0;
-        const epsilon = sr > 0 ? 1 / sr : ONE_FRAME_EPSILON_FALLBACK;
-
-        const mediaDuration =
-          Number.isFinite(elNow.duration) && elNow.duration > 0 ? elNow.duration : duration;
-        const maxSeekTarget =
-          Number.isFinite(mediaDuration) && mediaDuration > 0
-            ? Math.max(0, mediaDuration - END_EPSILON)
-            : Number.POSITIVE_INFINITY;
-
-        const rawTarget = next.range.end + epsilon;
-        const finalTarget = Math.min(rawTarget, maxSeekTarget);
-
-        if (finalTarget > timeNow) {
-          lastSkipTargetRef.current = finalTarget;
-          elNow.currentTime = finalTarget;
-        }
-        scheduleNextSkip();
-      };
-
-      if (next.delayMs <= 1) {
-        // Already at/inside the range — skip on the next microtask so we
-        // don't recurse synchronously beyond the stack.
-        scheduledSkipTimerRef.current = setTimeout(fire, 0);
-      } else {
-        scheduledSkipTimerRef.current = setTimeout(fire, next.delayMs);
-      }
-    };
-
-    scheduleNextSkip();
-
-    return () => {
-      cancelled = true;
-      if (scheduledSkipTimerRef.current !== null) {
-        clearTimeout(scheduledSkipTimerRef.current);
-        scheduledSkipTimerRef.current = null;
-      }
-    };
-  }, [
+  useDeletedRangeSkip({
+    mediaRef,
     isPlaying,
     previewEdits,
     isPreviewCacheActive,
@@ -498,7 +308,8 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     playbackRate,
     duration,
     seekVersion,
-  ]);
+    lastSkipTargetRef,
+  });
 
   // RAF-based playback loop: polls ~60fps for precise deleted-segment skipping
   // instead of relying on the ~4Hz onTimeUpdate event. With the scheduled

@@ -9,8 +9,9 @@ use std::collections::HashMap;
 use super::{EngineType, ModelCategory, ModelInfo};
 
 use anyhow::Result;
-use log::info;
+use log::{info, warn};
 use std::collections::HashSet;
+use std::fs;
 use std::path::Path;
 
 use super::hash;
