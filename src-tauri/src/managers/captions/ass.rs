@@ -33,37 +33,33 @@ pub fn blocks_to_ass(blocks: &[CaptionBlock]) -> String {
     let font_size = blocks.first().map(|b| b.font_size_px).unwrap_or(24);
 
     let mut out = String::new();
-    writeln!(out, "[Script Info]").unwrap();
-    writeln!(out, "ScriptType: v4.00+").unwrap();
-    writeln!(out, "WrapStyle: 2").unwrap();
-    writeln!(out, "ScaledBorderAndShadow: yes").unwrap();
-    writeln!(out, "PlayResX: {play_w}").unwrap();
-    writeln!(out, "PlayResY: {play_h}").unwrap();
-    writeln!(out).unwrap();
+    writeln!(out, "[Script Info]");
+    writeln!(out, "ScriptType: v4.00+");
+    writeln!(out, "WrapStyle: 2");
+    writeln!(out, "ScaledBorderAndShadow: yes");
+    writeln!(out, "PlayResX: {play_w}");
+    writeln!(out, "PlayResY: {play_h}");
+    writeln!(out);
 
-    writeln!(out, "[V4+ Styles]").unwrap();
+    writeln!(out, "[V4+ Styles]");
     writeln!(
         out,
         "Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding"
-    )
-    .unwrap();
+    );
     // BorderStyle=1 (outline + shadow, but Outline=0/Shadow=0 means no
     // outline or shadow). We do backgrounds via the drawing event, not
     // ASS's built-in box — so the style is otherwise neutral.
     writeln!(
         out,
         "Style: Default,{font_name},{font_size},&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,0,0,7,0,0,0,1"
-    )
-    .unwrap();
-    writeln!(out).unwrap();
+    );
+    writeln!(out);
 
-    writeln!(out, "[Events]").unwrap();
+    writeln!(out, "[Events]");
     writeln!(
         out,
         "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"
-    )
-    .unwrap();
-
+    );
     for block in blocks {
         let num_lines = block.lines.len().max(1) as u32;
         let box_w = block.text_width_px + 2 * block.padding_x_px;
@@ -88,9 +84,7 @@ pub fn blocks_to_ass(blocks: &[CaptionBlock]) -> String {
         writeln!(
             out,
             "Dialogue: 0,{start},{end},Default,,0,0,0,,{{\\an7\\pos({tx},{ty})\\bord0\\shad0\\1c{bg_color}\\1a{bg_alpha}\\p1}}{path}{{\\p0}}"
-        )
-        .unwrap();
-
+        );
         // ── Layer 1: text ──────────────────────────────────────────
         let text_color = ass_color_bgr(block.text_color);
         let text_alpha = ass_alpha(block.text_color.a);
@@ -105,8 +99,7 @@ pub fn blocks_to_ass(blocks: &[CaptionBlock]) -> String {
         writeln!(
             out,
             "Dialogue: 1,{start},{end},Default,,0,0,0,,{{\\an7\\pos({text_x},{text_y})\\bord0\\shad0\\1c{text_color}\\1a{text_alpha}}}{joined}"
-        )
-        .unwrap();
+        );
     }
 
     out
@@ -123,15 +116,15 @@ fn rounded_rect_path(w: u32, h: u32, r: u32) -> String {
     // `b x1 y1 x2 y2 x3 y3` draws a cubic bezier; repeating the end
     // points flattens the curve for a smooth quarter-arc approximation.
     let mut s = String::new();
-    write!(s, "m {r} 0 ").unwrap();
-    write!(s, "l {} 0 ", w - r).unwrap();
-    write!(s, "b {w} 0 {w} 0 {w} {r} ").unwrap();
-    write!(s, "l {w} {} ", h - r).unwrap();
-    write!(s, "b {w} {h} {w} {h} {} {h} ", w - r).unwrap();
-    write!(s, "l {r} {h} ").unwrap();
-    write!(s, "b 0 {h} 0 {h} 0 {} ", h - r).unwrap();
-    write!(s, "l 0 {r} ").unwrap();
-    write!(s, "b 0 0 0 0 {r} 0").unwrap();
+    write!(s, "m {r} 0 ");
+    write!(s, "l {} 0 ", w - r);
+    write!(s, "b {w} 0 {w} 0 {w} {r} ");
+    write!(s, "l {w} {} ", h - r);
+    write!(s, "b {w} {h} {w} {h} {} {h} ", w - r);
+    write!(s, "l {r} {h} ");
+    write!(s, "b 0 {h} 0 {h} 0 {} ", h - r);
+    write!(s, "l 0 {r} ");
+    write!(s, "b 0 0 0 0 {r} 0");
     s
 }
 

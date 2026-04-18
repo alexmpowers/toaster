@@ -19,8 +19,8 @@ use std::time::Duration;
 use tauri::AppHandle;
 
 const TRANSCRIPTION_FIELD: &str = "transcription";
-const CLEANUP_CONTRACT_VERSION: &str = "transcript_cleanup_contract_v1";
-const CLEANUP_TRANSCRIPTION_FIELD: &str = "cleaned_transcription";
+pub(super) const CLEANUP_CONTRACT_VERSION: &str = "transcript_cleanup_contract_v1";
+pub(super) const CLEANUP_TRANSCRIPTION_FIELD: &str = "cleaned_transcription";
 
 /// Strip invisible Unicode characters that some LLMs may insert
 fn strip_invisible_chars(s: &str) -> String {
@@ -29,7 +29,7 @@ fn strip_invisible_chars(s: &str) -> String {
 
 /// Build a system prompt from the user's prompt template.
 /// Removes `${output}` placeholder since the transcription is sent as the user message.
-fn build_system_prompt(prompt_template: &str) -> String {
+pub(super) fn build_system_prompt(prompt_template: &str) -> String {
     prompt_template.replace("${output}", "").trim().to_string()
 }
 
@@ -127,107 +127,11 @@ fn dedupe_tokens(tokens: &[String]) -> Vec<String> {
     deduped
 }
 
-fn build_cleanup_contract_system_prompt(
-    prompt_template: &str,
-    protected_tokens: &[String],
-) -> String {
-    let user_prompt = build_system_prompt(prompt_template);
-    let protected_tokens_clause = if protected_tokens.is_empty() {
-        "- Protected tokens in source transcript: none detected".to_string()
-    } else {
-        format!(
-            "- Protected tokens in source transcript (must be unchanged): {}",
-            protected_tokens.join(", ")
-        )
-    };
-
-    if user_prompt.is_empty() {
-        format!(
-            "You are a transcript cleanup engine.\n\
-             Follow these non-negotiable invariants:\n\
-             - Preserve the source language.\n\
-             - Do not reorder surviving content.\n\
-             - Do not paraphrase meaning.\n\
-             {}\n\
-             If any invariant cannot be satisfied, return the source transcript unchanged.\n\
-             Return only JSON that matches the cleanup contract schema.",
-            protected_tokens_clause
-        )
-    } else {
-        format!(
-            "You are a transcript cleanup engine.\n\
-             Follow these non-negotiable invariants:\n\
-             - Preserve the source language.\n\
-             - Do not reorder surviving content.\n\
-             - Do not paraphrase meaning.\n\
-             {}\n\
-             If any invariant cannot be satisfied, return the source transcript unchanged.\n\
-             Return only JSON that matches the cleanup contract schema.\n\n\
-             User cleanup instructions:\n{}",
-            protected_tokens_clause, user_prompt
-        )
-    }
-}
-
-fn build_cleanup_legacy_prompt(
-    prompt_template: &str,
-    transcription: &str,
-    protected_tokens: &[String],
-) -> String {
-    let base_prompt = prompt_template.replace("${output}", transcription);
-    let protected_tokens_clause = if protected_tokens.is_empty() {
-        "none detected".to_string()
-    } else {
-        protected_tokens.join(", ")
-    };
-
-    format!(
-        "{}\n\nNon-negotiable constraints:\n\
-         - Preserve source language.\n\
-         - Do not reorder words or paraphrase meaning.\n\
-         - Keep protected tokens unchanged: {}\n\
-         Return only cleaned transcript text.",
-        base_prompt, protected_tokens_clause
-    )
-}
-
-fn build_cleanup_contract_schema() -> serde_json::Value {
-    serde_json::json!({
-        "type": "object",
-        "properties": {
-            "contract_version": {
-                "type": "string",
-                "const": CLEANUP_CONTRACT_VERSION
-            },
-            (CLEANUP_TRANSCRIPTION_FIELD): {
-                "type": "string",
-                "description": "The cleaned transcript text after safe corrections"
-            },
-            "invariants": {
-                "type": "object",
-                "properties": {
-                    "preserve_language": { "type": "boolean" },
-                    "no_reorder": { "type": "boolean" },
-                    "no_paraphrase": { "type": "boolean" },
-                    "protected_tokens_preserved": { "type": "boolean" }
-                },
-                "required": [
-                    "preserve_language",
-                    "no_reorder",
-                    "no_paraphrase",
-                    "protected_tokens_preserved"
-                ],
-                "additionalProperties": false
-            }
-        },
-        "required": [
-            "contract_version",
-            CLEANUP_TRANSCRIPTION_FIELD,
-            "invariants"
-        ],
-        "additionalProperties": false
-    })
-}
+mod prompts;
+use prompts::{
+    build_cleanup_contract_schema, build_cleanup_contract_system_prompt,
+    build_cleanup_legacy_prompt,
+};
 
 fn classify_script(ch: char) -> Option<ScriptGroup> {
     let codepoint = ch as u32;
@@ -591,23 +495,14 @@ async fn post_process_transcription(settings: &AppSettings, transcription: &str)
     }
 
     // Disable reasoning for providers where post-processing rarely benefits from it.
-    // - local providers: top-level reasoning_effort (works for local OpenAI-compat servers)
-    // - openrouter: nested reasoning object; exclude:true also keeps reasoning text
-    //   out of the response so it can't pollute structured-output JSON parsing
-    let (reasoning_effort, reasoning) = if local_openai_provider {
-        (Some("none".to_string()), None)
-    } else {
-        match provider.id.as_str() {
-            "openrouter" => (
-                None,
-                Some(crate::llm_client::ReasoningConfig {
-                    effort: Some("none".to_string()),
-                    exclude: Some(true),
-                }),
-            ),
-            _ => (None, None),
-        }
-    };
+    // Toaster is local-only, so only the local OpenAI-compatible path sets
+    // `reasoning_effort`; the `reasoning` nested-object path is unused.
+    let (reasoning_effort, reasoning): (Option<String>, Option<crate::llm_client::ReasoningConfig>) =
+        if local_openai_provider {
+            (Some("none".to_string()), None)
+        } else {
+            (None, None)
+        };
 
     let should_attempt_structured = provider.supports_structured_output || local_openai_provider;
     if should_attempt_structured {
@@ -881,95 +776,5 @@ pub(crate) async fn process_transcription_output(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn valid_contract_response(cleaned_transcription: &str) -> CleanupContractResponse {
-        CleanupContractResponse {
-            contract_version: CLEANUP_CONTRACT_VERSION.to_string(),
-            cleaned_transcription: cleaned_transcription.to_string(),
-            invariants: CleanupInvariantClaims {
-                preserve_language: true,
-                no_reorder: true,
-                no_paraphrase: true,
-                protected_tokens_preserved: true,
-            },
-        }
-    }
-
-    #[test]
-    fn rejects_destructive_span_rewrites() {
-        assert!(validate_cleanup_candidate("helo world", "hello world", None).is_ok());
-        assert!(validate_cleanup_candidate(
-            "hello world today",
-            "This output rewrites the entire section into unrelated content.",
-            None
-        )
-        .is_err());
-    }
-
-    #[test]
-    fn accepts_valid_cleanup_contract_output() {
-        let original = "Invoice total is $25 on 2024-01-02.";
-        let contract = valid_contract_response("Invoice total is $25 on 2024-01-02!");
-
-        let validated =
-            validate_cleanup_candidate(original, &contract.cleaned_transcription, Some(&contract));
-
-        assert_eq!(
-            validated.expect("output should pass cleanup validation"),
-            "Invoice total is $25 on 2024-01-02!"
-        );
-    }
-
-    #[test]
-    fn rejects_contract_when_model_reports_invariant_failure() {
-        let original = "Keep this sentence exactly as written.";
-        let mut contract = valid_contract_response("Keep this sentence exactly as written!");
-        contract.invariants.no_paraphrase = false;
-
-        let validation =
-            validate_cleanup_candidate(original, &contract.cleaned_transcription, Some(&contract));
-
-        let error = validation.expect_err("validation should fail when claim is false");
-        assert!(error.to_string().contains("no_paraphrase=false"));
-    }
-
-    #[test]
-    fn rejects_output_when_protected_tokens_are_dropped() {
-        let original = "Budget is $5 and ref A1B2 remains.";
-        let contract = valid_contract_response("Budget is five dollars and ref AB remains.");
-
-        let validation =
-            validate_cleanup_candidate(original, &contract.cleaned_transcription, Some(&contract));
-
-        let error =
-            validation.expect_err("validation should fail when protected tokens are missing");
-        assert!(error.to_string().contains("missing protected tokens"));
-        assert!(error.to_string().contains("$5"));
-    }
-
-    #[test]
-    fn rejects_reordered_output() {
-        let original = "alpha beta gamma delta epsilon";
-        let contract = valid_contract_response("delta gamma beta alpha epsilon");
-
-        let validation =
-            validate_cleanup_candidate(original, &contract.cleaned_transcription, Some(&contract));
-
-        let error = validation.expect_err("validation should fail for reordered output");
-        assert!(error.to_string().contains("token order changed"));
-    }
-
-    #[test]
-    fn rejects_language_script_drift() {
-        let original = "你好 世界 今天";
-        let contract = valid_contract_response("hello world today");
-
-        let validation =
-            validate_cleanup_candidate(original, &contract.cleaned_transcription, Some(&contract));
-
-        let error = validation.expect_err("validation should fail for script changes");
-        assert!(error.to_string().contains("language/script changed"));
-    }
-}
+#[path = "tests.rs"]
+mod tests;
