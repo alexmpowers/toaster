@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import type {
   AppSettings as Settings,
   AudioDevice,
+  LogLevel,
   WhisperAcceleratorSetting,
   OrtAcceleratorSetting,
 } from "@/bindings";
@@ -16,7 +17,6 @@ interface SettingsStore {
   isUpdating: Record<string, boolean>;
   audioDevices: AudioDevice[];
   outputDevices: AudioDevice[];
-  customSounds: { start: boolean; stop: boolean };
   postProcessModelOptions: Record<string, string[]>;
 
   // Actions
@@ -32,7 +32,6 @@ interface SettingsStore {
   refreshOutputDevices: () => Promise<void>;
   getSetting: <K extends keyof Settings>(key: K) => Settings[K] | undefined;
   isUpdatingKey: (key: string) => boolean;
-  checkCustomSounds: () => Promise<void>;
   setPostProcessProvider: (providerId: string) => Promise<void>;
   updatePostProcessSetting: (
     settingType: "base_url" | "api_key" | "model",
@@ -58,7 +57,6 @@ interface SettingsStore {
   setUpdating: (key: string, updating: boolean) => void;
   setAudioDevices: (devices: AudioDevice[]) => void;
   setOutputDevices: (devices: AudioDevice[]) => void;
-  setCustomSounds: (sounds: { start: boolean; stop: boolean }) => void;
 }
 
 // Note: Default settings are now fetched from Rust via commands.getDefaultSettings()
@@ -98,7 +96,7 @@ const settingUpdaters: {
     commands.changePostProcessEnabledSetting(value as boolean),
   post_process_selected_prompt_id: (value) =>
     commands.setPostProcessSelectedPrompt(value as string),
-  log_level: (value) => commands.setLogLevel(value as any),
+  log_level: (value) => commands.setLogLevel(value as LogLevel),
   app_language: (value) => commands.changeAppLanguageSetting(value as string),
   experimental_enabled: (value) =>
     commands.changeExperimentalEnabledSetting(value as boolean),
@@ -143,7 +141,6 @@ export const useSettingsStore = create<SettingsStore>()(
     isUpdating: {},
     audioDevices: [],
     outputDevices: [],
-    customSounds: { start: false, stop: false },
     postProcessModelOptions: {},
 
     // Internal setters
@@ -156,7 +153,6 @@ export const useSettingsStore = create<SettingsStore>()(
       })),
     setAudioDevices: (audioDevices) => set({ audioDevices }),
     setOutputDevices: (outputDevices) => set({ outputDevices }),
-    setCustomSounds: (customSounds) => set({ customSounds }),
 
     // Getters
     getSetting: (key) => get().settings?.[key],
@@ -226,15 +222,6 @@ export const useSettingsStore = create<SettingsStore>()(
       }
     },
 
-    checkCustomSounds: async () => {
-      try {
-        const sounds = await commands.checkCustomSounds();
-        get().setCustomSounds(sounds);
-      } catch (error) {
-        console.error("Failed to check custom sounds:", error);
-      }
-    },
-
     // Update a specific setting (with race-condition dedup per key)
     updateSetting: async <K extends keyof Settings>(
       key: K,
@@ -296,7 +283,7 @@ export const useSettingsStore = create<SettingsStore>()(
       if (defaultSettings) {
         const defaultValue = defaultSettings[key];
         if (defaultValue !== undefined) {
-          await get().updateSetting(key, defaultValue as any);
+          await get().updateSetting(key, defaultValue as Settings[typeof key]);
         }
       }
     },
@@ -487,17 +474,13 @@ export const useSettingsStore = create<SettingsStore>()(
 
     // Initialize everything
     initialize: async () => {
-      const { refreshSettings, checkCustomSounds, loadDefaultSettings } = get();
+      const { refreshSettings, loadDefaultSettings } = get();
 
       // Note: Audio devices are NOT refreshed here. The frontend (App.tsx)
       // is responsible for calling refreshAudioDevices/refreshOutputDevices
       // after onboarding completes. This avoids triggering permission dialogs
       // on macOS before the user is ready.
-      await Promise.all([
-        loadDefaultSettings(),
-        refreshSettings(),
-        checkCustomSounds(),
-      ]);
+      await Promise.all([loadDefaultSettings(), refreshSettings()]);
 
       // Re-fetch settings when the backend changes them (e.g. language
       // reset during model switch). The backend is the source of truth.

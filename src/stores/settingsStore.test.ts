@@ -12,7 +12,6 @@ const { mockCommands } = vi.hoisted(() => {
       getDefaultSettings: fn(),
       getAvailableMicrophones: fn(),
       getAvailableOutputDevices: fn(),
-      checkCustomSounds: fn(),
       changeUpdateChecksSetting: fn(),
       setSelectedOutputDevice: fn(),
       updateRecordingRetentionPeriod: fn(),
@@ -82,7 +81,6 @@ describe("settingsStore", () => {
       isUpdating: {},
       audioDevices: [],
       outputDevices: [],
-      customSounds: { start: false, stop: false },
       postProcessModelOptions: {},
     });
     vi.clearAllMocks();
@@ -98,7 +96,6 @@ describe("settingsStore", () => {
       expect(state.isUpdating).toEqual({});
       expect(state.audioDevices).toEqual([]);
       expect(state.outputDevices).toEqual([]);
-      expect(state.customSounds).toEqual({ start: false, stop: false });
       expect(state.postProcessModelOptions).toEqual({});
     });
   });
@@ -156,19 +153,14 @@ describe("settingsStore", () => {
 
   // ── initialize ───────────────────────────────────────────────────
   describe("initialize", () => {
-    it("calls loadDefaultSettings, refreshSettings, and checkCustomSounds", async () => {
+    it("calls loadDefaultSettings and refreshSettings", async () => {
       mockCommands.getAppSettings.mockResolvedValue(ok(makeSettings()));
       mockCommands.getDefaultSettings.mockResolvedValue(ok(makeSettings()));
-      mockCommands.checkCustomSounds.mockResolvedValue({
-        start: true,
-        stop: false,
-      });
 
       await useSettingsStore.getState().initialize();
 
       expect(mockCommands.getAppSettings).toHaveBeenCalled();
       expect(mockCommands.getDefaultSettings).toHaveBeenCalled();
-      expect(mockCommands.checkCustomSounds).toHaveBeenCalled();
     });
   });
 
@@ -362,23 +354,6 @@ describe("settingsStore", () => {
     });
   });
 
-  // ── checkCustomSounds ────────────────────────────────────────────
-  describe("checkCustomSounds", () => {
-    it("updates customSounds state", async () => {
-      mockCommands.checkCustomSounds.mockResolvedValue({
-        start: true,
-        stop: true,
-      });
-
-      await useSettingsStore.getState().checkCustomSounds();
-
-      expect(useSettingsStore.getState().customSounds).toEqual({
-        start: true,
-        stop: true,
-      });
-    });
-  });
-
   // ── setPostProcessProvider ───────────────────────────────────────
   describe("setPostProcessProvider", () => {
     beforeEach(() => {
@@ -542,16 +517,6 @@ describe("settingsStore", () => {
       ];
       useSettingsStore.getState().setAudioDevices(devices);
       expect(useSettingsStore.getState().audioDevices).toEqual(devices);
-    });
-
-    it("setCustomSounds updates customSounds", () => {
-      useSettingsStore
-        .getState()
-        .setCustomSounds({ start: true, stop: false });
-      expect(useSettingsStore.getState().customSounds).toEqual({
-        start: true,
-        stop: false,
-      });
     });
 
     it("setPostProcessModelOptions updates for a specific provider", () => {

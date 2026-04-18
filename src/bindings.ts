@@ -10,7 +10,7 @@ async changeTranslateToEnglishSetting(enabled: boolean) : Promise<Result<null, s
     return { status: "ok", data: await TAURI_INVOKE("change_translate_to_english_setting", { enabled }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeSelectedLanguageSetting(language: string) : Promise<Result<null, string>> {
@@ -18,7 +18,7 @@ async changeSelectedLanguageSetting(language: string) : Promise<Result<null, str
     return { status: "ok", data: await TAURI_INVOKE("change_selected_language_setting", { language }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeDebugModeSetting(enabled: boolean) : Promise<Result<null, string>> {
@@ -26,7 +26,7 @@ async changeDebugModeSetting(enabled: boolean) : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("change_debug_mode_setting", { enabled }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeWordCorrectionThresholdSetting(threshold: number) : Promise<Result<null, string>> {
@@ -34,7 +34,7 @@ async changeWordCorrectionThresholdSetting(threshold: number) : Promise<Result<n
     return { status: "ok", data: await TAURI_INVOKE("change_word_correction_threshold_setting", { threshold }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changePostProcessEnabledSetting(enabled: boolean) : Promise<Result<null, string>> {
@@ -42,7 +42,7 @@ async changePostProcessEnabledSetting(enabled: boolean) : Promise<Result<null, s
     return { status: "ok", data: await TAURI_INVOKE("change_post_process_enabled_setting", { enabled }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeExperimentalEnabledSetting(enabled: boolean) : Promise<Result<null, string>> {
@@ -50,7 +50,7 @@ async changeExperimentalEnabledSetting(enabled: boolean) : Promise<Result<null, 
     return { status: "ok", data: await TAURI_INVOKE("change_experimental_enabled_setting", { enabled }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeExperimentalSimplifyModeSetting(enabled: boolean) : Promise<Result<null, string>> {
@@ -58,7 +58,7 @@ async changeExperimentalSimplifyModeSetting(enabled: boolean) : Promise<Result<n
     return { status: "ok", data: await TAURI_INVOKE("change_experimental_simplify_mode_setting", { enabled }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changePostProcessBaseUrlSetting(providerId: string, baseUrl: string) : Promise<Result<null, string>> {
@@ -66,7 +66,7 @@ async changePostProcessBaseUrlSetting(providerId: string, baseUrl: string) : Pro
     return { status: "ok", data: await TAURI_INVOKE("change_post_process_base_url_setting", { providerId, baseUrl }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changePostProcessApiKeySetting(providerId: string, apiKey: string) : Promise<Result<null, string>> {
@@ -74,7 +74,7 @@ async changePostProcessApiKeySetting(providerId: string, apiKey: string) : Promi
     return { status: "ok", data: await TAURI_INVOKE("change_post_process_api_key_setting", { providerId, apiKey }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changePostProcessModelSetting(providerId: string, model: string) : Promise<Result<null, string>> {
@@ -82,7 +82,7 @@ async changePostProcessModelSetting(providerId: string, model: string) : Promise
     return { status: "ok", data: await TAURI_INVOKE("change_post_process_model_setting", { providerId, model }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async setPostProcessProvider(providerId: string) : Promise<Result<null, string>> {
@@ -90,7 +90,7 @@ async setPostProcessProvider(providerId: string) : Promise<Result<null, string>>
     return { status: "ok", data: await TAURI_INVOKE("set_post_process_provider", { providerId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async fetchPostProcessModels(providerId: string) : Promise<Result<string[], string>> {
@@ -98,7 +98,7 @@ async fetchPostProcessModels(providerId: string) : Promise<Result<string[], stri
     return { status: "ok", data: await TAURI_INVOKE("fetch_post_process_models", { providerId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async addPostProcessPrompt(name: string, prompt: string) : Promise<Result<LLMPrompt, string>> {
@@ -106,7 +106,7 @@ async addPostProcessPrompt(name: string, prompt: string) : Promise<Result<LLMPro
     return { status: "ok", data: await TAURI_INVOKE("add_post_process_prompt", { name, prompt }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async updatePostProcessPrompt(id: string, name: string, prompt: string) : Promise<Result<null, string>> {
@@ -114,7 +114,7 @@ async updatePostProcessPrompt(id: string, name: string, prompt: string) : Promis
     return { status: "ok", data: await TAURI_INVOKE("update_post_process_prompt", { id, name, prompt }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async deletePostProcessPrompt(id: string) : Promise<Result<null, string>> {
@@ -122,7 +122,7 @@ async deletePostProcessPrompt(id: string) : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("delete_post_process_prompt", { id }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async setPostProcessSelectedPrompt(id: string) : Promise<Result<null, string>> {
@@ -130,7 +130,7 @@ async setPostProcessSelectedPrompt(id: string) : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("set_post_process_selected_prompt", { id }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async updateCustomWords(words: string[]) : Promise<Result<null, string>> {
@@ -138,7 +138,7 @@ async updateCustomWords(words: string[]) : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("update_custom_words", { words }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeCustomFillerWordsSetting(words: string[]) : Promise<Result<null, string>> {
@@ -146,7 +146,7 @@ async changeCustomFillerWordsSetting(words: string[]) : Promise<Result<null, str
     return { status: "ok", data: await TAURI_INVOKE("change_custom_filler_words_setting", { words }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeCaptionFontSizeSetting(size: number) : Promise<Result<null, string>> {
@@ -154,7 +154,7 @@ async changeCaptionFontSizeSetting(size: number) : Promise<Result<null, string>>
     return { status: "ok", data: await TAURI_INVOKE("change_caption_font_size_setting", { size }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeCaptionBgColorSetting(color: string) : Promise<Result<null, string>> {
@@ -162,7 +162,7 @@ async changeCaptionBgColorSetting(color: string) : Promise<Result<null, string>>
     return { status: "ok", data: await TAURI_INVOKE("change_caption_bg_color_setting", { color }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeCaptionTextColorSetting(color: string) : Promise<Result<null, string>> {
@@ -170,7 +170,7 @@ async changeCaptionTextColorSetting(color: string) : Promise<Result<null, string
     return { status: "ok", data: await TAURI_INVOKE("change_caption_text_color_setting", { color }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeCaptionPositionSetting(position: number) : Promise<Result<null, string>> {
@@ -178,7 +178,7 @@ async changeCaptionPositionSetting(position: number) : Promise<Result<null, stri
     return { status: "ok", data: await TAURI_INVOKE("change_caption_position_setting", { position }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeLazyStreamCloseSetting(enabled: boolean) : Promise<Result<null, string>> {
@@ -186,7 +186,7 @@ async changeLazyStreamCloseSetting(enabled: boolean) : Promise<Result<null, stri
     return { status: "ok", data: await TAURI_INVOKE("change_lazy_stream_close_setting", { enabled }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeNormalizeAudioSetting(enabled: boolean) : Promise<Result<null, string>> {
@@ -194,7 +194,7 @@ async changeNormalizeAudioSetting(enabled: boolean) : Promise<Result<null, strin
     return { status: "ok", data: await TAURI_INVOKE("change_normalize_audio_setting", { enabled }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeExportVolumeDbSetting(volumeDb: number) : Promise<Result<null, string>> {
@@ -202,7 +202,7 @@ async changeExportVolumeDbSetting(volumeDb: number) : Promise<Result<null, strin
     return { status: "ok", data: await TAURI_INVOKE("change_export_volume_db_setting", { volumeDb }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeExportFadeInMsSetting(fadeInMs: number) : Promise<Result<null, string>> {
@@ -210,7 +210,7 @@ async changeExportFadeInMsSetting(fadeInMs: number) : Promise<Result<null, strin
     return { status: "ok", data: await TAURI_INVOKE("change_export_fade_in_ms_setting", { fadeInMs }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeExportFadeOutMsSetting(fadeOutMs: number) : Promise<Result<null, string>> {
@@ -218,7 +218,7 @@ async changeExportFadeOutMsSetting(fadeOutMs: number) : Promise<Result<null, str
     return { status: "ok", data: await TAURI_INVOKE("change_export_fade_out_ms_setting", { fadeOutMs }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeAppLanguageSetting(language: string) : Promise<Result<null, string>> {
@@ -226,7 +226,7 @@ async changeAppLanguageSetting(language: string) : Promise<Result<null, string>>
     return { status: "ok", data: await TAURI_INVOKE("change_app_language_setting", { language }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeUpdateChecksSetting(enabled: boolean) : Promise<Result<null, string>> {
@@ -234,7 +234,7 @@ async changeUpdateChecksSetting(enabled: boolean) : Promise<Result<null, string>
     return { status: "ok", data: await TAURI_INVOKE("change_update_checks_setting", { enabled }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeWhisperAcceleratorSetting(accelerator: WhisperAcceleratorSetting) : Promise<Result<null, string>> {
@@ -242,7 +242,7 @@ async changeWhisperAcceleratorSetting(accelerator: WhisperAcceleratorSetting) : 
     return { status: "ok", data: await TAURI_INVOKE("change_whisper_accelerator_setting", { accelerator }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeOrtAcceleratorSetting(accelerator: OrtAcceleratorSetting) : Promise<Result<null, string>> {
@@ -250,7 +250,7 @@ async changeOrtAcceleratorSetting(accelerator: OrtAcceleratorSetting) : Promise<
     return { status: "ok", data: await TAURI_INVOKE("change_ort_accelerator_setting", { accelerator }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async changeWhisperGpuDevice(device: number) : Promise<Result<null, string>> {
@@ -258,7 +258,7 @@ async changeWhisperGpuDevice(device: number) : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("change_whisper_gpu_device", { device }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async getAvailableAccelerators() : Promise<AvailableAccelerators> {
@@ -269,7 +269,7 @@ async triggerUpdateCheck() : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("trigger_update_check") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async showMainWindowCommand() : Promise<Result<null, string>> {
@@ -277,7 +277,7 @@ async showMainWindowCommand() : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("show_main_window_command") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async cancelOperation() : Promise<void> {
@@ -291,7 +291,7 @@ async getAppDirPath() : Promise<Result<string, string>> {
     return { status: "ok", data: await TAURI_INVOKE("get_app_dir_path") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async getAppSettings() : Promise<Result<AppSettings, string>> {
@@ -299,7 +299,7 @@ async getAppSettings() : Promise<Result<AppSettings, string>> {
     return { status: "ok", data: await TAURI_INVOKE("get_app_settings") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async getDefaultSettings() : Promise<Result<AppSettings, string>> {
@@ -307,7 +307,7 @@ async getDefaultSettings() : Promise<Result<AppSettings, string>> {
     return { status: "ok", data: await TAURI_INVOKE("get_default_settings") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async getLogDirPath() : Promise<Result<string, string>> {
@@ -315,7 +315,7 @@ async getLogDirPath() : Promise<Result<string, string>> {
     return { status: "ok", data: await TAURI_INVOKE("get_log_dir_path") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async setLogLevel(level: LogLevel) : Promise<Result<null, string>> {
@@ -323,7 +323,7 @@ async setLogLevel(level: LogLevel) : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("set_log_level", { level }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async openRecordingsFolder() : Promise<Result<null, string>> {
@@ -331,7 +331,7 @@ async openRecordingsFolder() : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("open_recordings_folder") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async openLogDir() : Promise<Result<null, string>> {
@@ -339,7 +339,7 @@ async openLogDir() : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("open_log_dir") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async openAppDataDir() : Promise<Result<null, string>> {
@@ -347,7 +347,7 @@ async openAppDataDir() : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("open_app_data_dir") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 /**
@@ -362,7 +362,7 @@ async getAvailableModels() : Promise<Result<ModelInfo[], string>> {
     return { status: "ok", data: await TAURI_INVOKE("get_available_models") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async getModelInfo(modelId: string) : Promise<Result<ModelInfo | null, string>> {
@@ -370,7 +370,7 @@ async getModelInfo(modelId: string) : Promise<Result<ModelInfo | null, string>> 
     return { status: "ok", data: await TAURI_INVOKE("get_model_info", { modelId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async downloadModel(modelId: string) : Promise<Result<null, string>> {
@@ -378,7 +378,7 @@ async downloadModel(modelId: string) : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("download_model", { modelId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async deleteModel(modelId: string) : Promise<Result<null, string>> {
@@ -386,7 +386,7 @@ async deleteModel(modelId: string) : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("delete_model", { modelId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async cancelDownload(modelId: string) : Promise<Result<null, string>> {
@@ -394,7 +394,7 @@ async cancelDownload(modelId: string) : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("cancel_download", { modelId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async setActiveModel(modelId: string) : Promise<Result<null, string>> {
@@ -402,7 +402,7 @@ async setActiveModel(modelId: string) : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("set_active_model", { modelId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async getCurrentModel() : Promise<Result<string, string>> {
@@ -410,7 +410,7 @@ async getCurrentModel() : Promise<Result<string, string>> {
     return { status: "ok", data: await TAURI_INVOKE("get_current_model") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async getTranscriptionModelStatus() : Promise<Result<string | null, string>> {
@@ -418,7 +418,7 @@ async getTranscriptionModelStatus() : Promise<Result<string | null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("get_transcription_model_status") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async isModelLoading() : Promise<Result<boolean, string>> {
@@ -426,7 +426,7 @@ async isModelLoading() : Promise<Result<boolean, string>> {
     return { status: "ok", data: await TAURI_INVOKE("is_model_loading") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async hasAnyModelsAvailable() : Promise<Result<boolean, string>> {
@@ -434,7 +434,7 @@ async hasAnyModelsAvailable() : Promise<Result<boolean, string>> {
     return { status: "ok", data: await TAURI_INVOKE("has_any_models_available") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async hasAnyModelsOrDownloads() : Promise<Result<boolean, string>> {
@@ -442,7 +442,7 @@ async hasAnyModelsOrDownloads() : Promise<Result<boolean, string>> {
     return { status: "ok", data: await TAURI_INVOKE("has_any_models_or_downloads") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async getWindowsMicrophonePermissionStatus() : Promise<WindowsMicrophonePermissionStatus> {
@@ -453,7 +453,7 @@ async openMicrophonePrivacySettings() : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("open_microphone_privacy_settings") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async getAvailableMicrophones() : Promise<Result<AudioDevice[], string>> {
@@ -461,7 +461,7 @@ async getAvailableMicrophones() : Promise<Result<AudioDevice[], string>> {
     return { status: "ok", data: await TAURI_INVOKE("get_available_microphones") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async getAvailableOutputDevices() : Promise<Result<AudioDevice[], string>> {
@@ -469,7 +469,7 @@ async getAvailableOutputDevices() : Promise<Result<AudioDevice[], string>> {
     return { status: "ok", data: await TAURI_INVOKE("get_available_output_devices") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async setSelectedOutputDevice(deviceName: string) : Promise<Result<null, string>> {
@@ -477,7 +477,7 @@ async setSelectedOutputDevice(deviceName: string) : Promise<Result<null, string>
     return { status: "ok", data: await TAURI_INVOKE("set_selected_output_device", { deviceName }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async getSelectedOutputDevice() : Promise<Result<string, string>> {
@@ -485,7 +485,7 @@ async getSelectedOutputDevice() : Promise<Result<string, string>> {
     return { status: "ok", data: await TAURI_INVOKE("get_selected_output_device") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async normalizePlaybackAudioContract() : Promise<Result<PlaybackAudioContract, string>> {
@@ -493,11 +493,8 @@ async normalizePlaybackAudioContract() : Promise<Result<PlaybackAudioContract, s
     return { status: "ok", data: await TAURI_INVOKE("normalize_playback_audio_contract") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
-},
-async checkCustomSounds() : Promise<CustomSounds> {
-    return await TAURI_INVOKE("check_custom_sounds");
 },
 async editorSetWords(words: Word[]) : Promise<Word[]> {
     return await TAURI_INVOKE("editor_set_words", { words });
@@ -546,7 +543,7 @@ async mediaImport(path: string) : Promise<Result<MediaInfo, string>> {
     return { status: "ok", data: await TAURI_INVOKE("media_import", { path }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async mediaGetCurrent() : Promise<Result<MediaInfo | null, string>> {
@@ -554,7 +551,7 @@ async mediaGetCurrent() : Promise<Result<MediaInfo | null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("media_get_current") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async mediaGetAssetUrl() : Promise<Result<string | null, string>> {
@@ -562,7 +559,7 @@ async mediaGetAssetUrl() : Promise<Result<string | null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("media_get_asset_url") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async mediaClear() : Promise<Result<null, string>> {
@@ -570,7 +567,7 @@ async mediaClear() : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("media_clear") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async exportTranscript(format: ExportFormat, maxCharsPerLine: number | null, includeSilenced: boolean | null) : Promise<Result<string, string>> {
@@ -578,7 +575,7 @@ async exportTranscript(format: ExportFormat, maxCharsPerLine: number | null, inc
     return { status: "ok", data: await TAURI_INVOKE("export_transcript", { format, maxCharsPerLine, includeSilenced }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async exportTranscriptToFile(format: ExportFormat, path: string, maxCharsPerLine: number | null, includeSilenced: boolean | null) : Promise<Result<null, string>> {
@@ -586,7 +583,7 @@ async exportTranscriptToFile(format: ExportFormat, path: string, maxCharsPerLine
     return { status: "ok", data: await TAURI_INVOKE("export_transcript_to_file", { format, path, maxCharsPerLine, includeSilenced }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 /**
@@ -623,7 +620,7 @@ async transcribeMediaFile(path: string) : Promise<Result<Word[], string>> {
     return { status: "ok", data: await TAURI_INVOKE("transcribe_media_file", { path }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 /**
@@ -637,7 +634,7 @@ async generateWaveformPeaks(path: string, peakCount: number | null) : Promise<Re
     return { status: "ok", data: await TAURI_INVOKE("generate_waveform_peaks", { path, peakCount }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 /**
@@ -648,7 +645,7 @@ async getKeepSegments() : Promise<Result<KeepSegment[], string>> {
     return { status: "ok", data: await TAURI_INVOKE("get_keep_segments") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 /**
@@ -670,7 +667,7 @@ async generateFfmpegEditScript(inputPath: string) : Promise<Result<string, strin
     return { status: "ok", data: await TAURI_INVOKE("generate_ffmpeg_edit_script", { inputPath }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 /**
@@ -693,7 +690,7 @@ async mapEditToSourceTime(editTimeUs: number) : Promise<Result<number, string>> 
     return { status: "ok", data: await TAURI_INVOKE("map_edit_to_source_time", { editTimeUs }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async invalidateTempPreviewCache(generationToken: string | null, sourceMediaFingerprint: string | null, reason: string | null) : Promise<Result<null, string>> {
@@ -701,7 +698,7 @@ async invalidateTempPreviewCache(generationToken: string | null, sourceMediaFing
     return { status: "ok", data: await TAURI_INVOKE("invalidate_temp_preview_cache", { generationToken, sourceMediaFingerprint, reason }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 /**
@@ -712,7 +709,7 @@ async renderTempPreviewAudio() : Promise<Result<PreviewRenderMetadata, string>> 
     return { status: "ok", data: await TAURI_INVOKE("render_temp_preview_audio") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 /**
@@ -726,7 +723,7 @@ async exportEditedMedia(inputPath: string, outputPath: string, burnCaptions: boo
     return { status: "ok", data: await TAURI_INVOKE("export_edited_media", { inputPath, outputPath, burnCaptions }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async analyzeFillers(minPauseUs: number | null) : Promise<Result<FillerAnalysis, string>> {
@@ -734,7 +731,7 @@ async analyzeFillers(minPauseUs: number | null) : Promise<Result<FillerAnalysis,
     return { status: "ok", data: await TAURI_INVOKE("analyze_fillers", { minPauseUs }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 /**
@@ -745,7 +742,7 @@ async deleteFillers() : Promise<Result<number, string>> {
     return { status: "ok", data: await TAURI_INVOKE("delete_fillers") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 /**
@@ -756,7 +753,7 @@ async deleteDuplicates() : Promise<Result<number, string>> {
     return { status: "ok", data: await TAURI_INVOKE("delete_duplicates") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 /**
@@ -767,7 +764,7 @@ async silencePauses(minPauseUs: number | null) : Promise<Result<number, string>>
     return { status: "ok", data: await TAURI_INVOKE("silence_pauses", { minPauseUs }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 /**
@@ -782,7 +779,7 @@ async trimPauses(minPauseUs: number | null, maxGapUs: number | null) : Promise<R
     return { status: "ok", data: await TAURI_INVOKE("trim_pauses", { minPauseUs, maxGapUs }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 /**
@@ -794,7 +791,7 @@ async tightenGaps(targetGapUs: number | null) : Promise<Result<number, string>> 
     return { status: "ok", data: await TAURI_INVOKE("tighten_gaps", { targetGapUs }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async cleanupAll(minPauseUs: number | null, maxGapUs: number | null) : Promise<Result<CleanupResult, string>> {
@@ -802,7 +799,7 @@ async cleanupAll(minPauseUs: number | null, maxGapUs: number | null) : Promise<R
     return { status: "ok", data: await TAURI_INVOKE("cleanup_all", { minPauseUs, maxGapUs }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 /**
@@ -820,7 +817,7 @@ async cleanupSmartDuplicates() : Promise<Result<SmartCleanupResult, string>> {
     return { status: "ok", data: await TAURI_INVOKE("cleanup_smart_duplicates") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 /**
@@ -831,7 +828,7 @@ async saveProject(path: string, name: string | null) : Promise<Result<null, stri
     return { status: "ok", data: await TAURI_INVOKE("save_project", { path, name }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 /**
@@ -842,7 +839,7 @@ async loadProject(path: string) : Promise<Result<string, string>> {
     return { status: "ok", data: await TAURI_INVOKE("load_project", { path }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async setModelUnloadTimeout(timeout: ModelUnloadTimeout) : Promise<void> {
@@ -853,7 +850,7 @@ async getModelLoadStatus() : Promise<Result<ModelLoadStatus, string>> {
     return { status: "ok", data: await TAURI_INVOKE("get_model_load_status") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async unloadModelManually() : Promise<Result<null, string>> {
@@ -861,7 +858,7 @@ async unloadModelManually() : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("unload_model_manually") };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async getHistoryEntries(cursor: number | null, limit: number | null) : Promise<Result<PaginatedHistory, string>> {
@@ -869,7 +866,7 @@ async getHistoryEntries(cursor: number | null, limit: number | null) : Promise<R
     return { status: "ok", data: await TAURI_INVOKE("get_history_entries", { cursor, limit }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async toggleHistoryEntrySaved(id: number) : Promise<Result<null, string>> {
@@ -877,7 +874,7 @@ async toggleHistoryEntrySaved(id: number) : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("toggle_history_entry_saved", { id }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async getAudioFilePath(fileName: string) : Promise<Result<string, string>> {
@@ -885,7 +882,7 @@ async getAudioFilePath(fileName: string) : Promise<Result<string, string>> {
     return { status: "ok", data: await TAURI_INVOKE("get_audio_file_path", { fileName }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async deleteHistoryEntry(id: number) : Promise<Result<null, string>> {
@@ -893,7 +890,7 @@ async deleteHistoryEntry(id: number) : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("delete_history_entry", { id }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async retryHistoryEntryTranscription(id: number) : Promise<Result<null, string>> {
@@ -901,7 +898,7 @@ async retryHistoryEntryTranscription(id: number) : Promise<Result<null, string>>
     return { status: "ok", data: await TAURI_INVOKE("retry_history_entry_transcription", { id }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async updateHistoryLimit(limit: number) : Promise<Result<null, string>> {
@@ -909,7 +906,7 @@ async updateHistoryLimit(limit: number) : Promise<Result<null, string>> {
     return { status: "ok", data: await TAURI_INVOKE("update_history_limit", { limit }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 },
 async updateRecordingRetentionPeriod(period: string) : Promise<Result<null, string>> {
@@ -917,7 +914,7 @@ async updateRecordingRetentionPeriod(period: string) : Promise<Result<null, stri
     return { status: "ok", data: await TAURI_INVOKE("update_recording_retention_period", { period }) };
 } catch (e) {
     if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
+    else return { status: "error", error: e as string };
 }
 }
 }
@@ -994,7 +991,6 @@ export type CaptionSegment = { index: number; start_us: number; end_us: number; 
  * duplicates are found, then trims pauses.
  */
 export type CleanupResult = { fillers_removed: number; duplicates_removed: number; pauses_trimmed: number; gaps_tightened: number; passes: number }
-export type CustomSounds = { start: boolean; stop: boolean }
 /**
  * Atomic frontend projection of editor state after a backend transaction.
  */

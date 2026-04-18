@@ -50,7 +50,6 @@ const TAURI_MOCK_SCRIPT = `<script>
       if (cmd === "get_downloaded_models") return [];
       if (cmd === "get_current_model") return "";
       if (cmd === "has_any_models_available") return true;
-      if (cmd === "check_custom_sounds") return false;
       if (cmd === "get_windows_microphone_permission_status")
         return { supported: false, overall_access: "allowed" };
       if (cmd === "get_available_microphones") return [];

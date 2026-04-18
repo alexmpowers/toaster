@@ -11,26 +11,6 @@ use winreg::{
     RegKey, HKEY,
 };
 
-#[derive(Serialize, Type)]
-pub struct CustomSounds {
-    start: bool,
-    stop: bool,
-}
-
-fn custom_sound_exists(app: &AppHandle, sound_type: &str) -> bool {
-    crate::portable::resolve_app_data(app, &format!("custom_{}.wav", sound_type))
-        .is_ok_and(|path| path.exists())
-}
-
-#[tauri::command]
-#[specta::specta]
-pub fn check_custom_sounds(app: AppHandle) -> CustomSounds {
-    CustomSounds {
-        start: custom_sound_exists(&app, "start"),
-        stop: custom_sound_exists(&app, "stop"),
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone, Type)]
 pub struct AudioDevice {
     pub index: String,
