@@ -26,9 +26,16 @@ Windows (same shell before Cargo/Tauri commands):
 
 Run:
 
+On Windows, use the monitored launcher (required per AGENTS.md §"Launch protocol"):
+
+```powershell
+.\scripts\launch-toaster-monitored.ps1 -ObservationSeconds 120
+```
+
+Cross-platform minimum:
+
 ```bash
-npm run tauri dev
-# or: cargo tauri dev
+cargo tauri dev
 ```
 
 ## Validation before opening PR

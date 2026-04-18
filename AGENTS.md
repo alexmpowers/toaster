@@ -47,7 +47,7 @@ toaster/
 │   ├── components/            # editor/, player/, settings/, shared/
 │   ├── stores/                # Zustand state
 │   ├── lib/                   # frontend utilities + types
-│   └── i18n/locales/          # 22 locale files, gated by check-translations.ts
+│   └── i18n/locales/          # 20 locale files, gated by check-translations.ts
 ├── src-tauri/                 # Rust backend (Tauri 2.x)
 │   ├── Cargo.toml / tauri.conf.json
 │   ├── src/
@@ -70,7 +70,7 @@ toaster/
 ├── flake.nix / flake.lock     # root Nix flake (convention: stays at root)
 └── .github/
     ├── skills/                # project skills — invoke per AGENTS.md "Skills and agents"
-    ├── agents/                # project agents (code-reviewer, repo-auditor, ...)
+    ├── agents/                # project agents (repo-auditor, eval-harness-runner, waveform-diff, cut-drift-fuzzer, toaster-review-addendum)
     └── workflows/             # CI
 ```
 
@@ -132,6 +132,7 @@ Cold full-workspace `cargo clippy` / `cargo check` on this repo's dependency tre
 - TypeScript: strict typing, no `any`, functional components.
 - UI strings must use i18next keys.
 - Backend timestamps use microseconds.
+- **File-size cap: 800 lines** for `.rs` / `.ts` / `.tsx` under `src/` and `src-tauri/src/` (excluding generated `bindings.ts`). Enforced by `bun run check:file-sizes` in CI. Existing offenders are grandfathered via `scripts/file-size-allowlist.txt`; the monolith-split plan removes entries as each file is carved up. Do not add new entries without an approved tracking issue — split the file instead.
 
 ## Precision and UX guardrails
 
@@ -157,37 +158,71 @@ For any fix touching **audio edits, captions, preview↔export parity, or timeli
 
 ## Skills and agents
 
-The following skills and agents are available under `.github/skills/` and `.github/agents/`.
-Invoke them at the appropriate time — they are not optional suggestions.
+Toaster consumes two skill sources:
 
-### Required workflow skills
+- **Upstream `superpowers:` skills** — general-purpose discipline and workflow skills from [obra/superpowers](https://github.com/obra/superpowers), installed via the CLI plugin marketplace. Invoke by name (e.g. `superpowers:verification-before-completion`). No files for these live in this repo.
+- **Local Toaster skills** under `.github/skills/` — domain-specific gates that superpowers explicitly wants kept out of core and in a companion plugin. Invoke by short name (e.g. `transcript-precision-eval`).
 
-- **verification-before-completion** — Invoke before claiming ANY work is complete, fixed, or passing. No completion claims without fresh verification evidence (command output, not assumptions). This is non-negotiable.
-- **systematic-debugging** — Invoke when encountering any bug, test failure, or unexpected behavior. Root cause investigation must complete before proposing fixes. No random guess-and-check.
-- **test-driven-development** — Invoke when implementing any feature or bugfix. Write the failing test first, watch it fail, then write minimal code to pass. No production code without a failing test.
-- **receiving-code-review** — Invoke when receiving code review feedback. Evaluate technically before implementing. No performative agreement or blind implementation.
+Skills are not optional. If a skill applies to what you're doing, you must invoke it. User instructions in this file override skills where they conflict — per `superpowers:using-superpowers`.
+
+### Upstream superpowers skills (invoke by `superpowers:<name>`)
+
+**Discipline gates — apply per-trigger:**
+
+- `superpowers:verification-before-completion` — Invoke before claiming ANY work is complete, fixed, or passing. Evidence before assertions. See the Toaster extension [Verified means the live app, not `cargo check`](#verified-means-the-live-app-not-cargo-check) below.
+- `superpowers:systematic-debugging` — Invoke for any bug, test failure, build break, or unexpected behavior. Root cause before fixes; three-strike rule escalates to "question the architecture."
+- `superpowers:test-driven-development` — Invoke when implementing backend features or bugfixes. Narrowed Toaster scope — see [Toaster TDD scope](#toaster-tdd-scope) below.
+- `superpowers:receiving-code-review` — Invoke when receiving review feedback. Technical evaluation, no performative agreement. Toaster architecture boundaries (in the [code-review](#code-review-boundaries) table below) are additional hard rules.
+- `superpowers:requesting-code-review` — Invoke when self-reviewing before asking for review.
+
+**Planning and execution workflow:**
+
+- `superpowers:brainstorming` — Invoke before implementing any feature larger than a bugfix. Produces a design doc before code.
+- `superpowers:writing-plans` — Invoke when converting a spec into bite-sized (2–5 minute) implementation tasks.
+- `superpowers:executing-plans` — Inline batch execution with human checkpoints.
+- `superpowers:subagent-driven-development` — Fresh subagent per task with two-stage review (spec compliance, then code quality). Preferred for non-trivial plans.
+- `superpowers:dispatching-parallel-agents` — Concurrent subagent workflows.
+- `superpowers:using-git-worktrees` — Parallel branch isolation for larger features.
+- `superpowers:finishing-a-development-branch` — Merge / PR / discard decision workflow.
+
+**Meta:**
+
+- `superpowers:writing-skills` — Invoke when creating or modifying any skill in this repo.
+- `superpowers:using-superpowers` — Establishes skill-invocation discipline. "1% chance a skill might apply → you MUST invoke it."
+
+### Local Toaster-specific skills
+
 - **canonical-instructions** — Invoke whenever editing an AI-instruction file (AGENTS.md, CLAUDE.md, .github/copilot-instructions.md, CRUSH.md). AGENTS.md is the single source of truth; other files are pointers.
-
-### Build and environment
-
-- **build-and-test** — Invoke for compile/test/lint runs, toolchain issues, and Windows build environment troubleshooting.
-- **dep-hygiene** — Invoke before adding a dependency, after removing a module, and on any PR claiming "dead code cleanup". Enforces `cargo machete` / `knip` / `depcheck` gates.
-
-### Legacy pruning and product scope
-
 - **handy-legacy-pruning** — Invoke before editing any Handy-era dictation module (actions.rs, shortcut/, overlay.rs, tray*.rs, clipboard.rs, input.rs, audio_feedback.rs, apple_intelligence.rs, recorder.rs, vad/, PushToTalk.tsx, AudioFeedback.tsx, HandyKeysShortcutInput.tsx). Forces the "is this still on the transcript-editor path?" question before extending dead code.
-- **i18n-pruning** — Invoke when deleting or renaming any i18next key. Ensures all 22 locale files stay in sync.
+- **dep-hygiene** — Invoke before adding or removing a Rust crate or npm package, after deleting a module, and on any "dead code cleanup" PR. Enforces `cargo machete` / `knip` / `depcheck` gates.
+- **i18n-pruning** — Invoke when deleting, renaming, or adding a user-visible i18next key. Keeps all 22 locale files in sync with `scripts/check-translations.ts`.
 - **transcript-precision-eval** — Invoke when touching word operations, keep-segment logic, time mapping, transcription post-processing, or export.
 - **audio-boundary-eval** — Invoke on any PR that modifies `managers/editor`, `commands/waveform`, export splice logic, preview audio rendering, or boundary snapping. Extends `transcript-precision-eval` with seam-level gates: cross-seam leakage `xcorr < 0.15` over 0–80 ms, click-free seams (`z < 4.0`), and preview↔export within 1 sample / `-40 dBFS` RMS.
 - **transcription-adapter-contract** — Invoke before merging any PR that adds or swaps an ASR / forced-alignment backend. Enforces the `NormalizedTranscriptionResult` schema (monotonic non-overlap, no zero-duration words, stripped non-speech tokens, no silent equal-duration synthesis) and requires a round-trip fixture test that keeps precision + boundary gates green with the new backend.
 
-### Review and audit agents
+Build, lint, and test command reference lives in [Development commands](#development-commands) and [Windows requirements](#windows-requirements) above; see `docs/build.md` for Windows toolchain troubleshooting.
 
-- **code-reviewer** — Invoke after completing a major feature, fix, or project step. Reviews implementation against the original plan, architecture boundaries, and coding standards. Catches plan deviations, boundary violations, and missing verification.
-- **repo-auditor** — Invoke for whole-repository health audits (dead modules, monoliths, instruction drift, dep bloat, workflow duplication). Complements code-reviewer, which is diff-scoped.
+### Toaster TDD scope
+
+`superpowers:test-driven-development` requires a failing test before production code. Toaster's harness reality narrows this:
+
+- **Backend (`src-tauri/`):** full TDD applies — write a failing `#[test]` (or extend an eval fixture under `src-tauri/tests/fixtures/`) first. Verify with `cargo test`.
+- **Audio / timeline / export:** the real gate is the fixture-based eval harness (`transcript-precision-eval`, `audio-boundary-eval`). Extend fixtures first, run the relevant eval script, then implement.
+- **Frontend-only UI / styling:** no unit-test framework exists. `npm run lint`, `npm run build`, and a live-app check per `superpowers:verification-before-completion` are the gates. Playwright E2E for user-visible flow changes.
+
+### Code-review boundaries
+
+When `superpowers:code-reviewer` reviews a Toaster PR, it must also apply `.github/agents/toaster-review-addendum.md`. Architecture boundary violations, dual-path duplication, hosted-inference dependencies, and missing verification evidence are **Critical** findings that block merge.
+
+### Local Toaster-specific agents
+
+- **repo-auditor** — Invoke for whole-repository health audits (dead modules, monoliths, instruction drift, dep bloat, workflow duplication). Complements diff-scoped reviews.
 - **eval-harness-runner** — Invoke to run the precision / midstream / export evals with one command and produce a pass/fail JSON for CI.
 - **waveform-diff** — Invoke after audio-path milestones, or when a bug report sounds like "tiny remnants / clicks / drift". Renders preview and export to PCM, measures seam neighborhoods at sample level (cross-correlation, HF-burst energy, sample discontinuity, preview↔export parity), and emits JSON + human-readable findings. Does not fix code; reports only.
 - **cut-drift-fuzzer** — Invoke before merging any edit-engine / time-mapping / undo-redo / export change. Runs seeded deterministic sequences (1000 ops) over synthetic beacon and real fixtures, asserting monotonic time maps, no cumulative duration drift (≤ 21 µs), no panics, and beacon preservation within 1 sample on PCM export. Emits pass/fail JSON.
+- **toaster-review-addendum** (not an agent, consumed by `superpowers:code-reviewer`) — Toaster-specific architecture boundaries, verification gates, and hygiene rules the generic reviewer layers on top of its protocol.
+
+The previous local `code-reviewer` agent has been removed in favor of `superpowers:code-reviewer` + the addendum above.
 
 ## Hooks
 

@@ -1,80 +1,62 @@
 ---
 name: i18n-pruning
-description: 'Use when deleting or renaming any i18next key, or when removing a UI component that owned keys. Ensures every src/i18n/locales/*/translation.json is updated in the same commit so check-translations.ts stays green.'
+description: 'Use when deleting, renaming, or adding any user-visible i18next key. Ensures every src/i18n/locales/*/translation.json moves together so scripts/check-translations.ts stays green. Toaster-specific; use alongside superpowers:verification-before-completion.'
 ---
 
 # i18n Pruning
 
-## Overview
-
-Toaster ships 22 locale files under `src/i18n/locales/*/translation.json`. When a UI component is deleted, its keys must be removed from every locale simultaneously — otherwise `scripts/check-translations.ts` fails and translators drift further from the source locale.
-
-**Core principle:** Key changes touch all 22 locale files in one commit.
-
-## The Iron Law
+Toaster ships 22 locale files under `src/i18n/locales/*/translation.json`.
+`scripts/check-translations.ts` enforces parity and fails CI if they drift.
 
 ```
 DELETING A KEY IN en/translation.json =
 DELETING IT IN ALL 22 LOCALES, IN THE SAME COMMIT.
 ```
 
-## Gate Function
+## Deleting a component or setting screen
 
-**Deleting a component or setting screen:**
+1. Find every `t("...")` call in the deleted code. Note each key.
+2. Identify the key group (top-level object) in `en/translation.json`.
+3. Delete the orphaned group (or specific keys) from every locale.
+4. Run `bun scripts/check-translations.ts`.
+5. Run `npm run lint` (catches stray `useTranslation`).
+6. Run `npm run build` (catches stray `t()` calls).
 
-```
-1. Find the t("...") calls in the deleted component. Note every key.
-2. Identify the key group (top-level object) in en/translation.json.
-3. If the entire group is now orphaned: delete the group from every locale.
-4. If only some keys are orphaned: delete those specific keys from every locale.
-5. Run: bun scripts/check-translations.ts
-6. Run: npm run lint  (catches stray useTranslation references)
-7. Run: npm run build  (catches stray t() calls)
-```
+## Renaming a key
 
-**Renaming a key:**
+1. Update `en/translation.json` with the new name.
+2. Update every other locale — carry the existing translation to the new key.
+3. Do **not** leave the old key behind as an alias.
+4. Run `check-translations.ts`.
 
-```
-1. Update en/translation.json with the new key name.
-2. Update every other locale — carry the EXISTING translation under the new key.
-3. Do NOT leave the old key behind as an alias.
-4. Run check-translations.ts.
-```
+## Adding a key
 
-**Adding a key:**
+1. Add to `en/translation.json` first.
+2. Add an English fallback to every other locale. Translators fix later.
+3. Never leave a locale without the key.
 
-```
-1. Add it to en/translation.json first.
-2. Add an English fallback value to every other locale (translators will fix later).
-3. Never leave a locale without the key — check-translations.ts will fail.
-```
+## Dictation-era removal candidates (2026-04 audit)
 
-## Dictation-Era Key Groups (High-Value Removal Targets)
-
-When the Handy-era UI is deleted (see `handy-legacy-pruning` skill), the following groups in `en/translation.json` are orphaned in whole or in part. Removal candidates identified by the 2026-04 audit:
+Orphaned once the Handy-era UI is deleted — coordinate with
+`handy-legacy-pruning`:
 
 - `tray.*` (fully orphaned once tray is removed)
 - `settings.general.pushToTalk`
-- `settings.sound.*` (audio feedback, microphone, output device, volume)
-- `settings.advanced.startHidden`, `autostart`, `showTrayIcon`, `overlay`, `pasteMethod`, `typingTool`, `clipboardHandling`, `autoSubmit`
-- `settings.debug.soundTheme`, `alwaysOnMicrophone`, `muteWhileRecording`, `appendTrailingSpace`, `pasteDelay`, `recordingBuffer`, `keyboardImplementation`
+- `settings.sound.*`
+- `settings.advanced.{startHidden,autostart,showTrayIcon,overlay,pasteMethod,typingTool,clipboardHandling,autoSubmit}`
+- `settings.debug.{soundTheme,alwaysOnMicrophone,muteWhileRecording,appendTrailingSpace,pasteDelay,recordingBuffer,keyboardImplementation}`
 
-Keep (still live):
+Keep: `onboarding.permissions.*` (used by `AccessibilityOnboarding.tsx`).
 
-- `onboarding.permissions.*` — used by `AccessibilityOnboarding.tsx`
+## Red flags
 
-Cross-check by grepping the translation files for these prefixes and confirming no live editor component still references them.
+- About to edit only `en/translation.json`.
+- `check-translations.ts` failing and reaching for `--no-verify`.
+- "i18n updates in a follow-up PR" — no, same commit.
+- Adding a key with a hardcoded English string instead of using i18next.
 
-## Red Flags — STOP
+## Related skills
 
-- About to edit only `en/translation.json`
-- `check-translations.ts` is failing and you're about to `git commit --no-verify`
-- PR description says "i18n updates in follow-up" — no, do it now
-- Adding a key with a hardcoded English string instead of using i18next
-
-## When To Apply
-
-- Any PR that deletes a UI component
-- Any PR that renames or removes a setting field
-- Any PR that adds user-visible text
-- Any PR where `check-translations.ts` is failing
+- `handy-legacy-pruning` — drives the "which keys are orphaned" question.
+- `superpowers:verification-before-completion` — `check-translations.ts`
+  output is the evidence that parity holds.

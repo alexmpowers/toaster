@@ -86,7 +86,7 @@ When an audit verdict is FULLY DEAD:
 3. Remove every `change_*` command registration from `lib.rs`.
 4. Remove matching fields from `AppSettings` (`settings.rs`) and add a migration that strips them from persisted stores.
 5. Remove the i18n keys from every locale under `src/i18n/locales/*/translation.json`.
-6. Remove the Cargo/npm dependency if it has no other consumer (see `dep-hygiene` skill).
+6. Remove the Cargo/npm dependency if it has no other consumer (see the `dep-hygiene` skill).
 7. Run `cargo check`, `cargo clippy`, `cargo test`, `npm run lint`, `npm test`, and the monitored launch script. Verify the app still starts before moving on.
 
 ## When To Apply

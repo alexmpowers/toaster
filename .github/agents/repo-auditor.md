@@ -1,6 +1,6 @@
 ---
 name: repo-auditor
-description: 'Use on demand for whole-repository health audits (dead modules, monoliths, instruction drift, dep bloat, workflow duplication). Complements code-reviewer, which is scoped to diffs. Produces a prioritized audit report; does NOT modify files.'
+description: 'Use on demand for whole-repository health audits (dead modules, monoliths, instruction drift, dep bloat, workflow duplication). Complements superpowers:code-reviewer, which is scoped to diffs. Produces a prioritized audit report; does NOT modify files.'
 model: inherit
 ---
 

@@ -70,7 +70,7 @@ Out of scope for launch documentation: host-integration tracks outside the Tauri
 
 ### WS4: Agent and skill alignment
 - Keep AGENTS/CLAUDE/Copilot instructions synchronized with real architecture
-- Keep build-and-test skill commands and environment constraints current
+- Keep build/lint/test command reference in AGENTS.md and `docs/build.md` current
 
 ## 8. Milestones (sequential + parallel)
 
@@ -81,7 +81,7 @@ Out of scope for launch documentation: host-integration tracks outside the Tauri
 ### Milestone B (parallel)
 - Refresh CONTRIBUTING + PR/issue templates
 - Refresh AGENTS + CLAUDE + Copilot instructions
-- Audit build-and-test skill
+- Audit AGENTS.md Development commands + Windows requirements sections and `docs/build.md`
 
 ### Milestone C (sequential closeout)
 - Run launch-doc consistency pass

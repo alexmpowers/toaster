@@ -32,7 +32,7 @@ The PRD requires precise transcript-driven editing with per-word timing preserve
 ```
 1. Read the existing golden JSON. Confirm your change does not need to
    regenerate it (if it does, regenerating is a plan deviation and needs
-   explicit approval — see receiving-code-review skill).
+   explicit approval — see `superpowers:receiving-code-review`).
 2. Extend the eval to cover the new operation with at least one case.
 3. Run the eval. Watch it fail against the golden for the new behavior.
 4. Implement the change.

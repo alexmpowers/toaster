@@ -50,10 +50,19 @@ bun install --frozen-lockfile
 
 ### 3. Run app
 
-```bash
-npm run tauri dev
-# or: cargo tauri dev
+On Windows, use the monitored launcher (required):
+
+```powershell
+.\scripts\launch-toaster-monitored.ps1 -ObservationSeconds 120
 ```
+
+Cross-platform minimum:
+
+```bash
+cargo tauri dev
+```
+
+See AGENTS.md §"Launch protocol" for details.
 
 ### 4. Common checks
 
@@ -68,7 +77,8 @@ npm run lint
 - `src/` — React UI, editor/player components, i18n, stores
 - `src-tauri/src/managers/` — core domain logic (audio/model/transcription/editor/media/filler/history/export/project)
 - `src-tauri/src/commands/` — Tauri command handlers (plus shared app/system commands)
-- `.github/skills/` — Copilot skill definitions used in this repo
+- `.github/skills/` — project-specific skills (domain gates) consumed by AI coding assistants; see AGENTS.md for details
+- `scripts/` — PowerShell tooling (setup, monitored launcher, evals); see [scripts/README.md](scripts/README.md) if present
 
 ## Current launch focus
 

@@ -44,34 +44,38 @@ Run this in the same shell before Cargo/Tauri commands:
 ## Development commands
 
 ```bash
-# full app (frontend + backend)
-npm run tauri dev
-# or: cargo tauri dev
+# full app (frontend + backend) — cross-platform minimum
+cargo tauri dev
 
 # production build
-npm run tauri build
-# or: cargo tauri build
+cargo tauri build
+# or: npm run tauri build
 
 # frontend only
 npm run dev
 npm run build
 ```
 
+On Windows the monitored launcher (below) is required for live dev mode — see
+AGENTS.md §"Launch protocol".
+
 ## Launch protocol
 
-- Default launch command: `npm run tauri dev`.
-- Do not stop at process start; monitor startup output for 404/runtime/initialization failures.
-- On failure signals, gather logs and perform first-line debugging before reporting status.
+See AGENTS.md §"Launch protocol" for the authoritative rule. In short: on
+Windows use the monitored launcher; cross-platform minimum is `cargo tauri dev`.
+Do not stop at process start; monitor startup output for 404/runtime/initialization
+failures and gather logs on failure before reporting status.
 
-### Optional monitored launcher
+### Monitored launcher (required on Windows)
 
-Use this helper when you want bounded startup observation and captured logs:
+Runs environment setup, starts the app, and prints bounded startup observation
+with captured logs:
 
 ```powershell
 .\scripts\launch-toaster-monitored.ps1 -ObservationSeconds 120
 ```
 
-It runs environment setup, starts `npm run tauri dev`, and prints:
+It runs environment setup, starts `cargo tauri dev`, and prints:
 
 - `monitor_summary=...` (detected success/error signal keys + hints)
 - `launch_logs_stdout=...` and `launch_logs_stderr=...` (captured logs)
