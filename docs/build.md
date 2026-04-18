@@ -157,3 +157,49 @@ For full details see the
 | `VULKAN_SDK not set` | Vulkan SDK missing | Install Vulkan SDK and set `VULKAN_SDK` |
 | `link.exe not found` | MSVC env not loaded | Run `scripts/setup-env.ps1` in current shell |
 | `ort does not provide prebuilt binaries for gnu` | Wrong target | Use `stable-x86_64-pc-windows-msvc` |
+| `Generator Ninja does not support platform specification, but platform x64 was specified` | `Platform=x64` (set by `vcvars64.bat`) leaked into the env alongside `CMAKE_GENERATOR=Ninja`. CMake on Windows reads `Platform` as the implicit default for `CMAKE_GENERATOR_PLATFORM`. | `setup-env.ps1` strips it after sourcing vcvars; if you bypass that script, `Remove-Item Env:Platform` before invoking cargo. Stale `target/debug/build/whisper-rs-sys-*/CMakeCache.txt` remembers the bad generator — delete those dirs once after the fix. |
+
+## Build environment gotchas
+
+These are non-obvious interactions that have broken the Windows build more
+than once. `setup-env.ps1` is the single place that papers over them; do
+not delete its workarounds without re-reading this section.
+
+### `Platform=x64` from vcvars vs `CMAKE_GENERATOR=Ninja`
+
+`vcvars64.bat` exports `Platform=x64` for MSBuild's benefit. CMake on
+Windows reads the `Platform` env var (capital P) as the implicit default
+for `CMAKE_GENERATOR_PLATFORM`. We force `CMAKE_GENERATOR=Ninja` because
+Ninja gives faster incremental builds than the MSBuild-backed Visual
+Studio generator. The two are mutually exclusive — Ninja rejects platform
+specs, so every `project()` in `whisper-rs-sys`, `ggml`, and any other
+CMake-driven dep will fail with:
+
+> Generator Ninja does not support platform specification, but platform x64 was specified
+
+We use cl.exe + Ninja end-to-end (never MSBuild from inside cargo), so
+`Platform` has no legitimate consumer in this build. `setup-env.ps1`
+clears it immediately after sourcing vcvars, and runs a preflight check
+that screams loudly if either `Platform` or `CMAKE_GENERATOR_PLATFORM`
+sneaks back in alongside `CMAKE_GENERATOR=Ninja`.
+
+If you ever switch to MSBuild (don't), drop `CMAKE_GENERATOR=Ninja` first.
+
+### Stale `whisper-rs-sys` CMakeCache after generator change
+
+CMake records the generator in `CMakeCache.txt`. If a previous build
+configured with one generator (say "Visual Studio 18 2026" because the
+Platform leak forced a fallback) and a later build runs with a different
+one ("Ninja"), CMake aborts with:
+
+> Does not match the generator used previously: Ninja
+> Either remove the CMakeCache.txt file and CMakeFiles directory or choose a different binary directory.
+
+One-time fix after correcting the env:
+
+```powershell
+Get-ChildItem src-tauri\target\debug\build -Filter "whisper-rs-sys-*" -Directory |
+    ForEach-Object { Remove-Item -Recurse -Force $_.FullName }
+```
+
+You should not need this again once `Platform` is stripped properly.

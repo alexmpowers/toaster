@@ -38,6 +38,18 @@ if (Test-Path $vcvarsall) {
     Write-Host "WARNING: VS Build Tools not found. Install C++ workload." -ForegroundColor Yellow
 }
 
+# Strip the MSBuild `Platform=x64` env var that vcvars64.bat exports.
+#
+# Root cause: CMake on Windows reads `Platform` (capital P) as the implicit
+# default for `CMAKE_GENERATOR_PLATFORM`. We force `CMAKE_GENERATOR=Ninja`
+# above; Ninja rejects platform specs, so every `project()` call fails with:
+#   "Generator Ninja does not support platform specification, but
+#    platform x64 was specified"
+# We build with cl.exe + Ninja, never with MSBuild, so `Platform` has no
+# legitimate consumer here. Do NOT delete this without re-reading the
+# Build environment gotchas section in docs/build.md.
+Remove-Item Env:Platform -ErrorAction SilentlyContinue
+
 # Bindgen clang include paths
 $msvcBase = "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\MSVC"
 $msvcVersion = Get-ChildItem $msvcBase -Directory -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1 -ExpandProperty Name
@@ -96,3 +108,14 @@ foreach ($check in $checks) {
 }
 
 Write-Host "`nEnvironment ready. Run 'cargo tauri dev' to start." -ForegroundColor Cyan
+
+# Preflight: catch future regressions of the vcvars `Platform` leak (or any
+# other process setting CMAKE_GENERATOR_PLATFORM) on day zero. If either is
+# set while CMAKE_GENERATOR=Ninja, every CMake-driven build (whisper-rs-sys,
+# ggml, ffmpeg) will fail with "Generator Ninja does not support platform
+# specification". Better to scream here than to debug a 5-minute cold cmake
+# error.
+if ($env:CMAKE_GENERATOR -eq "Ninja" -and ($env:Platform -or $env:CMAKE_GENERATOR_PLATFORM)) {
+    Write-Host "`n[FAIL] Build env corrupted: CMAKE_GENERATOR=Ninja but Platform=[$env:Platform] CMAKE_GENERATOR_PLATFORM=[$env:CMAKE_GENERATOR_PLATFORM]" -ForegroundColor Red
+    Write-Host "       CMake will reject the platform spec. See docs/build.md > Build environment gotchas." -ForegroundColor Red
+}
