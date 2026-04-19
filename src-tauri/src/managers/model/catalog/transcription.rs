@@ -1,23 +1,15 @@
-//! Static transcription-model catalog (extracted from mod.rs).
+//! Static transcription-model catalog entries.
 //!
-//! `build_static_catalog()` returns the same HashMap that `ModelManager::new`
-//! previously constructed inline. Custom-model discovery and download-status
-//! refresh remain in the manager so this module stays purely descriptive.
+//! Returned as a flat `Vec<ModelInfo>` (all with `category = Transcription`);
+//! the aggregator in `catalog::mod` folds these plus `post_processor::entries()`
+//! into the `HashMap` consumed by `ModelManager::new`.
 
 use std::collections::HashMap;
 
-use super::{EngineType, ModelCategory, ModelInfo};
+use super::super::{EngineType, ModelCategory, ModelInfo};
 
-use anyhow::Result;
-use log::{info, warn};
-use std::collections::HashSet;
-use std::fs;
-use std::path::Path;
-
-use super::hash;
-
-pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
-    let mut available_models = HashMap::new();
+pub(super) fn entries() -> Vec<ModelInfo> {
+    let mut available_models: HashMap<String, ModelInfo> = HashMap::new();
 
     // Whisper supported languages (99 languages from tokenizer)
     // Including zh-Hans and zh-Hant variants to match frontend language codes
@@ -566,139 +558,5 @@ pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
         },
     );
 
-    available_models
-}
-
-pub(super) fn discover_custom_whisper_models(
-    models_dir: &Path,
-    available_models: &mut HashMap<String, ModelInfo>,
-) -> Result<()> {
-    if !models_dir.exists() {
-        return Ok(());
-    }
-
-    // Collect filenames of predefined Whisper file-based models to skip
-    let predefined_filenames: HashSet<String> = available_models
-        .values()
-        .filter(|m| matches!(m.engine_type, EngineType::Whisper) && !m.is_directory)
-        .map(|m| m.filename.clone())
-        .collect();
-
-    // Scan models directory for .bin files
-    for entry in fs::read_dir(models_dir)? {
-        let entry = match entry {
-            Ok(e) => e,
-            Err(e) => {
-                warn!("Failed to read directory entry: {}", e);
-                continue;
-            }
-        };
-
-        let path = entry.path();
-
-        // Only process .bin files (not directories)
-        if !path.is_file() {
-            continue;
-        }
-
-        let filename = match path.file_name().and_then(|s| s.to_str()) {
-            Some(name) => name.to_string(),
-            None => continue,
-        };
-
-        // Skip hidden files
-        if filename.starts_with('.') {
-            continue;
-        }
-
-        // Only process .bin files (Whisper GGML format).
-        // This also excludes .partial downloads (e.g., "model.bin.partial").
-        // If we add discovery for other formats, add a .partial check before this filter.
-        if !filename.ends_with(".bin") {
-            continue;
-        }
-
-        // Skip predefined model files
-        if predefined_filenames.contains(&filename) {
-            continue;
-        }
-
-        // Generate model ID from filename (remove .bin extension)
-        let model_id = filename.trim_end_matches(".bin").to_string();
-
-        // Skip if model ID already exists (shouldn't happen, but be safe)
-        if available_models.contains_key(&model_id) {
-            continue;
-        }
-
-        // Generate display name: replace - and _ with space, capitalize words
-        let display_name = model_id
-            .replace(['-', '_'], " ")
-            .split_whitespace()
-            .map(|word| {
-                let mut chars = word.chars();
-                match chars.next() {
-                    None => String::new(),
-                    Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                }
-            })
-            .collect::<Vec<_>>()
-            .join(" ");
-
-        // Get file size in MB
-        let size_mb = match path.metadata() {
-            Ok(meta) => meta.len() / (1024 * 1024),
-            Err(e) => {
-                warn!("Failed to get metadata for {}: {}", filename, e);
-                0
-            }
-        };
-
-        info!(
-            "Discovered custom Whisper model: {} ({}, {} MB)",
-            model_id, filename, size_mb
-        );
-
-        available_models.insert(
-            model_id.clone(),
-            ModelInfo {
-                id: model_id,
-                name: display_name,
-                description: "Not officially supported".to_string(),
-                filename,
-                url: None,    // Custom models have no download URL
-                sha256: None, // Custom models skip verification
-                size_mb,
-                is_downloaded: true, // Already present on disk
-                is_downloading: false,
-                partial_size: 0,
-                is_directory: false,
-                engine_type: EngineType::Whisper,
-                accuracy_score: 0.0, // Sentinel: UI hides score bars when both are 0
-                speed_score: 0.0,
-                supports_translation: false,
-                is_recommended: false,
-                supported_languages: vec![],
-                supports_language_selection: true,
-                is_custom: true,
-                category: ModelCategory::Transcription,
-                transcription_metadata: None,
-                llm_metadata: None,
-            },
-        );
-    }
-
-    Ok(())
-}
-
-/// Verifies the SHA256 of `path` against `expected_sha256` (if provided).
-/// On mismatch or read error the partial file is deleted and an error is returned,
-/// so the next download attempt always starts from a clean state.
-/// When `expected_sha256` is `None` (custom user models) verification is skipped.
-pub(super) fn verify_sha256(
-    path: &Path,
-    expected_sha256: Option<&str>,
-    model_id: &str,
-) -> Result<()> {
-    hash::verify_sha256(path, expected_sha256, model_id)
+    available_models.into_values().collect()
 }
