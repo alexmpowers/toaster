@@ -13,6 +13,25 @@ import type {
 } from "@/bindings";
 import { commands } from "@/bindings";
 
+/**
+ * App-wide settings store. Mirrors the backend `AppSettings` struct (see
+ * `src-tauri/src/settings/types.rs`) via specta-generated bindings.
+ *
+ * Persistence contract:
+ *   - `settings` is null until `loadSettings()` hydrates from the backend.
+ *   - `updateSetting(key, value)` is the only write path. It invokes the
+ *     backend's setter command, which validates + persists to disk, then
+ *     echoes the updated struct back via the `settings-changed` Tauri event.
+ *     The listener installed by `initSettingsListener()` writes the full
+ *     result into this store so optimistic UI updates stay consistent.
+ *   - `isUpdating[key]` is set while a setter is in flight; UI components
+ *     use it to disable controls and avoid racing writes.
+ *
+ * Every user-visible settings control goes through `updateSetting`; never
+ * call backend setter commands directly from components — the updater-
+ * coverage gate (`scripts/gate/check-settings-updater-coverage.ts`) enforces
+ * one updater per persisted key.
+ */
 interface SettingsStore {
   settings: Settings | null;
   defaultSettings: Settings | null;

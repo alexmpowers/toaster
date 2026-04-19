@@ -1,5 +1,10 @@
 import { create } from "zustand";
 
+/**
+ * Media metadata returned by the backend after a file is imported. Drives UI
+ * labels (file name, type icon) and export defaults (mirrors the source
+ * container unless the user overrides in Advanced settings).
+ */
 export interface MediaInfo {
   path: string;
   file_name: string;
@@ -8,6 +13,19 @@ export interface MediaInfo {
   extension: string;
 }
 
+/**
+ * Global media-player state shared between the transcript editor, the
+ * `<video>`/`<audio>` element, and the waveform.
+ *
+ * Keep this store presentation-only: it mirrors what the player element
+ * reports (currentTime/duration/isPlaying) and never performs edits or
+ * calls the backend. Anything that mutates the transcript belongs in
+ * `editorStore`; anything that affects export belongs in `settingsStore`.
+ *
+ * `seekVersion` + `seekTarget` form a bump-counter pattern: React components
+ * observe `seekVersion` changes to re-issue an imperative `.currentTime = x`
+ * on the underlying media element without needing a direct ref.
+ */
 interface PlayerStore {
   mediaUrl: string | null;
   mediaType: "video" | "audio" | null;

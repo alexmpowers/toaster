@@ -3,6 +3,22 @@ import { invoke } from "@tauri-apps/api/core";
 import type { Word } from "@/bindings";
 export type { Word };
 
+/**
+ * Transcript-editor state. The frontend holds a projection of the backend
+ * editor's word list; the **backend is the source of truth** for keep
+ * segments, time mapping, and undo history (AGENTS.md: editor & time-mapping
+ * authority lives in Rust).
+ *
+ * Mutation flow for every word op (delete/silence/split/undo/redo):
+ *   1. UI handler calls the corresponding Tauri `editor_*` command.
+ *   2. Backend applies the op and emits the new Word list + timing contract.
+ *   3. `refreshFromBackend()` replays the result into this store.
+ *
+ * Never mutate `words` directly in response to a user action — round-trip
+ * through the backend so preview and export stay aligned. Local-only UI
+ * state (selectedIndex, selection ranges, highlights) is safe to set here
+ * without a backend call.
+ */
 export interface TimingContractSnapshot {
   timeline_revision: number;
   total_words: number;

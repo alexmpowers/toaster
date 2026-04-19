@@ -2,6 +2,15 @@ import { create } from "zustand";
 import type { ModelCategory } from "@/bindings";
 import type { SidebarSection } from "@/components/Sidebar";
 
+/**
+ * Settings-page navigation state. Tracks which sidebar section is active and
+ * carries a one-shot `pendingModelsFilter` used by inter-section deep links
+ * (e.g. the Editor "Choose model" button jumps to the Models panel with the
+ * transcription filter pre-selected).
+ *
+ * `consumePendingModelsFilter` is single-read by design — the Models panel
+ * calls it on mount so the filter is cleared after it has been applied.
+ */
 export type ModelsFilter = ModelCategory | "all";
 
 interface SettingsNavStore {

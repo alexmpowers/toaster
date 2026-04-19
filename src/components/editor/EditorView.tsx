@@ -26,6 +26,25 @@ import ExportMenu from "@/components/editor/ExportMenu";
 import { unwrapResult } from "@/components/editor/EditorView.util";
 import { useEditorExports } from "@/components/editor/hooks/useEditorExports";
 
+/**
+ * Top-level editor page. Owns the three-pane layout (import controls on top,
+ * transcript editor + media player side-by-side, waveform + toolbar on the
+ * bottom) and wires the global stores together:
+ *
+ *   - `editorStore` — transcript words, selection, undo/redo (backend-owned
+ *     logic; this component just dispatches commands and re-reads).
+ *   - `playerStore` — media URL, playback state, seek signalling.
+ *   - `settingsStore` — export defaults and caption settings.
+ *
+ * All keep-segment / time-mapping / word operations round-trip through the
+ * backend via Tauri `editor_*` commands — the frontend never synthesises
+ * timing. File-import drag-and-drop, export dispatch, and toolbar actions
+ * all funnel through this component so the stores stay in sync.
+ *
+ * If this file starts trending past 600 LOC split the import/drag-drop
+ * panel and the export menu wiring into dedicated hooks before adding new
+ * features — the 800-line cap is enforced by `bun run check:file-sizes`.
+ */
 const EditorView: React.FC = () => {
   const { t } = useTranslation();
   const { words, setWords, deleteWord, silenceWord, splitWord, undo, redo, deleteRange, selectWord, setSelectionRange, clearHighlights, refreshFromBackend } = useEditorStore();
