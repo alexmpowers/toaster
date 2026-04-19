@@ -1,4 +1,4 @@
-use crate::managers::model::{ModelInfo, ModelManager};
+use crate::managers::model::{ModelCategory, ModelInfo, ModelManager};
 use crate::managers::transcription::{ModelStateEvent, TranscriptionManager};
 use crate::settings::{get_settings, write_settings, ModelUnloadTimeout};
 use std::sync::Arc;
@@ -10,6 +10,22 @@ pub async fn get_available_models(
     model_manager: State<'_, Arc<ModelManager>>,
 ) -> Result<Vec<ModelInfo>, String> {
     Ok(model_manager.get_available_models())
+}
+
+/// Category-aware model list. Returns every entry when `category` is
+/// `None`, or just the matching slice when specified. Used by the
+/// unified models page + the deprecated `list_llm_models` shim.
+#[tauri::command]
+#[specta::specta]
+pub async fn get_models(
+    model_manager: State<'_, Arc<ModelManager>>,
+    category: Option<ModelCategory>,
+) -> Result<Vec<ModelInfo>, String> {
+    let all = model_manager.get_available_models();
+    Ok(match category {
+        Some(cat) => all.into_iter().filter(|m| m.category == cat).collect(),
+        None => all,
+    })
 }
 
 #[tauri::command]
@@ -27,7 +43,21 @@ pub async fn download_model(
     app_handle: AppHandle,
     model_manager: State<'_, Arc<ModelManager>>,
     model_id: String,
+    category: Option<ModelCategory>,
 ) -> Result<(), String> {
+    // If a category is supplied, verify it matches the catalog entry.
+    // Mismatches are a client bug worth surfacing, not silently ignoring.
+    if let Some(cat) = category {
+        if let Some(info) = model_manager.get_model_info(&model_id) {
+            if info.category != cat {
+                return Err(format!(
+                    "download_model: catalog says {} is {:?}, caller passed {:?}",
+                    model_id, info.category, cat
+                ));
+            }
+        }
+    }
+
     let result = model_manager
         .download_model(&model_id)
         .await

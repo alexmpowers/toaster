@@ -239,6 +239,7 @@ pub fn run(cli_args: CliArgs) {
             commands::open_log_dir,
             commands::open_app_data_dir,
             commands::models::get_available_models,
+            commands::models::get_models,
             commands::models::get_model_info,
             commands::models::download_model,
             commands::models::delete_model,
