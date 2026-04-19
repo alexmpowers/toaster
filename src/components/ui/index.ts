@@ -1,5 +1,4 @@
 export { Alert } from "./Alert";
-export { AudioPlayer } from "./AudioPlayer";
 export { default as Badge } from "./Badge";
 export { Button } from "./Button";
 export { Dropdown } from "./Dropdown";
@@ -10,7 +9,5 @@ export { Select } from "./Select";
 export { SettingContainer } from "./SettingContainer";
 export { SettingsGroup } from "./SettingsGroup";
 export { Slider } from "./Slider";
-export { TextDisplay } from "./TextDisplay";
-export { Textarea } from "./Textarea";
 export { ToggleSwitch } from "./ToggleSwitch";
 export { Tooltip } from "./Tooltip";
