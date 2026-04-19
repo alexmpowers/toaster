@@ -21,7 +21,11 @@ use specta::Type;
 /// codec / bitrate listed in `export_format_codec_map`.
 ///
 /// Serialized lowercase per PRD R-001 / data model:
-/// `"mp4" | "mp3" | "wav" | "m4a" | "opus"`.
+/// `"mp4" | "mov" | "mkv" | "mp3" | "wav" | "m4a" | "opus"`. Round-8
+/// added the `Mov` and `Mkv` video variants so the editor format
+/// picker can offer real alternatives to MP4 for video projects; both
+/// re-use FFmpeg's container-default codecs (H.264 + AAC) so no extra
+/// codec-map entries are required.
 #[derive(
     Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type, Default,
 )]
@@ -29,6 +33,8 @@ use specta::Type;
 pub enum AudioExportFormat {
     #[default]
     Mp4,
+    Mov,
+    Mkv,
     Mp3,
     Wav,
     M4a,
@@ -36,19 +42,26 @@ pub enum AudioExportFormat {
 }
 
 impl AudioExportFormat {
-    /// True for the four audio-only formats. Audio-only renders force
+    /// True for the audio-only formats. Audio-only renders force
     /// `-vn`, omit `-c:v`, and select extension/codec/bitrate from
-    /// `export_format_codec_map`.
+    /// `export_format_codec_map`. The three video variants (Mp4, Mov,
+    /// Mkv) return false.
     pub fn is_audio_only(self) -> bool {
-        !matches!(self, AudioExportFormat::Mp4)
+        !matches!(
+            self,
+            AudioExportFormat::Mp4 | AudioExportFormat::Mov | AudioExportFormat::Mkv
+        )
     }
 
     /// User-facing default file extension for the format (with leading
-    /// dot). For Mp4 this is `.mp4`; for the audio-only formats it is
-    /// the value returned by `export_format_codec_map`.
+    /// dot). For the video variants this is the container extension;
+    /// for the audio-only formats it is the value returned by
+    /// `export_format_codec_map`.
     pub fn extension(self) -> &'static str {
         match self {
             AudioExportFormat::Mp4 => ".mp4",
+            AudioExportFormat::Mov => ".mov",
+            AudioExportFormat::Mkv => ".mkv",
             AudioExportFormat::Mp3 => ".mp3",
             AudioExportFormat::Wav => ".wav",
             AudioExportFormat::M4a => ".m4a",
@@ -88,7 +101,7 @@ impl CodecSpec {
 /// - opus -> ".opus", "libopus",    -b:a 128k
 pub fn export_format_codec_map(format: AudioExportFormat) -> Option<CodecSpec> {
     match format {
-        AudioExportFormat::Mp4 => None,
+        AudioExportFormat::Mp4 | AudioExportFormat::Mov | AudioExportFormat::Mkv => None,
         AudioExportFormat::Mp3 => Some(CodecSpec {
             extension: ".mp3",
             codec: "libmp3lame",
@@ -119,8 +132,13 @@ pub fn export_format_codec_map(format: AudioExportFormat) -> Option<CodecSpec> {
 const VIDEO_SOURCE_EXTENSIONS: &[&str] = &["mp4", "mkv", "mov", "avi", "webm", "flv"];
 
 /// Formats that make sense for a given source media type. Returns
-/// `[Mp4, Mp3, Wav, M4a, Opus]` for video sources, and the same list
-/// minus `Mp4` for audio-only sources.
+/// `[Mp4, Mov, Mkv, Mp3, Wav, M4a, Opus]` for video sources, and the
+/// audio-only suffix for audio sources.
+///
+/// Round-8: added Mov + Mkv to the video list so the editor's per-
+/// project format picker surfaces real container alternatives to mp4.
+/// The ordering is significant — the first entry is treated as the
+/// default by the save-dialog fallback in `useEditorExports`.
 ///
 /// Single source of truth for the source-type → allowed-format rule
 /// (PRD R-004 / AC-004-a, AC-004-b); frontend consumes this via the
@@ -132,6 +150,8 @@ pub fn allowed_formats_for_source(ext: &str) -> Vec<AudioExportFormat> {
     if is_video {
         vec![
             AudioExportFormat::Mp4,
+            AudioExportFormat::Mov,
+            AudioExportFormat::Mkv,
             AudioExportFormat::Mp3,
             AudioExportFormat::Wav,
             AudioExportFormat::M4a,
@@ -212,10 +232,29 @@ mod tests {
     #[test]
     fn audio_only_formats_report_audio_only() {
         assert!(!AudioExportFormat::Mp4.is_audio_only());
+        assert!(!AudioExportFormat::Mov.is_audio_only());
+        assert!(!AudioExportFormat::Mkv.is_audio_only());
         assert!(AudioExportFormat::Mp3.is_audio_only());
         assert!(AudioExportFormat::Wav.is_audio_only());
         assert!(AudioExportFormat::M4a.is_audio_only());
         assert!(AudioExportFormat::Opus.is_audio_only());
+    }
+
+    #[test]
+    fn video_variants_have_no_codec_map_entry() {
+        // Video containers reuse FFmpeg's container-default codecs, so
+        // `export_format_codec_map` returns None and the video pipeline
+        // in `build_export_args` keeps its libx264 + aac selection.
+        assert_eq!(export_format_codec_map(AudioExportFormat::Mp4), None);
+        assert_eq!(export_format_codec_map(AudioExportFormat::Mov), None);
+        assert_eq!(export_format_codec_map(AudioExportFormat::Mkv), None);
+    }
+
+    #[test]
+    fn video_variants_report_container_extensions() {
+        assert_eq!(AudioExportFormat::Mp4.extension(), ".mp4");
+        assert_eq!(AudioExportFormat::Mov.extension(), ".mov");
+        assert_eq!(AudioExportFormat::Mkv.extension(), ".mkv");
     }
 
     #[test]
@@ -241,12 +280,15 @@ mod tests {
         assert_eq!(wav.bitrate_flag(), None);
     }
 
-    // AC-004-a: video sources offer Mp4 first, then the four audio-only
-    // formats, in a fixed order.
+    // AC-004-a: video sources offer the three video containers first,
+    // then the four audio-only formats, in a fixed order. Round-8
+    // expanded the video prefix from `[Mp4]` to `[Mp4, Mov, Mkv]`.
     #[test]
     fn allowed_formats_video_source_lists_mp4_then_audio_only() {
         let expected = vec![
             AudioExportFormat::Mp4,
+            AudioExportFormat::Mov,
+            AudioExportFormat::Mkv,
             AudioExportFormat::Mp3,
             AudioExportFormat::Wav,
             AudioExportFormat::M4a,
