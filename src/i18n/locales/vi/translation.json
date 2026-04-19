@@ -501,11 +501,19 @@
         "experimental": {
           "title": "Experimental",
           "description": "Opt-in features that may change or be removed. Gated by the master toggle below."
+        },
+        "expertMode": {
+          "title": "Expert mode",
+          "description": "Reveals the AI-cleanup connection settings and the Editor's prompt drawer. This is a UI visibility gate only — whether cleanup actually runs is controlled by the separate 'Run AI cleanup at transcription' toggle."
         }
       },
       "experimentalMaster": {
         "title": "Enable experimental features",
         "description": "Master switch for every experiment. When off, individual experiment flags read as disabled even if they were previously turned on. Turning this back on restores your prior selections."
+      },
+      "expertMode": {
+        "title": "Expert mode",
+        "description": "Show advanced LLM post-processing controls. When on, a connection-config group appears below and a prompt drawer appears in the Editor. Leave off for the simple editing experience."
       }
     }
   },

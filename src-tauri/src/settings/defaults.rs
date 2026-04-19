@@ -137,6 +137,10 @@ pub(super) fn default_post_process_enabled() -> bool {
     false
 }
 
+pub(super) fn default_ui_expert_mode_enabled() -> bool {
+    false
+}
+
 pub(super) fn default_post_process_provider_requires_api_key() -> bool {
     true
 }
@@ -506,6 +510,7 @@ pub fn get_default_settings() -> AppSettings {
         model_unload_timeout: ModelUnloadTimeout::default(),
         word_correction_threshold: default_word_correction_threshold(),
         post_process_enabled: default_post_process_enabled(),
+        ui_expert_mode_enabled: default_ui_expert_mode_enabled(),
         post_process_provider_id: default_post_process_provider_id(),
         post_process_providers: default_post_process_providers(),
         post_process_api_keys: default_post_process_api_keys(),

@@ -199,6 +199,7 @@ pub fn run(cli_args: CliArgs) {
             commands::app_settings::change_debug_mode_setting,
             commands::app_settings::change_word_correction_threshold_setting,
             commands::app_settings::change_post_process_enabled_setting,
+            commands::app_settings::change_ui_expert_mode_enabled_setting,
             commands::app_settings::change_post_process_base_url_setting,
             commands::app_settings::change_post_process_api_key_setting,
             commands::app_settings::change_post_process_model_setting,

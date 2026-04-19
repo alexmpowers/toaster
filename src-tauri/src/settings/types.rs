@@ -232,6 +232,13 @@ pub struct AppSettings {
     pub word_correction_threshold: f64,
     #[serde(default = "default_post_process_enabled")]
     pub post_process_enabled: bool,
+    /// UI-only gate: when `true`, the Advanced > LLM Connection group and
+    /// the Editor's AI-cleanup drawer become visible. Does NOT control
+    /// whether post-processing actually runs — that is `post_process_enabled`.
+    /// Splitting UX visibility from execution lets expert users A/B raw
+    /// vs cleaned output without tearing down their configuration.
+    #[serde(default = "default_ui_expert_mode_enabled")]
+    pub ui_expert_mode_enabled: bool,
     #[serde(default = "default_post_process_provider_id")]
     pub post_process_provider_id: String,
     #[serde(default = "default_post_process_providers")]
