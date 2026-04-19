@@ -687,7 +687,7 @@
     "export": "Export",
     "exporting": "Exporting...",
     "addCaptions": "Add Captions",
-    "cleanup": "Clean up",
+    "cleanup": "Remove fillers",
     "exportFormat": {
       "label": "Export format",
       "useDefault": "Use default ({{format}})",

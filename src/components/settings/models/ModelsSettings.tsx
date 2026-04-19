@@ -6,7 +6,8 @@ import type { ModelCardStatus } from "@/components/onboarding";
 import { ModelCard } from "@/components/onboarding";
 import { useModelStore } from "@/stores/modelStore";
 import { useSettingsNavStore } from "@/stores/settingsNavStore";
-import { type ModelCategory, type ModelInfo } from "@/bindings";
+import { useSettingsStore } from "@/stores/settingsStore";
+import { commands, type ModelCategory, type ModelInfo } from "@/bindings";
 import { LanguageFilterDropdown } from "./LanguageFilterDropdown";
 
 type CategoryFilter = ModelCategory | "all";
@@ -69,6 +70,18 @@ export const ModelsSettings: React.FC<ModelsSettingsProps> = ({
     deleteModel,
   } = useModelStore();
 
+  // Active post-processor model id, so PostProcessor cards can show
+  // the "active" badge the same way Transcription cards already do.
+  // Pulled from settings (post_process_models[provider_id]) rather
+  // than the model store because the post-process pipeline has no
+  // equivalent of the transcription `currentModel` — the active model
+  // is keyed by provider in AppSettings.
+  const activePostProcessModelId = useSettingsStore((s) => {
+    const providerId = s.settings?.post_process_provider_id;
+    if (!providerId) return "";
+    return s.settings?.post_process_models?.[providerId] ?? "";
+  });
+
   // If the consumer changes `lockedCategory` at runtime, honor it.
   useEffect(() => {
     if (lockedCategory) {
@@ -111,10 +124,15 @@ export const ModelsSettings: React.FC<ModelsSettingsProps> = ({
     if (switchingModelId === modelId) {
       return "switching";
     }
-    if (modelId === currentModel) {
+    const model = models.find((m: ModelInfo) => m.id === modelId);
+    const isPostProcessor = model?.category === "PostProcessor";
+    if (isPostProcessor) {
+      if (modelId === activePostProcessModelId) {
+        return "active";
+      }
+    } else if (modelId === currentModel) {
       return "active";
     }
-    const model = models.find((m: ModelInfo) => m.id === modelId);
     if (model?.is_downloaded) {
       return "available";
     }
@@ -134,7 +152,27 @@ export const ModelsSettings: React.FC<ModelsSettingsProps> = ({
   const handleModelSelect = async (modelId: string) => {
     setSwitchingModelId(modelId);
     try {
-      await selectModel(modelId);
+      const model = models.find((m: ModelInfo) => m.id === modelId);
+      if (model?.category === "PostProcessor") {
+        // Post-processor models are keyed per provider in AppSettings;
+        // they use a different backend command than transcription models.
+        const providerId =
+          useSettingsStore.getState().settings?.post_process_provider_id;
+        if (providerId) {
+          const result = await commands.changePostProcessModelSetting(
+            providerId,
+            modelId,
+          );
+          if (result.status === "error") {
+            console.error(
+              `Failed to activate post-processor ${modelId}:`,
+              result.error,
+            );
+          }
+        }
+      } else {
+        await selectModel(modelId);
+      }
     } finally {
       setSwitchingModelId(null);
     }
@@ -212,10 +250,17 @@ export const ModelsSettings: React.FC<ModelsSettingsProps> = ({
       }
     }
 
-    // Sort: active model first, then non-custom, then custom at the bottom
+    // Sort: active model first (transcription OR post-processor),
+    // then non-custom, then custom at the bottom
     downloaded.sort((a, b) => {
-      if (a.id === currentModel) return -1;
-      if (b.id === currentModel) return 1;
+      const aActive =
+        a.id === currentModel ||
+        (a.category === "PostProcessor" && a.id === activePostProcessModelId);
+      const bActive =
+        b.id === currentModel ||
+        (b.category === "PostProcessor" && b.id === activePostProcessModelId);
+      if (aActive && !bActive) return -1;
+      if (bActive && !aActive) return 1;
       if (a.is_custom !== b.is_custom) return a.is_custom ? 1 : -1;
       return 0;
     });
@@ -224,7 +269,7 @@ export const ModelsSettings: React.FC<ModelsSettingsProps> = ({
       downloadedModels: downloaded,
       availableModels: available,
     };
-  }, [filteredModels, downloadingModels, extractingModels, currentModel]);
+  }, [filteredModels, downloadingModels, extractingModels, currentModel, activePostProcessModelId]);
 
   const categoryTabs: Array<{ value: CategoryFilter; labelKey: string }> = [
     { value: "all", labelKey: "settings.models.filter.all" },
