@@ -165,6 +165,46 @@ async changeCaptionPositionSetting(position: number) : Promise<Result<null, stri
     else return { status: "error", error: e as string };
 }
 },
+async changeCaptionFontFamilySetting(family: CaptionFontFamily) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_caption_font_family_setting", { family }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+async changeCaptionRadiusPxSetting(radius: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_caption_radius_px_setting", { radius }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+async changeCaptionPaddingXPxSetting(padding: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_caption_padding_x_px_setting", { padding }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+async changeCaptionPaddingYPxSetting(padding: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_caption_padding_y_px_setting", { padding }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+async changeCaptionMaxWidthPercentSetting(percent: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_caption_max_width_percent_setting", { percent }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
 async changeLazyStreamCloseSetting(enabled: boolean) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_lazy_stream_close_setting", { enabled }) };

@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import type {
   AppSettings as Settings,
   AudioDevice,
+  CaptionFontFamily,
   LogLevel,
   LoudnessTarget,
   WhisperAcceleratorSetting,
@@ -124,6 +125,16 @@ const settingUpdaters: {
     commands.changeCaptionTextColorSetting(value as string),
   caption_position: (value) =>
     commands.changeCaptionPositionSetting(value as number),
+  caption_font_family: (value) =>
+    commands.changeCaptionFontFamilySetting(value as CaptionFontFamily),
+  caption_radius_px: (value) =>
+    commands.changeCaptionRadiusPxSetting(value as number),
+  caption_padding_x_px: (value) =>
+    commands.changeCaptionPaddingXPxSetting(value as number),
+  caption_padding_y_px: (value) =>
+    commands.changeCaptionPaddingYPxSetting(value as number),
+  caption_max_width_percent: (value) =>
+    commands.changeCaptionMaxWidthPercentSetting(value as number),
 };
 
 // Tracks pending values for keys that are currently mid-update (race dedup)

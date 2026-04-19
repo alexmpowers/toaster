@@ -8,7 +8,7 @@
 
 use tauri::{AppHandle, Emitter, Manager};
 
-use crate::settings::{self, LLMPrompt};
+use crate::settings::{self, CaptionFontFamily, LLMPrompt};
 
 /// Validate that a post-process provider exists in the user's settings.
 fn validate_provider_exists(
@@ -147,6 +147,61 @@ pub fn change_caption_text_color_setting(app: AppHandle, color: String) -> Resul
 pub fn change_caption_position_setting(app: AppHandle, position: u32) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
     settings.caption_position = position.clamp(0, 100);
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_caption_font_family_setting(
+    app: AppHandle,
+    family: CaptionFontFamily,
+) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.caption_font_family = family;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_caption_radius_px_setting(app: AppHandle, radius: u32) -> Result<(), String> {
+    // mirrors settings::defaults::ensure_caption_defaults:589 (upper bound 64).
+    let mut settings = settings::get_settings(&app);
+    settings.caption_radius_px = radius.min(64);
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_caption_padding_x_px_setting(app: AppHandle, padding: u32) -> Result<(), String> {
+    // mirrors settings::defaults::ensure_caption_defaults:593 (upper bound 128).
+    let mut settings = settings::get_settings(&app);
+    settings.caption_padding_x_px = padding.min(128);
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_caption_padding_y_px_setting(app: AppHandle, padding: u32) -> Result<(), String> {
+    // mirrors settings::defaults::ensure_caption_defaults:597 (upper bound 128).
+    let mut settings = settings::get_settings(&app);
+    settings.caption_padding_y_px = padding.min(128);
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn change_caption_max_width_percent_setting(
+    app: AppHandle,
+    percent: u32,
+) -> Result<(), String> {
+    // mirrors settings::defaults::ensure_caption_defaults:601 (valid range 20..=100).
+    let mut settings = settings::get_settings(&app);
+    settings.caption_max_width_percent = percent.clamp(20, 100);
     settings::write_settings(&app, settings);
     Ok(())
 }
