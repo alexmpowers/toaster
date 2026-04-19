@@ -1,95 +1,109 @@
-# Toaster
+<p align="center">
+  <img src="src/assets/toaster.png" alt="Toaster" width="200" />
+</p>
 
-Toaster is a transcript-first desktop editor for spoken audio/video: **edit media by editing text**.
+<h1 align="center">Toaster</h1>
 
-Forked from Handy, Toaster keeps the local-first model management and adds word-level edit workflows for media cleanup and export.
+<p align="center">
+  <strong>Helping you sound crispy.</strong><br/>
+  Edit video by editing text — entirely on your machine.
+</p>
 
-## What Toaster does today
+<p align="center">
+  <a href="#features">Features</a> ·
+  <a href="#how-it-works">How It Works</a> ·
+  <a href="#quick-start">Quick Start</a> ·
+  <a href="#contributing">Contributing</a>
+</p>
 
-- Open audio/video files and generate transcripts with local models
-- Select words and apply non-destructive edit actions (delete/silence/restore/split)
-- Keep transcript, waveform, and playback synchronized while editing
-- Detect filler words and pauses for faster cleanup
-- Export cleaned media plus captions (SRT/VTT) and script text
-- Save/load project state for iterative editing sessions
+---
 
-## Tech stack
+## Why Toaster?
 
-- **Desktop shell:** Tauri 2.x
-- **Backend:** Rust (`src-tauri/`)
-- **Frontend:** React + TypeScript + Tailwind (`src/`)
-- **State:** Zustand stores
-- **Transcription:** local model inference via `transcribe-rs`/whisper ecosystem
+Recording yourself is easy. Editing out every "um", false start, and awkward pause? That's the hard part.
 
-## Architecture (high level)
+Toaster is a **transcript-first** desktop editor for spoken audio and video. Instead of scrubbing a timeline, you read your words, select the ones you don't want, and delete them — just like editing a document. Toaster handles the audio splicing, waveform sync, and caption export behind the scenes.
 
-```text
-Frontend (React + Zustand)
-  -> Tauri commands
-Backend (Rust managers)
-  -> audio/model/transcription/editor/media/filler/history/export/project domains
-```
+Everything runs locally. No cloud APIs, no uploads, no subscriptions.
 
-Core rule: backend managers own business logic; frontend orchestrates UI and invokes commands.
+## Features
 
-## Quick start (development)
+- **Edit media by editing text** — see your transcript, select words, delete/silence/restore in one click
+- **Local transcription** — generate word-level transcripts with on-device models (Whisper ecosystem)
+- **Filler & disfluency detection** — automatically highlight "um", "uh", "you know", and pauses
+- **Non-destructive editing** — every action is reversible; your original file is never touched
+- **Synchronized playback** — transcript, waveform, and video stay in lockstep as you edit
+- **Export cleaned media** — render your final cut with captions (SRT/VTT) and script text
+- **Save & resume** — project files preserve your edits for iterative sessions
+- **Privacy-first** — no runtime network calls, no telemetry, fully offline
 
-See [docs/build.md](docs/build.md) for platform setup.
+## How It Works
 
-### 1. Install deps
+1. **Open** a video or audio file
+2. **Transcribe** with a local model — Toaster generates a word-level transcript
+3. **Read and edit** — select words you want to remove and hit Delete
+4. **Preview** — play back your edit in real time with synced waveform and video
+5. **Export** — render the cleaned media plus captions and script
+
+The entire workflow stays on your machine. Your media never leaves your computer.
+
+## Quick Start
+
+### Install from release
+
+Download the latest installer from the [Releases](https://github.com/itsnotaboutthecell/toaster/releases) page.
+
+| Platform | Format |
+| --- | --- |
+| Windows | `.msi` / `.exe` |
+| macOS | `.dmg` |
+| Linux | `.AppImage` / `.deb` |
+
+### Build from source
+
+See [docs/build.md](docs/build.md) for full platform setup. The short version:
 
 ```bash
 bun install --frozen-lockfile
-```
-
-### 2. Windows environment setup (required on Windows)
-
-```powershell
-.\scripts\setup-env.ps1
-```
-
-### 3. Run app
-
-On Windows, use the monitored launcher (required):
-
-```powershell
-.\scripts\launch-toaster-monitored.ps1 -ObservationSeconds 120
-```
-
-Cross-platform minimum:
-
-```bash
 cargo tauri dev
 ```
 
-See AGENTS.md §"Launch protocol" for details.
+On Windows, run `.\scripts\setup-env.ps1` first to configure the MSVC + LLVM build environment.
 
-### 4. Common checks
+## Tech Stack
 
-```bash
-cd src-tauri && cargo test
-cd src-tauri && cargo clippy
-npm run lint
-```
-
-## Repository map
-
-- `src/` — React UI, editor/player components, i18n, stores
-- `src-tauri/src/managers/` — core domain logic (audio/model/transcription/editor/media/filler/history/export/project)
-- `src-tauri/src/commands/` — Tauri command handlers (plus shared app/system commands)
-- `.github/skills/` — project-specific skills (domain gates) consumed by AI coding assistants; see AGENTS.md for details
-- `scripts/` — PowerShell tooling (setup, monitored launcher, evals); see [scripts/README.md](scripts/README.md) if present
-
-## Current launch focus
-
-- Precision and reliability of transcript-driven playback/edit mapping
-- Documentation alignment with the shipping Tauri architecture
-- Windows-first setup reliability and repeatable build/test flow
+| Layer | Technology |
+| --- | --- |
+| Desktop shell | [Tauri 2.x](https://tauri.app/) |
+| Backend | Rust |
+| Frontend | React · TypeScript · Tailwind CSS |
+| State | Zustand |
+| Transcription | Local model inference (Whisper ecosystem) |
+| Export | FFmpeg 7 |
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening PRs.
+We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR.
+
+```bash
+# Run the checks contributors are expected to pass
+cd src-tauri && cargo test && cargo clippy
+npm run lint
+```
+
+For translation contributions, see [CONTRIBUTING_TRANSLATIONS.md](CONTRIBUTING_TRANSLATIONS.md).
+
+## Acknowledgments
+
+Toaster is forked from [Handy](https://github.com/cjpais/Handy) by [CJ Pais](https://github.com/cjpais). Handy proved that a free, open-source, fully-offline speech tool could be simple, private, and community-driven. Toaster builds on that foundation with a transcript-first editing workflow.
+
+We're grateful to the projects that make Toaster possible:
+
+- [Tauri](https://tauri.app/) — the Rust-native app framework that keeps the bundle small and the runtime fast
+- [Whisper](https://github.com/openai/whisper) by OpenAI — the speech recognition model at the heart of local transcription
+- [whisper.cpp](https://github.com/ggerganov/whisper.cpp) & [ggml](https://github.com/ggerganov/ggml) — cross-platform inference and hardware acceleration
+- [FFmpeg](https://ffmpeg.org/) — the Swiss Army knife of media processing
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE) for details.
