@@ -21,6 +21,7 @@
     "check:translations": "bun scripts/check-translations.ts",
     "check:file-sizes": "bun scripts/check-file-sizes.ts",
     "check:registry": "bun scripts/registry/check.ts",
+    "check:design-tokens": "bun scripts/gate/check-brand-token-drift.ts --strict",
     "registry:build": "bun scripts/registry/build.ts",
     "registry": "bun scripts/registry/reader.ts",
     "postinstall": "bun scripts/check-nix-deps.ts"
