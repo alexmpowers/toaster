@@ -4,6 +4,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?:
     | "primary"
     | "primary-soft"
+    | "brand"
     | "secondary"
     | "danger"
     | "danger-ghost"
@@ -26,6 +27,8 @@ export const Button: React.FC<ButtonProps> = ({
       "text-white bg-background-ui border-background-ui hover:bg-background-ui/80 hover:border-background-ui/80 focus:ring-1 focus:ring-background-ui",
     "primary-soft":
       "text-text bg-logo-primary/20 border-transparent hover:bg-logo-primary/30 focus:ring-1 focus:ring-logo-primary",
+    brand:
+      "text-white bg-logo-primary border-logo-primary hover:bg-logo-primary/90 hover:border-logo-primary/90 focus:ring-1 focus:ring-logo-primary",
     secondary:
       "bg-mid-gray/10 border-mid-gray/20 hover:bg-background-ui/30 hover:border-logo-primary focus:outline-none",
     danger:

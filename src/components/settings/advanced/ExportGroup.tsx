@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { SettingContainer } from "../../ui/SettingContainer";
 import { Dropdown, type DropdownOption } from "../../ui/Dropdown";
 import { Alert } from "../../ui/Alert";
+import { Button } from "../../ui/Button";
 import { useSettings } from "../../../hooks/useSettings";
 import {
   commands,
@@ -156,16 +157,17 @@ export const ExportGroup: React.FC = () => {
         layout="horizontal"
       >
         <div className="flex flex-col items-end gap-3 min-w-[16rem]">
-          <button
+          <Button
             type="button"
+            variant="brand"
+            size="sm"
             onClick={() => void runPreflight(target)}
             disabled={running}
-            className="px-3 py-1.5 rounded-md bg-logo-primary text-sm font-medium text-white hover:bg-logo-primary/90 disabled:opacity-50"
           >
             {running
               ? t("settings.export.loudness.preflight.running")
               : t("settings.export.loudness.preflight.run")}
-          </button>
+          </Button>
           {error && (
             <Alert variant="warning">
               {t("settings.export.loudness.preflight.error", { error })}
