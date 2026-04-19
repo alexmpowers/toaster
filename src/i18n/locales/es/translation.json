@@ -220,11 +220,6 @@
           "details": "Handy is an open-source, local-first speech-to-text application. Thank you to cjpais and all Handy contributors.",
           "button": "View Handy on GitHub"
         },
-        "whisper": {
-          "title": "Whisper.cpp",
-          "description": "Inferencia de alto rendimiento del modelo de reconocimiento automático de voz Whisper de OpenAI",
-          "details": "Toaster usa Whisper.cpp para procesamiento de voz a texto rápido y local. Gracias al increíble trabajo de Georgi Gerganov y colaboradores."
-        },
         "tauri": {
           "title": "Tauri",
           "description": "Rust-native app framework.",
@@ -323,20 +318,11 @@
       }
     },
     "captions": {
-      "tabs": {
-        "ariaLabel": "Caption orientation",
-        "desktop": "Desktop",
-        "desktopDescription": "Styling for landscape videos (width ≥ height).",
-        "mobile": "Mobile",
-        "mobileDescription": "Styling for portrait / square videos (width < height)."
-      },
       "preview": {
-        "heading": "Live preview",
         "sampleLegend": "Sample text",
         "sample": {
-          "short": "looking crispy",
-          "twoLine": "looking crispy\nand readable",
-          "long": "looking crispy and readable\neven when the caption text\nwraps onto a third line"
+          "single": "looking crispy",
+          "multiLine": "looking crispy and readable\neven when the caption text\nwraps onto a third line"
         },
         "orientation": {
           "label": "Orientación de vista previa",
@@ -384,7 +370,7 @@
           "description": "Model unload timing and related runtime behavior."
         },
         "captions": {
-          "title": "Captions",
+          "title": "Live preview",
           "description": "Caption preview and export styling."
         },
         "export": {
@@ -563,7 +549,6 @@
       "transcriptVtt": "Transcript (VTT)",
       "transcriptScript": "Transcript (Script)",
       "ffmpegScript": "FFmpeg script",
-      "editedAs": "Export as {{format}}",
       "formats": {
         "mp4": "MP4 video",
         "mov": "MOV video",

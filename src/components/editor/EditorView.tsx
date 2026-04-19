@@ -49,6 +49,8 @@ const EditorView: React.FC = () => {
   const { t } = useTranslation();
   const { words, setWords, deleteWord, silenceWord, splitWord, undo, redo, deleteRange, selectWord, setSelectionRange, clearHighlights, refreshFromBackend } = useEditorStore();
   const selectedIndex = useEditorStore((s) => s.selectedIndex);
+  const burnCaptions = useEditorStore((s) => s.burnCaptions);
+  const setBurnCaptions = useEditorStore((s) => s.setBurnCaptions);
   const { mediaUrl, currentTime, duration, setMedia } =
     usePlayerStore();
   const mediaInfo = usePlayerStore((s) => s.mediaInfo);
@@ -59,7 +61,6 @@ const EditorView: React.FC = () => {
   const updateSetting = useSettingsStore((s) => s.updateSetting);
   const normalizeAudio = settings?.normalize_audio_on_export ?? false;
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [burnCaptions, setBurnCaptions] = useState(false);
   const [isCleaningUp, setIsCleaningUp] = useState(false);
   const [modelMissing, setModelMissing] = useState(false);
   const [lastSavedPath, setLastSavedPath] = useState<string | null>(null);

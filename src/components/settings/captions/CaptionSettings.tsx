@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
 import { useSettings } from "../../../hooks/useSettings";
 import type { CaptionProfile, CaptionProfileSet } from "@/bindings";
 import { CaptionPreviewPane } from "./CaptionProfileShared";
@@ -45,7 +44,6 @@ const DEFAULT_MOBILE: CaptionProfile = {
  */
 export const CaptionSettings: React.FC<CaptionSettingsProps> = React.memo(
   ({ descriptionMode = "tooltip", grouped = false }) => {
-    const { t } = useTranslation();
     const { getSetting, updateSetting } = useSettings();
 
     const profileSet =
@@ -59,6 +57,9 @@ export const CaptionSettings: React.FC<CaptionSettingsProps> = React.memo(
 
     const isVertical = previewOrientation === "vertical";
     const activeProfile = isVertical ? profileSet.mobile : profileSet.desktop;
+
+    // Round-8: `isVertical` still drives which profile we patch (desktop vs
+    // mobile). Helper kept for readability when handleChange reads it below.
 
     const handleChange = (patch: Partial<CaptionProfile>) => {
       const merged: CaptionProfile = { ...activeProfile, ...patch };
@@ -78,14 +79,6 @@ export const CaptionSettings: React.FC<CaptionSettingsProps> = React.memo(
 
     return (
       <div className="px-4 py-4 space-y-4">
-        <p className="text-xs text-text/60">
-          {t(
-            isVertical
-              ? "settings.captions.tabs.mobileDescription"
-              : "settings.captions.tabs.desktopDescription",
-          )}
-        </p>
-
         <CaptionPreviewPane
           profile={activeProfile}
           orientation={previewOrientation}

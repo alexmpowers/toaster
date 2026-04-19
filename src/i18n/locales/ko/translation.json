@@ -220,11 +220,6 @@
           "details": "Handy is an open-source, local-first speech-to-text application. Thank you to cjpais and all Handy contributors.",
           "button": "View Handy on GitHub"
         },
-        "whisper": {
-          "title": "Whisper.cpp",
-          "description": "OpenAI의 Whisper 자동 음성 인식 모델의 고성능 추론",
-          "details": "Toaster는 빠르고 로컬 음성-텍스트 처리를 위해 Whisper.cpp를 사용합니다. Georgi Gerganov와 기여자들의 놀라운 작업에 감사드립니다."
-        },
         "tauri": {
           "title": "Tauri",
           "description": "Rust-native app framework.",
@@ -323,20 +318,11 @@
       }
     },
     "captions": {
-      "tabs": {
-        "ariaLabel": "Caption orientation",
-        "desktop": "Desktop",
-        "desktopDescription": "Styling for landscape videos (width ≥ height).",
-        "mobile": "Mobile",
-        "mobileDescription": "Styling for portrait / square videos (width < height)."
-      },
       "preview": {
-        "heading": "Live preview",
         "sampleLegend": "Sample text",
         "sample": {
-          "short": "looking crispy",
-          "twoLine": "looking crispy\nand readable",
-          "long": "looking crispy and readable\neven when the caption text\nwraps onto a third line"
+          "single": "looking crispy",
+          "multiLine": "looking crispy and readable\neven when the caption text\nwraps onto a third line"
         },
         "orientation": {
           "label": "미리보기 방향",
@@ -384,7 +370,7 @@
           "description": "Model unload timing and related runtime behavior."
         },
         "captions": {
-          "title": "Captions",
+          "title": "Live preview",
           "description": "Caption preview and export styling."
         },
         "export": {
@@ -563,7 +549,6 @@
       "transcriptVtt": "Transcript (VTT)",
       "transcriptScript": "Transcript (Script)",
       "ffmpegScript": "FFmpeg script",
-      "editedAs": "Export as {{format}}",
       "formats": {
         "mp4": "MP4 video",
         "mov": "MOV video",

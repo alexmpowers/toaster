@@ -144,7 +144,7 @@ export const SliderWithInput: React.FC<SliderWithInputProps> = ({
   );
 };
 
-type SampleKey = "short" | "twoLine" | "long";
+type SampleKey = "single" | "multiLine";
 
 // Virtual frame the caption settings are calibrated against. Preview-only
 // state; MUST NOT be plumbed through any Tauri command (Slice A SSOT rule).
@@ -165,7 +165,7 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
   onOrientationChange,
 }) => {
   const { t } = useTranslation();
-  const [selectedSampleKey, setSelectedSampleKey] = useState<SampleKey>("short");
+  const [selectedSampleKey, setSelectedSampleKey] = useState<SampleKey>("single");
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
 
@@ -183,9 +183,8 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
   }, []);
 
   const samples: Record<SampleKey, string> = {
-    short: t("settings.captions.preview.sample.short"),
-    twoLine: t("settings.captions.preview.sample.twoLine"),
-    long: t("settings.captions.preview.sample.long"),
+    single: t("settings.captions.preview.sample.single"),
+    multiLine: t("settings.captions.preview.sample.multiLine"),
   };
 
   const containerShort = Math.min(containerSize.w, containerSize.h);
@@ -204,10 +203,7 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
       className="mb-4 w-full rounded-xl border border-mid-gray/20 bg-background p-4"
       data-testid="caption-preview-pane"
     >
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h3 className="text-xs font-medium uppercase tracking-wide text-text/70">
-          {t("settings.captions.preview.heading")}
-        </h3>
+      <div className="mb-3 flex flex-wrap items-center justify-end gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <label className="text-xs text-text/60">
@@ -234,12 +230,11 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
               <Select
                 value={selectedSampleKey}
                 options={[
-                  { value: "short", label: t("settings.captions.preview.sample.short") },
-                  { value: "twoLine", label: t("settings.captions.preview.sample.twoLine").replace(/\n/g, " / ") },
-                  { value: "long", label: t("settings.captions.preview.sample.long").replace(/\n/g, " / ") },
+                  { value: "single", label: t("settings.captions.preview.sample.single") },
+                  { value: "multiLine", label: t("settings.captions.preview.sample.multiLine").replace(/\n/g, " / ") },
                 ]}
                 onChange={(v) => {
-                  if (v === "short" || v === "twoLine" || v === "long") setSelectedSampleKey(v);
+                  if (v === "single" || v === "multiLine") setSelectedSampleKey(v);
                 }}
               />
             </div>

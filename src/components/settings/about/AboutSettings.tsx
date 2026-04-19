@@ -110,17 +110,6 @@ export const AboutSettings: React.FC = () => {
         </SettingContainer>
 
         <SettingContainer
-          title={t("settings.about.acknowledgments.whisper.title")}
-          description={t("settings.about.acknowledgments.whisper.description")}
-          grouped={true}
-          layout="stacked"
-        >
-          <div className="text-sm text-mid-gray">
-            {t("settings.about.acknowledgments.whisper.details")}
-          </div>
-        </SettingContainer>
-
-        <SettingContainer
           title={t("settings.about.acknowledgments.whisperCpp.title")}
           description={t(
             "settings.about.acknowledgments.whisperCpp.description",

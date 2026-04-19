@@ -73,19 +73,21 @@ const EditorToolbar: React.FC<EditorToolbarProps> = React.memo(({
           grouped
         />
 
-        <SettingContainer
-          title={t("settings.export.loudness.title")}
-          description={t("settings.export.loudness.description")}
-          grouped
-          layout="horizontal"
-        >
-          <Dropdown
-            options={loudnessOptions}
-            selectedValue={loudnessTarget}
-            onSelect={handleLoudnessChange}
-            disabled={!settings || isUpdating("loudness_target")}
-          />
-        </SettingContainer>
+        {normalizeAudio && (
+          <SettingContainer
+            title={t("settings.export.loudness.title")}
+            description={t("settings.export.loudness.description")}
+            grouped
+            layout="horizontal"
+          >
+            <Dropdown
+              options={loudnessOptions}
+              selectedValue={loudnessTarget}
+              onSelect={handleLoudnessChange}
+              disabled={!settings || isUpdating("loudness_target")}
+            />
+          </SettingContainer>
+        )}
       </div>
     </SettingsGroup>
   );

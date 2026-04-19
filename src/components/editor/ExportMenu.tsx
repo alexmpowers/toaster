@@ -106,9 +106,7 @@ const ExportMenu: React.FC<ExportMenuProps> = ({
               {allowedFormats.map((row) => (
                 <MenuItem
                   key={row.format}
-                  label={t("editor.exportMenu.editedAs", {
-                    format: formatLabel(row.format),
-                  })}
+                  label={formatLabel(row.format)}
                   disabled={isExportingMedia || !mediaType}
                   onClick={() =>
                     dispatch(() => onExportEditedMedia(row.format))

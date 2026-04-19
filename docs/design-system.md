@@ -146,7 +146,7 @@ Rules:
 | `Slider` / `SliderWithInput` | Numeric setting | `logo-primary` fill+thumb | Non-live `onChange` (see §7) |
 | `Dropdown` | One-of-N with > 3 options | `text-text` on `bg-background`; ring `logo-primary` | Yellow-on-yellow (round-2 contrast bug) |
 | `Badge` | State indicator | `logo-primary` (primary), `mid-gray` (neutral) | Inventing new hue |
-| `Alert` | Inline warning/info | `logo-primary` border | Red-on-dark (readability) |
+| `Alert` | Inline warning/info | `logo-primary` border; `warning`/`success` variants use **`text-black` for icon + body** against the pale tinted container fill — yellow-on-yellow and green-on-green fail WCAG (round-2 + FB-7 bug) | Red-on-dark (readability); `text-yellow-*` on `bg-yellow-500/10` |
 | `ProgressBar` | Async work | `logo-primary` fill | Flashing/pulsing beyond 2 Hz |
 | `Tooltip` | Info-icon description | `bg-background` + `border-mid-gray/20` | Long prose (>2 lines) — use stacked description |
 

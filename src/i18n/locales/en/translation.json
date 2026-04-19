@@ -220,11 +220,6 @@
           "details": "Handy is an open-source, local-first speech-to-text application. Thank you to cjpais and all Handy contributors.",
           "button": "View Handy on GitHub"
         },
-        "whisper": {
-          "title": "Whisper.cpp",
-          "description": "High-performance inference of OpenAI's Whisper automatic speech recognition model",
-          "details": "Toaster uses Whisper.cpp for fast, local speech-to-text processing. Thanks to the amazing work by Georgi Gerganov and contributors."
-        },
         "tauri": {
           "title": "Tauri",
           "description": "Rust-native app framework.",
@@ -233,8 +228,8 @@
         },
         "whisperCpp": {
           "title": "whisper.cpp & ggml",
-          "description": "Cross-platform local speech-to-text inference.",
-          "details": "The whisper.cpp runtime and the ggml tensor library provide Toaster's on-device transcription with GPU / CPU acceleration on every supported platform.",
+          "description": "High-performance on-device inference of OpenAI's Whisper ASR model.",
+          "details": "Toaster uses whisper.cpp and ggml for fast, local speech-to-text with GPU / CPU acceleration on every supported platform. Thanks to Georgi Gerganov and the whisper.cpp + ggml contributors.",
           "button": "Open whisper.cpp on GitHub"
         },
         "ffmpeg": {
@@ -323,20 +318,11 @@
       }
     },
     "captions": {
-      "tabs": {
-        "ariaLabel": "Caption orientation",
-        "desktop": "Desktop",
-        "desktopDescription": "Styling for landscape videos (width ≥ height).",
-        "mobile": "Mobile",
-        "mobileDescription": "Styling for portrait / square videos (width < height)."
-      },
       "preview": {
-        "heading": "Live preview",
         "sampleLegend": "Sample text",
         "sample": {
-          "short": "looking crispy",
-          "twoLine": "looking crispy\nand readable",
-          "long": "looking crispy and readable\neven when the caption text\nwraps onto a third line"
+          "single": "looking crispy",
+          "multiLine": "looking crispy and readable\neven when the caption text\nwraps onto a third line"
         },
         "orientation": {
           "label": "Preview orientation",
@@ -384,7 +370,7 @@
           "description": "Model unload timing and related runtime behavior."
         },
         "captions": {
-          "title": "Captions",
+          "title": "Live preview",
           "description": "Caption preview and export styling."
         },
         "export": {
@@ -563,7 +549,6 @@
       "transcriptVtt": "Transcript (VTT)",
       "transcriptScript": "Transcript (Script)",
       "ffmpegScript": "FFmpeg script",
-      "editedAs": "Export as {{format}}",
       "formats": {
         "mp4": "MP4 video",
         "mov": "MOV video",

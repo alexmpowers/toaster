@@ -22,8 +22,12 @@ const variantStyles: Record<
   },
   warning: {
     container: "bg-yellow-500/10",
-    icon: "text-yellow-500",
-    text: "text-yellow-400",
+    // Brand standard: text + icon on `warning` / `success` variants use black
+    // for contrast against the pale tinted container (see docs/design-system.md
+    // Alert row). Do not swap back to `text-yellow-*` — the yellow-on-yellow
+    // contrast fails WCAG and the experimental banner becomes unreadable.
+    icon: "text-black",
+    text: "text-black",
   },
   info: {
     container: "bg-blue-500/10",

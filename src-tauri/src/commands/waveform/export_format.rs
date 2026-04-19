@@ -132,13 +132,15 @@ pub fn export_format_codec_map(format: AudioExportFormat) -> Option<CodecSpec> {
 const VIDEO_SOURCE_EXTENSIONS: &[&str] = &["mp4", "mkv", "mov", "avi", "webm", "flv"];
 
 /// Formats that make sense for a given source media type. Returns
-/// `[Mp4, Mov, Mkv, Mp3, Wav, M4a, Opus]` for video sources, and the
-/// audio-only suffix for audio sources.
+/// `[Mp4, Mov, Mkv]` for video sources, and the audio-only list for
+/// audio sources. Toaster intentionally does not bridge the two — a
+/// video source does not offer audio-only export formats (feedback
+/// round 7 / FB-7 E-3: "we're not intending to be a video to audio
+/// converter"). A dedicated media transcoder should be used for that.
 ///
-/// Round-8: added Mov + Mkv to the video list so the editor's per-
-/// project format picker surfaces real container alternatives to mp4.
-/// The ordering is significant — the first entry is treated as the
-/// default by the save-dialog fallback in `useEditorExports`.
+/// Round-8 / FB-7: video branch is `[Mp4, Mov, Mkv]`; audio branch is
+/// `[Mp3, Wav, M4a, Opus]`. The first entry of each branch is treated
+/// as the default by the save-dialog fallback in `useEditorExports`.
 ///
 /// Single source of truth for the source-type → allowed-format rule
 /// (PRD R-004 / AC-004-a, AC-004-b); frontend consumes this via the
@@ -152,10 +154,6 @@ pub fn allowed_formats_for_source(ext: &str) -> Vec<AudioExportFormat> {
             AudioExportFormat::Mp4,
             AudioExportFormat::Mov,
             AudioExportFormat::Mkv,
-            AudioExportFormat::Mp3,
-            AudioExportFormat::Wav,
-            AudioExportFormat::M4a,
-            AudioExportFormat::Opus,
         ]
     } else {
         vec![
@@ -280,19 +278,16 @@ mod tests {
         assert_eq!(wav.bitrate_flag(), None);
     }
 
-    // AC-004-a: video sources offer the three video containers first,
-    // then the four audio-only formats, in a fixed order. Round-8
-    // expanded the video prefix from `[Mp4]` to `[Mp4, Mov, Mkv]`.
+    // FB-7 E-3: video sources surface **only** the three video containers.
+    // Audio-only formats are not offered on video sources — the editor is
+    // not a video→audio transcoder. Audio sources keep the four audio
+    // formats unchanged.
     #[test]
-    fn allowed_formats_video_source_lists_mp4_then_audio_only() {
+    fn allowed_formats_video_source_lists_video_only() {
         let expected = vec![
             AudioExportFormat::Mp4,
             AudioExportFormat::Mov,
             AudioExportFormat::Mkv,
-            AudioExportFormat::Mp3,
-            AudioExportFormat::Wav,
-            AudioExportFormat::M4a,
-            AudioExportFormat::Opus,
         ];
         for video_ext in ["mp4", "mkv", "mov", "avi", "webm", "flv"] {
             assert_eq!(allowed_formats_for_source(video_ext), expected, "ext={video_ext}");
@@ -303,6 +298,18 @@ mod tests {
                 "ext=.{}",
                 video_ext.to_uppercase(),
             );
+            // No audio-only entries bleed through.
+            for audio in [
+                AudioExportFormat::Mp3,
+                AudioExportFormat::Wav,
+                AudioExportFormat::M4a,
+                AudioExportFormat::Opus,
+            ] {
+                assert!(
+                    !allowed_formats_for_source(video_ext).contains(&audio),
+                    "video src {video_ext} must not expose {audio:?}",
+                );
+            }
         }
     }
 

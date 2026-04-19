@@ -47,6 +47,12 @@ interface EditorState {
   selectionRange: [number, number] | null;
   highlightedIndices: number[];
   highlightType: "filler" | "pause" | "duplicate" | null;
+  /**
+   * Session-scoped per-project export intent. Not persisted to backend —
+   * lives with this store's lifetime so switching to the Advanced settings
+   * tab and back does NOT reset the "Add captions" toggle (FB-7 E-1).
+   */
+  burnCaptions: boolean;
 
   setWords: (words: Word[]) => Promise<void>;
   deleteWord: (index: number) => Promise<void>;
@@ -63,6 +69,7 @@ interface EditorState {
   setSelectionRange: (range: [number, number] | null) => void;
   setHighlightedIndices: (indices: number[], type: "filler" | "pause" | "duplicate" | null) => void;
   clearHighlights: () => void;
+  setBurnCaptions: (next: boolean) => void;
 }
 
 const fetchProjection = async (): Promise<EditorProjection> =>
@@ -75,6 +82,7 @@ export const useEditorStore = create<EditorState>()((set) => ({
   selectionRange: null,
   highlightedIndices: [],
   highlightType: null,
+  burnCaptions: false,
 
   setWords: async (words: Word[]) => {
     await invoke<Word[]>("editor_set_words", { words });
@@ -167,5 +175,9 @@ export const useEditorStore = create<EditorState>()((set) => ({
 
   clearHighlights: () => {
     set({ highlightedIndices: [], highlightType: null });
+  },
+
+  setBurnCaptions: (next: boolean) => {
+    set({ burnCaptions: next });
   },
 }));
