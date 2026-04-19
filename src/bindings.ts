@@ -261,6 +261,22 @@ async changeExportFadeOutMsSetting(fadeOutMs: number) : Promise<Result<null, str
     else return { status: "error", error: e as string };
 }
 },
+async changeExportFormatVideoSetting(format: AudioExportFormat) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_export_format_video_setting", { format }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+async changeExportFormatAudioSetting(format: AudioExportFormat) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_export_format_audio_setting", { format }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
 async changeAppLanguageSetting(language: string) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_app_language_setting", { language }) };
@@ -1080,7 +1096,7 @@ loudness_target?: LoudnessTarget; export_volume_db?: number; export_fade_in_ms?:
  * `-b:a` strings (AGENTS.md "Single source of truth for
  * dual-path logic").
  */
-export_format?: AudioExportFormat; caption_font_size?: number; caption_bg_color?: string; caption_text_color?: string; caption_position?: number; caption_font_family?: CaptionFontFamily; caption_radius_px?: number; caption_padding_x_px?: number; caption_padding_y_px?: number; caption_max_width_percent?: number; 
+export_format_video?: AudioExportFormat; export_format_audio?: AudioExportFormat; caption_font_size?: number; caption_bg_color?: string; caption_text_color?: string; caption_position?: number; caption_font_family?: CaptionFontFamily; caption_radius_px?: number; caption_padding_x_px?: number; caption_padding_y_px?: number; caption_max_width_percent?: number; 
 /**
  * Per-orientation caption profiles. Slice B single-source-of-truth
  * for caption geometry — preview and export both read through

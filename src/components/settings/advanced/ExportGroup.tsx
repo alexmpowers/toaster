@@ -13,10 +13,10 @@ import {
 } from "@/bindings";
 
 const TARGETS: LoudnessTarget[] = ["off", "podcast_-16", "streaming_-14"];
-// Order matches PRD R-001 / AC-001-a: video first, then four audio-only
-// presets. Frontend sends only the enum; backend owns codec/bitrate
-// mapping (AGENTS.md "Single source of truth for dual-path logic").
-const EXPORT_FORMATS: AudioExportFormat[] = ["mp4", "mp3", "wav", "m4a", "opus"];
+// Video defaults: only Mp4 is a video container today.
+const VIDEO_EXPORT_FORMATS: AudioExportFormat[] = ["mp4"];
+// Audio-only defaults: the four audio variants, omitting Mp4.
+const AUDIO_EXPORT_FORMATS: AudioExportFormat[] = ["mp3", "wav", "m4a", "opus"];
 const PREFLIGHT_DEBOUNCE_MS = 800;
 const PREFLIGHT_WARNING_LU = 12;
 
@@ -41,7 +41,10 @@ export const ExportGroup: React.FC = () => {
   const { t } = useTranslation();
   const { settings, updateSetting, isUpdating } = useSettings();
   const target: LoudnessTarget = settings?.loudness_target ?? "off";
-  const exportFormat: AudioExportFormat = settings?.export_format ?? "mp4";
+  const exportFormatVideo: AudioExportFormat =
+    settings?.export_format_video ?? "mp4";
+  const exportFormatAudio: AudioExportFormat =
+    settings?.export_format_audio ?? "wav";
 
   const [preflight, setPreflight] = useState<LoudnessPreflight | null>(null);
   const [running, setRunning] = useState(false);
@@ -97,10 +100,16 @@ export const ExportGroup: React.FC = () => {
     void updateSetting("loudness_target", next);
   };
 
-  const handleFormatChange = (value: string) => {
+  const handleFormatVideoChange = (value: string) => {
     const next = value as AudioExportFormat;
-    if (next === exportFormat) return;
-    void updateSetting("export_format", next);
+    if (next === exportFormatVideo) return;
+    void updateSetting("export_format_video", next);
+  };
+
+  const handleFormatAudioChange = (value: string) => {
+    const next = value as AudioExportFormat;
+    if (next === exportFormatAudio) return;
+    void updateSetting("export_format_audio", next);
   };
 
   const targetOptions: DropdownOption[] = TARGETS.map((value) => ({
@@ -108,10 +117,19 @@ export const ExportGroup: React.FC = () => {
     label: t(`settings.export.loudness.options.${value}.label`),
   }));
 
-  const formatOptions: DropdownOption[] = EXPORT_FORMATS.map((value) => ({
-    value,
-    label: t(`settings.export.format.options.${value}.label`),
-  }));
+  const videoFormatOptions: DropdownOption[] = VIDEO_EXPORT_FORMATS.map(
+    (value) => ({
+      value,
+      label: t(`settings.export.format.options.${value}.label`),
+    }),
+  );
+
+  const audioFormatOptions: DropdownOption[] = AUDIO_EXPORT_FORMATS.map(
+    (value) => ({
+      value,
+      label: t(`settings.export.format.options.${value}.label`),
+    }),
+  );
 
   const showWarning =
     preflight?.delta_lu !== null &&
@@ -122,16 +140,29 @@ export const ExportGroup: React.FC = () => {
   return (
     <div className="space-y-4">
       <SettingContainer
-        title={t("settings.export.format.label")}
-        description={t("settings.export.format.description")}
+        title={t("settings.export.formatVideo.label")}
+        description={t("settings.export.formatVideo.description")}
         grouped
         layout="horizontal"
       >
         <Dropdown
-          options={formatOptions}
-          selectedValue={exportFormat}
-          onSelect={handleFormatChange}
-          disabled={!settings || isUpdating("export_format")}
+          options={videoFormatOptions}
+          selectedValue={exportFormatVideo}
+          onSelect={handleFormatVideoChange}
+          disabled={!settings || isUpdating("export_format_video")}
+        />
+      </SettingContainer>
+      <SettingContainer
+        title={t("settings.export.formatAudio.label")}
+        description={t("settings.export.formatAudio.description")}
+        grouped
+        layout="horizontal"
+      >
+        <Dropdown
+          options={audioFormatOptions}
+          selectedValue={exportFormatAudio}
+          onSelect={handleFormatAudioChange}
+          disabled={!settings || isUpdating("export_format_audio")}
         />
       </SettingContainer>
       <SettingContainer

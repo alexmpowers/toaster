@@ -22,8 +22,9 @@ interface UseEditorExportsArgs {
  * (transcript / edited media / FFmpeg script) and the effect that keeps
  * `allowedFormats` in sync with the loaded media.
  *
- * Extracted from EditorView per Round-5 KISS K9 — keeps the top-level
- * component focused on layout + lifecycle.
+ * Round-6 Phase D: the per-project format override was removed. The
+ * backend now selects a default based on the source MediaType and the
+ * two settings fields `export_format_video` / `export_format_audio`.
  */
 export function useEditorExports({
   mediaInfo,
@@ -32,19 +33,13 @@ export function useEditorExports({
 }: UseEditorExportsArgs) {
   const { t } = useTranslation();
   const [isExportingMedia, setIsExportingMedia] = useState(false);
-  const [formatOverride, setFormatOverride] =
-    useState<AudioExportFormat | null>(null);
   const [allowedFormats, setAllowedFormats] = useState<AllowedExportFormat[]>(
     [],
   );
 
-  // Fetch source-compatible formats whenever the loaded media changes so
-  // the ExportFormatPicker options and extension-lookup stay authoritative
-  // (AC-003-a, AC-004-a).
   useEffect(() => {
     if (!mediaInfo) {
       setAllowedFormats([]);
-      setFormatOverride(null);
       return;
     }
     const ext = mediaInfo.extension ?? "";
@@ -52,10 +47,7 @@ export function useEditorExports({
     (async () => {
       try {
         const result = await commands.listAllowedExportFormats(ext);
-        if (!cancelled) {
-          setAllowedFormats(result);
-          setFormatOverride(null);
-        }
+        if (!cancelled) setAllowedFormats(result);
       } catch (err) {
         console.error("Failed to list allowed export formats:", err);
         if (!cancelled) setAllowedFormats([]);
@@ -67,7 +59,9 @@ export function useEditorExports({
   }, [mediaInfo]);
 
   const defaultExportFormat: AudioExportFormat =
-    settings?.export_format ?? "mp4";
+    mediaInfo?.media_type === "Video"
+      ? (settings?.export_format_video ?? "mp4")
+      : (settings?.export_format_audio ?? "wav");
 
   const handleExport = useCallback(async (format: ExportFormat) => {
     const ext = format === "Srt" ? "srt" : format === "Vtt" ? "vtt" : "txt";
@@ -100,17 +94,11 @@ export function useEditorExports({
   const handleExportEditedMedia = useCallback(async () => {
     if (!mediaInfo) return;
 
-    const effectiveFormat: AudioExportFormat =
-      formatOverride ?? defaultExportFormat;
     const allowedMatch = allowedFormats.find(
-      (f) => f.format === effectiveFormat,
+      (f) => f.format === defaultExportFormat,
     );
-    // Backend payload carries the canonical extension with a leading dot
-    // (AC-005-a). Fall back to the format string if the list hasn't loaded
-    // yet; source-derived extension is intentionally NOT used — that was
-    // the pre-override bug (PRD §1).
     const extension = (
-      allowedMatch?.extension.replace(/^\./, "") ?? effectiveFormat
+      allowedMatch?.extension.replace(/^\./, "") ?? defaultExportFormat
     ).toLowerCase();
     const baseName = mediaInfo.file_name.replace(/\.[^/.]+$/, "");
 
@@ -134,7 +122,7 @@ export function useEditorExports({
           mediaInfo.path,
           filePath,
           burnCaptions || null,
-          formatOverride,
+          null,
         ),
       );
     } catch (err) {
@@ -142,22 +130,13 @@ export function useEditorExports({
     } finally {
       setIsExportingMedia(false);
     }
-  }, [
-    mediaInfo,
-    t,
-    burnCaptions,
-    formatOverride,
-    defaultExportFormat,
-    allowedFormats,
-  ]);
+  }, [mediaInfo, t, burnCaptions, defaultExportFormat, allowedFormats]);
 
   return {
     handleExport,
     handleFFmpegScript,
     handleExportEditedMedia,
     isExportingMedia,
-    formatOverride,
-    setFormatOverride,
     allowedFormats,
     defaultExportFormat,
   };

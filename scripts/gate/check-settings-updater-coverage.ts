@@ -49,10 +49,7 @@ const LIVE_PREVIEW_PREFIXES = [
 // Keys intentionally written through updateSetting() without an updater
 // entry. Each entry must carry a reason; prefer fixing by adding a
 // Tauri command + settingUpdaters entry over growing this list.
-const ALLOWLIST: Record<string, string> = {
-  export_format:
-    "Tracked in features/edit-export-format-override/; needs backend command.",
-};
+const ALLOWLIST: Record<string, string> = {};
 
 type CallSite = { file: string; line: number; key: string };
 

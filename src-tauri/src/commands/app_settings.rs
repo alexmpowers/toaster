@@ -545,6 +545,35 @@ pub fn change_export_fade_out_ms_setting(app: AppHandle, fade_out_ms: u32) -> Re
     Ok(())
 }
 
+/// Update the default export format used when the source media carries
+/// a video stream (Round-6 Phase D). Frontend sends the enum; backend
+/// owns codec/extension mapping via `export_format_codec_map`.
+#[tauri::command]
+#[specta::specta]
+pub fn change_export_format_video_setting(
+    app: AppHandle,
+    format: crate::commands::waveform::AudioExportFormat,
+) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.export_format_video = format;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+/// Update the default export format used when the source media is
+/// audio-only (Round-6 Phase D).
+#[tauri::command]
+#[specta::specta]
+pub fn change_export_format_audio_setting(
+    app: AppHandle,
+    format: crate::commands::waveform::AudioExportFormat,
+) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.export_format_audio = format;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
 #[tauri::command]
 #[specta::specta]
 pub fn change_app_language_setting(app: AppHandle, language: String) -> Result<(), String> {

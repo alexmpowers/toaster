@@ -22,6 +22,14 @@ pub(super) fn default_settings_version() -> u32 {
     1
 }
 
+pub(super) fn default_export_format_video() -> crate::commands::waveform::AudioExportFormat {
+    crate::commands::waveform::AudioExportFormat::Mp4
+}
+
+pub(super) fn default_export_format_audio() -> crate::commands::waveform::AudioExportFormat {
+    crate::commands::waveform::AudioExportFormat::Wav
+}
+
 pub(super) fn default_caption_font_size() -> u32 {
     // 40 px on a 1080p frame is ~3.7 % of frame height, aligning with
     // broadcast/YouTube caption norms. The previous 24 px (~2.2 %) was
@@ -548,7 +556,8 @@ pub fn get_default_settings() -> AppSettings {
         export_volume_db: 0.0,
         export_fade_in_ms: 0,
         export_fade_out_ms: 0,
-        export_format: crate::commands::waveform::AudioExportFormat::Mp4,
+        export_format_video: default_export_format_video(),
+        export_format_audio: default_export_format_audio(),
         caption_font_size: default_caption_font_size(),
         caption_bg_color: default_caption_bg_color(),
         caption_text_color: default_caption_text_color(),

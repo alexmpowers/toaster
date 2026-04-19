@@ -226,6 +226,8 @@ pub fn run(cli_args: CliArgs) {
             commands::app_settings::change_export_volume_db_setting,
             commands::app_settings::change_export_fade_in_ms_setting,
             commands::app_settings::change_export_fade_out_ms_setting,
+            commands::app_settings::change_export_format_video_setting,
+            commands::app_settings::change_export_format_audio_setting,
             commands::app_settings::change_app_language_setting,
             commands::app_settings::change_update_checks_setting,
             commands::app_settings::change_whisper_accelerator_setting,

@@ -451,15 +451,22 @@
           "error": "Preflight failed: {{error}}"
         }
       },
-      "format": {
-        "title": "Format",
-        "label": "Output format",
-        "description": "Choose the container and codec for exported media. Audio-only presets drop the video stream.",
+      "formatVideo": {
+        "title": "Video output format",
+        "label": "Video output format",
+        "description": "Default format for source media that contains a video stream. Used when no per-export override is set.",
         "options": {
           "mp4": {
             "label": "Video (mp4)",
             "description": "Edited video with H.264 video and AAC audio in an mp4 container. Default."
-          },
+          }
+        }
+      },
+      "formatAudio": {
+        "title": "Audio output format",
+        "label": "Audio output format",
+        "description": "Default format for audio-only source media. Used when no per-export override is set.",
+        "options": {
           "mp3": {
             "label": "Audio - mp3",
             "description": "Audio-only mp3 (libmp3lame) at 192 kbps. Most universally compatible audio format."
@@ -674,17 +681,6 @@
     "exporting": "Exporting...",
     "addCaptions": "Add Captions",
     "cleanup": "Remove fillers",
-    "exportFormat": {
-      "label": "Export format",
-      "useDefault": "Use default ({{format}})",
-      "formatWav": "WAV",
-      "tooltip": "Pick the output format for this export. Uses your Advanced setting when not overridden.",
-      "formatM4a": "M4A",
-      "formatOpus": "Opus",
-      "formatMp4": "MP4 (video)",
-      "formatMp3": "MP3",
-      "description": "Pick the output format for this export. Uses your Advanced setting when not overridden."
-    },
     "addCaptionsDescription": "Burn captions directly into the exported video.",
     "normalizeAudioDescription": "Normalize loudness to the target LUFS on export.",
     "exportMenu": {

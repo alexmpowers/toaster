@@ -289,16 +289,18 @@ pub struct AppSettings {
     pub export_fade_in_ms: u32,
     #[serde(default)]
     pub export_fade_out_ms: u32,
-    /// Audio-only export format preset. Default `Mp4` preserves
-    /// current behavior (H.264 video + AAC audio in mp4). The four
-    /// audio-only variants drop the video stream and re-mux the
-    /// post-edit audio per
-    /// `crate::commands::waveform::export_format_codec_map` —
-    /// frontend only stores the enum and never builds `-c:a` /
-    /// `-b:a` strings (AGENTS.md "Single source of truth for
-    /// dual-path logic").
-    #[serde(default)]
-    pub export_format: crate::commands::waveform::AudioExportFormat,
+    /// Default export format when the source media has a video stream.
+    /// Consumed by `export_edited_media` when no per-invocation override
+    /// is supplied. Typically `Mp4`; users may select any audio-only
+    /// format here to force audio-extract from video sources by default.
+    #[serde(default = "default_export_format_video", alias = "export_format")]
+    pub export_format_video: crate::commands::waveform::AudioExportFormat,
+    /// Default export format when the source media is audio-only.
+    /// Frontend-side guards prevent selecting `Mp4` here (video formats
+    /// make no sense for audio-only sources); the backend defensively
+    /// falls through to `Wav` if an invalid value is ever persisted.
+    #[serde(default = "default_export_format_audio")]
+    pub export_format_audio: crate::commands::waveform::AudioExportFormat,
     #[serde(default = "default_caption_font_size")]
     pub caption_font_size: u32,
     #[serde(default = "default_caption_bg_color")]

@@ -83,10 +83,6 @@ const EditorView: React.FC = () => {
     handleFFmpegScript,
     handleExportEditedMedia,
     isExportingMedia,
-    formatOverride,
-    setFormatOverride,
-    allowedFormats,
-    defaultExportFormat,
   } = useEditorExports({ mediaInfo, settings, burnCaptions });
   // Suppress auto-select briefly after a manual word click so it doesn't get overridden
   const manualClickRef = React.useRef(false);
@@ -526,16 +522,11 @@ const EditorView: React.FC = () => {
         </>
       )}
 
-      {/* Export settings — format override, burn captions, normalize,
-          loudness/preflight. Export triggers themselves live in the
-          header <ExportMenu>. */}
+      {/* Per-export knobs: burn captions, normalize, loudness/preflight.
+          Export triggers live in the header <ExportMenu>; default format
+          selection lives in Settings → Advanced → Export. */}
       <EditorToolbar
         words={words}
-        formatOverride={formatOverride}
-        onFormatOverrideChange={setFormatOverride}
-        allowedFormats={allowedFormats}
-        defaultExportFormat={defaultExportFormat}
-        exportPickerDisabled={isExportingMedia || words.length === 0}
         burnCaptions={burnCaptions}
         onBurnCaptionsChange={setBurnCaptions}
         normalizeAudio={normalizeAudio}
