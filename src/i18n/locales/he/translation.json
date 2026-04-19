@@ -7,7 +7,6 @@
   "sidebar": {
     "editor": "Editor",
     "models": "מודלים",
-    "postProcessing": "עיבוד משלים",
     "debug": "ניפוי שגיאות",
     "about": "אודות",
     "advanced": "Advanced"

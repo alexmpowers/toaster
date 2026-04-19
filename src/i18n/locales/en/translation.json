@@ -7,7 +7,6 @@
   "sidebar": {
     "editor": "Editor",
     "models": "Models",
-    "postProcessing": "Post Process",
     "debug": "Debug",
     "about": "About",
     "advanced": "Advanced"

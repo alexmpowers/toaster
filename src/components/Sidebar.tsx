@@ -1,11 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Info, Cpu, Scissors, Wand2, SlidersHorizontal, Bug } from "lucide-react";
+import { Info, Cpu, Scissors, SlidersHorizontal, Bug } from "lucide-react";
 import toasterLogo from "../assets/toaster_text.svg";
 import {
   AboutSettings,
   ModelsSettings,
-  PostProcessingSettings,
   AdvancedSettings,
   DebugSettings,
 } from "./settings";
@@ -37,12 +36,6 @@ export const SECTIONS_CONFIG = {
     labelKey: "sidebar.models",
     icon: Cpu,
     component: ModelsSettings,
-    enabled: () => true,
-  },
-  postProcessing: {
-    labelKey: "sidebar.postProcessing",
-    icon: Wand2,
-    component: PostProcessingSettings,
     enabled: () => true,
   },
   advanced: {

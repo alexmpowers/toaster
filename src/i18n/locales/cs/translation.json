@@ -7,7 +7,6 @@
   "sidebar": {
     "editor": "Editor",
     "models": "Modely",
-    "postProcessing": "Následné zpracování",
     "debug": "Ladění",
     "about": "O aplikaci",
     "advanced": "Advanced"

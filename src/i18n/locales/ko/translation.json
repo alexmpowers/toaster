@@ -7,7 +7,6 @@
   "sidebar": {
     "editor": "Editor",
     "models": "모델",
-    "postProcessing": "후처리",
     "debug": "디버그",
     "about": "정보",
     "advanced": "Advanced"

@@ -7,7 +7,6 @@
   "sidebar": {
     "editor": "Editor",
     "models": "モデル",
-    "postProcessing": "後処理",
     "debug": "デバッグ",
     "about": "概要",
     "advanced": "Advanced"

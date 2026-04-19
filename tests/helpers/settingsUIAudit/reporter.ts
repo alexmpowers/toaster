@@ -29,8 +29,6 @@ export type Violation = {
 export const FILE_HINTS: Record<string, string> = {
   about: "src/components/settings/about/AboutSettings.tsx",
   models: "src/components/settings/models/ModelsSettings.tsx",
-  "post-process":
-    "src/components/settings/post-processing/PostProcessingSettings.tsx",
   advanced: "src/components/settings/advanced/AdvancedSettings.tsx",
   captions: "src/components/settings/advanced/AdvancedSettings.tsx",
 };

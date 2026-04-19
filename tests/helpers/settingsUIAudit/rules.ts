@@ -23,7 +23,6 @@ export type Viewport = {
 export const ROUTES: readonly Route[] = [
   { id: "about", label: "About", expectMaxW5xl: true },
   { id: "models", label: "Models", expectMaxW5xl: true },
-  { id: "post-process", label: "Post Process", expectMaxW5xl: true },
   { id: "advanced", label: "Advanced", expectMaxW5xl: true },
   {
     id: "captions",

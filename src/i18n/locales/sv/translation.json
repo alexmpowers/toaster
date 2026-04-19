@@ -7,7 +7,6 @@
   "sidebar": {
     "editor": "Editor",
     "models": "Modeller",
-    "postProcessing": "Efterbearbetning",
     "debug": "Felsökning",
     "about": "Om",
     "advanced": "Advanced"

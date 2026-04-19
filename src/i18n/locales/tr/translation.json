@@ -7,7 +7,6 @@
   "sidebar": {
     "editor": "Editor",
     "models": "Modeller",
-    "postProcessing": "Son İşlem",
     "debug": "Hata Ayıklama",
     "about": "Hakkında",
     "advanced": "Advanced"

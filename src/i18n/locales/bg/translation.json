@@ -7,7 +7,6 @@
   "sidebar": {
     "editor": "Editor",
     "models": "Модели",
-    "postProcessing": "Постобработка",
     "debug": "Отстраняване",
     "about": "За приложението",
     "advanced": "Advanced"

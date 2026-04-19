@@ -7,7 +7,6 @@
   "sidebar": {
     "editor": "Editor",
     "models": "Mô hình",
-    "postProcessing": "Xử lý sau",
     "debug": "Gỡ lỗi",
     "about": "Giới thiệu",
     "advanced": "Advanced"
