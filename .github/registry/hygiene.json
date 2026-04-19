@@ -1,0 +1,52 @@
+{
+  "$schema": "./schema/hygiene.schema.json",
+  "version": 1,
+  "rules": [
+    {
+      "id": "R1",
+      "name": "One feature per session",
+      "trigger": "User hands a new, unrelated feature after finishing or deferring one.",
+      "rule": "A session covers one feature slug (or one tightly-coupled slug group). Propose starting a fresh session rather than stacking.",
+      "check": "If plan.md's current-focus section would need to change slug, it's a new session."
+    },
+    {
+      "id": "R2",
+      "name": "Todo hygiene at every checkpoint",
+      "trigger": "Before writing a checkpoint.",
+      "rule": "Reap stale rows from the `todos` table. Keep active count under ~15 rows.",
+      "check": "`SELECT status, COUNT(*) FROM todos GROUP BY status` stays under ~15 total rows on any active day.",
+      "fix": "Run `scripts/sql/reap-stale-todos.sql` with the current feature slug bound."
+    },
+    {
+      "id": "R3",
+      "name": "plan.md current-focus is mandatory and time-stamped",
+      "trigger": "Every checkpoint.",
+      "rule": "Rewrite the Active-work 5-line block with current timestamp. No 2-hour gap on an active day.",
+      "check": "If the conversation summary is newer than plan.md's timestamp by > 30 min, first act on resume is to reconcile.",
+      "see": [".github/templates/plan-active-work.md"]
+    },
+    {
+      "id": "R4",
+      "name": "Retry budget on long cargo commands",
+      "trigger": "A cargo/tauri command > 2 min fails with an identical error hash.",
+      "rule": "Do not re-run a third time without a strategy change (`cargo clean`, scope swap, live-app pivot, ask user). Log the pivot under plan.md > Retry log.",
+      "fix": "Append a one-line entry per `.github/templates/retry-log-entry.md` with command, error, and switch strategy.",
+      "see": ["src-tauri/AGENTS.md#known-windows-dll-pitfalls", ".github/templates/retry-log-entry.md"]
+    },
+    {
+      "id": "R5",
+      "name": "Async shell accounting",
+      "trigger": "Ending any turn with an async shell still running.",
+      "rule": "Either `stop_powershell` it, OR record shellId + PID + purpose under plan.md > Live shells.",
+      "check": "On session resume, first act is `list_powershell` and reap orphans.",
+      "fix": "Stale async shells hold target/debug/*.dll locks and cause DLL-race failures — stop or record."
+    }
+  ],
+  "split_session_triggers": [
+    "Starting a feature whose slug differs from plan.md's Active work block.",
+    "`todos` table has > 30 rows.",
+    "`plan.md` timestamp is > 4 hours old and the session is still active.",
+    "Conversation summary has been auto-compacted more than once.",
+    "More than 2 async shells are running."
+  ]
+}

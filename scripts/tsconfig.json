@@ -1,0 +1,19 @@
+{
+  "//": "TypeScript project for Bun-run scripts. Not compiled (noEmit); exists so the VS Code language server loads node + bun types and stops flagging `fs`, `path`, `process`, `Bun`, etc. as missing. The root tsconfig only includes `src/`.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "types": ["node", "bun"],
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["../node_modules"]
+}

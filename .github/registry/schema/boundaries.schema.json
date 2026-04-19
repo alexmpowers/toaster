@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Toaster Boundaries",
+  "type": "object",
+  "required": ["version", "boundaries"],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "boundaries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "category", "rule"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "category": { "enum": ["always", "ask-first", "never"] },
+          "rule": { "type": "string" },
+          "why": { "type": "string" },
+          "critical": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

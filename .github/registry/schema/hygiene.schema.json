@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Toaster Session & Workspace Hygiene",
+  "type": "object",
+  "required": ["version", "rules"],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "rule"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^R[0-9]+$" },
+          "name": { "type": "string" },
+          "trigger": { "type": "string" },
+          "rule": { "type": "string" },
+          "check": { "type": "string" },
+          "fix": { "type": "string" },
+          "see": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "split_session_triggers": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

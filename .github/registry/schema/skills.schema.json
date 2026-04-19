@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Toaster Skills Index (auto-generated)",
+  "type": "object",
+  "required": ["version", "source", "skills"],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "source": { "const": ".github/skills/*/SKILL.md frontmatter" },
+    "generated_at": { "type": "string" },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "description", "path"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "path": { "type": "string" }
+        }
+      }
+    }
+  }
+}
