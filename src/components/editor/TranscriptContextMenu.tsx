@@ -42,12 +42,12 @@ const TranscriptContextMenu: React.FC<TranscriptContextMenuProps> = React.memo((
 
   return (
     <div
-      className="fixed z-50 min-w-[160px] rounded-md border border-[rgba(128,128,128,0.2)] bg-[#252525] py-1 shadow-lg"
+      className="fixed z-50 min-w-[160px] rounded-md border border-mid-gray/20 bg-background py-1 shadow-lg"
       style={{ left: contextMenu.x, top: contextMenu.y }}
     >
       {contextWord && !contextWord.deleted && (
         <button
-          className="w-full px-3 py-1.5 text-left text-sm text-[#F0F0F0] hover:bg-[rgba(128,128,128,0.2)]"
+          className="w-full px-3 py-1.5 text-left text-sm text-text hover:bg-mid-gray/20"
           onClick={onDelete}
         >
           {selectionRange ? t("editor.deleteRange") : t("editor.deleteWord")}
@@ -55,7 +55,7 @@ const TranscriptContextMenu: React.FC<TranscriptContextMenuProps> = React.memo((
       )}
       {contextWord && contextWord.deleted && (
         <button
-          className="w-full px-3 py-1.5 text-left text-sm text-[#F0F0F0] hover:bg-[rgba(128,128,128,0.2)]"
+          className="w-full px-3 py-1.5 text-left text-sm text-text hover:bg-mid-gray/20"
           onClick={onRestore}
         >
           {t("editor.restoreWord")}
@@ -63,7 +63,7 @@ const TranscriptContextMenu: React.FC<TranscriptContextMenuProps> = React.memo((
       )}
       {contextWord && !contextWord.deleted && (
         <button
-          className="w-full px-3 py-1.5 text-left text-sm text-[#F0F0F0] hover:bg-[rgba(128,128,128,0.2)]"
+          className="w-full px-3 py-1.5 text-left text-sm text-text hover:bg-mid-gray/20"
           onClick={onSilence}
         >
           {t("editor.silenceWord")}
@@ -71,15 +71,15 @@ const TranscriptContextMenu: React.FC<TranscriptContextMenuProps> = React.memo((
       )}
       {contextWord && !contextWord.deleted && contextWord.text.length > 1 && (
         <button
-          className="w-full px-3 py-1.5 text-left text-sm text-[#F0F0F0] hover:bg-[rgba(128,128,128,0.2)]"
+          className="w-full px-3 py-1.5 text-left text-sm text-text hover:bg-mid-gray/20"
           onClick={onSplit}
         >
           {t("editor.splitWord")}
         </button>
       )}
-      <div className="my-1 border-t border-[rgba(128,128,128,0.2)]" />
+      <div className="my-1 border-t border-mid-gray/20" />
       <button
-        className="w-full px-3 py-1.5 text-left text-sm text-[#F0F0F0] hover:bg-[rgba(128,128,128,0.2)]"
+        className="w-full px-3 py-1.5 text-left text-sm text-text hover:bg-mid-gray/20"
         onClick={async () => {
           await onUndo();
           onClose();
@@ -88,7 +88,7 @@ const TranscriptContextMenu: React.FC<TranscriptContextMenuProps> = React.memo((
         {t("editor.undo")}
       </button>
       <button
-        className="w-full px-3 py-1.5 text-left text-sm text-[#F0F0F0] hover:bg-[rgba(128,128,128,0.2)]"
+        className="w-full px-3 py-1.5 text-left text-sm text-text hover:bg-mid-gray/20"
         onClick={async () => {
           await onRedo();
           onClose();
@@ -96,9 +96,9 @@ const TranscriptContextMenu: React.FC<TranscriptContextMenuProps> = React.memo((
       >
         {t("editor.redo")}
       </button>
-      <div className="my-1 border-t border-[rgba(128,128,128,0.2)]" />
+      <div className="my-1 border-t border-mid-gray/20" />
       <button
-        className="w-full px-3 py-1.5 text-left text-sm text-[#F0F0F0] hover:bg-[rgba(128,128,128,0.2)]"
+        className="w-full px-3 py-1.5 text-left text-sm text-text hover:bg-mid-gray/20"
         onClick={async () => {
           await onRestoreAll();
           onClose();

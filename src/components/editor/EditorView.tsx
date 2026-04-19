@@ -556,7 +556,7 @@ const EditorView: React.FC = () => {
               <button
                 onClick={handleTranscribe}
                 disabled={isTranscribing}
-                className="flex items-center gap-2 px-4 py-2 bg-accent text-black rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-logo-primary text-black rounded-lg text-sm font-medium hover:bg-logo-primary/90 transition-colors disabled:opacity-50"
               >
                 <FileText size={16} />
                 {isTranscribing
@@ -592,7 +592,7 @@ const EditorView: React.FC = () => {
                 onClick={() => setBurnCaptions(!burnCaptions)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition-colors ${
                   burnCaptions
-                    ? "bg-accent text-black border-accent"
+                    ? "bg-logo-primary text-black border-logo-primary"
                     : "bg-background border-mid-gray/20 hover:bg-mid-gray/10"
                 }`}
               >
@@ -603,7 +603,7 @@ const EditorView: React.FC = () => {
                 onClick={handleNormalizeToggle}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs border transition-colors ${
                   normalizeAudio
-                    ? "bg-accent text-black border-accent"
+                    ? "bg-logo-primary text-black border-logo-primary"
                     : "bg-background border-mid-gray/20 hover:bg-mid-gray/10"
                 }`}
               >

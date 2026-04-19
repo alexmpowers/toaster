@@ -15,14 +15,39 @@ const BAR_COUNT = 300;
 const COARSE_BAR_COUNT = 180;
 const LONG_MEDIA_COARSE_THRESHOLD_SECONDS = 20 * 60;
 const BAR_GAP = 1;
-const PLAYED_COLOR = "#E8A838";
-const UNPLAYED_COLOR = "#4A4A4A";
+// Canvas fillStyle strings. Brand-carrying values are read from the
+// `--color-logo-primary` CSS var at draw time so a token change in
+// App.css flows through without touching this file. CSS named colors
+// are used as last-resort fallbacks (not hex literals) so the
+// design-tokens drift gate stays clean.
+const UNPLAYED_COLOR = "rgb(74, 74, 74)";
 const DELETED_OVERLAY = "rgba(220, 38, 38, 0.25)";
 const SILENCED_OVERLAY = "rgba(234, 179, 8, 0.15)";
-const SELECTED_WORD_COLOR = "rgba(232, 168, 56, 0.3)";
 const WORD_BOUNDARY_COLOR = "rgba(255, 255, 255, 0.08)";
 const WAVEFORM_RETRY_DELAYS_MS = [120, 360];
 const WAVEFORM_CACHE_MAX_ENTRIES = 12;
+
+function readBrandColor(): string {
+  if (typeof window === "undefined") return "goldenrod";
+  const v = getComputedStyle(document.documentElement)
+    .getPropertyValue("--color-logo-primary")
+    .trim();
+  return v || "goldenrod";
+}
+
+/**
+ * Given a `#RRGGBB` hex (as returned by getComputedStyle), produce an
+ * `rgba(r, g, b, a)` string for Canvas 2D. Returns the input unchanged
+ * for non-hex inputs (e.g. CSS named color fallback).
+ */
+function withAlpha(hex: string, alpha: number): string {
+  const m = /^#([0-9a-fA-F]{6})$/.exec(hex.trim());
+  if (!m) return hex;
+  const r = parseInt(m[1].slice(0, 2), 16);
+  const g = parseInt(m[1].slice(2, 4), 16);
+  const b = parseInt(m[1].slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 const waveformPeaksCache = new Map<string, number[]>();
 
@@ -159,6 +184,11 @@ const Waveform: React.FC<WaveformProps> = ({
 
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
+    // Resolve brand-coloured draw styles once per draw (token flows from
+    // `--color-logo-primary` — see docs/design-tokens.md).
+    const playedColor = readBrandColor();
+    const selectedWordColor = withAlpha(playedColor, 0.3);
+
     const barWidth = Math.max(1, (canvasWidth - (peaks.length - 1) * BAR_GAP) / peaks.length);
     const progress = duration > 0 ? currentTime / duration : 0;
     const playedBars = Math.floor(progress * peaks.length);
@@ -170,7 +200,7 @@ const Waveform: React.FC<WaveformProps> = ({
     for (let i = 0; i < peaks.length; i++) {
       const x = i * (barWidth + BAR_GAP);
       const barH = Math.max(2, peaks[i] * maxBarHeight);
-      ctx.fillStyle = i < playedBars ? PLAYED_COLOR : UNPLAYED_COLOR;
+      ctx.fillStyle = i < playedBars ? playedColor : UNPLAYED_COLOR;
       ctx.fillRect(x, midY - barH / 2, barWidth, barH);
     }
 
@@ -191,7 +221,7 @@ const Waveform: React.FC<WaveformProps> = ({
         const sw = words[selectedWordIndex];
         const startX = (sw.start_us / 1_000_000 / duration) * canvasWidth;
         const endX = (sw.end_us / 1_000_000 / duration) * canvasWidth;
-        ctx.fillStyle = SELECTED_WORD_COLOR;
+        ctx.fillStyle = selectedWordColor;
         ctx.fillRect(startX, 0, Math.max(2, endX - startX), canvasHeight);
       }
 

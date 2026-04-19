@@ -28,7 +28,7 @@ const FindReplaceBar: React.FC<FindReplaceBarProps> = React.memo(({
   const { t } = useTranslation();
 
   return (
-    <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-[#1E1E1E] border border-mid-gray/20">
+    <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-background border border-mid-gray/20">
       <Search size={14} className="text-mid-gray/60 shrink-0" />
       <input
         ref={findInputRef}
@@ -43,7 +43,7 @@ const FindReplaceBar: React.FC<FindReplaceBarProps> = React.memo(({
           if (e.key === "Escape") onClose();
         }}
         placeholder={t("editor.findPlaceholder")}
-        className="flex-1 bg-transparent text-sm text-[#F0F0F0] outline-none placeholder:text-mid-gray/40"
+        className="flex-1 bg-transparent text-sm text-text outline-none placeholder:text-mid-gray/40"
       />
       {findMatchCount > 0 && (
         <span className="text-[11px] text-mid-gray/60 shrink-0">

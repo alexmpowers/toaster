@@ -63,7 +63,7 @@ const PlaybackControls: React.FC<PlaybackControlsProps> = React.memo(({
         step={0.01}
         value={currentTime}
         onChange={onSeekBarChange}
-        className="w-full h-1 appearance-none bg-neutral-700 rounded cursor-pointer accent-[#E8A838]"
+        className="w-full h-1 appearance-none bg-neutral-700 rounded cursor-pointer accent-logo-primary"
         aria-label="Seek"
       />
 
@@ -72,7 +72,7 @@ const PlaybackControls: React.FC<PlaybackControlsProps> = React.memo(({
         {/* Restart */}
         <button
           onClick={onRestart}
-          className="hover:text-[#E8A838] transition-colors"
+          className="hover:text-logo-primary transition-colors"
           aria-label={t("player.restart")}
         >
           <SkipBack size={18} />
@@ -81,7 +81,7 @@ const PlaybackControls: React.FC<PlaybackControlsProps> = React.memo(({
         {/* Rewind 5s */}
         <button
           onClick={onRewind}
-          className="hover:text-[#E8A838] transition-colors"
+          className="hover:text-logo-primary transition-colors"
           aria-label={t("player.rewind")}
         >
           <Rewind size={18} />
@@ -90,7 +90,7 @@ const PlaybackControls: React.FC<PlaybackControlsProps> = React.memo(({
         {/* Play/Pause */}
         <button
           onClick={onTogglePlay}
-          className="hover:text-[#E8A838] transition-colors"
+          className="hover:text-logo-primary transition-colors"
           aria-label={isPlaying ? t("player.pause") : t("player.play")}
         >
           {isPlaying ? <Pause size={20} /> : <Play size={20} />}
@@ -109,7 +109,7 @@ const PlaybackControls: React.FC<PlaybackControlsProps> = React.memo(({
             aria-label={previewToggleLabel}
             className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded transition-colors ${
               previewEdits
-                ? "text-[#E8A838] bg-[#E8A838]/10"
+                ? "text-logo-primary bg-logo-primary/10"
                 : "text-neutral-500 hover:text-neutral-300"
             }`}
             title={previewToggleLabel}
@@ -136,7 +136,7 @@ const PlaybackControls: React.FC<PlaybackControlsProps> = React.memo(({
         {/* Volume */}
         <button
           onClick={onToggleMute}
-          className="hover:text-[#E8A838] transition-colors"
+          className="hover:text-logo-primary transition-colors"
           aria-label={volume === 0 ? t("player.volume") : t("player.mute")}
         >
           {volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
@@ -148,7 +148,7 @@ const PlaybackControls: React.FC<PlaybackControlsProps> = React.memo(({
           step={0.01}
           value={volume}
           onChange={onVolumeChange}
-          className="w-16 h-1 appearance-none bg-neutral-700 rounded cursor-pointer accent-[#E8A838]"
+          className="w-16 h-1 appearance-none bg-neutral-700 rounded cursor-pointer accent-logo-primary"
           aria-label={t("player.volume")}
         />
 
@@ -156,7 +156,7 @@ const PlaybackControls: React.FC<PlaybackControlsProps> = React.memo(({
         <select
           value={playbackRate}
           onChange={onRateChange}
-          className="bg-neutral-800 text-neutral-300 text-xs rounded px-1.5 py-0.5 border border-neutral-700 cursor-pointer focus:outline-none focus:border-[#E8A838]"
+          className="bg-neutral-800 text-neutral-300 text-xs rounded px-1.5 py-0.5 border border-neutral-700 cursor-pointer focus:outline-none focus:border-logo-primary"
           aria-label={t("player.speed")}
         >
           {PLAYBACK_RATES.map((rate) => (

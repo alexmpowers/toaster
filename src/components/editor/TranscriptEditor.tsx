@@ -5,7 +5,10 @@ import { useEditorStore } from "@/stores/editorStore";
 import TranscriptContextMenu, { type ContextMenuState } from "./TranscriptContextMenu";
 import FindReplaceBar from "./FindReplaceBar";
 
-// Speaker colors for visual differentiation
+// Speaker colors for visual differentiation — distinct palette of 8
+// hues used only when diarization assigns speaker IDs. Not a brand
+// concern; the palette is intentional variety, not drift. Allowlisted
+// in scripts/gate/check-brand-token-drift.ts.
 const SPEAKER_COLORS = [
   "#8B5CF6", // violet
   "#06B6D4", // cyan
@@ -380,11 +383,11 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                   isHighlighted && highlightType === "filler" && "bg-red-400/50 text-black",
                   isHighlighted && highlightType === "duplicate" && "bg-orange-400/50 text-black",
                   isHighlighted && highlightType === "pause" && "bg-yellow-400/50 text-black",
-                  isCurrentFindMatch && !isHighlighted && "ring-2 ring-[#E8A838] bg-[#E8A838]/30",
-                  isFindMatch && !isCurrentFindMatch && !isHighlighted && "bg-[#E8A838]/15",
-                  isSelected && !isFindMatch && !isHighlighted && "bg-[#E8A838] text-[#1E1E1E]",
-                  isRangeSelected && !isSelected && !isFindMatch && !isHighlighted && "bg-[#E8A838]/40",
-                  !isSelected && !isRangeSelected && !isFindMatch && !isHighlighted && !word.deleted && !word.silenced && "hover:bg-[rgba(128,128,128,0.2)]",
+                  isCurrentFindMatch && !isHighlighted && "ring-2 ring-logo-primary bg-logo-primary/30",
+                  isFindMatch && !isCurrentFindMatch && !isHighlighted && "bg-logo-primary/15",
+                  isSelected && !isFindMatch && !isHighlighted && "bg-logo-primary text-black",
+                  isRangeSelected && !isSelected && !isFindMatch && !isHighlighted && "bg-logo-primary/40",
+                  !isSelected && !isRangeSelected && !isFindMatch && !isHighlighted && !word.deleted && !word.silenced && "hover:bg-mid-gray/20",
                 ]
                   .filter(Boolean)
                   .join(" ")}

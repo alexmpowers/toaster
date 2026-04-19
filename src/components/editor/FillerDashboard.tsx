@@ -111,7 +111,7 @@ const FillerDashboard: React.FC<FillerDashboardProps> = ({ className = "" }) => 
         (analysis.filler_count > 0 || analysis.duplicate_count > 0 || analysis.pauses.length > 0) && (
           <button
             onClick={handleRemoveAll}
-            className="w-full px-3 py-2 rounded bg-[#E8A838] text-black text-sm font-medium hover:bg-[#E8A838]/80"
+            className="w-full px-3 py-2 rounded bg-logo-primary text-black text-sm font-medium hover:bg-logo-primary/80"
           >
             {t("editor.removeAll", {
               count: analysis.filler_count + analysis.duplicate_count + analysis.pauses.length,
@@ -121,7 +121,7 @@ const FillerDashboard: React.FC<FillerDashboardProps> = ({ className = "" }) => 
 
       {/* Summary bar */}
       {analysis && (
-        <div className="rounded-lg border border-mid-gray/20 bg-[#1E1E1E] overflow-hidden">
+        <div className="rounded-lg border border-mid-gray/20 bg-background overflow-hidden">
           <button
             onClick={() => setExpanded(!expanded)}
             className="w-full flex items-center justify-between px-3 py-2 text-xs text-mid-gray hover:bg-mid-gray/5 transition-colors"

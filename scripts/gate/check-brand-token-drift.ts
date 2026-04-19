@@ -41,24 +41,6 @@ const ALLOWLIST = new Set<string>([
   // carved out below, but the dark-theme `:root` override and any
   // legacy comments also legitimately contain hex literals.
   "src/App.css",
-  // TranscriptEditor find/selection highlights — pre-existing hardcoded
-  // brand yellow; migrate via a `bg-logo-primary/30` Tailwind tint pass
-  // (tracked as design-tokens-cleanup-followups).
-  "src/components/editor/TranscriptEditor.tsx",
-  "src/components/editor/FillerDashboard.tsx",
-  "src/components/editor/EditorView.tsx",
-  "src/components/editor/CaptionOrientationRadio.tsx",
-  // FindReplaceBar / TranscriptContextMenu use neutral dark chrome
-  // (#1E1E1E / #252525 / #F0F0F0) that should route through
-  // --color-background / --color-text once dark chrome tokens exist.
-  "src/components/editor/FindReplaceBar.tsx",
-  "src/components/editor/TranscriptContextMenu.tsx",
-  // PlaybackControls uses `accent-[#E8A838]` Tailwind arbitrary values;
-  // migrate to `accent-logo-primary` in a follow-up.
-  "src/components/player/PlaybackControls.tsx",
-  // Waveform.tsx exports a PLAYED_COLOR const consumed by canvas drawing.
-  // Needs a small Canvas2D -> CSS-var indirection; separate change.
-  "src/components/player/Waveform.tsx",
   // CaptionProfileShared / CaptionMockFrame / CaptionSettings embed
   // colors in profile data structures that serialize to user settings
   // (hex strings are the storage format). Different concern from
@@ -66,12 +48,9 @@ const ALLOWLIST = new Set<string>([
   "src/components/settings/captions/CaptionProfileShared.tsx",
   "src/components/settings/captions/CaptionMockFrame.tsx",
   "src/components/settings/captions/CaptionSettings.tsx",
-  // AudioPlayer still references the old Handy pink `#FAA2CA`. Real drift,
-  // but migrating is out of scope for the tokens sprint (allowlisted so
-  // the gate stays green while the migration is scheduled).
-  "src/components/ui/AudioPlayer.tsx",
-  // Toast chrome in App.tsx uses scrollbar-like greys; not a brand site.
-  "src/App.tsx",
+  // TranscriptEditor carries a SPEAKER_COLORS palette of 8 distinct
+  // hues for diarization. Intentional variety, not brand drift.
+  "src/components/editor/TranscriptEditor.tsx",
 ]);
 
 // Neutral hex literals that are NOT brand colors — pure black/white, alpha
