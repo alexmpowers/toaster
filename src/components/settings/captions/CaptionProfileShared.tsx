@@ -202,7 +202,7 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
 
   return (
     <div
-      className="mb-4 sticky top-0 z-10 bg-background pt-1 pb-3 w-full max-w-[50%]"
+      className="mb-4 sticky top-0 z-10 bg-background px-3 pt-3 pb-4 w-full max-w-[50%]"
       data-testid="caption-preview-pane"
     >
       <div className="mb-2 flex items-center justify-between gap-3">
@@ -249,9 +249,14 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
       </div>
       <div
         ref={containerRef}
-        className="relative w-full overflow-hidden rounded border border-mid-gray/30"
+        className="relative w-full mx-auto overflow-hidden rounded border border-mid-gray/30"
         style={{
           aspectRatio: `${orientation === "horizontal" ? HORIZONTAL_ASPECT : VERTICAL_ASPECT}`,
+          maxHeight: orientation === "vertical" ? "420px" : undefined,
+          maxWidth:
+            orientation === "vertical"
+              ? `${Math.round(420 * VERTICAL_ASPECT)}px`
+              : undefined,
           backgroundColor: "#1a1a1a",
         }}
       >
