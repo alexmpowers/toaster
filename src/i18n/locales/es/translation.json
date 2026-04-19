@@ -157,6 +157,15 @@
         "translation": "Traducción",
         "allLanguages": "Todos los idiomas"
       },
+      "filter": {
+        "all": "All",
+        "transcription": "Transcription",
+        "postProcessing": "Post-processing"
+      },
+      "badge": {
+        "transcription": "Transcription",
+        "postProcessing": "Post-processing"
+      },
       "noModelsMatch": "Ningún modelo coincide con este filtro.",
       "download": "Download",
       "groups": {
@@ -220,6 +229,7 @@
         "title": "Local LLM required",
         "body": "Toaster post-processing runs against a local OpenAI-compatible endpoint. See docs/post-processing.md for setup."
       },
+      "manageModelsLink": "Manage models",
       "localModels": {
         "title": "Local LLM model",
         "description": "Toaster runs LLM cleanup in-process. Pick a model below to download and use locally.",
@@ -380,10 +390,11 @@
       "tabs": {
         "ariaLabel": "Caption orientation",
         "desktop": "Desktop",
-        "desktopDescription": "Styling for landscape videos (width \u2265 height).",
+        "desktopDescription": "Styling for landscape videos (width ≥ height).",
         "mobile": "Mobile",
         "mobileDescription": "Styling for portrait / square videos (width < height)."
-      },      "preview": {
+      },
+      "preview": {
         "heading": "Live preview",
         "sampleLegend": "Sample text",
         "sample": {
