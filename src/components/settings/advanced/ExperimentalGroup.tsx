@@ -2,7 +2,6 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { ExternalLink } from "lucide-react";
-import { SettingContainer } from "../../ui/SettingContainer";
 import { ToggleSwitch } from "../../ui/ToggleSwitch";
 import { Alert } from "../../ui/Alert";
 import { useSettings } from "../../../hooks/useSettings";
@@ -49,26 +48,17 @@ export const ExperimentalGroup: React.FC = () => {
             const checked =
               (getSetting(experiment.settingsKey) as boolean) ?? false;
             return (
-              <SettingContainer
+              <ToggleSwitch
                 key={experiment.id}
-                title={t(experiment.labelKey)}
+                checked={checked}
+                onChange={(value) =>
+                  updateSetting(experiment.settingsKey, value)
+                }
+                isUpdating={isUpdating(experiment.settingsKey)}
+                label={t(experiment.labelKey)}
                 description={t(experiment.descriptionKey)}
-                descriptionMode="inline"
                 grouped
-                layout="stacked"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <ToggleSwitch
-                    checked={checked}
-                    onChange={(value) =>
-                      updateSetting(experiment.settingsKey, value)
-                    }
-                    isUpdating={isUpdating(experiment.settingsKey)}
-                    label={t(experiment.labelKey)}
-                    description={t(experiment.descriptionKey)}
-                    descriptionMode="tooltip"
-                    grouped
-                  />
+                rightAdornment={
                   <button
                     type="button"
                     onClick={() => handleOpenFeedback(experiment.feedbackUrl)}
@@ -77,8 +67,8 @@ export const ExperimentalGroup: React.FC = () => {
                     {t("experiments.feedbackLink")}
                     <ExternalLink className="w-3 h-3" />
                   </button>
-                </div>
-              </SettingContainer>
+                }
+              />
             );
           })}
         </>
