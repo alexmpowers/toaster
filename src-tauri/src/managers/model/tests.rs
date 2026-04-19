@@ -49,6 +49,8 @@ fn test_discover_custom_whisper_models() {
             supports_language_selection: true,
             is_custom: false,
             category: ModelCategory::Transcription,
+            transcription_metadata: None,
+            llm_metadata: None,
         },
     );
 
@@ -174,4 +176,112 @@ fn test_verify_sha256_fails_and_deletes_partial_when_file_missing() {
         super::hash::verify_sha256(&missing_path, Some("anyexpectedhash"), "missing_model");
 
     assert!(result.is_err(), "missing file must return an error");
+}
+
+
+#[test]
+fn model_category_has_post_processor_variant() {
+    // Exhaustive match guards that the enum stays at exactly three variants.
+    // Adding or removing a variant forces this test to be updated and
+    // surfaces the contract change.
+    let variants = [
+        ModelCategory::Transcription,
+        ModelCategory::PostProcessor,
+        ModelCategory::System,
+    ];
+    for v in variants {
+        let classified = match v {
+            ModelCategory::Transcription => "transcription",
+            ModelCategory::PostProcessor => "post-processor",
+            ModelCategory::System => "system",
+        };
+        assert!(!classified.is_empty());
+    }
+    assert_eq!(ModelCategory::default(), ModelCategory::Transcription);
+}
+
+
+#[test]
+fn per_category_metadata_populated() {
+    let mut info = ModelInfo {
+        id: "m".into(),
+        name: "m".into(),
+        description: String::new(),
+        filename: "m.bin".into(),
+        url: None,
+        sha256: None,
+        size_mb: 0,
+        is_downloaded: false,
+        is_downloading: false,
+        partial_size: 0,
+        is_directory: false,
+        engine_type: EngineType::Whisper,
+        accuracy_score: 0.0,
+        speed_score: 0.0,
+        supports_translation: false,
+        is_recommended: false,
+        supported_languages: vec![],
+        supports_language_selection: false,
+        is_custom: false,
+        category: ModelCategory::Transcription,
+        transcription_metadata: Some(TranscriptionMetadata {
+            engine_type: EngineType::Whisper,
+            accuracy_score: 0.9,
+            speed_score: 0.5,
+            supports_translation: true,
+            supports_language_selection: true,
+            supported_languages: vec!["en".to_string()],
+        }),
+        llm_metadata: None,
+    };
+    assert!(info.transcription_metadata.is_some());
+    assert!(info.llm_metadata.is_none());
+
+    info.category = ModelCategory::PostProcessor;
+    info.transcription_metadata = None;
+    info.llm_metadata = Some(LlmMetadata {
+        quantization: "Q4_K_M".into(),
+        context_length: 8192,
+        recommended_ram_gb: 8,
+        prompt_template_id: Some("cleanup-v1".into()),
+    });
+    assert!(info.llm_metadata.is_some());
+    assert_eq!(info.llm_metadata.as_ref().unwrap().context_length, 8192);
+}
+
+#[test]
+fn legacy_model_info_json_roundtrips() {
+    // Legacy JSON lacks the two new optional blocks; it must deserialize
+    // with None for both and re-serialize with null (or omit when using
+    // skip_serializing_if, which we don't — so we accept null).
+    let legacy = r#"{
+        "id":"tiny",
+        "name":"Tiny",
+        "description":"",
+        "filename":"tiny.bin",
+        "url":null,
+        "sha256":null,
+        "size_mb":75,
+        "is_downloaded":false,
+        "is_downloading":false,
+        "partial_size":0,
+        "is_directory":false,
+        "engine_type":"Whisper",
+        "accuracy_score":0.5,
+        "speed_score":0.9,
+        "supports_translation":true,
+        "is_recommended":false,
+        "supported_languages":["en"],
+        "supports_language_selection":true,
+        "is_custom":false
+    }"#;
+    let parsed: ModelInfo = serde_json::from_str(legacy).expect("legacy JSON must deserialize");
+    assert!(parsed.transcription_metadata.is_none());
+    assert!(parsed.llm_metadata.is_none());
+    assert_eq!(parsed.category, ModelCategory::Transcription);
+    // Roundtrip: re-serialize, re-deserialize, values preserved.
+    let out = serde_json::to_string(&parsed).unwrap();
+    let roundtrip: ModelInfo = serde_json::from_str(&out).unwrap();
+    assert_eq!(roundtrip.id, "tiny");
+    assert!(roundtrip.llm_metadata.is_none());
 }

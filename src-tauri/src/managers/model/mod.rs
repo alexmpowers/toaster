@@ -14,8 +14,9 @@ mod catalog;
 mod download;
 mod hash;
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type, Default)]
 pub enum EngineType {
+    #[default]
     Whisper,
     Parakeet,
     Moonshine,
@@ -30,10 +31,29 @@ pub enum EngineType {
 pub enum ModelCategory {
     #[default]
     Transcription,
+    PostProcessor,
     System,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type, Default)]
+pub struct TranscriptionMetadata {
+    pub engine_type: EngineType,
+    pub accuracy_score: f32,
+    pub speed_score: f32,
+    pub supports_translation: bool,
+    pub supports_language_selection: bool,
+    pub supported_languages: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type, Default)]
+pub struct LlmMetadata {
+    pub quantization: String,
+    pub context_length: u32,
+    pub recommended_ram_gb: u32,
+    pub prompt_template_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type, Default)]
 pub struct ModelInfo {
     pub id: String,
     pub name: String,
@@ -56,6 +76,14 @@ pub struct ModelInfo {
     pub is_custom: bool,            // Whether this is a user-provided custom model
     #[serde(default)]
     pub category: ModelCategory,
+    /// Optional transcription-specific metadata block (PostProcessor entries leave None).
+    /// Legacy JSON without this field deserializes as None.
+    #[serde(default)]
+    pub transcription_metadata: Option<TranscriptionMetadata>,
+    /// Optional LLM/post-processor metadata block (Transcription entries leave None).
+    /// Legacy JSON without this field deserializes as None.
+    #[serde(default)]
+    pub llm_metadata: Option<LlmMetadata>,
 }
 
 impl ModelInfo {

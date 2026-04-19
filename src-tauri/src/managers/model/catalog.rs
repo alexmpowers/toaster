@@ -60,6 +60,8 @@ pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
             supports_language_selection: true,
             is_custom: false,
             category: ModelCategory::Transcription,
+            transcription_metadata: None,
+            llm_metadata: None,
         },
     );
 
@@ -89,6 +91,8 @@ pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
             supports_language_selection: true,
             is_custom: false,
             category: ModelCategory::Transcription,
+            transcription_metadata: None,
+            llm_metadata: None,
         },
     );
 
@@ -117,6 +121,8 @@ pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
             supports_language_selection: true,
             is_custom: false,
             category: ModelCategory::Transcription,
+            transcription_metadata: None,
+            llm_metadata: None,
         },
     );
 
@@ -145,6 +151,8 @@ pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
             supports_language_selection: true,
             is_custom: false,
             category: ModelCategory::Transcription,
+            transcription_metadata: None,
+            llm_metadata: None,
         },
     );
 
@@ -173,6 +181,8 @@ pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
             supports_language_selection: true,
             is_custom: false,
             category: ModelCategory::Transcription,
+            transcription_metadata: None,
+            llm_metadata: None,
         },
     );
 
@@ -202,6 +212,8 @@ pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
             supports_language_selection: false,
             is_custom: false,
             category: ModelCategory::Transcription,
+            transcription_metadata: None,
+            llm_metadata: None,
         },
     );
 
@@ -240,6 +252,8 @@ pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
             supports_language_selection: false,
             is_custom: false,
             category: ModelCategory::Transcription,
+            transcription_metadata: None,
+            llm_metadata: None,
         },
     );
 
@@ -268,6 +282,8 @@ pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
             supports_language_selection: false,
             is_custom: false,
             category: ModelCategory::Transcription,
+            transcription_metadata: None,
+            llm_metadata: None,
         },
     );
 
@@ -296,6 +312,8 @@ pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
             supports_language_selection: false,
             is_custom: false,
             category: ModelCategory::Transcription,
+            transcription_metadata: None,
+            llm_metadata: None,
         },
     );
 
@@ -326,6 +344,8 @@ pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
             supports_language_selection: false,
             is_custom: false,
             category: ModelCategory::Transcription,
+            transcription_metadata: None,
+            llm_metadata: None,
         },
     );
 
@@ -356,6 +376,8 @@ pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
             supports_language_selection: false,
             is_custom: false,
             category: ModelCategory::Transcription,
+            transcription_metadata: None,
+            llm_metadata: None,
         },
     );
 
@@ -391,6 +413,8 @@ pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
             supports_language_selection: true,
             is_custom: false,
             category: ModelCategory::Transcription,
+            transcription_metadata: None,
+            llm_metadata: None,
         },
     );
 
@@ -422,6 +446,8 @@ pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
             supports_language_selection: false,
             is_custom: false,
             category: ModelCategory::Transcription,
+            transcription_metadata: None,
+            llm_metadata: None,
         },
     );
 
@@ -457,6 +483,8 @@ pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
             supports_language_selection: true,
             is_custom: false,
             category: ModelCategory::Transcription,
+            transcription_metadata: None,
+            llm_metadata: None,
         },
     );
 
@@ -495,6 +523,8 @@ pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
             supports_language_selection: true,
             is_custom: false,
             category: ModelCategory::Transcription,
+            transcription_metadata: None,
+            llm_metadata: None,
         },
     );
 
@@ -531,6 +561,8 @@ pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
             supports_language_selection: true,
             is_custom: false,
             category: ModelCategory::Transcription,
+            transcription_metadata: None,
+            llm_metadata: None,
         },
     );
 
@@ -650,6 +682,8 @@ pub(super) fn discover_custom_whisper_models(
                 supports_language_selection: true,
                 is_custom: true,
                 category: ModelCategory::Transcription,
+                transcription_metadata: None,
+                llm_metadata: None,
             },
         );
     }
