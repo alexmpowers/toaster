@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, FileVideo, Download, Terminal } from "lucide-react";
+import { ChevronDown, Download } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import type { ExportFormat, MediaType } from "@/bindings";
 
@@ -85,30 +85,25 @@ const ExportMenu: React.FC<ExportMenuProps> = ({
           className="absolute right-0 top-full mt-1 z-20 w-56 rounded-lg border border-mid-gray/20 bg-background shadow-lg py-1"
         >
           <MenuItem
-            icon={<FileVideo size={14} />}
             label={editedLabel}
             disabled={isExportingMedia || !mediaType}
             onClick={() => dispatch(onExportEditedMedia)}
           />
           <div className="my-1 border-t border-mid-gray/10" />
           <MenuItem
-            icon={<Download size={14} />}
             label={t("editor.exportMenu.transcriptSrt")}
             onClick={() => dispatch(() => onExportTranscript("Srt"))}
           />
           <MenuItem
-            icon={<Download size={14} />}
             label={t("editor.exportMenu.transcriptVtt")}
             onClick={() => dispatch(() => onExportTranscript("Vtt"))}
           />
           <MenuItem
-            icon={<Download size={14} />}
             label={t("editor.exportMenu.transcriptScript")}
             onClick={() => dispatch(() => onExportTranscript("Script"))}
           />
           <div className="my-1 border-t border-mid-gray/10" />
           <MenuItem
-            icon={<Terminal size={14} />}
             label={t("editor.exportMenu.ffmpegScript")}
             onClick={() => dispatch(onExportFFmpegScript)}
           />
@@ -119,22 +114,20 @@ const ExportMenu: React.FC<ExportMenuProps> = ({
 };
 
 interface MenuItemProps {
-  icon: React.ReactNode;
   label: string;
   disabled?: boolean;
   onClick: () => void;
 }
 
-const MenuItem: React.FC<MenuItemProps> = ({ icon, label, disabled, onClick }) => (
+const MenuItem: React.FC<MenuItemProps> = ({ label, disabled, onClick }) => (
   <Button
     variant="ghost"
     size="sm"
     role="menuitem"
     onClick={onClick}
     disabled={disabled}
-    className="w-full !justify-start gap-2 !rounded-none !border-0 text-sm"
+    className="w-full !justify-start !rounded-none !border-0 text-sm"
   >
-    <span className="text-mid-gray">{icon}</span>
     {label}
   </Button>
 );

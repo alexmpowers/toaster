@@ -41,10 +41,10 @@ export const SliderWithInput: React.FC<SliderWithInputProps> = ({
   step = 1,
   suffix,
   onChange,
-  disabled,
+  disabled: _disabled,
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(String(value));
+  const [isEditing, setIsEditing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [localValue, setLocalValue] = useState(value);
 
@@ -52,9 +52,17 @@ export const SliderWithInput: React.FC<SliderWithInputProps> = ({
     if (!isDragging) setLocalValue(value);
   }, [value, isDragging]);
 
-  const handleCommit = () => {
-    const parsed = parseInt(editValue);
-    if (!isNaN(parsed)) onChange(Math.min(max, Math.max(min, parsed)));
+  useEffect(() => {
+    if (!isEditing) setEditValue(String(value));
+  }, [value, isEditing]);
+
+  const commit = (raw: string) => {
+    const parsed = parseInt(raw, 10);
+    if (!Number.isNaN(parsed)) {
+      onChange(Math.min(max, Math.max(min, parsed)));
+    } else {
+      setEditValue(String(value));
+    }
     setIsEditing(false);
   };
 
@@ -67,9 +75,6 @@ export const SliderWithInput: React.FC<SliderWithInputProps> = ({
   const handleDragStart = () => setIsDragging(true);
   const handleDragEnd = () => {
     setIsDragging(false);
-    // Live-drag already calls onChange on every change; commit once more
-    // only if a non-drag path (e.g. keyboard arrow on focused slider)
-    // changed localValue without hitting handleSliderChange's onChange.
     if (localValue !== value) onChange(localValue);
   };
 
@@ -93,11 +98,10 @@ export const SliderWithInput: React.FC<SliderWithInputProps> = ({
           }}
           onTouchStart={handleDragStart}
           onTouchEnd={handleDragEnd}
-          disabled={disabled}
           className="w-full cursor-pointer outline-none appearance-none"
           style={{
             background: `linear-gradient(to right, #E8A838 0%, #E8A838 ${pct}%, #d1d5db ${pct}%, #d1d5db 100%)`,
-            cursor: disabled ? "not-allowed" : "pointer",
+            cursor: "pointer",
             width: "100%",
             height: "6px",
             WebkitAppearance: "none",
@@ -105,47 +109,34 @@ export const SliderWithInput: React.FC<SliderWithInputProps> = ({
           }}
         />
       </div>
-      {isEditing ? (
-        <input
-          type="number"
-          inputMode="numeric"
-          min={min}
-          max={max}
-          step={step}
-          value={editValue}
-          onChange={(e) => {
-            const v = e.target.value;
-            if (/^\d*$/.test(v)) setEditValue(v);
-          }}
-          onBlur={handleCommit}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleCommit();
-            if (e.key === "Escape") setIsEditing(false);
-          }}
-          autoFocus
-          className="w-14 px-2 py-0.5 text-xs rounded border border-mid-gray/30 bg-background text-text font-mono text-right"
-        />
-      ) : (
-        <input
-          type="number"
-          min={min}
-          max={max}
-          step={step}
-          value={displayValue}
-          onChange={(e) => {
-            const n = parseInt(e.target.value, 10);
-            if (!Number.isNaN(n)) onChange(Math.max(min, Math.min(max, n)));
-          }}
-          onDoubleClick={() => {
-            setEditValue(String(displayValue));
-            setIsEditing(true);
-          }}
-          disabled={disabled}
-          className="w-14 px-2 py-0.5 text-xs rounded border border-mid-gray/30 bg-background text-text font-mono text-right cursor-text"
-          title="Type a value or double-click to focus-edit"
-          aria-label="Numeric value"
-        />
-      )}
+      <input
+        type="text"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        value={isEditing ? editValue : String(displayValue)}
+        onFocus={() => {
+          setEditValue(String(displayValue));
+          setIsEditing(true);
+        }}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (/^\d*$/.test(v)) setEditValue(v);
+        }}
+        onBlur={(e) => commit(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            commit((e.target as HTMLInputElement).value);
+            (e.target as HTMLInputElement).blur();
+          }
+          if (e.key === "Escape") {
+            setEditValue(String(value));
+            setIsEditing(false);
+            (e.target as HTMLInputElement).blur();
+          }
+        }}
+        className="w-14 px-2 py-0.5 text-xs rounded border border-mid-gray/30 bg-background text-text font-mono text-right cursor-text"
+        aria-label="Numeric value"
+      />
       {suffix && (
         <span className="text-xs text-mid-gray select-none">{suffix}</span>
       )}
