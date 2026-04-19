@@ -265,7 +265,7 @@ mod tests {
 
     fn silence(samples: &mut Vec<f32>, sr: u32, dur_ms: u32) {
         let n = (sr as u64 * dur_ms as u64 / 1000) as usize;
-        samples.extend(std::iter::repeat(0.0).take(n));
+        samples.extend(std::iter::repeat_n(0.0, n));
     }
 
     #[test]

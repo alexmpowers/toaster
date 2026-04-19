@@ -208,7 +208,6 @@ mod tests;
 ///
 /// Add a `seam_rms_at_boundary(samples, cut_sample, window_samples) -> f32`
 /// helper and assert `seam_rms < 0.05 * peak_rms` for each cut.
-
 #[cfg(test)]
 #[path = "precision_benchmarks.rs"]
 mod precision_benchmarks;

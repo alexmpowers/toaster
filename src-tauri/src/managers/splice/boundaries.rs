@@ -66,7 +66,7 @@ pub fn snap_to_zero_crossing(
         let crosses = (a <= 0.0 && b > 0.0) || (a >= 0.0 && b < 0.0) || a == 0.0;
         if crosses {
             let dist = (i as i64 - target_sample).abs();
-            if best.map_or(true, |(d, _)| dist < d) {
+            if best.is_none_or(|(d, _)| dist < d) {
                 best = Some((dist, i as i64));
             }
         }
@@ -297,7 +297,7 @@ mod tests {
         // 16 kHz, 1 s buffer. Loud sine from 0..8000, silence from 8000..16000.
         let sr = 16_000u32;
         let mut buf = sine(100.0, sr, 8_000, 0.8);
-        buf.extend(std::iter::repeat(0.0f32).take(8_000));
+        buf.extend(std::iter::repeat_n(0.0f32, 8_000));
         // Target right at the boundary sample index 8000 → 500_000 us.
         // With a 20 ms energy radius (±320 samples), the valley should
         // land inside the silent region (index > 8000).
@@ -339,7 +339,7 @@ mod tests {
     fn energy_biased_segments_preserve_non_overlap() {
         let sr = 16_000u32;
         let mut buf = sine(80.0, sr, 8_000, 0.7);
-        buf.extend(std::iter::repeat(0.0f32).take(4_000));
+        buf.extend(std::iter::repeat_n(0.0f32, 4_000));
         buf.extend(sine(80.0, sr, 4_000, 0.7));
         let input = vec![(100_000, 450_000), (550_000, 900_000)];
         let out = snap_segments_energy_biased(&input, &buf, sr, 20_000, 5_000);

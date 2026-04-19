@@ -382,7 +382,6 @@ impl ModelManager {
 
     /// Discover custom Whisper models (.bin files) in the models directory.
     /// Skips files that match predefined model filenames.
-
     pub fn delete_model(&self, model_id: &str) -> Result<()> {
         debug!("ModelManager: delete_model called for: {}", model_id);
 

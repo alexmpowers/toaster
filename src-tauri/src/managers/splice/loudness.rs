@@ -20,10 +20,11 @@ use specta::Type;
 /// frontend only stores/sends this enum and never builds a filter
 /// string itself (AGENTS.md "Single source of truth for dual-path
 /// logic"). See `build_loudnorm_filter` for the mapping.
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum LoudnessTarget {
     /// No `loudnorm` filter is emitted; export passes audio through.
+    #[default]
     Off,
     /// Podcast / broadcast preset: integrated -16 LUFS.
     #[serde(rename = "podcast_-16")]
@@ -31,12 +32,6 @@ pub enum LoudnessTarget {
     /// Streaming preset (Spotify/YouTube-friendly): integrated -14 LUFS.
     #[serde(rename = "streaming_-14")]
     StreamingMinus14,
-}
-
-impl Default for LoudnessTarget {
-    fn default() -> Self {
-        Self::Off
-    }
 }
 
 impl LoudnessTarget {
@@ -336,7 +331,7 @@ mod tests {
 
         // Silent buffer: delta_lu must be None even when target is set
         // (we cannot meaningfully subtract from -inf).
-        let silent = vec![0.0f32; (sr as usize) * 1];
+        let silent = vec![0.0f32; sr as usize];
         let silent_dto = compute_loudness_preflight(&silent, sr, 1, LoudnessTarget::PodcastMinus16)
             .expect("preflight silent");
         assert!(silent_dto.integrated_lufs.is_infinite());

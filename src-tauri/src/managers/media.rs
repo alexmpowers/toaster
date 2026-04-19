@@ -39,6 +39,12 @@ pub struct MediaState {
     current: Option<MediaInfo>,
 }
 
+impl Default for MediaState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MediaState {
     pub fn new() -> Self {
         Self { current: None }

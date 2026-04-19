@@ -18,6 +18,12 @@ pub struct EditorState {
     timeline_revision: u64,
 }
 
+impl Default for EditorState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl EditorState {
     /// Create an empty editor.
     pub fn new() -> Self {
