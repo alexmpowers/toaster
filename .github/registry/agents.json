@@ -10,7 +10,7 @@
     },
     {
       "name": "eval-harness-runner",
-      "description": "Use to run the Toaster precision / boundary / export evals with one command and produce a pass/fail JSON consumable by CI. Wraps scripts/eval/eval-edit-quality.ps1, scripts/eval/eval-audio-boundary.ps1, and the cargo precision test.",
+      "description": "Use to run the Toaster precision / boundary / export evals with one command and produce a pass/fail JSON consumable by CI. Wraps scripts/eval/eval-edit-quality.ps1, scripts/eval/eval-audio-boundary.ps1, scripts/eval/eval-caption-parity.ps1, and the cargo precision test.",
       "path": ".github/agents/eval-harness-runner.agent.md"
     },
     {

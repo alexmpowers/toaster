@@ -1,6 +1,6 @@
 ---
 name: eval-harness-runner
-description: 'Use to run the Toaster precision / boundary / export evals with one command and produce a pass/fail JSON consumable by CI. Wraps scripts/eval/eval-edit-quality.ps1, scripts/eval/eval-audio-boundary.ps1, and the cargo precision test.'
+description: 'Use to run the Toaster precision / boundary / export evals with one command and produce a pass/fail JSON consumable by CI. Wraps scripts/eval/eval-edit-quality.ps1, scripts/eval/eval-audio-boundary.ps1, scripts/eval/eval-caption-parity.ps1, and the cargo precision test.'
 model: GPT-4.1 (copilot)
 tools:
   - execute/runInTerminal
@@ -49,7 +49,25 @@ Runs the five sample-resolution gates (leak xcorr, seam z-score, preview↔expor
 
 Record: pass/fail per fixture, worst-seam metrics, fixture variant.
 
-### 4. Export parity
+### 4. Caption-parity eval
+
+```powershell
+pwsh scripts/eval/eval-caption-parity.ps1
+```
+
+Runs the three caption-parity fixtures under
+`eval/caption-parity/fixtures/` through the authoritative
+`build_blocks` + `compute_caption_layout` + `blocks_to_ass` path,
+snapshots geometry + timing + ASS output against `expected.json`,
+and asserts preview↔export parity within 1 px geometry and
+1 sample @ 48 kHz (21 us) timing. Headless.
+
+Record: pass/fail per fixture, diff count, negative-test proof
+via `-ForceDrift` when requested.
+
+### 5. Export parity
+
+### 5. Export parity
 
 ```powershell
 pwsh scripts/eval/eval-edit-quality.ps1 `
@@ -60,7 +78,7 @@ pwsh scripts/eval/eval-edit-quality.ps1 `
 
 Compare the JSON against `tests/fixtures/edit-quality.baseline.json` (when available). Record per-metric delta.
 
-### 5. Local LLM gate (optional)
+### 6. Local LLM gate (optional)
 
 ```powershell
 pwsh scripts/eval/run-local-llm-eval-gate.ps1
@@ -94,6 +112,11 @@ Produce `eval-harness-report.json` with the shape:
       "name": "audio_boundary",
       "status": "pass|fail|skip|error",
       "details": { "fixtures": ["phrase_01", "multicut_01"], "failed_gates": [] }
+    },
+    {
+      "name": "caption_parity",
+      "status": "pass|fail|skip|error",
+      "details": { "fixtures": ["single_line_01", "multi_line_wrap_01", "rapid_fire_01"], "diff_count": 0 }
     },
     {
       "name": "export_parity",

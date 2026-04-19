@@ -1,0 +1,279 @@
+{
+  "id": "rapid_fire_01",
+  "preview_scale_factor": 0.5,
+  "layout": {
+    "margin_v_px": 972,
+    "margin_h_px": 96,
+    "box_width_px": 1728,
+    "font_size_px": 48,
+    "padding_x_px": 16,
+    "padding_y_px": 8,
+    "radius_px": 8,
+    "bg_rgba": [
+      0,
+      0,
+      0,
+      179
+    ],
+    "fg_rgba": [
+      255,
+      255,
+      255,
+      255
+    ],
+    "font_family": "Inter",
+    "frame_width": 1920,
+    "frame_height": 1080
+  },
+  "blocks": [
+    {
+      "index": 1,
+      "start_us": 0,
+      "end_us": 380000,
+      "lines": [
+        "one"
+      ],
+      "font_css": "Inter, system-ui, sans-serif",
+      "font_ass_name": "Inter",
+      "font_size_px": 48,
+      "text_color": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "background": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 179
+      },
+      "padding_x_px": 16,
+      "padding_y_px": 8,
+      "radius_px": 8,
+      "margin_v_px": 108,
+      "text_width_px": 86,
+      "line_height_px": 59,
+      "frame_width": 1920,
+      "frame_height": 1080
+    },
+    {
+      "index": 2,
+      "start_us": 500000,
+      "end_us": 880000,
+      "lines": [
+        "two"
+      ],
+      "font_css": "Inter, system-ui, sans-serif",
+      "font_ass_name": "Inter",
+      "font_size_px": 48,
+      "text_color": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "background": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 179
+      },
+      "padding_x_px": 16,
+      "padding_y_px": 8,
+      "radius_px": 8,
+      "margin_v_px": 108,
+      "text_width_px": 84,
+      "line_height_px": 59,
+      "frame_width": 1920,
+      "frame_height": 1080
+    },
+    {
+      "index": 3,
+      "start_us": 1000000,
+      "end_us": 1380000,
+      "lines": [
+        "three"
+      ],
+      "font_css": "Inter, system-ui, sans-serif",
+      "font_ass_name": "Inter",
+      "font_size_px": 48,
+      "text_color": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "background": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 179
+      },
+      "padding_x_px": 16,
+      "padding_y_px": 8,
+      "radius_px": 8,
+      "margin_v_px": 108,
+      "text_width_px": 119,
+      "line_height_px": 59,
+      "frame_width": 1920,
+      "frame_height": 1080
+    },
+    {
+      "index": 4,
+      "start_us": 1500000,
+      "end_us": 1880000,
+      "lines": [
+        "four"
+      ],
+      "font_css": "Inter, system-ui, sans-serif",
+      "font_ass_name": "Inter",
+      "font_size_px": 48,
+      "text_color": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "background": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 179
+      },
+      "padding_x_px": 16,
+      "padding_y_px": 8,
+      "radius_px": 8,
+      "margin_v_px": 108,
+      "text_width_px": 93,
+      "line_height_px": 59,
+      "frame_width": 1920,
+      "frame_height": 1080
+    },
+    {
+      "index": 5,
+      "start_us": 2000000,
+      "end_us": 2380000,
+      "lines": [
+        "five"
+      ],
+      "font_css": "Inter, system-ui, sans-serif",
+      "font_ass_name": "Inter",
+      "font_size_px": 48,
+      "text_color": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "background": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 179
+      },
+      "padding_x_px": 16,
+      "padding_y_px": 8,
+      "radius_px": 8,
+      "margin_v_px": 108,
+      "text_width_px": 85,
+      "line_height_px": 59,
+      "frame_width": 1920,
+      "frame_height": 1080
+    },
+    {
+      "index": 6,
+      "start_us": 2500000,
+      "end_us": 2880000,
+      "lines": [
+        "six"
+      ],
+      "font_css": "Inter, system-ui, sans-serif",
+      "font_ass_name": "Inter",
+      "font_size_px": 48,
+      "text_color": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "background": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 179
+      },
+      "padding_x_px": 16,
+      "padding_y_px": 8,
+      "radius_px": 8,
+      "margin_v_px": 108,
+      "text_width_px": 64,
+      "line_height_px": 59,
+      "frame_width": 1920,
+      "frame_height": 1080
+    },
+    {
+      "index": 7,
+      "start_us": 3000000,
+      "end_us": 3380000,
+      "lines": [
+        "seven"
+      ],
+      "font_css": "Inter, system-ui, sans-serif",
+      "font_ass_name": "Inter",
+      "font_size_px": 48,
+      "text_color": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "background": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 179
+      },
+      "padding_x_px": 16,
+      "padding_y_px": 8,
+      "radius_px": 8,
+      "margin_v_px": 108,
+      "text_width_px": 137,
+      "line_height_px": 59,
+      "frame_width": 1920,
+      "frame_height": 1080
+    },
+    {
+      "index": 8,
+      "start_us": 3500000,
+      "end_us": 3880000,
+      "lines": [
+        "eight"
+      ],
+      "font_css": "Inter, system-ui, sans-serif",
+      "font_ass_name": "Inter",
+      "font_size_px": 48,
+      "text_color": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "background": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 179
+      },
+      "padding_x_px": 16,
+      "padding_y_px": 8,
+      "radius_px": 8,
+      "margin_v_px": 108,
+      "text_width_px": 114,
+      "line_height_px": 59,
+      "frame_width": 1920,
+      "frame_height": 1080
+    }
+  ],
+  "ass": "[Script Info]\nScriptType: v4.00+\nWrapStyle: 2\nScaledBorderAndShadow: yes\nPlayResX: 1920\nPlayResY: 1080\n\n[V4+ Styles]\nFormat: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding\nStyle: Default,Inter,48,&H00FFFFFF,&H000000FF,&H4C000000,&H00000000,0,0,0,0,100,100,0,0,3,16,0,2,0,0,0,1\n\n[Events]\nFormat: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text\nDialogue: 0,0:00:00.00,0:00:00.38,Default,,0,0,108,,one\nDialogue: 0,0:00:00.50,0:00:00.88,Default,,0,0,108,,two\nDialogue: 0,0:00:01.00,0:00:01.38,Default,,0,0,108,,three\nDialogue: 0,0:00:01.50,0:00:01.88,Default,,0,0,108,,four\nDialogue: 0,0:00:02.00,0:00:02.38,Default,,0,0,108,,five\nDialogue: 0,0:00:02.50,0:00:02.88,Default,,0,0,108,,six\nDialogue: 0,0:00:03.00,0:00:03.38,Default,,0,0,108,,seven\nDialogue: 0,0:00:03.50,0:00:03.88,Default,,0,0,108,,eight\n"
+}
