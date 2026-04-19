@@ -261,22 +261,6 @@ async changeExportFadeOutMsSetting(fadeOutMs: number) : Promise<Result<null, str
     else return { status: "error", error: e as string };
 }
 },
-async changeExportFormatVideoSetting(format: AudioExportFormat) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_export_format_video_setting", { format }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e as string };
-}
-},
-async changeExportFormatAudioSetting(format: AudioExportFormat) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_export_format_audio_setting", { format }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e as string };
-}
-},
 async changeAppLanguageSetting(language: string) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_app_language_setting", { language }) };
@@ -1088,18 +1072,7 @@ experimental_enabled?: boolean; lazy_stream_close?: boolean; custom_filler_words
  * `normalize_audio_on_export` migrates to `PodcastMinus16` via
  * `settings::migrate_loudness_setting`.
  */
-loudness_target?: LoudnessTarget; export_volume_db?: number; export_fade_in_ms?: number; export_fade_out_ms?: number; 
-/**
- * Audio-only export format preset. Default `Mp4` preserves
- * current behavior (H.264 video + AAC audio in mp4). The four
- * audio-only variants drop the video stream and re-mux the
- * post-edit audio per
- * `crate::commands::waveform::export_format_codec_map` —
- * frontend only stores the enum and never builds `-c:a` /
- * `-b:a` strings (AGENTS.md "Single source of truth for
- * dual-path logic").
- */
-export_format_video?: AudioExportFormat; export_format_audio?: AudioExportFormat; caption_font_size?: number; caption_bg_color?: string; caption_text_color?: string; caption_position?: number; caption_font_family?: CaptionFontFamily; caption_radius_px?: number; caption_padding_x_px?: number; caption_padding_y_px?: number; caption_max_width_percent?: number; 
+loudness_target?: LoudnessTarget; export_volume_db?: number; export_fade_in_ms?: number; export_fade_out_ms?: number; caption_font_size?: number; caption_bg_color?: string; caption_text_color?: string; caption_position?: number; caption_font_family?: CaptionFontFamily; caption_radius_px?: number; caption_padding_x_px?: number; caption_padding_y_px?: number; caption_max_width_percent?: number; 
 /**
  * Per-orientation caption profiles. Slice B single-source-of-truth
  * for caption geometry — preview and export both read through
@@ -1133,7 +1106,7 @@ export type AudioDevice = { index: string; name: string; is_default: boolean }
  * Serialized lowercase per PRD R-001 / data model:
  * `"mp4" | "mp3" | "wav" | "m4a" | "opus"`.
  */
-export type AudioExportFormat = "mp4" | "mp3" | "wav" | "m4a" | "opus"
+export type AudioExportFormat = "mp4" | "mov" | "mkv" | "mp3" | "wav" | "m4a" | "opus"
 export type AvailableAccelerators = { whisper: string[]; ort: string[]; gpu_devices: GpuDeviceOption[] }
 /**
  * Authoritative caption unit consumed verbatim by preview and export.

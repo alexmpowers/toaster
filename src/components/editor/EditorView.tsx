@@ -83,7 +83,8 @@ const EditorView: React.FC = () => {
     handleFFmpegScript,
     handleExportEditedMedia,
     isExportingMedia,
-  } = useEditorExports({ mediaInfo, settings, burnCaptions });
+    allowedFormats,
+  } = useEditorExports({ mediaInfo, burnCaptions });
   // Suppress auto-select briefly after a manual word click so it doesn't get overridden
   const manualClickRef = React.useRef(false);
 
@@ -423,6 +424,7 @@ const EditorView: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <ExportMenu
                     mediaType={mediaInfo?.media_type ?? null}
+                    allowedFormats={allowedFormats}
                     disabled={words.length === 0 || isExportingMedia}
                     isExportingMedia={isExportingMedia}
                     onExportEditedMedia={handleExportEditedMedia}

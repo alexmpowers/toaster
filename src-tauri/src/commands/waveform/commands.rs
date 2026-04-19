@@ -435,16 +435,16 @@ pub async fn export_edited_media(
 
     let settings = crate::settings::get_settings(&app);
     // Per-invocation override wins over settings (PRD R-001); falls
-    // back to the settings default when the frontend passes None.
-    // Pick the default format based on whether the source media carries
-    // a video stream. Video sources fall back to `export_format_video`
-    // (typically Mp4); audio-only sources fall back to
-    // `export_format_audio` (typically Wav). Per-invocation
-    // `format_override` still wins when supplied.
+    // back to a source-type-dependent default when the frontend passes
+    // None. Video sources default to Mp4 (H.264/AAC container), audio-
+    // only sources default to Wav (PCM). Round-8 removed the user-
+    // configurable `export_format_video` / `export_format_audio`
+    // settings — the Editor's per-project format picker is the only
+    // way to deviate from these defaults.
     let default_format = if has_video {
-        settings.export_format_video
+        crate::commands::waveform::AudioExportFormat::Mp4
     } else {
-        settings.export_format_audio
+        crate::commands::waveform::AudioExportFormat::Wav
     };
     let export_format = format_override.unwrap_or(default_format);
     let ass_temp_path = if burn_captions.unwrap_or(false)

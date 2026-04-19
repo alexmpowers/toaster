@@ -4,7 +4,6 @@ import { save } from "@tauri-apps/plugin-dialog";
 import {
   commands,
   type AllowedExportFormat,
-  type AppSettings,
   type AudioExportFormat,
   type ExportFormat,
   type MediaInfo,
@@ -13,7 +12,6 @@ import { unwrapResult } from "@/components/editor/EditorView.util";
 
 interface UseEditorExportsArgs {
   mediaInfo: MediaInfo | null;
-  settings: AppSettings | null;
   burnCaptions: boolean;
 }
 
@@ -22,13 +20,16 @@ interface UseEditorExportsArgs {
  * (transcript / edited media / FFmpeg script) and the effect that keeps
  * `allowedFormats` in sync with the loaded media.
  *
- * Round-6 Phase D: the per-project format override was removed. The
- * backend now selects a default based on the source MediaType and the
- * two settings fields `export_format_video` / `export_format_audio`.
+ * Round-8: the two persisted `export_format_video` /
+ * `export_format_audio` settings were removed. Format choice is now a
+ * per-project parameter carried by the `ExportMenu` popover — each
+ * allowed format has its own menu row and passes its own format
+ * override to `commands.exportEditedMedia`. `defaultExportFormat` is
+ * still returned for fallback-path consumers (save-dialog extension
+ * hint when caller did not specify a format explicitly).
  */
 export function useEditorExports({
   mediaInfo,
-  settings,
   burnCaptions,
 }: UseEditorExportsArgs) {
   const { t } = useTranslation();
@@ -58,10 +59,10 @@ export function useEditorExports({
     };
   }, [mediaInfo]);
 
+  // Source-type fallback when the caller passes null — matches the
+  // backend's own default-selection in `export_edited_media`.
   const defaultExportFormat: AudioExportFormat =
-    mediaInfo?.media_type === "Video"
-      ? (settings?.export_format_video ?? "mp4")
-      : (settings?.export_format_audio ?? "wav");
+    mediaInfo?.media_type === "Video" ? "mp4" : "wav";
 
   const handleExport = useCallback(async (format: ExportFormat) => {
     const ext = format === "Srt" ? "srt" : format === "Vtt" ? "vtt" : "txt";
@@ -91,46 +92,47 @@ export function useEditorExports({
     }
   }, [mediaInfo]);
 
-  const handleExportEditedMedia = useCallback(async () => {
-    if (!mediaInfo) return;
+  const handleExportEditedMedia = useCallback(
+    async (format: AudioExportFormat) => {
+      if (!mediaInfo) return;
 
-    const allowedMatch = allowedFormats.find(
-      (f) => f.format === defaultExportFormat,
-    );
-    const extension = (
-      allowedMatch?.extension.replace(/^\./, "") ?? defaultExportFormat
-    ).toLowerCase();
-    const baseName = mediaInfo.file_name.replace(/\.[^/.]+$/, "");
+      const allowedMatch = allowedFormats.find((f) => f.format === format);
+      const extension = (
+        allowedMatch?.extension.replace(/^\./, "") ?? format
+      ).toLowerCase();
+      const baseName = mediaInfo.file_name.replace(/\.[^/.]+$/, "");
 
-    try {
-      const filePath = await save({
-        filters: [
-          {
-            name:
-              mediaInfo.media_type === "Video"
-                ? t("editor.editedVideo")
-                : t("editor.editedAudio"),
-            extensions: [extension],
-          },
-        ],
-        defaultPath: `${baseName}-edited.${extension}`,
-      });
-      if (!filePath) return;
-      setIsExportingMedia(true);
-      unwrapResult(
-        await commands.exportEditedMedia(
-          mediaInfo.path,
-          filePath,
-          burnCaptions || null,
-          null,
-        ),
-      );
-    } catch (err) {
-      console.error("Edited media export failed:", err);
-    } finally {
-      setIsExportingMedia(false);
-    }
-  }, [mediaInfo, t, burnCaptions, defaultExportFormat, allowedFormats]);
+      try {
+        const filePath = await save({
+          filters: [
+            {
+              name:
+                mediaInfo.media_type === "Video"
+                  ? t("editor.editedVideo")
+                  : t("editor.editedAudio"),
+              extensions: [extension],
+            },
+          ],
+          defaultPath: `${baseName}-edited.${extension}`,
+        });
+        if (!filePath) return;
+        setIsExportingMedia(true);
+        unwrapResult(
+          await commands.exportEditedMedia(
+            mediaInfo.path,
+            filePath,
+            burnCaptions || null,
+            format,
+          ),
+        );
+      } catch (err) {
+        console.error("Edited media export failed:", err);
+      } finally {
+        setIsExportingMedia(false);
+      }
+    },
+    [mediaInfo, t, burnCaptions, allowedFormats],
+  );
 
   return {
     handleExport,

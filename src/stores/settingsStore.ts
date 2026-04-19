@@ -4,7 +4,6 @@ import { listen } from "@tauri-apps/api/event";
 import type {
   AppSettings as Settings,
   AudioDevice,
-  AudioExportFormat,
   CaptionFontFamily,
   CaptionProfileSet,
   LogLevel,
@@ -119,10 +118,6 @@ const settingUpdaters: {
     commands.changeExportFadeInMsSetting(value as number),
   export_fade_out_ms: (value) =>
     commands.changeExportFadeOutMsSetting(value as number),
-  export_format_video: (value) =>
-    commands.changeExportFormatVideoSetting(value as AudioExportFormat),
-  export_format_audio: (value) =>
-    commands.changeExportFormatAudioSetting(value as AudioExportFormat),
   caption_font_size: (value) =>
     commands.changeCaptionFontSizeSetting(value as number),
   caption_bg_color: (value) =>

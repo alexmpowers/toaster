@@ -454,40 +454,6 @@
             "description": "Spotify / YouTube preset. Targets -14 LUFS integrated."
           }
         }
-      },
-      "formatVideo": {
-        "title": "Video output format",
-        "label": "Video output format",
-        "description": "Default format for source media that contains a video stream. Used when no per-export override is set.",
-        "options": {
-          "mp4": {
-            "label": "Video (mp4)",
-            "description": "Edited video with H.264 video and AAC audio in an mp4 container. Default."
-          }
-        }
-      },
-      "formatAudio": {
-        "title": "Audio output format",
-        "label": "Audio output format",
-        "description": "Default format for audio-only source media. Used when no per-export override is set.",
-        "options": {
-          "mp3": {
-            "label": "Audio - mp3",
-            "description": "Audio-only mp3 (libmp3lame) at 192 kbps. Most universally compatible audio format."
-          },
-          "wav": {
-            "label": "Audio - wav",
-            "description": "Uncompressed 16-bit PCM in a wav container. Largest file; lossless."
-          },
-          "m4a": {
-            "label": "Audio - m4a",
-            "description": "AAC audio in an m4a (audio-only mp4) container at 192 kbps. Good for Apple devices."
-          },
-          "opus": {
-            "label": "Audio - opus",
-            "description": "Opus audio (libopus) at 128 kbps. Best quality per bit; modern codec."
-          }
-        }
       }
     },
     "advanced": {
@@ -690,12 +656,20 @@
     "normalizeAudioDescription": "Normalize loudness to the target LUFS on export.",
     "exportMenu": {
       "trigger": "Export",
-      "editedVideo": "Edited Video",
-      "editedAudio": "Edited Audio",
       "transcriptSrt": "Transcript (SRT)",
       "transcriptVtt": "Transcript (VTT)",
       "transcriptScript": "Transcript (Script)",
-      "ffmpegScript": "FFmpeg script"
+      "ffmpegScript": "FFmpeg script",
+      "editedAs": "Export as {{format}}",
+      "formats": {
+        "mp4": "MP4 video",
+        "mov": "MOV video",
+        "mkv": "MKV video",
+        "mp3": "MP3 audio",
+        "wav": "WAV audio",
+        "m4a": "M4A audio",
+        "opus": "Opus audio"
+      }
     }
   },
   "experiments": {

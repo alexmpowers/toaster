@@ -289,18 +289,12 @@ pub struct AppSettings {
     pub export_fade_in_ms: u32,
     #[serde(default)]
     pub export_fade_out_ms: u32,
-    /// Default export format when the source media has a video stream.
     /// Consumed by `export_edited_media` when no per-invocation override
-    /// is supplied. Typically `Mp4`; users may select any audio-only
-    /// format here to force audio-extract from video sources by default.
-    #[serde(default = "default_export_format_video", alias = "export_format")]
-    pub export_format_video: crate::commands::waveform::AudioExportFormat,
-    /// Default export format when the source media is audio-only.
-    /// Frontend-side guards prevent selecting `Mp4` here (video formats
-    /// make no sense for audio-only sources); the backend defensively
-    /// falls through to `Wav` if an invalid value is ever persisted.
-    #[serde(default = "default_export_format_audio")]
-    pub export_format_audio: crate::commands::waveform::AudioExportFormat,
+    /// is supplied (Round-8: the user-facing format picker moved from
+    /// Settings → Advanced → Export into the Editor's per-project
+    /// ExportMenu; the two persisted settings fields were removed and
+    /// hard-coded defaults now fall back to Mp4 for video sources and
+    /// Wav for audio-only sources inside `export_edited_media`).
     #[serde(default = "default_caption_font_size")]
     pub caption_font_size: u32,
     #[serde(default = "default_caption_bg_color")]

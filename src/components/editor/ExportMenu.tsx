@@ -1,13 +1,19 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, Download } from "lucide-react";
-import type { ExportFormat, MediaType } from "@/bindings";
+import type {
+  AllowedExportFormat,
+  AudioExportFormat,
+  ExportFormat,
+  MediaType,
+} from "@/bindings";
 
 interface ExportMenuProps {
   mediaType: MediaType | null;
+  allowedFormats: AllowedExportFormat[];
   disabled?: boolean;
   isExportingMedia?: boolean;
-  onExportEditedMedia: () => void;
+  onExportEditedMedia: (format: AudioExportFormat) => void;
   onExportTranscript: (format: ExportFormat) => void;
   onExportFFmpegScript: () => void;
 }
@@ -17,11 +23,16 @@ interface ExportMenuProps {
  * four-location export UI (header [Export] button + EditorToolbar
  * SRT/VTT/Script buttons + FFmpeg script button).
  *
- * Popover lists every available export path; the trigger button is
- * always [Export ▼] so users have exactly one place to look.
+ * Round-8: the popover now lists **one row per allowed export
+ * format** for the loaded media (MP4/MOV/MKV for video sources; MP3/
+ * WAV/M4A/Opus for audio sources) instead of a single "Edited video/
+ * audio" row backed by a persisted default setting. The trigger
+ * button uses the brand orange with black text so the export action
+ * visually catches the eye alongside the other primary CTAs.
  */
 const ExportMenu: React.FC<ExportMenuProps> = ({
   mediaType,
+  allowedFormats,
   disabled,
   isExportingMedia,
   onExportEditedMedia,
@@ -56,10 +67,8 @@ const ExportMenu: React.FC<ExportMenuProps> = ({
     action();
   };
 
-  const editedLabel =
-    mediaType === "Video"
-      ? t("editor.exportMenu.editedVideo")
-      : t("editor.exportMenu.editedAudio");
+  const formatLabel = (format: AudioExportFormat): string =>
+    t(`editor.exportMenu.formats.${format}`);
 
   return (
     <div ref={containerRef} className="relative inline-flex">
@@ -71,8 +80,8 @@ const ExportMenu: React.FC<ExportMenuProps> = ({
         aria-expanded={open}
         className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
           open
-            ? "bg-logo-primary/20 text-text"
-            : "bg-mid-gray/10 text-text/60 hover:bg-mid-gray/20"
+            ? "bg-logo-primary/90 text-black"
+            : "bg-logo-primary text-black hover:bg-logo-primary/90"
         }`}
       >
         <Download className="w-3.5 h-3.5" />
@@ -92,12 +101,23 @@ const ExportMenu: React.FC<ExportMenuProps> = ({
           role="menu"
           className="absolute top-full right-0 mt-1 w-56 bg-background border border-mid-gray/80 rounded-lg shadow-lg z-50 overflow-hidden"
         >
-          <MenuItem
-            label={editedLabel}
-            disabled={isExportingMedia || !mediaType}
-            onClick={() => dispatch(onExportEditedMedia)}
-          />
-          <div className="border-t border-mid-gray/20" />
+          {allowedFormats.length > 0 && (
+            <>
+              {allowedFormats.map((row) => (
+                <MenuItem
+                  key={row.format}
+                  label={t("editor.exportMenu.editedAs", {
+                    format: formatLabel(row.format),
+                  })}
+                  disabled={isExportingMedia || !mediaType}
+                  onClick={() =>
+                    dispatch(() => onExportEditedMedia(row.format))
+                  }
+                />
+              ))}
+              <div className="border-t border-mid-gray/20" />
+            </>
+          )}
           <MenuItem
             label={t("editor.exportMenu.transcriptSrt")}
             onClick={() => dispatch(() => onExportTranscript("Srt"))}
