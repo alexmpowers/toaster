@@ -11,13 +11,15 @@ import { ModelSelect } from "../post-processing-api/ModelSelect";
 import { usePostProcessProviderState } from "../post-processing-api/usePostProcessProviderState";
 import { Button } from "../../ui/Button";
 import { Alert } from "../../ui/Alert";
-import { LlmModelCatalog } from "./local-models/LlmModelCatalog";
+import { ModelsSettings } from "../models/ModelsSettings";
+import { useSettingsNavStore } from "../../../stores/settingsNavStore";
 import { useSettings } from "../../../hooks/useSettings";
 
 const LOCAL_GGUF_PROVIDER_ID = "local";
 
 export const PostProcessingSettings: React.FC = () => {
   const { t } = useTranslation();
+  const navigateToModels = useSettingsNavStore((s) => s.navigateToModels);
   const {
     providerOptions,
     selectedProviderId,
@@ -87,7 +89,18 @@ export const PostProcessingSettings: React.FC = () => {
             grouped={true}
             layout="stacked"
           >
-            <LlmModelCatalog />
+            <div className="space-y-3">
+              <ModelsSettings lockedCategory="PostProcessor" />
+              <div className="flex justify-end">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => navigateToModels("PostProcessor")}
+                >
+                  {t("settings.postProcessing.manageModelsLink")}
+                </Button>
+              </div>
+            </div>
           </SettingContainer>
         ) : (
           <>
