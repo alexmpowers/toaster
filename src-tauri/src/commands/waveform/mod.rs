@@ -1,7 +1,6 @@
-use log::{debug, warn};
+use log::warn;
 use std::path::Path;
 use std::time::Duration;
-use tauri::AppHandle;
 
 use crate::managers::editor::{EditorState, TimingContractSnapshot};
 use crate::managers::splice::boundaries::{
@@ -296,14 +295,6 @@ fn append_silence_gate(filter: &mut String, edit_ranges: &[(i64, i64)]) {
 ///
 /// Uses the timing contract snapshot as the source of truth and normalizes
 /// bounds/order so preview and export consume identical segment semantics.
-fn settings_experimental_simplify_mode_enabled(app: &AppHandle) -> bool {
-    let settings = crate::settings::get_settings(app);
-    crate::settings::is_experiment_enabled(
-        &settings,
-        crate::settings::ExperimentKey::SimplifyMode,
-    )
-}
-
 fn contract_keep_segments_for_media(snapshot: &TimingContractSnapshot) -> Vec<(i64, i64)> {
     if snapshot.keep_segments_valid {
         snapshot
@@ -328,10 +319,9 @@ fn contract_keep_segments_for_media(snapshot: &TimingContractSnapshot) -> Vec<(i
 fn select_raw_keep_segments_for_media(
     snapshot: &TimingContractSnapshot,
     legacy_segments: &[(i64, i64)],
-    experimental_simplify_mode: bool,
 ) -> Vec<(i64, i64)> {
     let mut raw = contract_keep_segments_for_media(snapshot);
-    if raw.is_empty() && !experimental_simplify_mode {
+    if raw.is_empty() {
         raw = legacy_segments.to_vec();
     }
 
@@ -340,7 +330,6 @@ fn select_raw_keep_segments_for_media(
 
 fn canonical_keep_segments_for_media(
     state: &EditorState,
-    experimental_simplify_mode: bool,
 ) -> Vec<(i64, i64)> {
     // Default: no outer trim (Whisper / unknown engines — see todo
     // p0-waveform-boundary-policy). Callers that know they're running a
@@ -349,26 +338,19 @@ fn canonical_keep_segments_for_media(
     // `canonical_keep_segments_for_media_with_options` and pass
     // `PARAKEET_OUTER_TRIM_US`. Seam fades ride inside kept segments (see
     // `build_audio_segment_filter`); no seam-edge extension is applied.
-    canonical_keep_segments_for_media_with_options(state, experimental_simplify_mode, 0)
+    canonical_keep_segments_for_media_with_options(state, 0)
 }
 
 fn canonical_keep_segments_for_media_with_options(
     state: &EditorState,
-    experimental_simplify_mode: bool,
     outer_trim_us: i64,
 ) -> Vec<(i64, i64)> {
     let snapshot = state.timing_contract_snapshot();
     let legacy_segments = state.get_keep_segments();
     let mut raw =
-        select_raw_keep_segments_for_media(&snapshot, &legacy_segments, experimental_simplify_mode);
+        select_raw_keep_segments_for_media(&snapshot, &legacy_segments);
 
     if raw.is_empty() {
-        if experimental_simplify_mode {
-            debug!(
-                "Experimental simplify mode kept contract-only segment selection at revision {} (no legacy fallback segments available)",
-                snapshot.timeline_revision
-            );
-        }
         return raw;
     }
 

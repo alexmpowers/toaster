@@ -514,7 +514,6 @@ pub fn get_default_settings() -> AppSettings {
         post_process_selected_prompt_id: None,
         app_language: default_app_language(),
         experimental_enabled: false,
-        experimental_simplify_mode: false,
         lazy_stream_close: false,
         custom_filler_words: Some(vec![
             "um".to_string(),

@@ -390,7 +390,7 @@
       "tabs": {
         "ariaLabel": "Caption orientation",
         "desktop": "Desktop",
-        "desktopDescription": "Styling for landscape videos (width \u2265 height).",
+        "desktopDescription": "Styling for landscape videos (width ≥ height).",
         "mobile": "Mobile",
         "mobileDescription": "Styling for portrait / square videos (width < height)."
       },
@@ -584,8 +584,7 @@
     "previewEditsOff": "Preview edits: Off",
     "cacheModeBuilding": "Cache: building",
     "cacheModeReady": "Cache: ready",
-    "cacheModeFallback": "Cache: fallback",
-    "cacheModeSimplified": "Cache: simplified"
+    "cacheModeFallback": "Cache: fallback"
   },
   "editor": {
     "captionOrientation": {
@@ -678,10 +677,6 @@
     "cleanup": "Clean up"
   },
   "experiments": {
-    "simplifyMode": {
-      "label": "Simplify Mode",
-      "description": "Reduce visual density and hide secondary controls in the editor."
-    },
     "feedbackLink": "Send feedback"
   }
 }

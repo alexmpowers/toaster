@@ -1,5 +1,5 @@
 use super::*;
-use crate::managers::editor::{EditorState, TimingSegment, Word};
+use crate::managers::editor::{EditorState, Word};
 
 /// Shared test helper: default `ExportAudioOptions` (no normalization, no
 /// volume change, no fades). Lives here so both `part1` and `part2` can use

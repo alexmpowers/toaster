@@ -671,9 +671,9 @@ async generateFfmpegEditScript(inputPath: string) : Promise<Result<string, strin
  * 
  * Always drives the mapping from `canonical_keep_segments_for_media` — the
  * same function the preview render (`render_temp_preview_audio`) and export
- * use — so the cursor and the audio it's scrubbing over stay sample-aligned
- * regardless of `experimental_simplify_mode`. The previous default path
- * routed through `EditorState::map_edit_time_to_source_time`, which uses raw
+ * use — so the cursor and the audio it's scrubbing over stay sample-aligned.
+ * The previous default path routed through
+ * `EditorState::map_edit_time_to_source_time`, which uses raw
  * legacy keep-segments and drifted against the rendered audio whenever the
  * two pipelines disagreed on seam placement. See splice-logic synthesis
  * report.
@@ -977,7 +977,7 @@ export type AppSettings = { bindings?: Partial<{ [key in string]: ShortcutBindin
  * stored values are preserved across master toggle flips so a
  * user's prior opt-in comes back when they re-enable the master.
  */
-experimental_enabled?: boolean; experimental_simplify_mode?: boolean; lazy_stream_close?: boolean; custom_filler_words?: string[] | null; whisper_accelerator?: WhisperAcceleratorSetting; ort_accelerator?: OrtAcceleratorSetting; whisper_gpu_device?: number; normalize_audio_on_export?: boolean; 
+experimental_enabled?: boolean; lazy_stream_close?: boolean; custom_filler_words?: string[] | null; whisper_accelerator?: WhisperAcceleratorSetting; ort_accelerator?: OrtAcceleratorSetting; whisper_gpu_device?: number; normalize_audio_on_export?: boolean; 
 /**
  * Loudness normalization target for export. Single source of truth
  * for the `loudnorm` filter — see

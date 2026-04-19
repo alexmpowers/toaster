@@ -18,62 +18,6 @@ fn normalize_peaks_all_zero() {
     assert!(result.iter().all(|&p| p < 0.01));
 }
 
-fn snapshot_with_segments(
-    keep_segments_valid: bool,
-    keep_segments: Vec<(i64, i64)>,
-    quantized_keep_segments: Vec<(i64, i64)>,
-) -> TimingContractSnapshot {
-    let to_timing_segments = |segments: Vec<(i64, i64)>| {
-        segments
-            .into_iter()
-            .map(|(start_us, end_us)| TimingSegment { start_us, end_us })
-            .collect::<Vec<_>>()
-    };
-
-    TimingContractSnapshot {
-        timeline_revision: 7,
-        total_words: 0,
-        deleted_words: 0,
-        active_words: 0,
-        source_start_us: 0,
-        source_end_us: 3_000_000,
-        total_keep_duration_us: 0,
-        keep_segments: to_timing_segments(keep_segments),
-        quantized_keep_segments: to_timing_segments(quantized_keep_segments),
-        quantization_fps_num: 30,
-        quantization_fps_den: 1,
-        keep_segments_valid,
-        warning: (!keep_segments_valid).then_some("contract invalid".to_string()),
-    }
-}
-
-#[test]
-fn experimental_simplify_mode_skips_legacy_fallback_segments() {
-    let snapshot = snapshot_with_segments(true, Vec::new(), Vec::new());
-    let legacy = vec![(10, 20)];
-
-    assert_eq!(
-        select_raw_keep_segments_for_media(&snapshot, &legacy, false),
-        legacy
-    );
-    assert!(select_raw_keep_segments_for_media(&snapshot, &legacy, true).is_empty());
-}
-
-#[test]
-fn experimental_simplify_mode_still_uses_quantized_segments_when_contract_invalid() {
-    let snapshot = snapshot_with_segments(false, vec![(100, 300)], vec![(1_000, 2_000)]);
-    let legacy = vec![(10, 20)];
-
-    assert_eq!(
-        select_raw_keep_segments_for_media(&snapshot, &legacy, false),
-        vec![(1_000, 2_000)]
-    );
-    assert_eq!(
-        select_raw_keep_segments_for_media(&snapshot, &legacy, true),
-        vec![(1_000, 2_000)]
-    );
-}
-
 #[test]
 fn canonical_keep_segments_match_valid_contract_segments() {
     let mut state = EditorState::new();
@@ -107,7 +51,7 @@ fn canonical_keep_segments_match_valid_contract_segments() {
         },
     ]);
 
-    let segments = canonical_keep_segments_for_media(&state, false);
+    let segments = canonical_keep_segments_for_media(&state);
     // Seams land exactly on the deleted-word boundaries. Seam fade is
     // applied inside the kept segments by `build_audio_segment_filter`
     // and never pulls deleted audio back across the cut.
@@ -151,7 +95,7 @@ fn canonical_keep_segments_with_parakeet_outer_trim_removes_outer_padding() {
     // API to cover the outer-trim path (the only remaining tunable on
     // this function after CUT_GUARD_US was removed).
     let segments =
-        canonical_keep_segments_for_media_with_options(&state, false, PARAKEET_OUTER_TRIM_US);
+        canonical_keep_segments_for_media_with_options(&state, PARAKEET_OUTER_TRIM_US);
     assert_eq!(segments, vec![(300_000, 1_000_000), (2_000_000, 2_700_000)]);
 }
 
@@ -179,7 +123,7 @@ fn canonical_keep_segments_normalize_invalid_overlap_to_monotonic_ranges() {
         },
     ]);
 
-    let segments = canonical_keep_segments_for_media(&state, false);
+    let segments = canonical_keep_segments_for_media(&state);
     assert!(!segments.is_empty());
     assert!(segments
         .iter()
@@ -227,7 +171,7 @@ fn canonical_keep_segments_never_extend_past_deleted_neighbour() {
         },
     ]);
 
-    let segments = canonical_keep_segments_for_media(&state, false);
+    let segments = canonical_keep_segments_for_media(&state);
     for seg in &segments {
         let intersects = seg.0 < deleted_end && seg.1 > deleted_start;
         assert!(
@@ -277,7 +221,7 @@ fn cursor_mapping_matches_canonical_pipeline() {
         },
     ]);
 
-    let segments = canonical_keep_segments_for_media(&state, false);
+    let segments = canonical_keep_segments_for_media(&state);
     // Sample a handful of edit-time cursor positions that straddle the
     // internal seam (edit_time 1_000_000 is the seam itself).
     for edit_time_us in [
@@ -289,7 +233,7 @@ fn cursor_mapping_matches_canonical_pipeline() {
         // #[tauri::command] directly in a unit test without an AppHandle).
         let via_command_body = map_edit_time_to_source_time_from_segments(
             edit_time_us,
-            &canonical_keep_segments_for_media(&state, false),
+            &canonical_keep_segments_for_media(&state),
         );
         assert_eq!(
             via_canonical, via_command_body,

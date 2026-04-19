@@ -256,8 +256,6 @@ pub struct AppSettings {
     #[serde(default)]
     pub experimental_enabled: bool,
     #[serde(default)]
-    pub experimental_simplify_mode: bool,
-    #[serde(default)]
     pub lazy_stream_close: bool,
     #[serde(default)]
     pub custom_filler_words: Option<Vec<String>>,

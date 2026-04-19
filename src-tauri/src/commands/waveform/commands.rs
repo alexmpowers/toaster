@@ -112,9 +112,9 @@ pub fn get_keep_segments(
     app: AppHandle,
     store: State<EditorStore>,
 ) -> Result<Vec<KeepSegment>, String> {
-    let experimental_simplify_mode = settings_experimental_simplify_mode_enabled(&app);
+    let _ = app;
     let state = crate::lock_recovery::try_lock(store.0.lock()).map_err(|e| e.to_string())?;
-    let segments = canonical_keep_segments_for_media(&state, experimental_simplify_mode)
+    let segments = canonical_keep_segments_for_media(&state)
         .into_iter()
         .map(|(start_us, end_us)| KeepSegment { start_us, end_us })
         .collect();
@@ -140,9 +140,9 @@ pub fn generate_ffmpeg_edit_script(
     store: State<EditorStore>,
     input_path: String,
 ) -> Result<String, String> {
-    let experimental_simplify_mode = settings_experimental_simplify_mode_enabled(&app);
+    let _ = app;
     let state = crate::lock_recovery::try_lock(store.0.lock()).map_err(|e| e.to_string())?;
-    let segments = canonical_keep_segments_for_media(&state, experimental_simplify_mode);
+    let segments = canonical_keep_segments_for_media(&state);
 
     if segments.is_empty() {
         return Err("No segments to export (all words deleted)".to_string());
@@ -202,9 +202,9 @@ pub fn generate_ffmpeg_edit_script(
 ///
 /// Always drives the mapping from `canonical_keep_segments_for_media` — the
 /// same function the preview render (`render_temp_preview_audio`) and export
-/// use — so the cursor and the audio it's scrubbing over stay sample-aligned
-/// regardless of `experimental_simplify_mode`. The previous default path
-/// routed through `EditorState::map_edit_time_to_source_time`, which uses raw
+/// use — so the cursor and the audio it's scrubbing over stay sample-aligned.
+/// The previous default path routed through
+/// `EditorState::map_edit_time_to_source_time`, which uses raw
 /// legacy keep-segments and drifted against the rendered audio whenever the
 /// two pipelines disagreed on seam placement. See splice-logic synthesis
 /// report.
@@ -215,9 +215,9 @@ pub fn map_edit_to_source_time(
     store: State<EditorStore>,
     edit_time_us: i64,
 ) -> Result<i64, String> {
-    let experimental_simplify_mode = settings_experimental_simplify_mode_enabled(&app);
+    let _ = app;
     let state = crate::lock_recovery::try_lock(store.0.lock()).map_err(|e| e.to_string())?;
-    let segments = canonical_keep_segments_for_media(&state, experimental_simplify_mode);
+    let segments = canonical_keep_segments_for_media(&state);
     Ok(map_edit_time_to_source_time_from_segments(
         edit_time_us,
         &segments,
@@ -232,12 +232,12 @@ pub async fn render_temp_preview_audio(
     store: State<'_, EditorStore>,
     media_store: State<'_, MediaStore>,
 ) -> Result<PreviewRenderMetadata, String> {
-    let experimental_simplify_mode = settings_experimental_simplify_mode_enabled(&app);
+    let _ = app;
     let render_started_at = Instant::now();
     let (segments, silenced_ranges) = {
         let state = crate::lock_recovery::try_lock(store.0.lock()).map_err(|e| e.to_string())?;
         (
-            canonical_keep_segments_for_media(&state, experimental_simplify_mode),
+            canonical_keep_segments_for_media(&state),
             state.get_silenced_ranges(),
         )
     };
@@ -390,10 +390,9 @@ pub async fn export_edited_media(
     output_path: String,
     burn_captions: Option<bool>,
 ) -> Result<String, String> {
-    let experimental_simplify_mode = settings_experimental_simplify_mode_enabled(&app);
     let (segments, words, silenced_ranges) = {
         let state = crate::lock_recovery::try_lock(store.0.lock()).map_err(|e| e.to_string())?;
-        let segs = canonical_keep_segments_for_media(&state, experimental_simplify_mode);
+        let segs = canonical_keep_segments_for_media(&state);
         let w = state.get_words().to_vec();
         let silenced = state.get_silenced_ranges();
         (segs, w, silenced)
@@ -555,11 +554,11 @@ pub async fn loudness_preflight(
     media_store: State<'_, MediaStore>,
     target: crate::managers::splice::loudness::LoudnessTarget,
 ) -> Result<LoudnessPreflight, String> {
-    let experimental_simplify_mode = settings_experimental_simplify_mode_enabled(&app);
+    let _ = app;
     let (segments, silenced_ranges) = {
         let state = crate::lock_recovery::try_lock(store.0.lock()).map_err(|e| e.to_string())?;
         (
-            canonical_keep_segments_for_media(&state, experimental_simplify_mode),
+            canonical_keep_segments_for_media(&state),
             state.get_silenced_ranges(),
         )
     };

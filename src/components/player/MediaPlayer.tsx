@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useEditorStore } from "@/stores/editorStore";
-import { useExperiment } from "@/hooks/useExperiment";
 import {
   DUAL_TRACK_DRIFT_THRESHOLD,
   DUAL_TRACK_SYNC_COOLDOWN_MS,
@@ -56,11 +55,6 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
   const words = useEditorStore((s) => s.words);
   const timingContract = useEditorStore((s) => s.timingContract);
-  // Gated through useExperiment so the master `experimental_enabled`
-  // toggle disables this feature even if the per-flag stored value
-  // is still `true` (defence-in-depth — see useExperiment.ts and
-  // is_experiment_enabled in src-tauri/src/settings/mod.rs).
-  const experimentalSimplifyMode = useExperiment("experimental_simplify_mode");
 
   const {
     previewAudioRef,
@@ -84,7 +78,6 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     mediaType,
     words,
     timingContract,
-    experimentalSimplifyMode,
   });
 
   const lastSkipTargetRef = useRef(0);

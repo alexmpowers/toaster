@@ -10,7 +10,7 @@ interface CachedPreviewMetadata {
   editVersion: string;
 }
 
-export type PreviewCacheMode = "building" | "ready" | "fallback" | "simplified";
+export type PreviewCacheMode = "building" | "ready" | "fallback";
 
 interface PlaybackAudioContract {
   selected_output_device: string;
@@ -26,7 +26,6 @@ interface UsePreviewCacheParams {
   mediaType: "video" | "audio" | null;
   words: Word[];
   timingContract: TimingContractSnapshot | null;
-  experimentalSimplifyMode: boolean;
 }
 
 export function usePreviewCache({
@@ -34,7 +33,6 @@ export function usePreviewCache({
   mediaType,
   words,
   timingContract,
-  experimentalSimplifyMode,
 }: UsePreviewCacheParams) {
   const { t } = useTranslation();
   const previewAudioRef = useRef<HTMLAudioElement>(null);
@@ -52,26 +50,22 @@ export function usePreviewCache({
 
   const hasPreviewAudio = !!previewAudioUrl;
   const usePreviewCacheFlag =
-    !experimentalSimplifyMode &&
     previewEdits &&
     hasPreviewAudio &&
     previewCacheState === "ready";
-  const previewCacheMode: PreviewCacheMode = experimentalSimplifyMode
-    ? "simplified"
-    : !previewEdits || previewCacheState === "error"
-    ? "fallback"
-    : previewCacheState === "loading" || (hasPreviewAudio && !previewAudioReady)
-      ? "building"
-      : usePreviewCacheFlag
-        ? "ready"
-        : "fallback";
+  const previewCacheMode: PreviewCacheMode =
+    !previewEdits || previewCacheState === "error"
+      ? "fallback"
+      : previewCacheState === "loading" || (hasPreviewAudio && !previewAudioReady)
+        ? "building"
+        : usePreviewCacheFlag
+          ? "ready"
+          : "fallback";
   const previewToggleLabel = previewEdits ? t("player.previewEditsOn") : t("player.previewEditsOff");
   const previewCacheModeLabel = previewCacheMode === "building"
     ? t("player.cacheModeBuilding")
     : previewCacheMode === "ready"
       ? t("player.cacheModeReady")
-      : previewCacheMode === "simplified"
-        ? t("player.cacheModeSimplified")
       : t("player.cacheModeFallback");
 
   const hasVideoPreviewCandidate = mediaType === "video" && usePreviewCacheFlag;
@@ -187,12 +181,10 @@ export function usePreviewCache({
 
   // Debounced preview cache generation
   useEffect(() => {
-    if (experimentalSimplifyMode || !previewEdits || words.length === 0) {
-      const reason = experimentalSimplifyMode
-        ? "experimental-simplify-mode"
-        : previewEdits
-          ? "empty-transcript"
-          : "preview-disabled";
+    if (!previewEdits || words.length === 0) {
+      const reason = previewEdits
+        ? "empty-transcript"
+        : "preview-disabled";
       resetPreviewCache(reason, true);
       return;
     }
@@ -249,7 +241,6 @@ export function usePreviewCache({
       }
     };
   }, [
-    experimentalSimplifyMode,
     previewEdits,
     resetPreviewCache,
     schedulePreviewInvalidation,

@@ -47,7 +47,6 @@ pub use types::{
 /// in the Blueprint.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ExperimentKey {
-    SimplifyMode,
     LazyStreamClose,
 }
 
@@ -64,7 +63,6 @@ pub fn is_experiment_enabled(settings: &AppSettings, key: ExperimentKey) -> bool
         return false;
     }
     match key {
-        ExperimentKey::SimplifyMode => settings.experimental_simplify_mode,
         ExperimentKey::LazyStreamClose => settings.lazy_stream_close,
     }
 }
@@ -115,13 +113,8 @@ mod tests {
     fn experiment_getter_returns_false_when_master_disabled() {
         let mut settings = get_default_settings();
         settings.experimental_enabled = false;
-        settings.experimental_simplify_mode = true;
         settings.lazy_stream_close = true;
 
-        assert!(
-            !is_experiment_enabled(&settings, ExperimentKey::SimplifyMode),
-            "simplify mode must read false when master toggle is off, even if stored value is true"
-        );
         assert!(
             !is_experiment_enabled(&settings, ExperimentKey::LazyStreamClose),
             "lazy stream close must read false when master toggle is off"
@@ -130,7 +123,6 @@ mod tests {
         // Defence-in-depth: stored per-flag values are preserved
         // across the master flip so the user's prior opt-in comes
         // back when they re-enable.
-        assert!(settings.experimental_simplify_mode);
         assert!(settings.lazy_stream_close);
     }
 
@@ -138,14 +130,9 @@ mod tests {
     fn experiment_getter_returns_stored_value_when_master_enabled() {
         let mut settings = get_default_settings();
         settings.experimental_enabled = true;
-        settings.experimental_simplify_mode = true;
-        settings.lazy_stream_close = false;
+        settings.lazy_stream_close = true;
 
         assert!(is_experiment_enabled(
-            &settings,
-            ExperimentKey::SimplifyMode
-        ));
-        assert!(!is_experiment_enabled(
             &settings,
             ExperimentKey::LazyStreamClose
         ));
@@ -155,12 +142,6 @@ mod tests {
     fn experimental_enabled_defaults_to_false_on_fresh_install() {
         let settings = get_default_settings();
         assert!(!settings.experimental_enabled);
-    }
-
-    #[test]
-    fn default_settings_disable_experimental_simplify_mode() {
-        let settings = get_default_settings();
-        assert!(!settings.experimental_simplify_mode);
     }
 
     #[test]

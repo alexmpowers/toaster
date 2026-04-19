@@ -26,12 +26,4 @@ export interface Experiment {
 export const EXPERIMENTS_FEEDBACK_URL =
   "https://github.com/itsnotaboutthecell/toaster/issues/new?labels=experimental-feedback&template=experimental_feedback.md";
 
-export const experiments: readonly Experiment[] = [
-  {
-    id: "simplifyMode",
-    settingsKey: "experimental_simplify_mode",
-    labelKey: "experiments.simplifyMode.label",
-    descriptionKey: "experiments.simplifyMode.description",
-    feedbackUrl: EXPERIMENTS_FEEDBACK_URL,
-  },
-] as const;
+export const experiments: readonly Experiment[] = [] as const;

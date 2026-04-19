@@ -584,8 +584,7 @@
     "previewEditsOff": "Preview edits: Off",
     "cacheModeBuilding": "Cache: building",
     "cacheModeReady": "Cache: ready",
-    "cacheModeFallback": "Cache: fallback",
-    "cacheModeSimplified": "Cache: simplified"
+    "cacheModeFallback": "Cache: fallback"
   },
   "editor": {
     "captionOrientation": {
@@ -678,10 +677,6 @@
     "cleanup": "Clean up"
   },
   "experiments": {
-    "simplifyMode": {
-      "label": "Simplify Mode",
-      "description": "Reduce visual density and hide secondary controls in the editor."
-    },
     "feedbackLink": "Send feedback"
   }
 }
