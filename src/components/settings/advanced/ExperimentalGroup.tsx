@@ -7,6 +7,7 @@ import { Alert } from "../../ui/Alert";
 import { useSettings } from "../../../hooks/useSettings";
 import { experiments } from "@/lib/experiments";
 import { PostProcessingSettingsPrompts } from "../post-processing/PostProcessingSettingsPrompts";
+import { LLMConnectionGroup } from "./LLMConnectionGroup";
 
 /**
  * Experimental group body for the Advanced page.
@@ -61,6 +62,14 @@ export const ExperimentalGroup: React.FC = () => {
             grouped
           />
           {expertModeEnabled && <PostProcessingSettingsPrompts />}
+          {expertModeEnabled && (
+            <div className="space-y-2">
+              <h3 className="text-xs font-medium uppercase tracking-wide text-mid-gray">
+                {t("settings.advanced.groups.llmConnection.title")}
+              </h3>
+              <LLMConnectionGroup />
+            </div>
+          )}
           {experiments.map((experiment) => {
             const checked =
               (getSetting(experiment.settingsKey) as boolean) ?? false;

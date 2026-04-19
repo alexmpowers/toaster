@@ -46,7 +46,7 @@ const DEFAULT_MOBILE: CaptionProfile = {
 export const CaptionSettings: React.FC<CaptionSettingsProps> = React.memo(
   ({ descriptionMode = "tooltip", grouped = false }) => {
     const { t } = useTranslation();
-    const { getSetting, updateSetting, isUpdating } = useSettings();
+    const { getSetting, updateSetting } = useSettings();
 
     const profileSet =
       (getSetting("caption_profiles") as CaptionProfileSet | undefined) ?? {
@@ -69,7 +69,12 @@ export const CaptionSettings: React.FC<CaptionSettingsProps> = React.memo(
       updateSetting("caption_profiles", next);
     };
 
-    const disabled = isUpdating("caption_profiles");
+    // Round-8: intentionally do NOT thread `isUpdating("caption_profiles")`
+    // into the form. Caption-profile writes are idempotent and fire on
+    // every slider tick; pulsing the `disabled` prop true→false on each
+    // write was causing the font-family Select to visibly flash/flicker
+    // even when the user was only dragging a neighbouring slider.
+    const disabled = false;
 
     return (
       <div className="px-4 py-4 space-y-4">
