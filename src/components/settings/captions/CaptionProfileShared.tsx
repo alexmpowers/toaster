@@ -200,16 +200,19 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
   const bottomPx = ((100 - profile.position) / 100) * containerSize.h;
   const showPill = scale > 0;
 
+  const isVertical = orientation === "vertical";
+  const screenMaxWidth = isVertical ? "320px" : undefined;
+
   return (
     <div
-      className="mb-4 sticky top-0 z-10 bg-background px-3 pt-3 pb-4 w-full max-w-[50%]"
+      className="mb-4 w-full rounded-xl border border-mid-gray/20 bg-background p-4"
       data-testid="caption-preview-pane"
     >
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <h3 className="text-xs font-medium text-text/70">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-xs font-medium uppercase tracking-wide text-text/70">
           {t("settings.captions.preview.heading")}
         </h3>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <label className="text-xs text-text/60">
               {t("settings.captions.preview.orientation.label")}
@@ -248,33 +251,33 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
         </div>
       </div>
       <div
-        ref={containerRef}
-        className="relative w-full mx-auto overflow-hidden rounded border border-mid-gray/30"
-        style={{
-          aspectRatio: `${orientation === "horizontal" ? HORIZONTAL_ASPECT : VERTICAL_ASPECT}`,
-          maxHeight: orientation === "vertical" ? "420px" : undefined,
-          maxWidth:
-            orientation === "vertical"
-              ? `${Math.round(420 * VERTICAL_ASPECT)}px`
-              : undefined,
-          backgroundColor: "#1a1a1a",
-        }}
+        className="mx-auto w-full rounded-[20px] bg-[#000000]/85 p-2 shadow-inner"
+        style={{ maxWidth: screenMaxWidth ?? "36rem" }}
       >
-        <CaptionMockFrame orientation={orientation} />
-        {showPill && (
-          <CaptionPill
-            lines={lines}
-            fontCss={FONT_CSS[profile.font_family]}
-            fontSizePx={profile.font_size * scale}
-            lineHeightPx={lineHeightPx}
-            textColor={hexToRgba(profile.text_color)}
-            background={hexToRgba(profile.bg_color)}
-            paddingPx={paddingPx}
-            bottomPx={bottomPx}
-            marginLeftPx={0}
-            borderRadiusPx={profile.radius_px * scale}
-          />
-        )}
+        <div
+          ref={containerRef}
+          className="relative w-full overflow-hidden rounded-[12px] border border-mid-gray/20"
+          style={{
+            aspectRatio: `${isVertical ? VERTICAL_ASPECT : HORIZONTAL_ASPECT}`,
+            backgroundColor: "#1a1a1a",
+          }}
+        >
+          <CaptionMockFrame orientation={orientation} />
+          {showPill && (
+            <CaptionPill
+              lines={lines}
+              fontCss={FONT_CSS[profile.font_family]}
+              fontSizePx={profile.font_size * scale}
+              lineHeightPx={lineHeightPx}
+              textColor={hexToRgba(profile.text_color)}
+              background={hexToRgba(profile.bg_color)}
+              paddingPx={paddingPx}
+              bottomPx={bottomPx}
+              marginLeftPx={0}
+              borderRadiusPx={profile.radius_px * scale}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

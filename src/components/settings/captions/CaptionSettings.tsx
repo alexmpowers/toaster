@@ -78,7 +78,7 @@ export const CaptionSettings: React.FC<CaptionSettingsProps> = React.memo(
     const disabled = isUpdating("caption_profiles");
 
     return (
-      <>
+      <div className="px-4 py-4 space-y-4">
         <div
           role="tablist"
           aria-label={t("settings.captions.tabs.ariaLabel")}
@@ -118,7 +118,7 @@ export const CaptionSettings: React.FC<CaptionSettingsProps> = React.memo(
           grouped={grouped}
           disabled={disabled}
         />
-      </>
+      </div>
     );
   },
 );
