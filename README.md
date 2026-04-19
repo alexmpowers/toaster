@@ -2,6 +2,10 @@
   <img src="src/assets/toaster.png" alt="Toaster" width="200" />
 </p>
 
+<p align="center">
+  <img src="src/assets/toaster_text.svg" alt="Toaster" width="200" />
+</p>
+
 <h1 align="center">Toaster</h1>
 
 <p align="center">
