@@ -37,86 +37,6 @@ async changeWordCorrectionThresholdSetting(threshold: number) : Promise<Result<n
     else return { status: "error", error: e as string };
 }
 },
-async changePostProcessEnabledSetting(enabled: boolean) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_post_process_enabled_setting", { enabled }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e as string };
-}
-},
-async changePostProcessBaseUrlSetting(providerId: string, baseUrl: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_post_process_base_url_setting", { providerId, baseUrl }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e as string };
-}
-},
-async changePostProcessApiKeySetting(providerId: string, apiKey: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_post_process_api_key_setting", { providerId, apiKey }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e as string };
-}
-},
-async changePostProcessModelSetting(providerId: string, model: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_post_process_model_setting", { providerId, model }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e as string };
-}
-},
-async setPostProcessProvider(providerId: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("set_post_process_provider", { providerId }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e as string };
-}
-},
-async fetchPostProcessModels(providerId: string) : Promise<Result<string[], string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("fetch_post_process_models", { providerId }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e as string };
-}
-},
-async addPostProcessPrompt(name: string, prompt: string) : Promise<Result<LLMPrompt, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("add_post_process_prompt", { name, prompt }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e as string };
-}
-},
-async updatePostProcessPrompt(id: string, name: string, prompt: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("update_post_process_prompt", { id, name, prompt }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e as string };
-}
-},
-async deletePostProcessPrompt(id: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("delete_post_process_prompt", { id }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e as string };
-}
-},
-async setPostProcessSelectedPrompt(id: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("set_post_process_selected_prompt", { id }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e as string };
-}
-},
 async updateCustomWords(words: string[]) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("update_custom_words", { words }) };
@@ -303,9 +223,6 @@ async changeWhisperGpuDevice(device: number) : Promise<Result<null, string>> {
 },
 async getAvailableAccelerators() : Promise<AvailableAccelerators> {
     return await TAURI_INVOKE("get_available_accelerators");
-},
-async getDefaultPostProcessPromptText() : Promise<string> {
-    return await TAURI_INVOKE("get_default_post_process_prompt_text");
 },
 async triggerUpdateCheck() : Promise<Result<null, string>> {
     try {
@@ -547,9 +464,6 @@ async normalizePlaybackAudioContract() : Promise<Result<PlaybackAudioContract, s
 },
 async editorSetWords(words: Word[]) : Promise<Word[]> {
     return await TAURI_INVOKE("editor_set_words", { words });
-},
-async editorApplyLocalLlmProposals(proposals: LocalLlmWordProposal[]) : Promise<LocalLlmApplyResponse> {
-    return await TAURI_INVOKE("editor_apply_local_llm_proposals", { proposals });
 },
 async editorGetWords() : Promise<Word[]> {
     return await TAURI_INVOKE("editor_get_words");
@@ -992,46 +906,6 @@ async unloadModelManually() : Promise<Result<null, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e as string };
 }
-},
-async listLlmModels() : Promise<Result<LlmModelInfo[], string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("list_llm_models") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e as string };
-}
-},
-async downloadLlmModel(modelId: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("download_llm_model", { modelId }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e as string };
-}
-},
-async cancelLlmDownload(modelId: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("cancel_llm_download", { modelId }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e as string };
-}
-},
-async deleteLlmModel(modelId: string) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("delete_llm_model", { modelId }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e as string };
-}
-},
-async setSelectedLlmModel(modelId: string | null) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("set_selected_llm_model", { modelId }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e as string };
-}
 }
 }
 
@@ -1052,7 +926,7 @@ async setSelectedLlmModel(modelId: string | null) : Promise<Result<null, string>
  * the leading dot off before passing to save-dialog filters.
  */
 export type AllowedExportFormat = { format: AudioExportFormat; extension: string }
-export type AppSettings = { bindings?: Partial<{ [key in string]: ShortcutBinding }>; start_hidden?: boolean; update_checks_enabled?: boolean; selected_model?: string; selected_output_device?: string | null; preferred_output_sample_rate?: number; translate_to_english?: boolean; selected_language?: string; debug_mode?: boolean; log_level?: LogLevel; custom_words?: string[]; model_unload_timeout?: ModelUnloadTimeout; word_correction_threshold?: number; post_process_enabled?: boolean; ui_expert_mode_enabled?: boolean; post_process_provider_id?: string; post_process_providers?: PostProcessProvider[]; post_process_api_keys?: SecretMap; post_process_models?: Partial<{ [key in string]: string }>; post_process_prompts?: LLMPrompt[]; post_process_selected_prompt_id?: string | null; app_language?: string; 
+export type AppSettings = { bindings?: Partial<{ [key in string]: ShortcutBinding }>; start_hidden?: boolean; update_checks_enabled?: boolean; selected_model?: string; selected_output_device?: string | null; preferred_output_sample_rate?: number; translate_to_english?: boolean; selected_language?: string; debug_mode?: boolean; log_level?: LogLevel; custom_words?: string[]; model_unload_timeout?: ModelUnloadTimeout; word_correction_threshold?: number; app_language?: string; 
 /**
  * Master gate for the Experimental settings group. When `false`,
  * per-flag booleans still store whatever the user last set, but the
@@ -1086,16 +960,7 @@ caption_profiles?: CaptionProfileSet;
  * Idempotency latch for the flat-field → profiles migration. Once
  * true, `ensure_caption_defaults` is a no-op on subsequent loads.
  */
-caption_profiles_was_migrated?: boolean; settings_version?: number; 
-/**
- * ID of the catalog entry (see
- * `managers::model::catalog::post_processor`) the user
- * selected for the in-process local-GGUF cleanup path. `None` means
- * no local model has been chosen yet; the dispatcher falls back to
- * the HTTP provider when this is unset, regardless of the provider
- * selector value. See PRD R-008.
- */
-local_llm_model_id?: string | null }
+caption_profiles_was_migrated?: boolean; settings_version?: number }
 export type AudioDevice = { index: string; name: string; is_default: boolean }
 /**
  * User-facing export format. Default is `Mp4` (current behavior:
@@ -1236,30 +1101,6 @@ export type GpuDeviceOption = { id: number; name: string; total_vram_mb: number 
  * A keep-segment: contiguous non-deleted region of the source media.
  */
 export type KeepSegment = { start_us: number; end_us: number }
-export type LLMPrompt = { id: string; name: string; prompt: string }
-export type LlmMetadata = { quantization: string; context_length: number; recommended_ram_gb: number; prompt_template_id: string | null }
-/**
- * Runtime view of a post-processor catalog entry + download status.
- * 
- * Retained for the deprecated `list_llm_models` Tauri shim (see
- * `commands::llm_models`). New code should consume `ModelInfo` directly
- * via `commands::models::get_models(Some(PostProcessor))`.
- */
-export type LlmModelInfo = { id: string; display_name: string; description: string; filename: string; download_url: string; sha256: string; quantization: string; size_bytes: number; context_length: number; recommended_ram_gb: number; is_recommended_default: boolean; is_downloaded: boolean; is_downloading: boolean; partial_size: number }
-export type LocalLlmApplyResponse = { projection: EditorProjection; apply_result: LocalLlmApplyResult }
-/**
- * Outcome for applying a batch of local LLM proposals.
- */
-export type LocalLlmApplyResult = { applied_proposals: number; applied_word_indices: number[]; rejected_proposals: LocalLlmProposalRejection[] }
-/**
- * Rejection details for a proposal that failed validation.
- */
-export type LocalLlmProposalRejection = { proposal_index: number; start_word_index: number; end_word_index: number; reason: string }
-/**
- * Backend-authoritative word-level LLM rewrite proposal.
- * The range is half-open: `[start_word_index, end_word_index)`.
- */
-export type LocalLlmWordProposal = { start_word_index: number; end_word_index: number; replacement_words: string[] }
 export type LogLevel = "trace" | "debug" | "info" | "warn" | "error"
 /**
  * Preflight DTO surfaced to the frontend. All fields are computed
@@ -1336,18 +1177,13 @@ media_type: MediaType;
  */
 extension: string }
 export type MediaType = "Video" | "Audio"
-export type ModelCategory = "Transcription" | "PostProcessor" | "System"
+export type ModelCategory = "Transcription" | "System"
 export type ModelInfo = { id: string; name: string; description: string; filename: string; url: string | null; sha256: string | null; size_mb: number; is_downloaded: boolean; is_downloading: boolean; partial_size: number; is_directory: boolean; engine_type: EngineType; accuracy_score: number; speed_score: number; supports_translation: boolean; is_recommended: boolean; supported_languages: string[]; supports_language_selection: boolean; is_custom: boolean; category?: ModelCategory; 
 /**
- * Optional transcription-specific metadata block (PostProcessor entries leave None).
+ * Optional transcription-specific metadata block.
  * Legacy JSON without this field deserializes as None.
  */
-transcription_metadata?: TranscriptionMetadata | null; 
-/**
- * Optional LLM/post-processor metadata block (Transcription entries leave None).
- * Legacy JSON without this field deserializes as None.
- */
-llm_metadata?: LlmMetadata | null }
+transcription_metadata?: TranscriptionMetadata | null }
 export type ModelLoadStatus = { is_loaded: boolean; current_model: string | null }
 export type ModelUnloadTimeout = "never" | "immediately" | "min_2" | "min_5" | "min_10" | "min_15" | "hour_1" | "sec_15"
 /**
@@ -1360,8 +1196,7 @@ export type OrtAcceleratorSetting = "auto" | "cpu" | "cuda" | "directml" | "rocm
 export type PauseInfo = { after_word_index: number; gap_duration_us: number }
 export type PermissionAccess = "allowed" | "denied" | "unknown"
 export type PlaybackAudioContract = { selected_output_device: string; selected_output_device_available: boolean; preferred_output_sample_rate: number; detected_output_sample_rate: number | null; normalized_output_sample_rate: number; mismatch_detected: boolean }
-export type PostProcessProvider = { id: string; label: string; base_url: string; allow_base_url_edit?: boolean; models_endpoint?: string | null; supports_structured_output?: boolean; local_only?: boolean; requires_api_key?: boolean }
-export type PreviewRenderMetadata = { status: PreviewRenderStatus; preview_file_path: string | null; preview_url_safe_path: string | null; source_media_fingerprint: string | null; edit_version: string; generation_token: string; cache_hit: boolean }
+export type PreviewRenderMetadata= { status: PreviewRenderStatus; preview_file_path: string | null; preview_url_safe_path: string | null; source_media_fingerprint: string | null; edit_version: string; generation_token: string; cache_hit: boolean }
 export type PreviewRenderStatus = "ready" | "no_segments" | "missing_media"
 /**
  * Scope for `set_caption_profile` — whether the write lands on

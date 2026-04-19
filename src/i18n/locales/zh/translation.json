@@ -158,12 +158,10 @@
       },
       "filter": {
         "all": "All Models",
-        "transcription": "Transcription",
-        "postProcessing": "Post-processing"
+        "transcription": "Transcription"
       },
       "badge": {
-        "transcription": "Transcription",
-        "postProcessing": "Post-processing"
+        "transcription": "Transcription"
       },
       "noModelsMatch": "没有符合此筛选条件的模型。",
       "download": "Download",
@@ -171,85 +169,6 @@
         "performance": "Performance",
         "captions": "Captions"
       }
-    },
-    "postProcessing": {
-      "title": "后处理",
-      "hotkey": {
-        "title": "快捷键"
-      },
-      "api": {
-        "title": "API（兼容 OpenAI）",
-        "provider": {
-          "title": "提供商",
-          "description": "选择一个兼容 OpenAI 的提供商。"
-        },
-        "baseUrl": {
-          "title": "基础 URL",
-          "description": "所选提供商的 API 基础 URL。仅自定义提供商可编辑。",
-          "placeholder": "https://api.openai.com/v1"
-        },
-        "apiKey": {
-          "title": "API 密钥",
-          "description": "所选提供商的 API 密钥。",
-          "placeholder": "sk-..."
-        },
-        "model": {
-          "title": "模型",
-          "descriptionCustom": "提供自定义端点期望的模型标识符。",
-          "descriptionDefault": "选择所选提供商提供的模型。",
-          "placeholderWithOptions": "搜索或选择模型",
-          "placeholderNoOptions": "输入模型名称",
-          "refreshModels": "刷新模型"
-        }
-      },
-      "prompts": {
-        "title": "提示词",
-        "selectedPrompt": {
-          "title": "已选提示词",
-          "description": "选择用于优化转录的模板或创建新模板。在提示词文本中使用 ${output} 来引用捕获的转录。"
-        },
-        "noPrompts": "没有可用的提示词",
-        "selectPrompt": "选择提示词",
-        "createNew": "创建新提示词",
-        "promptLabel": "提示词名称",
-        "promptLabelPlaceholder": "输入提示词名称",
-        "promptInstructions": "提示词指令",
-        "promptInstructionsPlaceholder": "编写转录后要执行的指令。示例：改进以下文本的语法和清晰度: ${output}",
-        "promptTip": "提示：使用 <code>${output}</code> 将转录文本插入到您的提示词中。",
-        "updatePrompt": "更新提示词",
-        "deletePrompt": "删除提示词",
-        "createPrompt": "创建提示词",
-        "cancel": "取消",
-        "selectToEdit": "选择上方的提示词以查看和编辑其详细信息。",
-        "createFirst": "点击上方的「创建新提示词」来创建您的第一个后处理提示词。",
-        "resetToDefault": "Reset to default"
-      },
-      "localLlmAlert": {
-        "link": "Learn more",
-        "title": "Local LLM required",
-        "body": "Toaster post-processing runs against a local OpenAI-compatible endpoint. See docs/post-processing.md for setup."
-      },
-      "manageModelsLink": "Manage models",
-      "localModels": {
-        "title": "Local LLM model",
-        "description": "Toaster runs LLM cleanup in-process. Pick a model below to download and use locally.",
-        "defaultBadge": "Default",
-        "selectedBadge": "Active",
-        "download": "Download",
-        "cancel": "Cancel",
-        "delete": "Delete",
-        "select": "Use this model",
-        "empty": "No local models available.",
-        "requirementsFormat": "{{size}} · RAM ~{{ram}} MB · Disk ~{{disk}} MB",
-        "progressFormat": "{{percent}}% · {{speed}} MB/s"
-      },
-      "provider": {
-        "local": {
-          "label": "Local (in-process)",
-          "description": "Runs the cleanup model inside Toaster. No network calls."
-        }
-      },
-      "localOnlyNotice": "Local LLM only — provider URLs are enforced to loopback by the backend (see src-tauri/src/llm_client.rs is_local_host)."
     },
     "debug": {
       "title": "调试",
@@ -269,10 +188,6 @@
       "wordCorrectionThreshold": {
         "title": "词汇修正阈值",
         "description": "自定义词汇修正的灵敏度"
-      },
-      "postProcessingToggle": {
-        "label": "后处理",
-        "description": "启用转录后的 AI 文本优化"
       },
       "paths": {
         "appData": "应用数据:",
@@ -479,23 +394,11 @@
         "experimental": {
           "title": "Experimental",
           "description": "Opt-in features that may change or be removed. Gated by the master toggle below."
-        },
-        "expertMode": {
-          "title": "Transcript processor",
-          "description": "Reveals the AI-cleanup connection settings and the Editor's prompt drawer. This is a UI visibility gate only — whether cleanup actually runs is controlled by the separate 'Run AI cleanup at transcription' toggle."
-        },
-        "llmConnection": {
-          "title": "AI cleanup (LLM connection)",
-          "description": "Configure the LLM endpoint that Toaster uses for transcript cleanup after transcription. Local GGUF runs in-process via a downloaded model; custom endpoints point at your own Ollama / LocalAI / self-hosted inference server."
         }
       },
       "experimentalMaster": {
         "title": "Enable experimental features",
         "description": "Master switch for every experiment. When off, individual experiment flags read as disabled even if they were previously turned on. Turning this back on restores your prior selections."
-      },
-      "expertMode": {
-        "title": "Transcript processor",
-        "description": "Show advanced LLM post-processing controls. When on, a connection-config group appears below and a prompt drawer appears in the Editor. Leave off for the simple editing experience."
       }
     }
   },

@@ -8,7 +8,6 @@ import {
   Loader2,
   Mic,
   Trash2,
-  Wand2,
 } from "lucide-react";
 import type { ModelCategory, ModelInfo } from "@/bindings";
 import { formatModelSize } from "../../lib/utils/format";
@@ -43,9 +42,6 @@ const getCategoryTag = (
 ): { Icon: typeof Mic; labelKey: string } | null => {
   if (category === "Transcription") {
     return { Icon: Mic, labelKey: "settings.models.badge.transcription" };
-  }
-  if (category === "PostProcessor") {
-    return { Icon: Wand2, labelKey: "settings.models.badge.postProcessing" };
   }
   return null;
 };
@@ -180,8 +176,7 @@ const ModelCard: React.FC<ModelCardProps> = ({
             {displayDescription}
           </p>
         </div>
-        {model.category !== "PostProcessor" &&
-          (model.accuracy_score > 0 || model.speed_score > 0) && (
+        {(model.accuracy_score > 0 || model.speed_score > 0) && (
           <div className="hidden sm:flex items-center ms-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">

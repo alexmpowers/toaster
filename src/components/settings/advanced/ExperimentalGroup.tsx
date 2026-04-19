@@ -6,8 +6,6 @@ import { ToggleSwitch } from "../../ui/ToggleSwitch";
 import { Alert } from "../../ui/Alert";
 import { useSettings } from "../../../hooks/useSettings";
 import { experiments } from "@/lib/experiments";
-import { PostProcessingSettingsPrompts } from "../post-processing/PostProcessingSettingsPrompts";
-import { LLMConnectionGroup } from "./LLMConnectionGroup";
 
 /**
  * Experimental group body for the Advanced page.
@@ -19,19 +17,12 @@ import { LLMConnectionGroup } from "./LLMConnectionGroup";
  * values are never cleared when the master flips off, so the user's
  * prior opt-ins come back when they re-enable the master (see
  * BLUEPRINT.md R-005/R-006).
- *
- * Expert mode (`ui_expert_mode_enabled`) lives inside the master-on
- * block because the LLM post-processing controls it reveals are not
- * yet a confident first-class feature — treat it as experimental
- * until that changes.
  */
 export const ExperimentalGroup: React.FC = () => {
   const { t } = useTranslation();
   const { getSetting, updateSetting, isUpdating } = useSettings();
   const masterEnabled =
     (getSetting("experimental_enabled") as boolean) ?? false;
-  const expertModeEnabled =
-    (getSetting("ui_expert_mode_enabled") as boolean) ?? false;
 
   const handleOpenFeedback = (url: string) => {
     void openUrl(url).catch((error) => {
@@ -53,23 +44,6 @@ export const ExperimentalGroup: React.FC = () => {
       {masterEnabled && (
         <>
           <Alert variant="warning">{t("settings.experimental.banner")}</Alert>
-          <ToggleSwitch
-            checked={expertModeEnabled}
-            onChange={(value) => updateSetting("ui_expert_mode_enabled", value)}
-            isUpdating={isUpdating("ui_expert_mode_enabled")}
-            label={t("settings.advanced.expertMode.title")}
-            description={t("settings.advanced.expertMode.description")}
-            grouped
-          />
-          {expertModeEnabled && <PostProcessingSettingsPrompts />}
-          {expertModeEnabled && (
-            <div className="space-y-2">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-mid-gray">
-                {t("settings.advanced.groups.llmConnection.title")}
-              </h3>
-              <LLMConnectionGroup />
-            </div>
-          )}
           {experiments.map((experiment) => {
             const checked =
               (getSetting(experiment.settingsKey) as boolean) ?? false;
@@ -102,4 +76,3 @@ export const ExperimentalGroup: React.FC = () => {
     </div>
   );
 };
-

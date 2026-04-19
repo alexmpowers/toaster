@@ -158,12 +158,10 @@
       },
       "filter": {
         "all": "All Models",
-        "transcription": "Transcription",
-        "postProcessing": "Post-processing"
+        "transcription": "Transcription"
       },
       "badge": {
-        "transcription": "Transcription",
-        "postProcessing": "Post-processing"
+        "transcription": "Transcription"
       },
       "noModelsMatch": "אין מודלים שמתאימים לסינון הזה.",
       "download": "Download",
@@ -171,85 +169,6 @@
         "performance": "Performance",
         "captions": "Captions"
       }
-    },
-    "postProcessing": {
-      "title": "עיבוד משלים",
-      "hotkey": {
-        "title": "קיצור מקשים"
-      },
-      "api": {
-        "title": "API (תואם OpenAI)",
-        "provider": {
-          "title": "ספק",
-          "description": "בחר ספק שתואם ל-OpenAI."
-        },
-        "baseUrl": {
-          "title": "Base URL",
-          "description": "כתובת ה-API הבסיסית עבור הספק הנבחר. רק ספק מותאם אישית ניתן לעריכה.",
-          "placeholder": "https://api.openai.com/v1"
-        },
-        "apiKey": {
-          "title": "מפתח API",
-          "description": "מפתח API עבור הספק הנבחר.",
-          "placeholder": "sk-..."
-        },
-        "model": {
-          "title": "מודל",
-          "descriptionCustom": "ספק את מזהה המודל שה-endpoint המותאם שלך מצפה לו.",
-          "descriptionDefault": "בחר מודל שהספק הנבחר חושף.",
-          "placeholderWithOptions": "חפש או בחר מודל",
-          "placeholderNoOptions": "הקלד שם מודל",
-          "refreshModels": "רענן מודלים"
-        }
-      },
-      "prompts": {
-        "title": "פרומפט",
-        "selectedPrompt": {
-          "title": "פרומפט נבחר",
-          "description": "בחר תבנית לשיפור התמלול או צור חדשה. השתמש ב-${output} בתוך טקסט הפרומפט כדי להפנות לתמלול שנקלט."
-        },
-        "noPrompts": "אין פרומפטים זמינים",
-        "selectPrompt": "בחר פרומפט",
-        "createNew": "צור פרומפט חדש",
-        "promptLabel": "שם הפרומפט",
-        "promptLabelPlaceholder": "הזן שם לפרומפט",
-        "promptInstructions": "הוראות לפרומפט",
-        "promptInstructionsPlaceholder": "כתוב את ההוראות שירוצו אחרי התמלול. לדוגמה: שפר דקדוק ובהירות עבור הטקסט הבא: ${output}",
-        "promptTip": "טיפ: השתמש ב-<code>${output}</code> כדי להכניס את הטקסט המתומלל לפרומפט שלך.",
-        "updatePrompt": "עדכן פרומפט",
-        "deletePrompt": "מחק פרומפט",
-        "createPrompt": "צור פרומפט",
-        "cancel": "ביטול",
-        "selectToEdit": "בחר פרומפט למעלה כדי לצפות בפרטים שלו ולערוך אותם.",
-        "createFirst": "לחץ על 'צור פרומפט חדש' למעלה כדי ליצור את פרומפט העיבוד הראשון שלך.",
-        "resetToDefault": "Reset to default"
-      },
-      "localLlmAlert": {
-        "link": "Learn more",
-        "title": "Local LLM required",
-        "body": "Toaster post-processing runs against a local OpenAI-compatible endpoint. See docs/post-processing.md for setup."
-      },
-      "manageModelsLink": "Manage models",
-      "localModels": {
-        "title": "Local LLM model",
-        "description": "Toaster runs LLM cleanup in-process. Pick a model below to download and use locally.",
-        "defaultBadge": "Default",
-        "selectedBadge": "Active",
-        "download": "Download",
-        "cancel": "Cancel",
-        "delete": "Delete",
-        "select": "Use this model",
-        "empty": "No local models available.",
-        "requirementsFormat": "{{size}} · RAM ~{{ram}} MB · Disk ~{{disk}} MB",
-        "progressFormat": "{{percent}}% · {{speed}} MB/s"
-      },
-      "provider": {
-        "local": {
-          "label": "Local (in-process)",
-          "description": "Runs the cleanup model inside Toaster. No network calls."
-        }
-      },
-      "localOnlyNotice": "Local LLM only — provider URLs are enforced to loopback by the backend (see src-tauri/src/llm_client.rs is_local_host)."
     },
     "debug": {
       "title": "ניפוי שגיאות",
@@ -269,10 +188,6 @@
       "wordCorrectionThreshold": {
         "title": "סף תיקון מילים",
         "description": "רגישות לתיקוני מילים מותאמות אישית"
-      },
-      "postProcessingToggle": {
-        "label": "עיבוד משלים",
-        "description": "הפעל שיפור טקסט מבוסס AI אחרי התמלול"
       },
       "paths": {
         "appData": "נתוני אפליקציה:",
@@ -479,23 +394,11 @@
         "experimental": {
           "title": "Experimental",
           "description": "Opt-in features that may change or be removed. Gated by the master toggle below."
-        },
-        "expertMode": {
-          "title": "Transcript processor",
-          "description": "Reveals the AI-cleanup connection settings and the Editor's prompt drawer. This is a UI visibility gate only — whether cleanup actually runs is controlled by the separate 'Run AI cleanup at transcription' toggle."
-        },
-        "llmConnection": {
-          "title": "AI cleanup (LLM connection)",
-          "description": "Configure the LLM endpoint that Toaster uses for transcript cleanup after transcription. Local GGUF runs in-process via a downloaded model; custom endpoints point at your own Ollama / LocalAI / self-hosted inference server."
         }
       },
       "experimentalMaster": {
         "title": "Enable experimental features",
         "description": "Master switch for every experiment. When off, individual experiment flags read as disabled even if they were previously turned on. Turning this back on restores your prior selections."
-      },
-      "expertMode": {
-        "title": "Transcript processor",
-        "description": "Show advanced LLM post-processing controls. When on, a connection-config group appears below and a prompt drawer appears in the Editor. Leave off for the simple editing experience."
       }
     }
   },

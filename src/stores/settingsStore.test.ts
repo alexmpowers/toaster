@@ -19,8 +19,6 @@ const { mockCommands } = vi.hoisted(() => {
       changeDebugModeSetting: fn(),
       updateCustomWords: fn(),
       changeWordCorrectionThresholdSetting: fn(),
-      changePostProcessEnabledSetting: fn(),
-      setPostProcessSelectedPrompt: fn(),
       setLogLevel: fn(),
       changeAppLanguageSetting: fn(),
       changeLazyStreamCloseSetting: fn(),
@@ -31,11 +29,6 @@ const { mockCommands } = vi.hoisted(() => {
       changeExportVolumeDbSetting: fn(),
       changeExportFadeInMsSetting: fn(),
       changeExportFadeOutMsSetting: fn(),
-      setPostProcessProvider: fn(),
-      changePostProcessBaseUrlSetting: fn(),
-      changePostProcessApiKeySetting: fn(),
-      changePostProcessModelSetting: fn(),
-      fetchPostProcessModels: fn(),
     } as Record<string, ReturnType<typeof vi.fn>>,
   };
 });
@@ -77,7 +70,6 @@ describe("settingsStore", () => {
       isUpdating: {},
       audioDevices: [],
       outputDevices: [],
-      postProcessModelOptions: {},
     });
     vi.clearAllMocks();
   });
@@ -92,7 +84,6 @@ describe("settingsStore", () => {
       expect(state.isUpdating).toEqual({});
       expect(state.audioDevices).toEqual([]);
       expect(state.outputDevices).toEqual([]);
-      expect(state.postProcessModelOptions).toEqual({});
     });
   });
 
@@ -350,150 +341,6 @@ describe("settingsStore", () => {
     });
   });
 
-  // ── setPostProcessProvider ───────────────────────────────────────
-  describe("setPostProcessProvider", () => {
-    beforeEach(() => {
-      useSettingsStore.setState({
-        settings: makeSettings({ post_process_provider_id: "openai" }),
-      });
-    });
-
-    it("optimistically updates provider and clears model options", async () => {
-      mockCommands.setPostProcessProvider.mockResolvedValue(ok(undefined));
-      mockCommands.getAppSettings.mockResolvedValue(ok(makeSettings()));
-
-      await useSettingsStore.getState().setPostProcessProvider("anthropic");
-
-      expect(mockCommands.setPostProcessProvider).toHaveBeenCalledWith(
-        "anthropic",
-      );
-    });
-
-    it("rolls back provider on failure", async () => {
-      mockCommands.setPostProcessProvider.mockResolvedValue(
-        err("provider error"),
-      );
-
-      await expect(
-        useSettingsStore.getState().setPostProcessProvider("bad"),
-      ).rejects.toThrow("provider error");
-
-      expect(
-        useSettingsStore.getState().settings?.post_process_provider_id,
-      ).toBe("openai");
-    });
-  });
-
-  // ── updatePostProcessBaseUrl ─────────────────────────────────────
-  describe("updatePostProcessBaseUrl", () => {
-    it("persists base URL, resets model, clears cached models, refreshes", async () => {
-      useSettingsStore.setState({ settings: makeSettings() });
-      mockCommands.changePostProcessBaseUrlSetting.mockResolvedValue(
-        ok(undefined),
-      );
-      mockCommands.changePostProcessModelSetting.mockResolvedValue(
-        ok(undefined),
-      );
-      mockCommands.getAppSettings.mockResolvedValue(ok(makeSettings()));
-
-      await useSettingsStore
-        .getState()
-        .updatePostProcessBaseUrl("custom", "https://example.com");
-
-      expect(
-        mockCommands.changePostProcessBaseUrlSetting,
-      ).toHaveBeenCalledWith("custom", "https://example.com");
-      expect(mockCommands.changePostProcessModelSetting).toHaveBeenCalledWith(
-        "custom",
-        "",
-      );
-      expect(
-        useSettingsStore.getState().postProcessModelOptions["custom"],
-      ).toEqual([]);
-    });
-
-    it("throws when base URL persistence fails", async () => {
-      useSettingsStore.setState({ settings: makeSettings() });
-      mockCommands.changePostProcessBaseUrlSetting.mockResolvedValue(
-        err("url fail"),
-      );
-
-      await expect(
-        useSettingsStore
-          .getState()
-          .updatePostProcessBaseUrl("custom", "https://bad"),
-      ).rejects.toThrow("url fail");
-    });
-  });
-
-  // ── updatePostProcessApiKey ──────────────────────────────────────
-  describe("updatePostProcessApiKey", () => {
-    it("clears cached models then delegates to updatePostProcessSetting", async () => {
-      useSettingsStore.setState({
-        settings: makeSettings(),
-        postProcessModelOptions: { openai: ["gpt-4"] },
-      });
-      mockCommands.changePostProcessApiKeySetting.mockResolvedValue(
-        ok(undefined),
-      );
-      mockCommands.getAppSettings.mockResolvedValue(ok(makeSettings()));
-
-      await useSettingsStore
-        .getState()
-        .updatePostProcessApiKey("openai", "sk-123");
-
-      expect(
-        useSettingsStore.getState().postProcessModelOptions["openai"],
-      ).toEqual([]);
-      expect(mockCommands.changePostProcessApiKeySetting).toHaveBeenCalledWith(
-        "openai",
-        "sk-123",
-      );
-    });
-  });
-
-  // ── fetchPostProcessModels ───────────────────────────────────────
-  describe("fetchPostProcessModels", () => {
-    it("stores returned models and returns them", async () => {
-      mockCommands.fetchPostProcessModels.mockResolvedValue(
-        ok(["gpt-4", "gpt-3.5"]),
-      );
-
-      const models = await useSettingsStore
-        .getState()
-        .fetchPostProcessModels("openai");
-
-      expect(models).toEqual(["gpt-4", "gpt-3.5"]);
-      expect(
-        useSettingsStore.getState().postProcessModelOptions["openai"],
-      ).toEqual(["gpt-4", "gpt-3.5"]);
-    });
-
-    it("throws on backend error", async () => {
-      mockCommands.fetchPostProcessModels.mockResolvedValue(
-        err("fetch failed"),
-      );
-
-      await expect(
-        useSettingsStore.getState().fetchPostProcessModels("openai"),
-      ).rejects.toThrow("fetch failed");
-    });
-
-    it("clears isUpdating after fetch", async () => {
-      mockCommands.fetchPostProcessModels.mockResolvedValue(
-        ok(["model-a"]),
-      );
-
-      await useSettingsStore.getState().fetchPostProcessModels("openai");
-
-      expect(
-        useSettingsStore
-          .getState()
-          .isUpdatingKey("post_process_models_fetch:openai"),
-      ).toBe(false);
-    });
-  });
-
   // ── Internal setters ─────────────────────────────────────────────
   describe("internal setters", () => {
     it("setSettings updates settings", () => {
@@ -513,15 +360,6 @@ describe("settingsStore", () => {
       ];
       useSettingsStore.getState().setAudioDevices(devices);
       expect(useSettingsStore.getState().audioDevices).toEqual(devices);
-    });
-
-    it("setPostProcessModelOptions updates for a specific provider", () => {
-      useSettingsStore
-        .getState()
-        .setPostProcessModelOptions("openai", ["gpt-4"]);
-      expect(
-        useSettingsStore.getState().postProcessModelOptions["openai"],
-      ).toEqual(["gpt-4"]);
     });
   });
 });

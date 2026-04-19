@@ -158,12 +158,10 @@
       },
       "filter": {
         "all": "All Models",
-        "transcription": "Transcription",
-        "postProcessing": "Post-processing"
+        "transcription": "Transcription"
       },
       "badge": {
-        "transcription": "Transcription",
-        "postProcessing": "Post-processing"
+        "transcription": "Transcription"
       },
       "noModelsMatch": "لا توجد نماذج مطابقة لهذا الفلتر.",
       "download": "Download",
@@ -171,85 +169,6 @@
         "performance": "Performance",
         "captions": "Captions"
       }
-    },
-    "postProcessing": {
-      "title": "معالجة لاحقة",
-      "hotkey": {
-        "title": "مفتاح الاختصار"
-      },
-      "api": {
-        "title": "API (متوافق مع OpenAI)",
-        "provider": {
-          "title": "المزود",
-          "description": "اختر مزوداً متوافقاً مع OpenAI."
-        },
-        "baseUrl": {
-          "title": "URL الأساسي",
-          "description": "URL الأساسي لـ API للمزود المختار. يمكن تعديل المزود المخصص فقط.",
-          "placeholder": "https://api.openai.com/v1"
-        },
-        "apiKey": {
-          "title": "مفتاح API",
-          "description": "مفتاح API للمزود المختار.",
-          "placeholder": "sk-..."
-        },
-        "model": {
-          "title": "النموذج",
-          "descriptionCustom": "قدم معرف النموذج المتوقع من قبل نقطة النهاية المخصصة الخاصة بك.",
-          "descriptionDefault": "اختر نموذجاً يعرضه المزود المختار.",
-          "placeholderWithOptions": "ابحث عن نموذج أو اختره",
-          "placeholderNoOptions": "اكتب اسم النموذج",
-          "refreshModels": "تحديث النماذج"
-        }
-      },
-      "prompts": {
-        "title": "المطالبة",
-        "selectedPrompt": {
-          "title": "المطالبة المختارة",
-          "description": ".اختر قالباً لتحسين التفريغ الصوتي أو أنشئ قالباً جديداً. استخدم ${output} داخل نص المطالبة للإشارة إلى النص الملتقط"
-        },
-        "noPrompts": "لا توجد مطالبات متاحة",
-        "selectPrompt": "اختر مطالبة",
-        "createNew": "إنشاء مطالبة جديدة",
-        "promptLabel": "تسمية المطالبة",
-        "promptLabelPlaceholder": "أدخل اسم المطالبة",
-        "promptInstructions": "تعليمات المطالبة",
-        "promptInstructionsPlaceholder": ".اكتب التعليمات المراد تشغيلها بعد التفريغ الصوتي. مثال: قم بتحسين القواعد والوضوح للنص التالي: ${output}",
-        "promptTip": "تلميح: استخدم <code>${output}</code> لإدراج النص المفرغ في مطالبتك.",
-        "updatePrompt": "تحديث المطالبة",
-        "deletePrompt": "حذف المطالبة",
-        "createPrompt": "إنشاء مطالبة",
-        "cancel": "إلغاء",
-        "selectToEdit": ".اختر مطالبة أعلاه لعرض وتعديل تفاصيلها",
-        "createFirst": ".انقر على 'إنشاء مطالبة جديدة' أعلاه لإنشاء أول مطالبة معالجة لاحقة لك",
-        "resetToDefault": "Reset to default"
-      },
-      "localLlmAlert": {
-        "link": "Learn more",
-        "title": "Local LLM required",
-        "body": "Toaster post-processing runs against a local OpenAI-compatible endpoint. See docs/post-processing.md for setup."
-      },
-      "manageModelsLink": "Manage models",
-      "localModels": {
-        "title": "Local LLM model",
-        "description": "Toaster runs LLM cleanup in-process. Pick a model below to download and use locally.",
-        "defaultBadge": "Default",
-        "selectedBadge": "Active",
-        "download": "Download",
-        "cancel": "Cancel",
-        "delete": "Delete",
-        "select": "Use this model",
-        "empty": "No local models available.",
-        "requirementsFormat": "{{size}} · RAM ~{{ram}} MB · Disk ~{{disk}} MB",
-        "progressFormat": "{{percent}}% · {{speed}} MB/s"
-      },
-      "provider": {
-        "local": {
-          "label": "Local (in-process)",
-          "description": "Runs the cleanup model inside Toaster. No network calls."
-        }
-      },
-      "localOnlyNotice": "Local LLM only — provider URLs are enforced to loopback by the backend (see src-tauri/src/llm_client.rs is_local_host)."
     },
     "debug": {
       "title": "تصحيح الأخطاء",
@@ -269,10 +188,6 @@
       "wordCorrectionThreshold": {
         "title": "عتبة تصحيح الكلمات",
         "description": "حساسية تصحيح الكلمات المخصصة"
-      },
-      "postProcessingToggle": {
-        "label": "معالجة لاحقة",
-        "description": "تمكين تحسين النص المدعوم بالذكاء الاصطناعي بعد التفريغ الصوتي"
       },
       "paths": {
         "appData": "بيانات التطبيق:",
@@ -479,23 +394,11 @@
         "experimental": {
           "title": "Experimental",
           "description": "Opt-in features that may change or be removed. Gated by the master toggle below."
-        },
-        "expertMode": {
-          "title": "Transcript processor",
-          "description": "Reveals the AI-cleanup connection settings and the Editor's prompt drawer. This is a UI visibility gate only — whether cleanup actually runs is controlled by the separate 'Run AI cleanup at transcription' toggle."
-        },
-        "llmConnection": {
-          "title": "AI cleanup (LLM connection)",
-          "description": "Configure the LLM endpoint that Toaster uses for transcript cleanup after transcription. Local GGUF runs in-process via a downloaded model; custom endpoints point at your own Ollama / LocalAI / self-hosted inference server."
         }
       },
       "experimentalMaster": {
         "title": "Enable experimental features",
         "description": "Master switch for every experiment. When off, individual experiment flags read as disabled even if they were previously turned on. Turning this back on restores your prior selections."
-      },
-      "expertMode": {
-        "title": "Transcript processor",
-        "description": "Show advanced LLM post-processing controls. When on, a connection-config group appears below and a prompt drawer appears in the Editor. Leave off for the simple editing experience."
       }
     }
   },

@@ -158,12 +158,10 @@
       },
       "filter": {
         "all": "All Models",
-        "transcription": "Transcription",
-        "postProcessing": "Post-processing"
+        "transcription": "Transcription"
       },
       "badge": {
-        "transcription": "Transcription",
-        "postProcessing": "Post-processing"
+        "transcription": "Transcription"
       },
       "noModelsMatch": "Không có mô hình nào khớp với bộ lọc này.",
       "download": "Download",
@@ -171,85 +169,6 @@
         "performance": "Performance",
         "captions": "Captions"
       }
-    },
-    "postProcessing": {
-      "title": "Xử lý sau",
-      "hotkey": {
-        "title": "Phím tắt"
-      },
-      "api": {
-        "title": "API (Tương thích OpenAI)",
-        "provider": {
-          "title": "Nhà cung cấp",
-          "description": "Chọn một nhà cung cấp tương thích OpenAI."
-        },
-        "baseUrl": {
-          "title": "URL cơ sở",
-          "description": "URL cơ sở API cho nhà cung cấp đã chọn. Chỉ có thể chỉnh sửa nhà cung cấp tùy chỉnh.",
-          "placeholder": "https://api.openai.com/v1"
-        },
-        "apiKey": {
-          "title": "Khóa API",
-          "description": "Khóa API cho nhà cung cấp đã chọn.",
-          "placeholder": "sk-..."
-        },
-        "model": {
-          "title": "Mô hình",
-          "descriptionCustom": "Cung cấp định danh mô hình được yêu cầu bởi điểm cuối tùy chỉnh của bạn.",
-          "descriptionDefault": "Chọn một mô hình được cung cấp bởi nhà cung cấp đã chọn.",
-          "placeholderWithOptions": "Tìm kiếm hoặc chọn một mô hình",
-          "placeholderNoOptions": "Nhập tên mô hình",
-          "refreshModels": "Làm mới mô hình"
-        }
-      },
-      "prompts": {
-        "title": "Prompt",
-        "selectedPrompt": {
-          "title": "Prompt đã chọn",
-          "description": "Chọn một mẫu để tinh chỉnh bản ghi hoặc tạo mới. Sử dụng ${output} trong văn bản prompt để tham chiếu bản ghi đã chụp."
-        },
-        "noPrompts": "Không có prompt nào",
-        "selectPrompt": "Chọn một prompt",
-        "createNew": "Tạo Prompt mới",
-        "promptLabel": "Nhãn Prompt",
-        "promptLabelPlaceholder": "Nhập tên prompt",
-        "promptInstructions": "Hướng dẫn Prompt",
-        "promptInstructionsPlaceholder": "Viết hướng dẫn để chạy sau khi chuyển đổi. Ví dụ: Cải thiện ngữ pháp và độ rõ ràng cho văn bản sau: ${output}",
-        "promptTip": "Mẹo: Sử dụng <code>${output}</code> để chèn văn bản đã chuyển đổi vào prompt của bạn.",
-        "updatePrompt": "Cập nhật Prompt",
-        "deletePrompt": "Xóa Prompt",
-        "createPrompt": "Tạo Prompt",
-        "cancel": "Hủy",
-        "selectToEdit": "Chọn một prompt ở trên để xem và chỉnh sửa chi tiết.",
-        "createFirst": "Nhấn 'Tạo Prompt mới' ở trên để tạo prompt xử lý sau đầu tiên của bạn.",
-        "resetToDefault": "Reset to default"
-      },
-      "localLlmAlert": {
-        "link": "Learn more",
-        "title": "Local LLM required",
-        "body": "Toaster post-processing runs against a local OpenAI-compatible endpoint. See docs/post-processing.md for setup."
-      },
-      "manageModelsLink": "Manage models",
-      "localModels": {
-        "title": "Local LLM model",
-        "description": "Toaster runs LLM cleanup in-process. Pick a model below to download and use locally.",
-        "defaultBadge": "Default",
-        "selectedBadge": "Active",
-        "download": "Download",
-        "cancel": "Cancel",
-        "delete": "Delete",
-        "select": "Use this model",
-        "empty": "No local models available.",
-        "requirementsFormat": "{{size}} · RAM ~{{ram}} MB · Disk ~{{disk}} MB",
-        "progressFormat": "{{percent}}% · {{speed}} MB/s"
-      },
-      "provider": {
-        "local": {
-          "label": "Local (in-process)",
-          "description": "Runs the cleanup model inside Toaster. No network calls."
-        }
-      },
-      "localOnlyNotice": "Local LLM only — provider URLs are enforced to loopback by the backend (see src-tauri/src/llm_client.rs is_local_host)."
     },
     "debug": {
       "title": "Gỡ lỗi",
@@ -269,10 +188,6 @@
       "wordCorrectionThreshold": {
         "title": "Ngưỡng sửa từ",
         "description": "Độ nhạy cho việc sửa từ tùy chỉnh"
-      },
-      "postProcessingToggle": {
-        "label": "Xử lý sau",
-        "description": "Bật tinh chỉnh văn bản bằng AI sau khi chuyển đổi"
       },
       "paths": {
         "appData": "Dữ liệu ứng dụng:",
@@ -479,23 +394,11 @@
         "experimental": {
           "title": "Experimental",
           "description": "Opt-in features that may change or be removed. Gated by the master toggle below."
-        },
-        "expertMode": {
-          "title": "Transcript processor",
-          "description": "Reveals the AI-cleanup connection settings and the Editor's prompt drawer. This is a UI visibility gate only — whether cleanup actually runs is controlled by the separate 'Run AI cleanup at transcription' toggle."
-        },
-        "llmConnection": {
-          "title": "AI cleanup (LLM connection)",
-          "description": "Configure the LLM endpoint that Toaster uses for transcript cleanup after transcription. Local GGUF runs in-process via a downloaded model; custom endpoints point at your own Ollama / LocalAI / self-hosted inference server."
         }
       },
       "experimentalMaster": {
         "title": "Enable experimental features",
         "description": "Master switch for every experiment. When off, individual experiment flags read as disabled even if they were previously turned on. Turning this back on restores your prior selections."
-      },
-      "expertMode": {
-        "title": "Transcript processor",
-        "description": "Show advanced LLM post-processing controls. When on, a connection-config group appears below and a prompt drawer appears in the Editor. Leave off for the simple editing experience."
       }
     }
   },
