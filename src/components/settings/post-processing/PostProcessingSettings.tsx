@@ -50,6 +50,9 @@ export const PostProcessingSettings: React.FC = () => {
 
   return (
     <div className="max-w-5xl w-full mx-auto space-y-6" data-testid="settings-outer">
+      <p className="text-xs text-mid-gray px-4" data-testid="post-processing-local-only-notice">
+        {t("settings.postProcessing.localOnlyNotice")}
+      </p>
       {(!selectedProviderId ||
         (!isLocalProvider && !model) ||
         (isLocalProvider && !settings?.local_llm_model_id)) && (

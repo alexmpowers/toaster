@@ -248,7 +248,8 @@
           "label": "Local (in-process)",
           "description": "Runs the cleanup model inside Toaster. No network calls."
         }
-      }
+      },
+      "localOnlyNotice": "Local LLM only — provider URLs are enforced to loopback by the backend (see src-tauri/src/llm_client.rs is_local_host)."
     },
     "debug": {
       "title": "偵錯",
