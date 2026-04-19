@@ -50,6 +50,19 @@ pub fn all() -> Vec<ModelInfo> {
     v
 }
 
+/// Look up a post-processor entry by id from the static catalog.
+/// Used by `managers::llm::LlmManager` (and its tests) for metadata
+/// that is not on the runtime `ModelInfo` snapshot. This helper is the
+/// direct replacement for the deleted `managers::llm::catalog::find_entry`.
+pub fn find_post_processor(id: &str) -> Option<ModelInfo> {
+    post_processor::entries().into_iter().find(|m| m.id == id)
+}
+
+/// Flat list of post-processor catalog entries. Used by tests.
+pub fn post_processor_entries() -> Vec<ModelInfo> {
+    post_processor::entries()
+}
+
 pub(super) fn discover_custom_whisper_models(
     models_dir: &Path,
     available_models: &mut HashMap<String, ModelInfo>,

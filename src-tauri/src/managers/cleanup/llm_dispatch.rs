@@ -454,12 +454,14 @@ mod dispatch_tests {
         model_id: &str,
         backend: Arc<Mutex<MockBackend>>,
     ) -> (TempDir, Arc<LlmManager>) {
-        use crate::managers::llm::{catalog, FixedRamProbe};
+        use crate::managers::llm::FixedRamProbe;
         let tmp = TempDir::new().unwrap();
         let dir = tmp.path().join("llm");
         std::fs::create_dir_all(&dir).unwrap();
         // Write a fake gguf for the entry.
-        let filename = catalog::find_entry(model_id).unwrap().filename();
+        let filename = crate::managers::model::catalog::find_post_processor(model_id)
+            .unwrap()
+            .filename;
         std::fs::write(dir.join(&filename), b"fake").unwrap();
         let mgr = Arc::new(
             LlmManager::with_probes(dir, Arc::new(FixedRamProbe(64 * 1024 * 1024 * 1024))).unwrap(),

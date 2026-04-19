@@ -30,6 +30,45 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 $srcRoot = Join-Path $repoRoot 'src-tauri\src'
 
 switch ($Check) {
+    'deleted' {
+        # AC-002-b: managers/llm/catalog.rs + managers/llm/download.rs deleted.
+        $catalog = Join-Path $srcRoot 'managers\llm\catalog.rs'
+        $download = Join-Path $srcRoot 'managers\llm\download.rs'
+        $missing = @()
+        if (Test-Path $catalog) { $missing += $catalog }
+        if (Test-Path $download) { $missing += $download }
+        if ($missing.Count -gt 0) {
+            Write-Host "[FAIL] expected these files to be deleted:" -ForegroundColor Red
+            $missing | ForEach-Object { Write-Host "   still present: $_" }
+            exit 1
+        }
+
+        # Also verify no remaining references to the deleted modules
+        # (other than in this audit script itself).
+        $files = Get-ChildItem -Path $srcRoot -Recurse -Filter *.rs -File
+        $refs = $files |
+            Select-String -Pattern 'managers::llm::(catalog|download)\b|LlmCatalogEntry\b|crate::managers::llm::catalog\b|crate::managers::llm::download\b' |
+            Where-Object { $_.Line -notmatch '^\s*(//|\*)' }
+        if (@($refs).Count -gt 0) {
+            Write-Host "[FAIL] leftover references to deleted llm::catalog/llm::download:" -ForegroundColor Red
+            $refs | ForEach-Object { Write-Host "   $_" }
+            exit 1
+        }
+
+        # Also verify managers/llm/mod.rs no longer declares the removed
+        # submodules.
+        $modRs = Join-Path $srcRoot 'managers\llm\mod.rs'
+        if (Test-Path $modRs) {
+            $modContent = Get-Content -Raw $modRs
+            if ($modContent -match '(?m)^\s*pub\s+mod\s+(catalog|download)\s*;') {
+                Write-Host "[FAIL] managers/llm/mod.rs still declares a removed submodule (pub mod catalog/download)" -ForegroundColor Red
+                exit 1
+            }
+        }
+
+        Write-Host "[PASS] managers/llm/catalog.rs and managers/llm/download.rs deleted with no leftover references" -ForegroundColor Green
+        exit 0
+    }
     'single-ev' {
         # AC-005-a: exactly one `struct ModelDownloadProgress` under src-tauri/src/
         # AND it must contain a `category` field.

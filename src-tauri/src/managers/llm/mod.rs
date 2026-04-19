@@ -1,7 +1,7 @@
-//! LLM manager — owns the in-process GGUF lifecycle and the catalog state.
+//! LLM manager — owns the in-process GGUF lifecycle.
 //!
 //! Responsibilities:
-//! - Catalog discovery + download-status refresh (mirrors `ModelManager`).
+//! - Catalog discovery + download-status refresh (delegates to `ModelManager`).
 //! - Lazy-load a selected GGUF on first `complete()` call; unload after the
 //!   existing `model_unload_timeout` setting elapses.
 //! - Expose a `complete()` entry point used by
@@ -10,13 +10,11 @@
 //! Everything behind the `LlmBackend` trait is abstracted over so tests
 //! and default cargo-check builds do not pull in `llama-cpp-2`.
 //!
-//! As of the unified-model-catalog feature (R-004), downloads, deletes,
-//! status refresh, and cancel flow through `Arc<ModelManager>`. The legacy
-//! `managers::llm::download` module is kept alive for its unit tests only
-//! (deletion deferred to umc-delete-llm-catalog).
+//! As of the unified-model-catalog feature (R-002 / R-004), all catalog
+//! data and download/delete/cancel operations flow through the shared
+//! `managers::model::catalog::post_processor` entries + `ModelManager`.
+//! The prior `managers::llm::{catalog,download}` modules are deleted.
 
-pub mod catalog;
-pub mod download;
 pub mod inference;
 
 #[cfg(test)]
@@ -25,16 +23,80 @@ mod tests;
 
 use anyhow::{anyhow, Result};
 use log::{debug, warn};
+use serde::{Deserialize, Serialize};
+use specta::Type;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-pub use catalog::{LlmCatalogEntry, LlmModelInfo};
-pub use download::{DiskSpaceCheck, FreeSpaceProbe, RealFreeSpaceProbe};
 pub use inference::{CompletionRequest, CompletionResponse, LlmBackend};
 
-use crate::managers::model::{DownloadStatus, ModelCategory, ModelDownloadProgress, ModelManager};
+use crate::managers::model::{
+    catalog as unified_catalog, DownloadStatus, ModelCategory, ModelDownloadProgress, ModelInfo,
+    ModelManager,
+};
+
+/// Runtime view of a post-processor catalog entry + download status.
+///
+/// Retained for the deprecated `list_llm_models` Tauri shim (see
+/// `commands::llm_models`). New code should consume `ModelInfo` directly
+/// via `commands::models::get_models(Some(PostProcessor))`.
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct LlmModelInfo {
+    pub id: String,
+    pub display_name: String,
+    pub description: String,
+    pub filename: String,
+    pub download_url: String,
+    pub sha256: String,
+    pub quantization: String,
+    pub size_bytes: u64,
+    pub context_length: u32,
+    pub recommended_ram_gb: u32,
+    pub is_recommended_default: bool,
+    pub is_downloaded: bool,
+    pub is_downloading: bool,
+    pub partial_size: u64,
+}
+
+impl LlmModelInfo {
+    /// Build from a unified `ModelInfo` record. PostProcessor entries in
+    /// the unified catalog carry an `llm_metadata` block with the fields
+    /// needed here.
+    pub fn from_model_info(m: ModelInfo) -> Self {
+        let llm = m.llm_metadata.clone().unwrap_or_default();
+        Self {
+            id: m.id,
+            display_name: m.name,
+            description: m.description,
+            filename: m.filename,
+            download_url: m.url.unwrap_or_default(),
+            sha256: m.sha256.unwrap_or_default(),
+            quantization: llm.quantization,
+            size_bytes: m.size_mb.saturating_mul(1_048_576),
+            context_length: llm.context_length,
+            recommended_ram_gb: llm.recommended_ram_gb,
+            is_recommended_default: m.is_recommended,
+            is_downloaded: m.is_downloaded,
+            is_downloading: m.is_downloading,
+            partial_size: m.partial_size,
+        }
+    }
+}
+
+/// Pull the (context_length, recommended_ram_gb, size_bytes) tuple from a
+/// post-processor `ModelInfo`. Centralized so every call site uses the
+/// same fallbacks when `llm_metadata` is missing (which should not happen
+/// for a curated PostProcessor entry — but we defend against it).
+fn llm_fields(m: &ModelInfo) -> (u32, u32, u64) {
+    let meta = m.llm_metadata.as_ref();
+    (
+        meta.map(|x| x.context_length).unwrap_or(0),
+        meta.map(|x| x.recommended_ram_gb).unwrap_or(0),
+        m.size_mb.saturating_mul(1_048_576),
+    )
+}
 
 /// Total system RAM probe. Abstracted so the "insufficient RAM" test can
 /// inject a small value without tying the test to the real host.
@@ -128,11 +190,10 @@ impl LlmManager {
 
     pub fn list_models(&self) -> Vec<LlmModelInfo> {
         let Some(mm) = self.model_manager.as_ref() else {
-            // Test mode: synthesize from the static catalog so consumers
-            // still see a non-empty list.
-            return catalog::catalog()
+            // Test mode: read directly from the static post-processor catalog.
+            return unified_catalog::post_processor_entries()
                 .into_iter()
-                .map(|e| LlmModelInfo::from(&e))
+                .map(LlmModelInfo::from_model_info)
                 .collect();
         };
         mm.get_available_models()
@@ -144,7 +205,7 @@ impl LlmManager {
 
     pub fn get_model(&self, model_id: &str) -> Option<LlmModelInfo> {
         let Some(mm) = self.model_manager.as_ref() else {
-            return catalog::find_entry(model_id).map(|e| LlmModelInfo::from(&e));
+            return unified_catalog::find_post_processor(model_id).map(LlmModelInfo::from_model_info);
         };
         mm.get_model_info(model_id)
             .filter(|m| m.category == ModelCategory::PostProcessor)
@@ -169,28 +230,29 @@ impl LlmManager {
         model_id: &str,
         mut on_progress: impl FnMut(ModelDownloadProgress),
     ) -> Result<()> {
-        let entry = catalog::find_entry(model_id)
+        let entry = unified_catalog::find_post_processor(model_id)
             .ok_or_else(|| anyhow!("Unknown LLM model id: {}", model_id))?;
+        let (_ctx, _ram, size_bytes) = llm_fields(&entry);
 
         on_progress(ModelDownloadProgress {
             id: model_id.to_string(),
             category: ModelCategory::PostProcessor,
             downloaded_bytes: 0,
-            total_bytes: entry.size_bytes,
+            total_bytes: size_bytes,
             percentage: 0.0,
             status: DownloadStatus::Started,
         });
 
         let result = self.model_manager()?.download_model(model_id).await;
 
-        let downloaded_final = if result.is_ok() { entry.size_bytes } else { 0 };
+        let downloaded_final = if result.is_ok() { size_bytes } else { 0 };
         on_progress(ModelDownloadProgress {
             id: model_id.to_string(),
             category: ModelCategory::PostProcessor,
             downloaded_bytes: downloaded_final,
-            total_bytes: entry.size_bytes,
-            percentage: if entry.size_bytes > 0 {
-                (downloaded_final as f64 / entry.size_bytes as f64) * 100.0
+            total_bytes: size_bytes,
+            percentage: if size_bytes > 0 {
+                (downloaded_final as f64 / size_bytes as f64) * 100.0
             } else {
                 0.0
             },
@@ -213,7 +275,7 @@ impl LlmManager {
     }
 
     pub fn delete(&self, model_id: &str) -> Result<()> {
-        let _entry = catalog::find_entry(model_id)
+        let _entry = unified_catalog::find_post_processor(model_id)
             .ok_or_else(|| anyhow!("Unknown LLM model id: {}", model_id))?;
         // If the deleted model is currently loaded, drop it first.
         {
@@ -260,9 +322,10 @@ impl LlmManager {
                 return Ok(());
             }
         }
-        let entry = catalog::find_entry(model_id)
+        let entry = unified_catalog::find_post_processor(model_id)
             .ok_or_else(|| anyhow!("Unknown LLM model id: {}", model_id))?;
-        let gguf_path = self.llm_dir.join(entry.filename());
+        let (context_length, recommended_ram_gb, _size_bytes) = llm_fields(&entry);
+        let gguf_path = self.llm_dir.join(&entry.filename);
         if !gguf_path.exists() {
             return Err(anyhow!(
                 "LLM model file not downloaded: {} (expected at {})",
@@ -272,23 +335,23 @@ impl LlmManager {
         }
         // RAM budget check.
         let have = self.ram_probe.total_ram_bytes();
-        let need = (entry.recommended_ram_gb as u64) * 1024 * 1024 * 1024;
+        let need = (recommended_ram_gb as u64) * 1024 * 1024 * 1024;
         if have < need {
             return Err(anyhow!(
                 "Insufficient RAM for {}: have {} bytes, need at least {} ({} GiB)",
                 entry.id,
                 have,
                 need,
-                entry.recommended_ram_gb
+                recommended_ram_gb
             ));
         }
-        let backend = inference::load_backend(&gguf_path, entry.context_length)?;
+        let backend = inference::load_backend(&gguf_path, context_length)?;
         {
             let mut loaded = crate::lock_recovery::recover_lock(self.loaded.lock());
             *loaded = Some(LoadedModel {
                 id: entry.id.clone(),
                 backend,
-                context_length: entry.context_length,
+                context_length,
             });
         }
         debug!("LLM model loaded: {}", entry.id);
@@ -302,12 +365,14 @@ impl LlmManager {
         model_id: &str,
         backend: Arc<Mutex<dyn LlmBackend>>,
     ) {
-        let entry = catalog::find_entry(model_id).expect("test model id must be in catalog");
+        let entry = unified_catalog::find_post_processor(model_id)
+            .expect("test model id must be in catalog");
+        let (context_length, _, _) = llm_fields(&entry);
         let mut loaded = crate::lock_recovery::recover_lock(self.loaded.lock());
         *loaded = Some(LoadedModel {
             id: entry.id.clone(),
             backend,
-            context_length: entry.context_length,
+            context_length,
         });
     }
 

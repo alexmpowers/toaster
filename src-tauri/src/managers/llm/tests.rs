@@ -9,9 +9,9 @@ use std::sync::Arc;
 use tempfile::TempDir;
 
 fn default_model_id() -> String {
-    let default_entry = catalog::catalog()
+    let default_entry = crate::managers::model::catalog::post_processor_entries()
         .into_iter()
-        .find(|e| e.is_recommended_default)
+        .find(|e| e.is_recommended)
         .expect("catalog must have a default entry");
     default_entry.id
 }
@@ -113,9 +113,14 @@ async fn llm_manager_errors_when_ram_insufficient() {
     // 128 MiB — below the smallest catalog entry's recommended_ram_gb (2 GiB).
     let (_tmp, mgr) = build_manager_with_ram(128 * 1024 * 1024);
     // Use the smallest model so we're not limited by which entries exist.
-    let small_entry = catalog::catalog()
+    let small_entry = crate::managers::model::catalog::post_processor_entries()
         .into_iter()
-        .min_by_key(|e| e.recommended_ram_gb)
+        .min_by_key(|e| {
+            e.llm_metadata
+                .as_ref()
+                .map(|m| m.recommended_ram_gb)
+                .unwrap_or(u32::MAX)
+        })
         .unwrap();
     write_fake_gguf(mgr.llm_dir(), &small_entry.id);
 

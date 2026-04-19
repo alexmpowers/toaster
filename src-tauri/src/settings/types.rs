@@ -326,7 +326,8 @@ pub struct AppSettings {
     pub caption_profiles_was_migrated: bool,
     #[serde(default = "default_settings_version")]
     pub settings_version: u32,
-    /// ID of the catalog entry (see `managers::llm::catalog`) the user
+    /// ID of the catalog entry (see
+    /// `managers::model::catalog::post_processor`) the user
     /// selected for the in-process local-GGUF cleanup path. `None` means
     /// no local model has been chosen yet; the dispatcher falls back to
     /// the HTTP provider when this is unset, regardless of the provider
