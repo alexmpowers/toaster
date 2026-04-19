@@ -17,10 +17,10 @@
  * lint time.
  *
  * Scope: ONLY the four prefixes above. Other `AppSettings` fields
- * (`selected_model`, `bindings`, `ui_expert_mode_enabled`,
- * `experimental_enabled`, `model_unload_timeout`, …) are intentionally
- * out of scope — they follow different persistence pathways or are
- * deliberately client-only. See the "silent keys" exclusions in
+ * (`selected_model`, `bindings`, `experimental_enabled`,
+ * `model_unload_timeout`, …) are intentionally out of scope — they
+ * follow different persistence pathways or are deliberately
+ * client-only. See the "silent keys" exclusions in
  * `settingsStore.ts > updateSetting` (line ~278).
  *
  * Invocation:

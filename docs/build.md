@@ -81,27 +81,6 @@ It runs environment setup, starts `cargo tauri dev`, and prints:
 - `launch_logs_stdout=...` and `launch_logs_stderr=...` (captured logs)
 - `launch_status=launched_ok|launched_with_errors|failed_to_launch`
 
-### Offline local LLM eval gate (cleanup + precision + ASR oracle)
-
-Run the combined offline rollout gate:
-
-```powershell
-.\scripts\run-local-llm-eval-gate.ps1 -MediaPath "C:\path\to\file.mp4" -AsrModelPath "C:\path\to\ggml-small.bin"
-```
-
-Optional output directory override:
-
-```powershell
-.\scripts\run-local-llm-eval-gate.ps1 -MediaPath "C:\path\to\file.mp4" -AsrModelPath "C:\path\to\ggml-small.bin" -OutputDir "C:\temp\toaster-local-llm-gate"
-```
-
-This gate has no silent fallback for required inputs:
-
-- `-MediaPath` is required and must point to an existing media file.
-- `-AsrModelPath` is required and must point to an existing local Whisper model file.
-
-The run writes `local-llm-eval-gate-report.json` with machine-readable pass/fail output, explicit criteria for each check (`cleanup_quality`, `precision_safety`, `asr_leakage_oracle`), and failure reasons when the gate fails.
-
 ### First Build Timing
 
 The first build after cloning (or after clearing `target/`) takes **2-4 minutes** due to:
@@ -111,20 +90,6 @@ The first build after cloning (or after clearing `target/`) takes **2-4 minutes*
 
 Subsequent incremental builds typically take 10-30 seconds.
 The launch monitoring script defaults to 120 seconds to accommodate first builds.
-
-## Post-processing (local LLM)
-
-Toaster's post-processing cleanup runs a **local** LLM — either in-process via
-`llama-cpp-2` (the default "Local (in-process)" provider) or against a
-locally-hosted OpenAI-compatible HTTP endpoint such as Ollama, LM Studio, or
-`llama.cpp ./server`. **No Toaster build step bundles or downloads a model**,
-and cleanup never calls a hosted inference API. The Allow / Discard word lists
-in Settings drive the protected-tokens and filler-word clauses of the cleanup
-prompt directly — there is no hardcoded fallback list.
-
-See [`docs/post-processing.md`](./post-processing.md) for provider setup,
-endpoint URLs, and model-download guidance. The rule this section implements
-lives in [`AGENTS.md`](../AGENTS.md) under "Local-only inference".
 
 ## Test and lint
 

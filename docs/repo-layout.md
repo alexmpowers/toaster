@@ -51,11 +51,9 @@ toaster/
 │   │   ├── commands/          # Tauri command handlers (transcribe_file/, waveform/, ...)
 │   │   └── managers/          # business logic
 │   │       ├── captions/       # caption generation and styling
-│   │       ├── cleanup/       # post-processing
 │   │       ├── editor/        # keep-segments, time mapping (backend authority)
 │   │       ├── export.rs      # FFmpeg-driven render pipeline
 │   │       ├── filler.rs      # filler-word detection and removal
-│   │       ├── llm/           # local LLM integration
 │   │       ├── model/         # ASR model lifecycle
 │   │       ├── splice/        # audio splice logic
 │   │       ├── transcription/ # adapter trait + backend implementations

@@ -78,14 +78,6 @@ pwsh scripts/eval/eval-edit-quality.ps1 `
 
 Compare the JSON against `tests/fixtures/edit-quality.baseline.json` (when available). Record per-metric delta.
 
-### 6. Local LLM gate (optional)
-
-```powershell
-pwsh scripts/eval/run-local-llm-eval-gate.ps1
-```
-
-Only run if the gate is enabled in the current context. Record skip reason otherwise.
-
 ## Output Format
 
 Produce `eval-harness-report.json` with the shape:
@@ -127,10 +119,6 @@ Produce `eval-harness-report.json` with the shape:
         "leading_silence_delta_s": 0.0,
         "trailing_silence_delta_s": 0.0
       }
-    },
-    {
-      "name": "local_llm_gate",
-      "status": "pass|fail|skip|error"
     }
   ],
   "overall": "pass|fail|error"
