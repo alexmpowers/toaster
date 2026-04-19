@@ -69,13 +69,6 @@ fn escape_srt_path_for_ffmpeg(path: &str) -> String {
     path.replace('\\', "/").replace(':', "\\:")
 }
 
-/// Probe the height (in pixels) of the first video stream using ffprobe.
-/// Returns `None` when ffprobe is unavailable or the file has no video stream.
-fn is_valid_hex_color(s: &str) -> bool {
-    let h = s.trim_start_matches('#');
-    (h.len() == 6 || h.len() == 8) && h.chars().all(|c| c.is_ascii_hexdigit())
-}
-
 pub(crate) fn probe_video_dimensions(path: &str) -> Option<(u32, u32)> {
     let output = std::process::Command::new("ffprobe")
         .args([
@@ -555,6 +548,14 @@ fn extend_single_segment_export_args(
 /// FFmpeg ASS uses `&HAABBGGRR&` color format (AA = alpha inverted, BGR order).
 /// Alpha: 00 = fully opaque, FF = fully transparent (inverted from CSS convention).
 /// BorderStyle=3 means OutlineColour controls the opaque box fill, not BackColour.
+///
+/// TODO(caption-pipeline): production path now uses
+/// `managers::captions::ass::build_ass_document` which embeds styling in the
+/// ASS document itself (see tests/part2.rs:176 — `force_style` must be gone).
+/// This helper is retained only for unit-test coverage of the legacy
+/// color-conversion math; consider deleting along with its tests in a
+/// dedicated cleanup bundle.
+#[allow(dead_code)]
 fn build_caption_style(
     text_color: &str,
     bg_color: &str,

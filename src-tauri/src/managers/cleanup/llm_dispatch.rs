@@ -10,6 +10,11 @@
 // the HTTP path is untouched, and a new `LocalGguf` variant routes through
 // `managers::llm::LlmManager` so cleanup can run in-process against a
 // downloaded GGUF model.
+//
+// TODO(cleanup-wireup): this module is not yet reachable from any Tauri
+// command — allow(dead_code) until the cleanup pipeline is wired in a
+// follow-up bundle.
+#![allow(dead_code)]
 
 use log::{debug, error, warn};
 use std::sync::Arc;

@@ -1,3 +1,9 @@
+// TODO(cleanup-wireup): llm_client is the HTTP path for OpenAI-compatible
+// providers (Ollama / LM Studio / llama.cpp). It is exercised by the
+// cleanup pipeline which is not yet reachable from any Tauri command.
+// Allow dead_code until the wireup lands.
+#![allow(dead_code)]
+
 use crate::settings::PostProcessProvider;
 use log::debug;
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE, USER_AGENT};

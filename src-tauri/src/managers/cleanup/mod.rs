@@ -7,6 +7,14 @@
 // (low-confidence span routing, local-cleanup-review UI round-trip, Apple
 // Intelligence provider branch, streaming-segment confidence heuristics)
 // were removed with the rest of the Handy dictation surface.
+//
+// TODO(cleanup-wireup): many helpers below are currently dead because the
+// cleanup pipeline is not yet invoked from any Tauri command. A future
+// feature bundle (`cleanup-pipeline-tauri-wireup`) will add the command
+// surface and make these helpers reachable. Until then, allow(dead_code)
+// keeps the warnings list signal over noise. See
+// features/postprocessor-word-list-source-of-truth/ for scope.
+#![allow(dead_code)]
 
 use crate::settings::{get_settings, AppSettings};
 use ferrous_opencc::{config::BuiltinConfig, OpenCC};
@@ -73,7 +81,7 @@ impl ScriptGroup {
 }
 
 #[derive(Debug)]
-struct CleanupValidationError {
+pub(in crate::managers) struct CleanupValidationError {
     reasons: Vec<String>,
 }
 

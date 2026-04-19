@@ -1,4 +1,9 @@
 //! Cleanup prompt + schema builders (extracted from cleanup/mod.rs).
+//!
+//! TODO(cleanup-wireup): this module is not yet reachable from any Tauri
+//! command — `allow(dead_code)` keeps the warnings list actionable until
+//! the cleanup pipeline is wired up by a follow-up feature bundle.
+#![allow(dead_code)]
 
 use super::{build_system_prompt, CLEANUP_CONTRACT_VERSION, CLEANUP_TRANSCRIPTION_FIELD};
 

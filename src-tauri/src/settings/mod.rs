@@ -193,17 +193,21 @@ mod tests {
     }
 
     #[test]
-    fn default_post_process_provider_prefers_local_ollama() {
+    fn default_post_process_provider_prefers_local_gguf() {
+        // Per PRD R-008 (local-llm-model-catalog) and
+        // docs/post-processing.md, the default post-processor is the
+        // in-process local-GGUF provider. Users can swap to Ollama /
+        // LM Studio / llama.cpp via the selector.
         let settings = get_default_settings();
-        assert_eq!(settings.post_process_provider_id, OLLAMA_PROVIDER_ID);
+        assert_eq!(settings.post_process_provider_id, LOCAL_GGUF_PROVIDER_ID);
 
-        let ollama = settings
+        let local = settings
             .post_process_providers
             .iter()
-            .find(|provider| provider.id == OLLAMA_PROVIDER_ID)
-            .expect("ollama provider should exist");
-        assert!(ollama.local_only);
-        assert!(!ollama.requires_api_key);
+            .find(|provider| provider.id == LOCAL_GGUF_PROVIDER_ID)
+            .expect("local-gguf provider should exist");
+        assert!(local.local_only);
+        assert!(!local.requires_api_key);
     }
 
     #[test]

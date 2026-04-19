@@ -1,6 +1,5 @@
 use crate::settings::{get_settings, write_settings};
 use anyhow::Result;
-use futures_util::StreamExt;
 use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 use specta::Type;
