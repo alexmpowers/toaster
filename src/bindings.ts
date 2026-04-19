@@ -764,9 +764,24 @@ async renderTempPreviewAudio() : Promise<Result<PreviewRenderMetadata, string>> 
  * Uses the keep-segments from the editor to produce an output file
  * with deleted segments removed. Supports both audio-only and video+audio.
  */
-async exportEditedMedia(inputPath: string, outputPath: string, burnCaptions: boolean | null) : Promise<Result<string, string>> {
+async exportEditedMedia(inputPath: string, outputPath: string, burnCaptions: boolean | null, formatOverride: AudioExportFormat | null) : Promise<Result<string, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("export_edited_media", { inputPath, outputPath, burnCaptions }) };
+    return { status: "ok", data: await TAURI_INVOKE("export_edited_media", { inputPath, outputPath, burnCaptions, formatOverride }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+/**
+ * List the export formats that make sense for a given source file
+ * extension. Backend is the single source of truth (AC-003-a).
+ *
+ * TEMPORARY hand-patch pending specta regen on next `cargo tauri dev`.
+ * See features/edit-export-format-override/journal.md.
+ */
+async listAllowedExportFormats(sourceExtension: string) : Promise<Result<AllowedExportFormat[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_allowed_export_formats", { sourceExtension }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e as string };
@@ -1086,6 +1101,13 @@ export type AudioDevice = { index: string; name: string; is_default: boolean }
  * `"mp4" | "mp3" | "wav" | "m4a" | "opus"`.
  */
 export type AudioExportFormat = "mp4" | "mp3" | "wav" | "m4a" | "opus"
+/**
+ * A source-compatible export format plus its canonical extension
+ * (leading-dot, e.g. ".mp4"). TEMPORARY hand-patch pending specta
+ * regen on next `cargo tauri dev`. See
+ * features/edit-export-format-override/journal.md.
+ */
+export type AllowedExportFormat = { format: AudioExportFormat; extension: string }
 export type AvailableAccelerators = { whisper: string[]; ort: string[]; gpu_devices: GpuDeviceOption[] }
 /**
  * Authoritative caption unit consumed verbatim by preview and export.

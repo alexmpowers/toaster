@@ -15,7 +15,7 @@ import {
   Volume2,
 } from "lucide-react";
 import { SettingsGroup } from "@/components/ui/SettingsGroup";
-import { commands, type ExportFormat, type Result } from "@/bindings";
+import { commands, type ExportFormat, type Result, type AllowedExportFormat, type AudioExportFormat } from "@/bindings";
 import { useEditorStore } from "@/stores/editorStore";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useSettingsStore } from "@/stores/settingsStore";
@@ -23,6 +23,7 @@ import TranscriptEditor from "@/components/editor/TranscriptEditor";
 import MediaPlayer from "@/components/player/MediaPlayer";
 import Waveform from "@/components/player/Waveform";
 import EditorToolbar from "@/components/editor/EditorToolbar";
+import ExportFormatPicker from "@/components/editor/ExportFormatPicker";
 
 const unwrapResult = <T,>(result: Result<T, string>): T => {
   if (result.status === "ok") {
@@ -47,6 +48,8 @@ const EditorView: React.FC = () => {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [isExportingMedia, setIsExportingMedia] = useState(false);
   const [burnCaptions, setBurnCaptions] = useState(false);
+  const [formatOverride, setFormatOverride] = useState<AudioExportFormat | null>(null);
+  const [allowedFormats, setAllowedFormats] = useState<AllowedExportFormat[]>([]);
   const [isCleaningUp, setIsCleaningUp] = useState(false);
   const [modelMissing, setModelMissing] = useState(false);
   const [lastSavedPath, setLastSavedPath] = useState<string | null>(null);
@@ -309,10 +312,46 @@ const EditorView: React.FC = () => {
     }
   }, [mediaInfo]);
 
+  // Fetch source-compatible formats whenever the loaded media changes
+  // so the ExportFormatPicker options and extension-lookup stay
+  // authoritative (AC-003-a, AC-004-a).
+  useEffect(() => {
+    if (!mediaInfo) {
+      setAllowedFormats([]);
+      setFormatOverride(null);
+      return;
+    }
+    const ext = mediaInfo.extension ?? "";
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = unwrapResult(await commands.listAllowedExportFormats(ext));
+        if (!cancelled) {
+          setAllowedFormats(result);
+          setFormatOverride(null);
+        }
+      } catch (err) {
+        console.error("Failed to list allowed export formats:", err);
+        if (!cancelled) setAllowedFormats([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mediaInfo]);
+
+  const defaultExportFormat: AudioExportFormat = settings?.export_format ?? "mp4";
+
   const handleExportEditedMedia = useCallback(async () => {
     if (!mediaInfo) return;
 
-    const extension = (mediaInfo.extension || (mediaInfo.media_type === "Video" ? "mp4" : "m4a")).toLowerCase();
+    const effectiveFormat: AudioExportFormat = formatOverride ?? defaultExportFormat;
+    const allowedMatch = allowedFormats.find((f) => f.format === effectiveFormat);
+    // Backend payload carries the canonical extension with a leading
+    // dot (AC-005-a). Fall back to the format string if the list hasn't
+    // loaded yet; source-derived extension is intentionally NOT used —
+    // that was the pre-override bug (PRD §1).
+    const extension = (allowedMatch?.extension.replace(/^\./, "") ?? effectiveFormat).toLowerCase();
     const baseName = mediaInfo.file_name.replace(/\.[^/.]+$/, "");
 
     try {
@@ -327,13 +366,20 @@ const EditorView: React.FC = () => {
       });
       if (!filePath) return;
       setIsExportingMedia(true);
-      unwrapResult(await commands.exportEditedMedia(mediaInfo.path, filePath, burnCaptions || null));
+      unwrapResult(
+        await commands.exportEditedMedia(
+          mediaInfo.path,
+          filePath,
+          burnCaptions || null,
+          formatOverride,
+        ),
+      );
     } catch (err) {
       console.error("Edited media export failed:", err);
     } finally {
       setIsExportingMedia(false);
     }
-  }, [mediaInfo, t, burnCaptions]);
+  }, [mediaInfo, t, burnCaptions, formatOverride, defaultExportFormat, allowedFormats]);
 
   const handleCleanup = useCallback(async () => {
     clearHighlights();
@@ -428,6 +474,13 @@ const EditorView: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
+                  <ExportFormatPicker
+                    value={formatOverride}
+                    onChange={setFormatOverride}
+                    options={allowedFormats}
+                    defaultFormat={defaultExportFormat}
+                    disabled={isExportingMedia || words.length === 0}
+                  />
                   <button
                     onClick={handleExportEditedMedia}
                     disabled={words.length === 0 || isExportingMedia}

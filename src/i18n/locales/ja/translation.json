@@ -675,7 +675,17 @@
     "export": "Export",
     "exporting": "Exporting...",
     "addCaptions": "Add Captions",
-    "cleanup": "Clean up"
+    "cleanup": "Clean up",
+    "exportFormat": {
+      "label": "Export format",
+      "useDefault": "Use default ({{format}})",
+      "formatWav": "WAV",
+      "tooltip": "Pick the output format for this export. Uses your Advanced setting when not overridden.",
+      "formatM4a": "M4A",
+      "formatOpus": "Opus",
+      "formatMp4": "MP4 (video)",
+      "formatMp3": "MP3"
+    }
   },
   "experiments": {
     "feedbackLink": "Send feedback"
