@@ -182,25 +182,19 @@ pub fn delete_asset(llm_dir: &Path, entry: &LlmCatalogEntry) -> Result<()> {
     Ok(())
 }
 
-/// Download progress snapshot emitted to the frontend.
-#[derive(Debug, Clone)]
-pub struct LlmDownloadProgress {
-    pub model_id: String,
-    pub downloaded: u64,
-    pub total: u64,
-    pub percentage: f64,
-    pub speed_bps: u64,
-}
-
 /// Download a catalog entry to `<llm_dir>/<id>.gguf`. Performs the disk-space
 /// preflight first, then streams the bytes into a `.partial` file, verifies
 /// sha256 on completion, and renames to the final path.
 ///
-/// `on_progress` is called at most every ~100ms; callers can hook Tauri
-/// events there. `cancel` polls between chunks — when the flag flips, the
-/// partial file is removed and `Ok(())` is returned (cancellation is not an
-/// error for the caller; UI treats it as a clean state reset).
-pub async fn download_entry<P: FreeSpaceProbe + ?Sized, F: FnMut(LlmDownloadProgress)>(
+/// `on_progress` is called at most every ~100ms with (downloaded_bytes,
+/// total_bytes, speed_bps); callers can hook Tauri events there. `cancel`
+/// polls between chunks — when the flag flips, the partial file is kept and
+/// `Ok(())` is returned (cancellation is not an error for the caller).
+///
+/// NOTE: This helper is scheduled for removal in `umc-delete-llm-catalog`
+/// once the last non-test caller is gone. Production downloads flow through
+/// `managers::model::download::download_model` / `fetch_and_verify`.
+pub async fn download_entry<P: FreeSpaceProbe + ?Sized, F: FnMut(u64, u64, u64)>(
     probe: &P,
     llm_dir: &Path,
     entry: &LlmCatalogEntry,
@@ -282,18 +276,7 @@ pub async fn download_entry<P: FreeSpaceProbe + ?Sized, F: FnMut(LlmDownloadProg
             let elapsed_secs = start.elapsed().as_secs_f64().max(0.001);
             let speed_bps =
                 ((downloaded - resume_from) as f64 / elapsed_secs) as u64;
-            let percentage = if total > 0 {
-                (downloaded as f64 / total as f64) * 100.0
-            } else {
-                0.0
-            };
-            on_progress(LlmDownloadProgress {
-                model_id: entry.id.clone(),
-                downloaded,
-                total,
-                percentage,
-                speed_bps,
-            });
+            on_progress(downloaded, total, speed_bps);
             last_emit = Instant::now();
         }
     }
@@ -373,7 +356,7 @@ pub(crate) mod download_tests {
         // Provide only half the required space (need 2x; we supply 1x).
         let probe = FixedFreeSpace(entry.size_bytes);
         let cancel = Arc::new(AtomicBool::new(false));
-        let result = download_entry(&probe, &llm_dir, &entry, cancel, |_| {}).await;
+        let result = download_entry(&probe, &llm_dir, &entry, cancel, |_, _, _| {}).await;
         let err = result.expect_err("download must fail when disk is tight");
         let msg = err.to_string();
         assert!(

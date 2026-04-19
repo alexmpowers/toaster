@@ -13,7 +13,7 @@ use std::time::{Duration, Instant};
 use tar::Archive;
 use tauri::Emitter;
 
-use super::{DownloadCleanup, DownloadProgress, ModelManager};
+use super::{DownloadCleanup, DownloadStatus, ModelDownloadProgress, ModelManager};
 
 impl ModelManager {
     pub async fn download_model(&self, model_id: &str) -> Result<()> {
@@ -135,15 +135,17 @@ impl ModelManager {
         };
 
         // Emit initial progress
-        let initial_progress = DownloadProgress {
-            model_id: model_id.to_string(),
-            downloaded,
-            total: total_size,
+        let initial_progress = ModelDownloadProgress {
+            id: model_id.to_string(),
+            category: model_info.category,
+            downloaded_bytes: downloaded,
+            total_bytes: total_size,
             percentage: if total_size > 0 {
                 (downloaded as f64 / total_size as f64) * 100.0
             } else {
                 0.0
             },
+            status: DownloadStatus::Started,
         };
         let _ = self
             .app_handle
@@ -177,11 +179,13 @@ impl ModelManager {
 
             // Emit progress event (throttled to avoid UI freeze)
             if last_emit.elapsed() >= throttle_duration {
-                let progress = DownloadProgress {
-                    model_id: model_id.to_string(),
-                    downloaded,
-                    total: total_size,
+                let progress = ModelDownloadProgress {
+                    id: model_id.to_string(),
+                    category: model_info.category,
+                    downloaded_bytes: downloaded,
+                    total_bytes: total_size,
                     percentage,
+                    status: DownloadStatus::Progress,
                 };
                 let _ = self.app_handle.emit("model-download-progress", &progress);
                 last_emit = Instant::now();
@@ -189,15 +193,17 @@ impl ModelManager {
         }
 
         // Emit final progress to ensure 100% is shown
-        let final_progress = DownloadProgress {
-            model_id: model_id.to_string(),
-            downloaded,
-            total: total_size,
+        let final_progress = ModelDownloadProgress {
+            id: model_id.to_string(),
+            category: model_info.category,
+            downloaded_bytes: downloaded,
+            total_bytes: total_size,
             percentage: if total_size > 0 {
                 (downloaded as f64 / total_size as f64) * 100.0
             } else {
                 100.0
             },
+            status: DownloadStatus::Completed,
         };
         let _ = self
             .app_handle

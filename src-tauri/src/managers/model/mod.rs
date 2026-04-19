@@ -27,7 +27,7 @@ pub enum EngineType {
     Cohere,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type, PartialEq, Default)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, Type, PartialEq, Eq, Default)]
 pub enum ModelCategory {
     #[default]
     Transcription,
@@ -113,12 +113,31 @@ impl ModelInfo {
     }
 }
 
+/// Unified per-model download progress event. Emitted on the
+/// `model-download-progress` channel for both transcription and
+/// post-processor downloads (PRD R-005). The frontend keys progress
+/// state by `id`; `category` lets consumers scope to a specific
+/// catalog segment without a round-trip lookup.
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
-pub struct DownloadProgress {
-    pub model_id: String,
-    pub downloaded: u64,
-    pub total: u64,
+pub struct ModelDownloadProgress {
+    pub id: String,
+    pub category: ModelCategory,
+    pub downloaded_bytes: u64,
+    pub total_bytes: u64,
     pub percentage: f64,
+    pub status: DownloadStatus,
+}
+
+/// Lifecycle status for a download. Mirrors the progress-bar reducer
+/// states the UI already tracks for Whisper models.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
+#[serde(rename_all = "snake_case")]
+pub enum DownloadStatus {
+    Started,
+    Progress,
+    Completed,
+    Cancelled,
+    Failed,
 }
 
 /// RAII guard that cleans up download state (`is_downloading` flag and cancel flag)

@@ -29,11 +29,10 @@ pub async fn download_llm_model(
             let _ = emitter.emit(
                 "llm-model-download-progress",
                 serde_json::json!({
-                    "model_id": progress.model_id,
-                    "downloaded": progress.downloaded,
-                    "total": progress.total,
+                    "model_id": progress.id,
+                    "downloaded": progress.downloaded_bytes,
+                    "total": progress.total_bytes,
                     "percentage": progress.percentage,
-                    "speed_bps": progress.speed_bps,
                     "asset_kind": "llm",
                 }),
             );

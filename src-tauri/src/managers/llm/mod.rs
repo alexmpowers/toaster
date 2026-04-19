@@ -31,10 +31,10 @@ use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 pub use catalog::{LlmCatalogEntry, LlmModelInfo};
-pub use download::{DiskSpaceCheck, FreeSpaceProbe, LlmDownloadProgress, RealFreeSpaceProbe};
+pub use download::{DiskSpaceCheck, FreeSpaceProbe, RealFreeSpaceProbe};
 pub use inference::{CompletionRequest, CompletionResponse, LlmBackend};
 
-use crate::managers::model::{ModelCategory, ModelManager};
+use crate::managers::model::{DownloadStatus, ModelCategory, ModelDownloadProgress, ModelManager};
 
 /// Total system RAM probe. Abstracted so the "insufficient RAM" test can
 /// inject a small value without tying the test to the real host.
@@ -158,38 +158,47 @@ impl LlmManager {
     }
 
     /// Start downloading a catalog entry via the unified pipeline.
+    ///
+    /// Note: `ModelManager::download_model` is the emitter of canonical
+    /// `model-download-progress` events. This helper additionally calls
+    /// `on_progress` with start + end snapshots so the legacy
+    /// `llm-model-download-progress` channel can keep working until the
+    /// command layer is unified (umc-command-unify).
     pub async fn download(
         &self,
         model_id: &str,
-        mut on_progress: impl FnMut(LlmDownloadProgress),
+        mut on_progress: impl FnMut(ModelDownloadProgress),
     ) -> Result<()> {
         let entry = catalog::find_entry(model_id)
             .ok_or_else(|| anyhow!("Unknown LLM model id: {}", model_id))?;
 
-        let start = Instant::now();
-        on_progress(LlmDownloadProgress {
-            model_id: model_id.to_string(),
-            downloaded: 0,
-            total: entry.size_bytes,
+        on_progress(ModelDownloadProgress {
+            id: model_id.to_string(),
+            category: ModelCategory::PostProcessor,
+            downloaded_bytes: 0,
+            total_bytes: entry.size_bytes,
             percentage: 0.0,
-            speed_bps: 0,
+            status: DownloadStatus::Started,
         });
 
         let result = self.model_manager()?.download_model(model_id).await;
 
         let downloaded_final = if result.is_ok() { entry.size_bytes } else { 0 };
-        let elapsed = start.elapsed().as_secs_f64().max(0.001);
-        let speed_bps = (downloaded_final as f64 / elapsed) as u64;
-        on_progress(LlmDownloadProgress {
-            model_id: model_id.to_string(),
-            downloaded: downloaded_final,
-            total: entry.size_bytes,
+        on_progress(ModelDownloadProgress {
+            id: model_id.to_string(),
+            category: ModelCategory::PostProcessor,
+            downloaded_bytes: downloaded_final,
+            total_bytes: entry.size_bytes,
             percentage: if entry.size_bytes > 0 {
                 (downloaded_final as f64 / entry.size_bytes as f64) * 100.0
             } else {
                 0.0
             },
-            speed_bps,
+            status: if result.is_ok() {
+                DownloadStatus::Completed
+            } else {
+                DownloadStatus::Failed
+            },
         });
 
         result
