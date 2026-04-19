@@ -502,24 +502,31 @@ const EditorView: React.FC = () => {
       )}
 
       {mediaUrl && words.length > 0 && (
-        <>
-          {/* Inline transcript action row — Cleanup is a transcript
-              modification, not an export action, so it lives with
-              the transcript, not in an export toolbar. */}
-          <div className="flex justify-end">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleCleanup}
-              disabled={isCleaningUp}
-              className="inline-flex items-center gap-1.5"
-            >
-              <AudioLines size={14} />
-              {t("editor.cleanup")}
-            </Button>
+        <div className="space-y-2">
+          <div className="px-4">
+            <h2 className="text-xs font-medium text-mid-gray uppercase tracking-wide">
+              {t("editor.sections.transcription")}
+            </h2>
           </div>
-          <TranscriptEditor onWordClick={handleWordClick} />
-        </>
+          <div className="bg-background border border-mid-gray/20 rounded-lg p-4 space-y-3">
+            {/* Cleanup is a transcript modification, not an export action,
+                so it lives with the transcript itself. Left-aligned above
+                the transcript per Round 7 user feedback. */}
+            <div className="flex justify-start">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleCleanup}
+                disabled={isCleaningUp}
+                className="inline-flex items-center gap-1.5"
+              >
+                <AudioLines size={14} />
+                {t("editor.cleanup")}
+              </Button>
+            </div>
+            <TranscriptEditor onWordClick={handleWordClick} />
+          </div>
+        </div>
       )}
 
       {/* Per-export knobs: burn captions, normalize, loudness/preflight.

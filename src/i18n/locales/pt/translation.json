@@ -434,21 +434,6 @@
             "label": "Streaming (-14 LUFS)",
             "description": "Spotify / YouTube preset. Targets -14 LUFS integrated."
           }
-        },
-        "preflight": {
-          "title": "Preflight measurement",
-          "description": "Measures the post-edit audio without exporting so you can preview how far off-target it is.",
-          "run": "Run preflight",
-          "running": "Measuring…",
-          "integrated": "Integrated",
-          "truePeak": "True peak",
-          "lra": "Loudness range",
-          "delta": "Delta to target",
-          "target": "Target",
-          "noMedia": "Open a project to run preflight.",
-          "noTarget": "—",
-          "warningOffTarget": "Measured loudness is more than 12 LU off the target. Consider re-recording or adjusting the source before export.",
-          "error": "Preflight failed: {{error}}"
         }
       },
       "formatVideo": {
@@ -620,7 +605,8 @@
     "sections": {
       "media": "Media",
       "words": "Words",
-      "exportSettings": "Export & Tools"
+      "exportSettings": "Export & Tools",
+      "transcription": "Transcription"
     },
     "deleteWord": "Delete Word",
     "restoreWord": "Restore Word",

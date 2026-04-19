@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown, Download } from "lucide-react";
-import { Button } from "@/components/ui/Button";
 import type { ExportFormat, MediaType } from "@/bindings";
 
 interface ExportMenuProps {
@@ -64,32 +63,41 @@ const ExportMenu: React.FC<ExportMenuProps> = ({
 
   return (
     <div ref={containerRef} className="relative inline-flex">
-      <Button
-        variant="brand"
-        size="sm"
+      <button
+        type="button"
         onClick={() => setOpen((v) => !v)}
         disabled={disabled}
-        className="inline-flex items-center gap-1.5"
         aria-haspopup="menu"
         aria-expanded={open}
+        className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+          open
+            ? "bg-logo-primary/20 text-text"
+            : "bg-mid-gray/10 text-text/60 hover:bg-mid-gray/20"
+        }`}
       >
-        <Download size={14} />
-        {isExportingMedia
-          ? t("editor.exporting")
-          : t("editor.exportMenu.trigger")}
-        <ChevronDown size={14} />
-      </Button>
+        <Download className="w-3.5 h-3.5" />
+        <span>
+          {isExportingMedia
+            ? t("editor.exporting")
+            : t("editor.exportMenu.trigger")}
+        </span>
+        <ChevronDown
+          className={`w-3.5 h-3.5 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full mt-1 z-20 w-56 rounded-lg border border-mid-gray/20 bg-background shadow-lg py-1"
+          className="absolute top-full right-0 mt-1 w-56 bg-background border border-mid-gray/80 rounded-lg shadow-lg z-50 overflow-hidden"
         >
           <MenuItem
             label={editedLabel}
             disabled={isExportingMedia || !mediaType}
             onClick={() => dispatch(onExportEditedMedia)}
           />
-          <div className="my-1 border-t border-mid-gray/10" />
+          <div className="border-t border-mid-gray/20" />
           <MenuItem
             label={t("editor.exportMenu.transcriptSrt")}
             onClick={() => dispatch(() => onExportTranscript("Srt"))}
@@ -102,7 +110,7 @@ const ExportMenu: React.FC<ExportMenuProps> = ({
             label={t("editor.exportMenu.transcriptScript")}
             onClick={() => dispatch(() => onExportTranscript("Script"))}
           />
-          <div className="my-1 border-t border-mid-gray/10" />
+          <div className="border-t border-mid-gray/20" />
           <MenuItem
             label={t("editor.exportMenu.ffmpegScript")}
             onClick={() => dispatch(onExportFFmpegScript)}
@@ -120,16 +128,15 @@ interface MenuItemProps {
 }
 
 const MenuItem: React.FC<MenuItemProps> = ({ label, disabled, onClick }) => (
-  <Button
-    variant="ghost"
-    size="sm"
+  <button
+    type="button"
     role="menuitem"
     onClick={onClick}
     disabled={disabled}
-    className="w-full !justify-start !rounded-none !border-0 text-sm"
+    className="w-full px-3 py-1.5 text-sm text-left text-text transition-colors hover:bg-mid-gray/10 disabled:opacity-50 disabled:cursor-not-allowed"
   >
     {label}
-  </Button>
+  </button>
 );
 
 export default ExportMenu;

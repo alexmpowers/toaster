@@ -38,6 +38,12 @@ const ALLOWED_PATHS = new Set<string>([
   // Update-checker banner CTA; lives on a modal overlay with bespoke
   // spacing. Tracked as design debt.
   "src/components/update-checker/UpdateChecker.tsx",
+  // ExportMenu popover: option rows inside the export popover are list
+  // items (same rationale as Dropdown.tsx / LanguageSelector.tsx); the
+  // trigger intentionally mirrors the Models-page category filter button
+  // so the Editor's primary export control and the Models filter share
+  // visual tokens per Round 7 user feedback.
+  "src/components/editor/ExportMenu.tsx",
 ]);
 const BRAND_CLASSES = [
   "bg-logo-primary",
