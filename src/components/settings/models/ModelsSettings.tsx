@@ -5,17 +5,52 @@ import { ChevronDown, Globe } from "lucide-react";
 import type { ModelCardStatus } from "@/components/onboarding";
 import { ModelCard } from "@/components/onboarding";
 import { useModelStore } from "@/stores/modelStore";
+import { useSettingsNavStore } from "@/stores/settingsNavStore";
 import { LANGUAGES } from "@/lib/constants/languages.ts";
-import { type ModelInfo } from "@/bindings";
+import { type ModelCategory, type ModelInfo } from "@/bindings";
+
+type CategoryFilter = ModelCategory | "all";
+
+interface ModelsSettingsProps {
+  /**
+   * When set, the segmented category filter is not rendered and the
+   * list is pinned to this category. Used by PostProcessingSettings
+   * to embed the unified picker filtered to `PostProcessor`.
+   */
+  lockedCategory?: ModelCategory;
+  /**
+   * Initial selection for the category filter when `lockedCategory`
+   * is not set. Ignored when `lockedCategory` is provided.
+   */
+  initialFilter?: CategoryFilter;
+}
 
 // check if model supports a language based on its supported_languages list
 const modelSupportsLanguage = (model: ModelInfo, langCode: string): boolean => {
   return model.supported_languages.includes(langCode);
 };
 
-export const ModelsSettings: React.FC = () => {
+const categoryBadgeKey = (category: ModelCategory | null | undefined): string | null => {
+  if (category === "Transcription") return "settings.models.badge.transcription";
+  if (category === "PostProcessor") return "settings.models.badge.postProcessing";
+  return null;
+};
+
+export const ModelsSettings: React.FC<ModelsSettingsProps> = ({
+  lockedCategory,
+  initialFilter,
+}) => {
   const { t } = useTranslation();
+  const consumePendingModelsFilter = useSettingsNavStore(
+    (s) => s.consumePendingModelsFilter,
+  );
   const [switchingModelId, setSwitchingModelId] = useState<string | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>(() => {
+    if (lockedCategory) return lockedCategory;
+    const pending = consumePendingModelsFilter();
+    if (pending) return pending;
+    return initialFilter ?? "all";
+  });
   const [languageFilter, setLanguageFilter] = useState("all");
   const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false);
   const [languageSearch, setLanguageSearch] = useState("");
@@ -35,6 +70,13 @@ export const ModelsSettings: React.FC = () => {
     selectModel,
     deleteModel,
   } = useModelStore();
+
+  // If the consumer changes `lockedCategory` at runtime, honor it.
+  useEffect(() => {
+    if (lockedCategory) {
+      setCategoryFilter(lockedCategory);
+    }
+  }, [lockedCategory]);
 
   // click outside handler for language dropdown
   useEffect(() => {
@@ -153,15 +195,23 @@ export const ModelsSettings: React.FC = () => {
     }
   };
 
-  // Filter models based on language filter
+  const getCategoryBadge = (model: ModelInfo): string | undefined => {
+    const key = categoryBadgeKey(model.category ?? null);
+    return key ? t(key) : undefined;
+  };
+
+  // Filter models based on category + language filters
   const filteredModels = useMemo(() => {
     return models.filter((model: ModelInfo) => {
+      if (categoryFilter !== "all") {
+        if ((model.category ?? "Transcription") !== categoryFilter) return false;
+      }
       if (languageFilter !== "all") {
         if (!modelSupportsLanguage(model, languageFilter)) return false;
       }
       return true;
     });
-  }, [models, languageFilter]);
+  }, [models, categoryFilter, languageFilter]);
 
   // Split filtered models into downloaded (including custom) and available sections
   const { downloadedModels, availableModels } = useMemo(() => {
@@ -195,6 +245,34 @@ export const ModelsSettings: React.FC = () => {
     };
   }, [filteredModels, downloadingModels, extractingModels, currentModel]);
 
+  const categoryTabs: Array<{ value: CategoryFilter; labelKey: string }> = [
+    { value: "all", labelKey: "settings.models.filter.all" },
+    {
+      value: "Transcription",
+      labelKey: "settings.models.filter.transcription",
+    },
+    {
+      value: "PostProcessor",
+      labelKey: "settings.models.filter.postProcessing",
+    },
+  ];
+
+  const handleCategoryKeyDown = (
+    e: React.KeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    const delta = e.key === "ArrowRight" ? 1 : -1;
+    const next = (index + delta + categoryTabs.length) % categoryTabs.length;
+    setCategoryFilter(categoryTabs[next].value);
+    const container = e.currentTarget.parentElement;
+    const target = container?.querySelectorAll<HTMLButtonElement>(
+      "button[role='tab']",
+    )[next];
+    target?.focus();
+  };
+
   if (loading) {
     return (
       <div className="max-w-5xl w-full mx-auto" data-testid="settings-outer">
@@ -215,6 +293,35 @@ export const ModelsSettings: React.FC = () => {
           {t("settings.models.description")}
         </p>
       </div>
+      {!lockedCategory && (
+        <div
+          role="tablist"
+          aria-label={t("settings.models.filter.all")}
+          className="inline-flex items-center gap-1 rounded-lg bg-mid-gray/10 p-1"
+        >
+          {categoryTabs.map((tab, idx) => {
+            const isActive = categoryFilter === tab.value;
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                tabIndex={isActive ? 0 : -1}
+                onClick={() => setCategoryFilter(tab.value)}
+                onKeyDown={(e) => handleCategoryKeyDown(e, idx)}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  isActive
+                    ? "bg-logo-primary/80 text-black"
+                    : "text-text/70 hover:bg-mid-gray/20"
+                }`}
+              >
+                {t(tab.labelKey)}
+              </button>
+            );
+          })}
+        </div>
+      )}
       {filteredModels.length > 0 ? (
         <div className="space-y-6">
           {/* Downloaded Models Section — header always visible so filter stays accessible */}
@@ -328,6 +435,7 @@ export const ModelsSettings: React.FC = () => {
                 downloadProgress={getDownloadProgress(model.id)}
                 downloadSpeed={getDownloadSpeed(model.id)}
                 showRecommended={false}
+                categoryLabel={getCategoryBadge(model)}
               />
             ))}
           </div>
@@ -350,6 +458,7 @@ export const ModelsSettings: React.FC = () => {
                   downloadProgress={getDownloadProgress(model.id)}
                   downloadSpeed={getDownloadSpeed(model.id)}
                   showRecommended={false}
+                  categoryLabel={getCategoryBadge(model)}
                 />
               ))}
             </div>

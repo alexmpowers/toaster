@@ -14,6 +14,7 @@ import { Sidebar, SidebarSection, SECTIONS_CONFIG, resolveSidebarSection } from 
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useSettings } from "./hooks/useSettings";
 import { useSettingsStore } from "./stores/settingsStore";
+import { useSettingsNavStore } from "./stores/settingsNavStore";
 import { commands } from "@/bindings";
 import { getLanguageDirection, initializeRTL } from "@/lib/utils/rtl";
 
@@ -30,8 +31,10 @@ function App() {
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep | null>(
     null,
   );
-  const [currentSection, setCurrentSection] =
-    useState<SidebarSection>("editor");
+  const [currentSection, setCurrentSection] = [
+    useSettingsNavStore((s) => s.currentSection),
+    useSettingsNavStore((s) => s.setCurrentSection),
+  ];
   const { settings, updateSetting } = useSettings();
   const direction = getLanguageDirection(i18n.language);
   const refreshAudioDevices = useSettingsStore(
