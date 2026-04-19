@@ -31,7 +31,7 @@ pub const SILERO_VAD_MODEL_ID: &str = "silero-vad";
 
 /// Approximate on-disk size. Used only for UI progress hints; the
 /// downloader verifies by SHA-256, not size.
-pub const SILERO_VAD_APPROX_SIZE_BYTES: u64 = 2_200_000;
+pub const SILERO_VAD_APPROX_SIZE_BYTES: u64 = 1_807_522;
 
 /// Upstream download URL for the pinned Silero v4 ONNX. `None` means
 /// the catalog entry has not been populated yet — callers must treat
@@ -39,14 +39,19 @@ pub const SILERO_VAD_APPROX_SIZE_BYTES: u64 = 2_200_000;
 /// clear message rather than silently 404. Populated before STATE.md
 /// advances to `implemented` per features/reintroduce-silero-vad.
 #[allow(dead_code)] // wired by Phase 2 downloader plumbing.
-pub const SILERO_VAD_URL: Option<&str> = None;
+pub const SILERO_VAD_URL: Option<&str> =
+    Some("https://github.com/snakers4/silero-vad/raw/v4.0/files/silero_vad.onnx");
 
 /// Expected SHA-256 of [`SILERO_VAD_URL`]'s payload. `None` until the
 /// URL is pinned; the downloader refuses to activate prefilter /
 /// boundary / filler features when the hash is missing so a
 /// silently-bad model file cannot bypass verification.
+///
+/// Pinned to the snakers4/silero-vad v4.0 release tag (1,807,522 bytes);
+/// verified 2026-04-19 via `Invoke-WebRequest` + `Get-FileHash -Algorithm SHA256`.
 #[allow(dead_code)] // wired by Phase 2 downloader plumbing.
-pub const SILERO_VAD_SHA256: Option<&str> = None;
+pub const SILERO_VAD_SHA256: Option<&str> =
+    Some("a35ebf52fd3ce5f1469b2a36158dba761bc47b973ea3382b3186ca15b1f5af28");
 
 /// Resolve the on-disk location of the Silero VAD ONNX inside
 /// `models_dir`. The file may or may not exist — callers must
