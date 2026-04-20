@@ -44,18 +44,20 @@ const Onboarding: React.FC<OnboardingProps> = ({ onModelSelected }) => {
       !stillExtracting
     ) {
       // Model is ready — select it and transition
-      selectModel(selectedModelId).then((success) => {
-        if (success) {
-          onModelSelected();
-        } else {
+      selectModel(selectedModelId)
+        .then((success) => {
+          if (success) {
+            onModelSelected();
+          } else {
+            toast.error(t("onboarding.errors.selectModel"));
+            setSelectedModelId(null);
+          }
+        })
+        .catch((error) => {
+          console.error("Model selection failed:", error);
           toast.error(t("onboarding.errors.selectModel"));
           setSelectedModelId(null);
-        }
-      }).catch((error) => {
-        console.error("Model selection failed:", error);
-        toast.error(t("onboarding.errors.selectModel"));
-        setSelectedModelId(null);
-      });
+        });
     }
   }, [
     selectedModelId,

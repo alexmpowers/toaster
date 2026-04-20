@@ -9,7 +9,7 @@ technique is adopted; the upstream Gemini runtime dependency is NOT.
 ## Why this exists
 
 Toaster has multi-backend ASR outputs (`whisper`, `parakeet`, ...) for the
-same audio. When backends disagree, existing eval gates tell you *each*
+same audio. When backends disagree, existing eval gates tell you _each_
 backend's numeric error vs the oracle, but they do not rank them. This
 harness does Best-of-N ranking with:
 
@@ -20,7 +20,7 @@ harness does Best-of-N ranking with:
 
 It is complementary to `scripts/eval/eval-multi-backend-parity.ps1`, not a
 replacement. The numeric parity eval is the acceptance gate; this harness
-produces a calibrated *preference* between backends for the same audio.
+produces a calibrated _preference_ between backends for the same audio.
 
 ## Non-goals
 
@@ -64,16 +64,16 @@ Output lands under `eval/output/verifier-parity/<stamp>/` as `report.json` and
 Four runners ship today. Each takes the same backend flags and emits a
 `report.json` + `report.md` under `eval/output/verifier-<runner>/<stamp>/`.
 
-| Wrapper | Fixtures | Criteria |
-| --- | --- | --- |
-| `scripts/eval/eval-verifier.ps1` | `src-tauri/tests/fixtures/parity/` | ASR transcription + timing + authoritative-claim honesty |
-| `scripts/eval/eval-verifier-cleanup.ps1` | `src-tauri/tests/fixtures/cleanup/` | Filler removal recall, content preservation, timing monotonicity, deleted-region audibility |
-| `scripts/eval/eval-verifier-captions.ps1` | `src-tauri/tests/fixtures/captions/` | Readability, punctuation respect, line-length balance, timing coverage |
+| Wrapper                                     | Fixtures                               | Criteria                                                                                                                                                   |
+| ------------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/eval/eval-verifier.ps1`            | `src-tauri/tests/fixtures/parity/`     | ASR transcription + timing + authoritative-claim honesty                                                                                                   |
+| `scripts/eval/eval-verifier-cleanup.ps1`    | `src-tauri/tests/fixtures/cleanup/`    | Filler removal recall, content preservation, timing monotonicity, deleted-region audibility                                                                |
+| `scripts/eval/eval-verifier-captions.ps1`   | `src-tauri/tests/fixtures/captions/`   | Readability, punctuation respect, line-length balance, timing coverage                                                                                     |
 | `scripts/eval/eval-verifier-disfluency.ps1` | `src-tauri/tests/fixtures/disfluency/` | Group collapse completeness, audio-aware survivor clarity, audio-aware cut placement cleanliness, pacing agreement (vs. human oracle), timing monotonicity |
 
-The cleanup and disfluency runners both pick up ``audio_path`` from
+The cleanup and disfluency runners both pick up `audio_path` from
 their fixture JSON (resolved relative to the fixture file) and use
-``audio_features.py`` — a stdlib-only WAV reader — to compute the mean
+`audio_features.py` — a stdlib-only WAV reader — to compute the mean
 silence ratio of each candidate's deleted regions, the articulation
 score (peak + RMS + silence) of each repetition survivor, and the
 silence ratio of a 40 ms window centered on every splice seam.
@@ -87,23 +87,23 @@ behavior the repo's fixtures were constructed to prove.
 See `criteria_*.py`. Each criterion ID is load-bearing — `backends._mock_score`
 dispatches on it. Adding a criterion means adding a mock-scoring branch.
 
-| ID | Rubric | Penalizes |
-| --- | --- | --- |
-| `transcription_fidelity` | parity | Substitutions / insertions / deletions vs oracle |
-| `word_timing_fidelity` | parity | High median/p95 error, equal-duration synthesis |
-| `authoritative_honesty` | parity | `authoritative=true` while p95 blows past the gate |
-| `filler_removal_recall` | cleanup | Leaving non-quoted fillers in the keep set |
-| `content_preservation` | cleanup | Deleting content words or quoted fillers |
-| `deleted_region_audible` | cleanup | Deleting silence instead of audible speech (requires audio) |
-| `group_collapse_completeness` | disfluency | Groups left with 0 or >1 survivors |
-| `survivor_clarity` | disfluency | Keeping the mumbled repetition instead of the clearer take (requires audio) |
-| `cut_placement_cleanliness` | disfluency | Cut seams that land inside voiced speech (requires audio) |
-| `pacing_agreement` | disfluency | Disagreement with the human oracle's keep/delete labels on non-filler, non-repetition words (only active on fixtures that carry `human_label`) |
-| `timing_monotonicity` | disfluency / cleanup | Non-monotonic / overlapping kept segments |
-| `readability` | captions | Line length outside ~20-42 chars, >7 words/line |
-| `punctuation_respect` | captions | Splits inside quoted spans, breaks mid-clause |
-| `line_length_balance` | captions | High CV across line character counts |
-| `timing_coverage` | captions | Missing or duplicated oracle words across lines |
+| ID                            | Rubric               | Penalizes                                                                                                                                      |
+| ----------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `transcription_fidelity`      | parity               | Substitutions / insertions / deletions vs oracle                                                                                               |
+| `word_timing_fidelity`        | parity               | High median/p95 error, equal-duration synthesis                                                                                                |
+| `authoritative_honesty`       | parity               | `authoritative=true` while p95 blows past the gate                                                                                             |
+| `filler_removal_recall`       | cleanup              | Leaving non-quoted fillers in the keep set                                                                                                     |
+| `content_preservation`        | cleanup              | Deleting content words or quoted fillers                                                                                                       |
+| `deleted_region_audible`      | cleanup              | Deleting silence instead of audible speech (requires audio)                                                                                    |
+| `group_collapse_completeness` | disfluency           | Groups left with 0 or >1 survivors                                                                                                             |
+| `survivor_clarity`            | disfluency           | Keeping the mumbled repetition instead of the clearer take (requires audio)                                                                    |
+| `cut_placement_cleanliness`   | disfluency           | Cut seams that land inside voiced speech (requires audio)                                                                                      |
+| `pacing_agreement`            | disfluency           | Disagreement with the human oracle's keep/delete labels on non-filler, non-repetition words (only active on fixtures that carry `human_label`) |
+| `timing_monotonicity`         | disfluency / cleanup | Non-monotonic / overlapping kept segments                                                                                                      |
+| `readability`                 | captions             | Line length outside ~20-42 chars, >7 words/line                                                                                                |
+| `punctuation_respect`         | captions             | Splits inside quoted spans, breaks mid-clause                                                                                                  |
+| `line_length_balance`         | captions             | High CV across line character counts                                                                                                           |
+| `timing_coverage`             | captions             | Missing or duplicated oracle words across lines                                                                                                |
 
 ## Backends
 
@@ -161,6 +161,6 @@ under-deletion failure modes (including the quote-violation failure
 mode specific to Toaster), picks the balanced caption grouping over
 single-line / one-word-per-line / quote-splitting / word-dropping
 failure modes, and — for disfluency — picks the candidate that keeps
-the *clear* take of a repeated word over one that keeps the mumbled
+the _clear_ take of a repeated word over one that keeps the mumbled
 take, strictly ordering them by audio articulation even when group
 collapse stats are identical.

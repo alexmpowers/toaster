@@ -20,11 +20,9 @@ interface CaptionOrientationRadioProps {
  * picks Desktop for width/height >= 1.0 and Mobile otherwise. The
  * resolved value is what's passed to `get_caption_layout`.
  */
-export const CaptionOrientationRadio: React.FC<CaptionOrientationRadioProps> = ({
-  value,
-  onChange,
-  resolved,
-}) => {
+export const CaptionOrientationRadio: React.FC<
+  CaptionOrientationRadioProps
+> = ({ value, onChange, resolved }) => {
   const { t } = useTranslation();
   const options: OrientationChoice[] = ["Desktop", "Mobile", "Auto"];
   return (
@@ -45,7 +43,9 @@ export const CaptionOrientationRadio: React.FC<CaptionOrientationRadioProps> = (
           <label
             key={opt}
             className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded ${
-              checked ? "bg-logo-primary/10 text-text" : "text-text/70 hover:text-text"
+              checked
+                ? "bg-logo-primary/10 text-text"
+                : "text-text/70 hover:text-text"
             }`}
           >
             <input
@@ -55,7 +55,9 @@ export const CaptionOrientationRadio: React.FC<CaptionOrientationRadioProps> = (
               onChange={() => onChange(opt)}
               className="accent-logo-primary"
             />
-            <span>{t(`editor.captionOrientation.option.${opt.toLowerCase()}`)}</span>
+            <span>
+              {t(`editor.captionOrientation.option.${opt.toLowerCase()}`)}
+            </span>
             {showResolved && (
               <span className="text-text/40">
                 (

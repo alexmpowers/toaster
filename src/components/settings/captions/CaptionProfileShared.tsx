@@ -3,7 +3,10 @@ import { useTranslation } from "react-i18next";
 import { CaptionPill } from "../../player/CaptionOverlay";
 import { Select } from "../../ui/Select";
 import type { CaptionFontFamily, CaptionProfile, Rgba } from "@/bindings";
-import { CaptionMockFrame, type CaptionMockOrientation } from "./CaptionMockFrame";
+import {
+  CaptionMockFrame,
+  type CaptionMockOrientation,
+} from "./CaptionMockFrame";
 
 // CSS font stacks must mirror src-tauri/src/managers/captions/fonts.rs
 // (the canonical font table). Adding a font here without adding it
@@ -165,7 +168,8 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
   onOrientationChange,
 }) => {
   const { t } = useTranslation();
-  const [selectedSampleKey, setSelectedSampleKey] = useState<SampleKey>("single");
+  const [selectedSampleKey, setSelectedSampleKey] =
+    useState<SampleKey>("single");
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
 
@@ -190,7 +194,8 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
   const containerShort = Math.min(containerSize.w, containerSize.h);
   const scale = containerShort > 0 ? containerShort / VIRTUAL_FRAME_SHORT : 0;
   const lines = samples[selectedSampleKey].split("\n");
-  const paddingPx = Math.max(profile.padding_x_px, profile.padding_y_px) * scale;
+  const paddingPx =
+    Math.max(profile.padding_x_px, profile.padding_y_px) * scale;
   const lineHeightPx = profile.font_size * 1.2 * scale;
   const bottomPx = ((100 - profile.position) / 100) * containerSize.h;
   const showPill = scale > 0;
@@ -213,11 +218,20 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
               <Select
                 value={orientation}
                 options={[
-                  { value: "horizontal", label: t("settings.captions.preview.orientation.horizontal") },
-                  { value: "vertical", label: t("settings.captions.preview.orientation.vertical") },
+                  {
+                    value: "horizontal",
+                    label: t(
+                      "settings.captions.preview.orientation.horizontal",
+                    ),
+                  },
+                  {
+                    value: "vertical",
+                    label: t("settings.captions.preview.orientation.vertical"),
+                  },
                 ]}
                 onChange={(v) => {
-                  if (v === "horizontal" || v === "vertical") onOrientationChange(v);
+                  if (v === "horizontal" || v === "vertical")
+                    onOrientationChange(v);
                 }}
               />
             </div>
@@ -230,11 +244,20 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
               <Select
                 value={selectedSampleKey}
                 options={[
-                  { value: "single", label: t("settings.captions.preview.sample.label.single") },
-                  { value: "multiLine", label: t("settings.captions.preview.sample.label.multiLine") },
+                  {
+                    value: "single",
+                    label: t("settings.captions.preview.sample.label.single"),
+                  },
+                  {
+                    value: "multiLine",
+                    label: t(
+                      "settings.captions.preview.sample.label.multiLine",
+                    ),
+                  },
                 ]}
                 onChange={(v) => {
-                  if (v === "single" || v === "multiLine") setSelectedSampleKey(v);
+                  if (v === "single" || v === "multiLine")
+                    setSelectedSampleKey(v);
                 }}
               />
             </div>

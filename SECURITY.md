@@ -20,10 +20,10 @@ We will acknowledge your report within 7 days and aim to provide a resolution ti
 
 ## Supported Versions
 
-| Version | Supported |
-| ------- | --------- |
+| Version | Supported                   |
+| ------- | --------------------------- |
 | 0.1.x   | ✅ Current (public preview) |
-| < 0.1.0 | ❌ No longer supported |
+| < 0.1.0 | ❌ No longer supported      |
 
 Only the latest release receives security updates.
 

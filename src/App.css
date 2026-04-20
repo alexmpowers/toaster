@@ -7,12 +7,12 @@
    * drift bug. See docs/design-tokens.md. */
   --color-text: #0f0f0f;
   --color-background: #fbfbfb;
-  --color-background-ui: #D9D8D8;   /* neutral chrome (primary button bg, inline surfaces) */
-  --color-logo-primary: #E8A838;    /* Toaster brand accent (brand button, slider, toggle-on) */
-  --color-logo-stroke: #3D2B1F;
+  --color-background-ui: #d9d8d8; /* neutral chrome (primary button bg, inline surfaces) */
+  --color-logo-primary: #e8a838; /* Toaster brand accent (brand button, slider, toggle-on) */
+  --color-logo-stroke: #3d2b1f;
   --color-text-stroke: #f6f6f6;
   --color-mid-gray: #808080;
-  --color-accent: #E8A838;          /* alias of --color-logo-primary; retained for legacy callers */
+  --color-accent: #e8a838; /* alias of --color-logo-primary; retained for legacy callers */
 }
 
 :root {
@@ -61,8 +61,8 @@
     /* Colors - Dark Theme — brand yellow is constant across themes;
      * only neutral chrome flips. */
     --color-text: #fbfbfb;
-    --color-background: #1E1E1E;
-    --color-logo-stroke: #E8A838;
+    --color-background: #1e1e1e;
+    --color-logo-stroke: #e8a838;
   }
 }
 

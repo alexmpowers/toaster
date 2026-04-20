@@ -76,7 +76,9 @@ export function useDeletedRangeSkip({
   seekVersion,
   lastSkipTargetRef,
 }: UseDeletedRangeSkipParams): void {
-  const scheduledSkipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduledSkipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   useEffect(() => {
     // Scheduled skip is the fallback/live-skip path only: when preview edits
@@ -106,7 +108,11 @@ export function useDeletedRangeSkip({
       const el = mediaRef.current;
       if (!el) return;
       const time = el.currentTime;
-      const next = computeNextDeletedSkip(time, activeDeletedRanges, playbackRate);
+      const next = computeNextDeletedSkip(
+        time,
+        activeDeletedRanges,
+        playbackRate,
+      );
       if (!next) return;
 
       const fire = () => {
@@ -136,7 +142,9 @@ export function useDeletedRangeSkip({
         const epsilon = sr > 0 ? 1 / sr : ONE_FRAME_EPSILON_FALLBACK;
 
         const mediaDuration =
-          Number.isFinite(elNow.duration) && elNow.duration > 0 ? elNow.duration : duration;
+          Number.isFinite(elNow.duration) && elNow.duration > 0
+            ? elNow.duration
+            : duration;
         const maxSeekTarget =
           Number.isFinite(mediaDuration) && mediaDuration > 0
             ? Math.max(0, mediaDuration - END_EPSILON)

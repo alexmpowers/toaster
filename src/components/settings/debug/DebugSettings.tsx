@@ -21,7 +21,10 @@ export const DebugSettings: React.FC = () => {
   const { t } = useTranslation();
 
   return (
-    <div className="max-w-5xl w-full mx-auto space-y-6" data-testid="debug-settings-outer">
+    <div
+      className="max-w-5xl w-full mx-auto space-y-6"
+      data-testid="debug-settings-outer"
+    >
       <div className="mb-4">
         <h1 className="text-xl font-semibold mb-2">
           {t("settings.debug.title")}

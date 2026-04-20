@@ -49,75 +49,41 @@
       "clarity_hint": 0.55
     }
   ],
-  "desired_kept_indices": [
-    1,
-    2,
-    4
-  ],
+  "desired_kept_indices": [1, 2, 4],
   "groups": [
     {
       "id": "g1",
-      "member_indices": [
-        0,
-        1
-      ]
+      "member_indices": [0, 1]
     },
     {
       "id": "g2",
-      "member_indices": [
-        2,
-        3
-      ]
+      "member_indices": [2, 3]
     }
   ],
   "candidates": [
     {
       "name": "clear_survivors",
-      "kept_indices": [
-        1,
-        2,
-        4
-      ]
+      "kept_indices": [1, 2, 4]
     },
     {
       "name": "unclear_survivors",
-      "kept_indices": [
-        0,
-        3,
-        4
-      ]
+      "kept_indices": [0, 3, 4]
     },
     {
       "name": "mixed_survivors",
-      "kept_indices": [
-        0,
-        2,
-        4
-      ]
+      "kept_indices": [0, 2, 4]
     },
     {
       "name": "no_collapse",
-      "kept_indices": [
-        0,
-        1,
-        2,
-        3,
-        4
-      ]
+      "kept_indices": [0, 1, 2, 3, 4]
     },
     {
       "name": "over_collapse",
-      "kept_indices": [
-        1,
-        4
-      ]
+      "kept_indices": [1, 4]
     },
     {
       "name": "drops_content",
-      "kept_indices": [
-        1,
-        2
-      ]
+      "kept_indices": [1, 2]
     }
   ],
   "expected_winner": "clear_survivors"

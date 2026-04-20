@@ -18,16 +18,16 @@ State lives in `features/<slug>/STATE.md`, one of: `defined`, `planned`, `execut
 
 Under `features/<slug>/`:
 
-| File | Purpose | Tracked? |
-|------|---------|----------|
-| `STATE.md` | Lifecycle state (single line) | yes |
-| `REQUEST.md` | Six-element user request (Problem & Goals / Outcome & AC / Scope / Code refs / Edge cases / Data model) | yes |
-| `PRD.md` | Requirements with `R-NNN` IDs and `AC-NNN-x` acceptance criteria | yes |
-| `BLUEPRINT.md` | Architecture decisions per R-ID, single-source-of-truth placement, risk register | yes |
-| `tasks.sql` | `INSERT INTO todos / todo_deps` for the session SQL store | yes |
-| `coverage.json` | Every AC -> verifier (skill / agent / cargo-test / script / manual live-app) | yes |
-| `journal.md` | Operational journal (gitignored except for the example) | no |
-| `tasks/<id>/context.md` | Curated per-task briefing for fresh subagents (gitignored except for the example) | no |
+| File                    | Purpose                                                                                                 | Tracked? |
+| ----------------------- | ------------------------------------------------------------------------------------------------------- | -------- |
+| `STATE.md`              | Lifecycle state (single line)                                                                           | yes      |
+| `REQUEST.md`            | Six-element user request (Problem & Goals / Outcome & AC / Scope / Code refs / Edge cases / Data model) | yes      |
+| `PRD.md`                | Requirements with `R-NNN` IDs and `AC-NNN-x` acceptance criteria                                        | yes      |
+| `BLUEPRINT.md`          | Architecture decisions per R-ID, single-source-of-truth placement, risk register                        | yes      |
+| `tasks.sql`             | `INSERT INTO todos / todo_deps` for the session SQL store                                               | yes      |
+| `coverage.json`         | Every AC -> verifier (skill / agent / cargo-test / script / manual live-app)                            | yes      |
+| `journal.md`            | Operational journal (gitignored except for the example)                                                 | no       |
+| `tasks/<id>/context.md` | Curated per-task briefing for fresh subagents (gitignored except for the example)                       | no       |
 
 The `feature-pm` skill + `product-manager` agent generate this bundle; see [`features/example-pm-dryrun/`](../features/example-pm-dryrun/) for a worked reference.
 

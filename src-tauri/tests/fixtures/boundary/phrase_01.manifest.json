@@ -30,9 +30,6 @@
       "sample": 19200
     }
   ],
-  "expected_final_transcript": [
-    "four_forty",
-    "eight_eighty"
-  ],
+  "expected_final_transcript": ["four_forty", "eight_eighty"],
   "notes": "Synthetic tone phrase. word_01=440Hz, word_02=660Hz, word_03=880Hz."
 }

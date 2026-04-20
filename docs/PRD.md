@@ -24,13 +24,13 @@ Primary launch objective: deliver a reliable, precise, and understandable transc
 
 ## 4. In-scope architecture
 
-| Layer | Implementation |
-|---|---|
-| Desktop app | Tauri 2.x |
-| Backend | Rust managers + Tauri commands |
-| Frontend | React + TypeScript + Tailwind |
-| State | Zustand stores |
-| Export/transforms | FFmpeg-driven backend paths |
+| Layer             | Implementation                 |
+| ----------------- | ------------------------------ |
+| Desktop app       | Tauri 2.x                      |
+| Backend           | Rust managers + Tauri commands |
+| Frontend          | React + TypeScript + Tailwind  |
+| State             | Zustand stores                 |
+| Export/transforms | FFmpeg-driven backend paths    |
 
 Out of scope for launch documentation: host-integration tracks outside the Tauri desktop app.
 
@@ -54,36 +54,43 @@ Out of scope for launch documentation: host-integration tracks outside the Tauri
 ## 7. Launch readiness workstreams
 
 ### WS1: Playback precision and timeline correctness
+
 - Maintain backend-authoritative keep-segment mapping
 - Validate long-form and midstream deletion scenarios
 - Keep preview and export boundaries aligned
 
 ### WS2: Editor UX reliability
+
 - Ensure detect actions target only highlighted words
 - Keep destructive shortcuts scoped to active selection/highlight sets
 - Preserve readability in dark-theme highlight states
 
 ### WS3: Documentation and contributor onboarding
+
 - Align README/BUILD/CONTRIBUTING/templates with current stack
 - Remove stale Handy-only and conflicting architecture guidance
 - Provide a clean first-run path for new contributors
 
 ### WS4: Agent and skill alignment
+
 - Keep AGENTS/CLAUDE/Copilot instructions synchronized with real architecture
 - Keep build/lint/test command reference in AGENTS.md and `docs/build.md` current
 
 ## 8. Milestones (sequential + parallel)
 
 ### Milestone A (sequential gate)
+
 - Lock architecture narrative to Tauri-first launch docs
 - Publish corrected README + PRD + BUILD baseline
 
 ### Milestone B (parallel)
+
 - Refresh CONTRIBUTING + PR/issue templates
 - Refresh AGENTS + CLAUDE + Copilot instructions
 - Audit AGENTS.md Development commands + Windows requirements sections and `docs/build.md`
 
 ### Milestone C (sequential closeout)
+
 - Run launch-doc consistency pass
 - Run new-contributor dry-run from docs only
 - Publish remaining blockers and owners

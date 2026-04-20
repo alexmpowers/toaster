@@ -52,11 +52,16 @@ export interface TimeSegment {
  * Regression guard: adjacent deleted words closer than 50 ms are merged into
  * a single range so the skip loop never oscillates between two ranges.
  */
-export function getDeletedRanges(words: Word[], duration: number): TimeSegment[] {
+export function getDeletedRanges(
+  words: Word[],
+  duration: number,
+): TimeSegment[] {
   const CROSSFADE_PAD = 0.01; // 10 ms
   const MIN_RANGE_DURATION = 0.001; // 1 ms
   const maxDuration =
-    Number.isFinite(duration) && duration > 0 ? duration : Number.POSITIVE_INFINITY;
+    Number.isFinite(duration) && duration > 0
+      ? duration
+      : Number.POSITIVE_INFINITY;
 
   const ranges: TimeSegment[] = [];
   let rangeStart: number | null = null;
@@ -185,7 +190,10 @@ export function editTimeToSourceTime(
  * Regression guard: see `dt_pre_play_snap_*` tests in
  * `src-tauri/src/managers/editor.rs`.
  */
-export function snapOutOfDeletedRange(time: number, deletedRanges: ReadonlyArray<TimeSegment>): number {
+export function snapOutOfDeletedRange(
+  time: number,
+  deletedRanges: ReadonlyArray<TimeSegment>,
+): number {
   for (const range of deletedRanges) {
     if (time >= range.start && time < range.end) {
       return range.end;

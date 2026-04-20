@@ -3,14 +3,16 @@ import { toast, Toaster } from "sonner";
 import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
 import { platform } from "@tauri-apps/plugin-os";
-import {
-  ModelStateEvent,
-  RecordingErrorEvent,
-} from "./lib/types/events";
+import { ModelStateEvent, RecordingErrorEvent } from "./lib/types/events";
 import "./App.css";
 import Footer from "./components/footer";
 import Onboarding from "./components/onboarding";
-import { Sidebar, SidebarSection, SECTIONS_CONFIG, resolveSidebarSection } from "./components/Sidebar";
+import {
+  Sidebar,
+  SidebarSection,
+  SECTIONS_CONFIG,
+  resolveSidebarSection,
+} from "./components/Sidebar";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useSettings } from "./hooks/useSettings";
 import { useSettingsStore } from "./stores/settingsStore";

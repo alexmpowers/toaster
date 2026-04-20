@@ -55,7 +55,9 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
               <span className="me-2">{item.label}</span>
             )}
             {showSpeed && item.speed !== undefined && item.speed > 0 ? (
-              <span>{t("download.speed", { speed: item.speed.toFixed(1) })}</span>
+              <span>
+                {t("download.speed", { speed: item.speed.toFixed(1) })}
+              </span>
             ) : showSpeed ? (
               <span>{t("download.downloading")}</span>
             ) : null}

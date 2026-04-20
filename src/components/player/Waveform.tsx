@@ -51,9 +51,13 @@ function withAlpha(hex: string, alpha: number): string {
 
 const waveformPeaksCache = new Map<string, number[]>();
 
-const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+const delay = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-function downsamplePeaks(channelData: Float32Array, barCount: number): number[] {
+function downsamplePeaks(
+  channelData: Float32Array,
+  barCount: number,
+): number[] {
   if (barCount <= 0 || channelData.length === 0) return [];
 
   const sampleCount = channelData.length;
@@ -61,7 +65,10 @@ function downsamplePeaks(channelData: Float32Array, barCount: number): number[] 
   for (let i = 0; i < barCount; i++) {
     let max = 0;
     const start = Math.floor((i / barCount) * sampleCount);
-    const end = Math.max(start + 1, Math.floor(((i + 1) / barCount) * sampleCount));
+    const end = Math.max(
+      start + 1,
+      Math.floor(((i + 1) / barCount) * sampleCount),
+    );
     for (let j = start; j < end; j++) {
       const abs = Math.abs(channelData[j]);
       if (abs > max) max = abs;
@@ -95,7 +102,9 @@ const Waveform: React.FC<WaveformProps> = ({
     }
 
     const targetBarCount =
-      duration > LONG_MEDIA_COARSE_THRESHOLD_SECONDS ? COARSE_BAR_COUNT : BAR_COUNT;
+      duration > LONG_MEDIA_COARSE_THRESHOLD_SECONDS
+        ? COARSE_BAR_COUNT
+        : BAR_COUNT;
     const cacheKey = `${audioUrl}::${targetBarCount}`;
     const cached = waveformPeaksCache.get(cacheKey);
     if (cached) {
@@ -107,9 +116,16 @@ const Waveform: React.FC<WaveformProps> = ({
     const controller = new AbortController();
 
     const loadAudio = async () => {
-      for (let attempt = 0; attempt <= WAVEFORM_RETRY_DELAYS_MS.length; attempt++) {
+      for (
+        let attempt = 0;
+        attempt <= WAVEFORM_RETRY_DELAYS_MS.length;
+        attempt++
+      ) {
         try {
-          const response = await fetch(audioUrl, { signal: controller.signal, cache: "force-cache" });
+          const response = await fetch(audioUrl, {
+            signal: controller.signal,
+            cache: "force-cache",
+          });
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
           }
@@ -189,7 +205,10 @@ const Waveform: React.FC<WaveformProps> = ({
     const playedColor = readBrandColor();
     const selectedWordColor = withAlpha(playedColor, 0.3);
 
-    const barWidth = Math.max(1, (canvasWidth - (peaks.length - 1) * BAR_GAP) / peaks.length);
+    const barWidth = Math.max(
+      1,
+      (canvasWidth - (peaks.length - 1) * BAR_GAP) / peaks.length,
+    );
     const progress = duration > 0 ? currentTime / duration : 0;
     const playedBars = Math.floor(progress * peaks.length);
 

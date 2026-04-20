@@ -41,16 +41,16 @@ for the full design system (tokens, primitives, CI gates).
 
 ## Primitives you reach for
 
-| Control | Primitive | File |
-|---------|-----------|------|
-| Button / action | `<Button variant="…">` | `src/components/ui/Button.tsx` |
-| Boolean | `<ToggleSwitch>` | `src/components/ui/ToggleSwitch.tsx` |
-| Numeric | `<SliderWithInput>` | `src/components/ui/SliderWithInput.tsx` |
-| One-of-N (> 3 options) | `<Dropdown>` | `src/components/ui/Dropdown.tsx` |
-| State pill | `<Badge>` | `src/components/ui/Badge.tsx` |
-| Inline warning | `<Alert>` | `src/components/ui/Alert.tsx` |
-| Row wrapper | `<SettingContainer>` | `src/components/ui/SettingContainer.tsx` |
-| Card wrapper | `<SettingsGroup>` | `src/components/ui/SettingsGroup.tsx` |
+| Control                | Primitive              | File                                     |
+| ---------------------- | ---------------------- | ---------------------------------------- |
+| Button / action        | `<Button variant="…">` | `src/components/ui/Button.tsx`           |
+| Boolean                | `<ToggleSwitch>`       | `src/components/ui/ToggleSwitch.tsx`     |
+| Numeric                | `<SliderWithInput>`    | `src/components/ui/SliderWithInput.tsx`  |
+| One-of-N (> 3 options) | `<Dropdown>`           | `src/components/ui/Dropdown.tsx`         |
+| State pill             | `<Badge>`              | `src/components/ui/Badge.tsx`            |
+| Inline warning         | `<Alert>`              | `src/components/ui/Alert.tsx`            |
+| Row wrapper            | `<SettingContainer>`   | `src/components/ui/SettingContainer.tsx` |
+| Card wrapper           | `<SettingsGroup>`      | `src/components/ui/SettingsGroup.tsx`    |
 
 ## Review checklist before PR
 

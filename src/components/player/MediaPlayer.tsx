@@ -106,9 +106,13 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
   // Sync seek requests from the store to the media element(s)
   const lastSeekVersion = useRef(0);
-  const pendingSeekRef = useRef<{ version: number; target: number } | null>(null);
+  const pendingSeekRef = useRef<{ version: number; target: number } | null>(
+    null,
+  );
   const seekFlushRafRef = useRef<number | null>(null);
-  const lastAppliedSeekRef = useRef<{ target: number; ts: number } | null>(null);
+  const lastAppliedSeekRef = useRef<{ target: number; ts: number } | null>(
+    null,
+  );
   const seekContextRef = useRef<{
     dualTrack: boolean;
     keepSegments: TimeSegment[];
@@ -141,7 +145,11 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
 
       const now = performance.now();
       const lastApplied = lastAppliedSeekRef.current;
-      if (lastApplied && Math.abs(lastApplied.target - pending.target) < 0.0005 && now - lastApplied.ts < 30) {
+      if (
+        lastApplied &&
+        Math.abs(lastApplied.target - pending.target) < 0.0005 &&
+        now - lastApplied.ts < 30
+      ) {
         return;
       }
 
@@ -163,10 +171,16 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         // Verify seeks landed within tolerance after the next frame
         const tolerance = 0.05;
         requestAnimationFrame(() => {
-          if (previewEl && Math.abs(previewEl.currentTime - pending.target) > tolerance) {
+          if (
+            previewEl &&
+            Math.abs(previewEl.currentTime - pending.target) > tolerance
+          ) {
             previewEl.currentTime = pending.target;
           }
-          if (mediaNow && Math.abs(mediaNow.currentTime - sourceTime) > tolerance) {
+          if (
+            mediaNow &&
+            Math.abs(mediaNow.currentTime - sourceTime) > tolerance
+          ) {
             mediaNow.currentTime = sourceTime;
           }
         });
@@ -246,7 +260,10 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
           if (!cancelled) setPlaying(true);
         } catch (error) {
           if (cancelled) return;
-          console.warn("Preview audio failed to start; falling back to single-track playback:", error);
+          console.warn(
+            "Preview audio failed to start; falling back to single-track playback:",
+            error,
+          );
           setPreviewCacheState("error");
           setPreviewAudioReady(false);
           previewEl.pause();
@@ -265,14 +282,21 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       // mode, seek to the next kept boundary before calling play() to prevent startup
       // leakage of deleted audio. Uses exclusive-end semantics (range.end + ε) so the
       // final sample of the deleted word is skipped rather than played.
-      if (fallbackSkipModeRef.current && activeDeletedRangesRef.current.length > 0) {
-        const snapped = snapOutOfDeletedRange(mediaEl.currentTime, activeDeletedRangesRef.current);
+      if (
+        fallbackSkipModeRef.current &&
+        activeDeletedRangesRef.current.length > 0
+      ) {
+        const snapped = snapOutOfDeletedRange(
+          mediaEl.currentTime,
+          activeDeletedRangesRef.current,
+        );
         if (snapped !== mediaEl.currentTime) {
           mediaEl.currentTime = snapped + ONE_FRAME_EPSILON_FALLBACK;
         }
       }
 
-      mediaEl.play()
+      mediaEl
+        .play()
         .then(() => {
           if (!cancelled) setPlaying(true);
         })
@@ -291,7 +315,13 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [isPlaying, activePlaybackSrc, isDualTrackVideoPreview, setPlaying, volume]);
+  }, [
+    isPlaying,
+    activePlaybackSrc,
+    isDualTrackVideoPreview,
+    setPlaying,
+    volume,
+  ]);
 
   useDeletedRangeSkip({
     mediaRef,
@@ -323,7 +353,9 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     }
 
     const tick = () => {
-      const el = isDualTrackVideoPreview ? previewAudioRef.current : mediaRef.current;
+      const el = isDualTrackVideoPreview
+        ? previewAudioRef.current
+        : mediaRef.current;
       if (!el) return;
       const time = el.currentTime;
       if (time + 0.05 < lastObservedTimeRef.current) {
@@ -334,7 +366,9 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       const END_EPSILON = 0.005; // 5ms
       const nowTick = performance.now();
       const mediaDuration =
-        Number.isFinite(el.duration) && el.duration > 0 ? el.duration : duration;
+        Number.isFinite(el.duration) && el.duration > 0
+          ? el.duration
+          : duration;
       const maxSeekTarget =
         Number.isFinite(mediaDuration) && mediaDuration > 0
           ? Math.max(0, mediaDuration - END_EPSILON)
@@ -345,7 +379,11 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       // boundary skips precisely. RAF catches anything the timer misses (e.g. throttled
       // background tab). Debounce is kept short (10 ms) so back-to-back short deletions
       // don't bleed, while still preventing thrash if the element's currentTime lags.
-      if (previewEdits && !isPreviewCacheActive && activeDeletedRanges.length > 0) {
+      if (
+        previewEdits &&
+        !isPreviewCacheActive &&
+        activeDeletedRanges.length > 0
+      ) {
         for (const range of activeDeletedRanges) {
           if (time >= range.start && time < range.end) {
             // Exclusive-end semantics: land at `range.end + ε` so the final sample
@@ -357,9 +395,15 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
                 : 0;
             const epsilon = sr > 0 ? 1 / sr : ONE_FRAME_EPSILON_FALLBACK;
             const rawTarget = Math.min(range.end + epsilon, maxSeekTarget);
-            const monotonicTarget = Math.max(rawTarget, lastSkipTargetRef.current + epsilon);
+            const monotonicTarget = Math.max(
+              rawTarget,
+              lastSkipTargetRef.current + epsilon,
+            );
             const finalTarget = Math.min(monotonicTarget, maxSeekTarget);
-            if (finalTarget > time + epsilon && nowTick - lastFallbackSkipAtRef.current > 10) {
+            if (
+              finalTarget > time + epsilon &&
+              nowTick - lastFallbackSkipAtRef.current > 10
+            ) {
               lastFallbackSkipAtRef.current = nowTick;
               lastSkipTargetRef.current = finalTarget;
               el.currentTime = finalTarget;
@@ -379,7 +423,10 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       if (isDualTrackVideoPreview && backendKeepSegments.length > 0) {
         const videoEl = mediaRef.current;
         if (videoEl) {
-          const targetSourceTime = editTimeToSourceTime(time, backendKeepSegments);
+          const targetSourceTime = editTimeToSourceTime(
+            time,
+            backendKeepSegments,
+          );
           const drift = Math.abs(videoEl.currentTime - targetSourceTime);
           const now = performance.now();
           if (
@@ -405,39 +452,54 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
         rafRef.current = 0;
       }
     };
-  }, [isPlaying, previewEdits, isPreviewCacheActive, activeDeletedRanges, duration, setCurrentTime, onTimeUpdate, isDualTrackVideoPreview, backendKeepSegments]);
+  }, [
+    isPlaying,
+    previewEdits,
+    isPreviewCacheActive,
+    activeDeletedRanges,
+    duration,
+    setCurrentTime,
+    onTimeUpdate,
+    isDualTrackVideoPreview,
+    backendKeepSegments,
+  ]);
 
   // Fallback onTimeUpdate for when paused (seek bar scrubbing, etc.)
   const handleTimeUpdate = useCallback(() => {
     if (isPlaying) return; // RAF loop handles this during playback
-    const el = isDualTrackVideoPreview ? previewAudioRef.current : mediaRef.current;
+    const el = isDualTrackVideoPreview
+      ? previewAudioRef.current
+      : mediaRef.current;
     if (!el) return;
     setCurrentTime(el.currentTime);
     onTimeUpdate?.(el.currentTime);
   }, [isPlaying, setCurrentTime, onTimeUpdate, isDualTrackVideoPreview]);
 
-  const handleLoadedMetadata = useCallback((e: React.SyntheticEvent<HTMLVideoElement | HTMLAudioElement>) => {
-    const targetEl = e.currentTarget;
-    setDuration(targetEl.duration);
-    targetEl.playbackRate = playbackRate;
+  const handleLoadedMetadata = useCallback(
+    (e: React.SyntheticEvent<HTMLVideoElement | HTMLAudioElement>) => {
+      const targetEl = e.currentTarget;
+      setDuration(targetEl.duration);
+      targetEl.playbackRate = playbackRate;
 
-    if (targetEl === previewAudioRef.current) {
-      setPreviewAudioReady(true);
+      if (targetEl === previewAudioRef.current) {
+        setPreviewAudioReady(true);
+        targetEl.volume = volume;
+        return;
+      }
+
+      if (isDualTrackVideoPreview) {
+        targetEl.volume = 0;
+        targetEl.muted = true;
+        return;
+      }
+
       targetEl.volume = volume;
-      return;
-    }
+      targetEl.muted = false;
+    },
+    [setDuration, volume, playbackRate, isDualTrackVideoPreview],
+  );
 
-    if (isDualTrackVideoPreview) {
-      targetEl.volume = 0;
-      targetEl.muted = true;
-      return;
-    }
-
-    targetEl.volume = volume;
-    targetEl.muted = false;
-  }, [setDuration, volume, playbackRate, isDualTrackVideoPreview]);
-
-  const handlePlay= useCallback(() => setPlaying(true), [setPlaying]);
+  const handlePlay = useCallback(() => setPlaying(true), [setPlaying]);
   const handlePause = useCallback(() => setPlaying(false), [setPlaying]);
 
   const togglePlay = useCallback(() => {
@@ -455,10 +517,15 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     const skipSeconds = 5;
     if (isDualTrackVideoPreview) {
       const previewEl = previewAudioRef.current;
-      if (previewEl) previewEl.currentTime = Math.max(0, previewEl.currentTime - skipSeconds);
+      if (previewEl)
+        previewEl.currentTime = Math.max(
+          0,
+          previewEl.currentTime - skipSeconds,
+        );
     } else {
       const mediaEl = mediaRef.current;
-      if (mediaEl) mediaEl.currentTime = Math.max(0, mediaEl.currentTime - skipSeconds);
+      if (mediaEl)
+        mediaEl.currentTime = Math.max(0, mediaEl.currentTime - skipSeconds);
     }
   }, [isDualTrackVideoPreview]);
 
@@ -489,7 +556,12 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
       setCurrentTime(editTime);
       onTimeUpdate?.(editTime);
     },
-    [setCurrentTime, onTimeUpdate, isDualTrackVideoPreview, backendKeepSegments],
+    [
+      setCurrentTime,
+      onTimeUpdate,
+      isDualTrackVideoPreview,
+      backendKeepSegments,
+    ],
   );
 
   const handleVolumeChange = useCallback(
@@ -532,9 +604,7 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
           onPause={handlePause}
           onEnded={handlePause}
           className={
-            showVideoDisplay
-              ? "w-full rounded-t-lg bg-black"
-              : "hidden"
+            showVideoDisplay ? "w-full rounded-t-lg bg-black" : "hidden"
           }
           preload="metadata"
         />

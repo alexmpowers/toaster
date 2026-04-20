@@ -154,21 +154,29 @@ describe("settingsStore", () => {
   // ── getSetting / isUpdatingKey ──────────────────────────────────
   describe("getSetting / isUpdatingKey", () => {
     it("returns undefined when settings are null", () => {
-      expect(useSettingsStore.getState().getSetting("debug_mode")).toBeUndefined();
+      expect(
+        useSettingsStore.getState().getSetting("debug_mode"),
+      ).toBeUndefined();
     });
 
     it("returns the value when settings exist", () => {
-      useSettingsStore.setState({ settings: makeSettings({ debug_mode: true }) });
+      useSettingsStore.setState({
+        settings: makeSettings({ debug_mode: true }),
+      });
       expect(useSettingsStore.getState().getSetting("debug_mode")).toBe(true);
     });
 
     it("isUpdatingKey returns false by default", () => {
-      expect(useSettingsStore.getState().isUpdatingKey("debug_mode")).toBe(false);
+      expect(useSettingsStore.getState().isUpdatingKey("debug_mode")).toBe(
+        false,
+      );
     });
 
     it("isUpdatingKey returns true after setUpdating", () => {
       useSettingsStore.getState().setUpdating("debug_mode", true);
-      expect(useSettingsStore.getState().isUpdatingKey("debug_mode")).toBe(true);
+      expect(useSettingsStore.getState().isUpdatingKey("debug_mode")).toBe(
+        true,
+      );
     });
   });
 
@@ -207,9 +215,13 @@ describe("settingsStore", () => {
 
     it("handles settings with no explicit updater gracefully", async () => {
       // "bindings" and "selected_model" are known keys with no updater and no warning
-      await useSettingsStore.getState().updateSetting("selected_model", "some-model");
+      await useSettingsStore
+        .getState()
+        .updateSetting("selected_model", "some-model");
 
-      expect(useSettingsStore.getState().settings?.selected_model).toBe("some-model");
+      expect(useSettingsStore.getState().settings?.selected_model).toBe(
+        "some-model",
+      );
     });
 
     it("normalizes selected_output_device 'Default' to 'default'", async () => {
@@ -229,7 +241,9 @@ describe("settingsStore", () => {
 
       await useSettingsStore.getState().updateSetting("debug_mode", true);
 
-      expect(useSettingsStore.getState().isUpdatingKey("debug_mode")).toBe(false);
+      expect(useSettingsStore.getState().isUpdatingKey("debug_mode")).toBe(
+        false,
+      );
     });
 
     it("clears isUpdating after failure", async () => {
@@ -237,7 +251,9 @@ describe("settingsStore", () => {
 
       await useSettingsStore.getState().updateSetting("debug_mode", true);
 
-      expect(useSettingsStore.getState().isUpdatingKey("debug_mode")).toBe(false);
+      expect(useSettingsStore.getState().isUpdatingKey("debug_mode")).toBe(
+        false,
+      );
     });
   });
 

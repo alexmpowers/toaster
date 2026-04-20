@@ -37,10 +37,7 @@ export const VIEWPORTS: readonly Viewport[] = [
   { id: "mobile-portrait-390x844", width: 390, height: 844 },
 ];
 
-export async function navigateToRoute(
-  page: Page,
-  route: Route,
-): Promise<void> {
+export async function navigateToRoute(page: Page, route: Route): Promise<void> {
   await page.goto("/");
   await page.waitForLoadState("domcontentloaded");
   const nav = page.getByText(route.label, { exact: true }).first();
@@ -52,9 +49,14 @@ export async function navigateToRoute(
     .catch(() => undefined);
 
   if (route.captionTab) {
-    const tab = page.locator(`button[role="tab"]`, { hasText: route.captionTab });
+    const tab = page.locator(`button[role="tab"]`, {
+      hasText: route.captionTab,
+    });
     if ((await tab.count()) > 0) {
-      await tab.first().click().catch(() => undefined);
+      await tab
+        .first()
+        .click()
+        .catch(() => undefined);
       await page.waitForTimeout(150);
     }
   }
@@ -138,7 +140,8 @@ export async function checkR003TwoColumn(
       if (label && control) {
         const rel = label.compareDocumentPosition(control);
         if (rel & Node.DOCUMENT_POSITION_FOLLOWING) order = "label-first";
-        else if (rel & Node.DOCUMENT_POSITION_PRECEDING) order = "control-first";
+        else if (rel & Node.DOCUMENT_POSITION_PRECEDING)
+          order = "control-first";
         else order = "same";
       }
       return {
@@ -183,9 +186,9 @@ export async function checkR003TwoColumn(
       let ok = false;
       if (shape.display === "flex" && shape.flexDirection === "row") ok = true;
       else if (shape.display === "grid") {
-        const tracks = (shape.gridTemplateColumns || "").split(/\s+/).filter(
-          (s) => s && s !== "none",
-        ).length;
+        const tracks = (shape.gridTemplateColumns || "")
+          .split(/\s+/)
+          .filter((s) => s && s !== "none").length;
         if (tracks >= 2) ok = true;
       }
       if (!ok) {
@@ -193,9 +196,7 @@ export async function checkR003TwoColumn(
           page: routeId,
           viewport: viewportId,
           rule:
-            routeId === "advanced"
-              ? "R-003-export-two-column"
-              : "R-003-layout",
+            routeId === "advanced" ? "R-003-export-two-column" : "R-003-layout",
           severity: "major",
           selector: `[data-testid="setting-row"]:nth-of-type(${i + 1})`,
           expected: {
@@ -348,7 +349,11 @@ export async function checkR005Contract(
       });
     }
 
-    if (info.rangeCount > 0 && info.numberCount === 0 && info.editableCount === 0) {
+    if (
+      info.rangeCount > 0 &&
+      info.numberCount === 0 &&
+      info.editableCount === 0
+    ) {
       await pushViolation(page, {
         page: routeId,
         viewport: viewportId,
@@ -486,10 +491,16 @@ export async function checkR006DoubleLabel(
   viewportId: string,
 ): Promise<void> {
   const hits = await page.evaluate(() => {
-    const out: Array<{ groupTitle: string; containerTitle: string; groupIndex: number }> = [];
+    const out: Array<{
+      groupTitle: string;
+      containerTitle: string;
+      groupIndex: number;
+    }> = [];
     const groups = document.querySelectorAll('[data-testid="settings-group"]');
     groups.forEach((group, gi) => {
-      const groupTitleEl = group.querySelector('[data-setting-role="group-title"]');
+      const groupTitleEl = group.querySelector(
+        '[data-setting-role="group-title"]',
+      );
       const groupTitle = (groupTitleEl?.textContent || "").trim().toLowerCase();
       if (!groupTitle) return;
       const containers = group.querySelectorAll('[data-setting-role="label"]');
@@ -515,7 +526,10 @@ export async function checkR006DoubleLabel(
       severity: "major",
       selector: `[data-testid="settings-group"]:nth-of-type(${hit.groupIndex + 1})`,
       expected: { containerTitleDistinctFromGroupTitle: true },
-      actual: { groupTitle: hit.groupTitle, containerTitle: hit.containerTitle },
+      actual: {
+        groupTitle: hit.groupTitle,
+        containerTitle: hit.containerTitle,
+      },
       screenshotSelector: '[data-testid="settings-group"]',
     });
   }
@@ -533,7 +547,11 @@ export async function checkR008DuplicateDescription(
   viewportId: string,
 ): Promise<void> {
   const hits = await page.evaluate(() => {
-    const out: Array<{ description: string; groupIndex: number; count: number }> = [];
+    const out: Array<{
+      description: string;
+      groupIndex: number;
+      count: number;
+    }> = [];
     const groups = document.querySelectorAll('[data-testid="settings-group"]');
     groups.forEach((group, gi) => {
       const seen = new Map<string, number>();

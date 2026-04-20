@@ -26,7 +26,9 @@ const DebugSettings = lazy(() =>
 
 /** Minimal fallback for lazy settings tabs — avoids layout shift. */
 const SettingsTabFallback: React.FC = () => (
-  <div className="p-4 text-sm text-mid-gray/60" aria-busy="true">…</div>
+  <div className="p-4 text-sm text-mid-gray/60" aria-busy="true">
+    …
+  </div>
 );
 
 /** Wrap a lazy settings tab in its own Suspense boundary. */
@@ -118,7 +120,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { t } = useTranslation();
   const { settings } = useSettings();
 
-  const availableSections= Object.entries(SECTIONS_CONFIG)
+  const availableSections = Object.entries(SECTIONS_CONFIG)
     .filter(([_, config]) => config.enabled(settings))
     .map(([id, config]) => ({ id: id as SidebarSection, ...config }));
 

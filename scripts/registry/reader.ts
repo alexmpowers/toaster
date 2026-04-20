@@ -95,7 +95,10 @@ function applyFilters(
   );
 }
 
-function renderSection(section: Section, data: Record<string, unknown>): string {
+function renderSection(
+  section: Section,
+  data: Record<string, unknown>,
+): string {
   const key = itemKey(section);
   const items = (data[key] ?? []) as Record<string, unknown>[];
   const lines: string[] = [`## ${section}`, ""];
@@ -127,7 +130,11 @@ function renderSection(section: Section, data: Record<string, unknown>): string 
       const subset = items.filter((i) => i.category === cat);
       if (!subset.length) continue;
       const title =
-        cat === "always" ? "Always do" : cat === "ask-first" ? "Ask first" : "Never do";
+        cat === "always"
+          ? "Always do"
+          : cat === "ask-first"
+            ? "Ask first"
+            : "Never do";
       lines.push(`### ${title}`, "");
       for (const b of subset) lines.push(`- ${b.rule}`);
       lines.push("");
@@ -137,8 +144,7 @@ function renderSection(section: Section, data: Record<string, unknown>): string 
     for (const l of items)
       lines.push(`| ${l.layer} | \`${l.command}\` | ${l.notes ?? ""} |`);
   } else if (section === "hygiene") {
-    for (const r of items)
-      lines.push(`- **${r.id}. ${r.name}** — ${r.rule}`);
+    for (const r of items) lines.push(`- **${r.id}. ${r.name}** — ${r.rule}`);
   } else if (section === "verification") {
     for (const g of items)
       lines.push(`- _${g.when}_ → \`${g.command}\` (evidence: ${g.evidence})`);
@@ -191,7 +197,9 @@ function main(): void {
   if (Object.keys(filters).length) items = applyFilters(items, filters);
 
   if (jsonMode) {
-    process.stdout.write(JSON.stringify({ ...data, [key]: items }, null, 2) + "\n");
+    process.stdout.write(
+      JSON.stringify({ ...data, [key]: items }, null, 2) + "\n",
+    );
     return;
   }
 

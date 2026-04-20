@@ -9,18 +9,8 @@
     "padding_x_px": 16,
     "padding_y_px": 8,
     "radius_px": 8,
-    "bg_rgba": [
-      0,
-      0,
-      0,
-      179
-    ],
-    "fg_rgba": [
-      255,
-      255,
-      255,
-      255
-    ],
+    "bg_rgba": [0, 0, 0, 179],
+    "fg_rgba": [255, 255, 255, 255],
     "font_family": "Inter",
     "frame_width": 1920,
     "frame_height": 1080
@@ -30,9 +20,7 @@
       "index": 1,
       "start_us": 0,
       "end_us": 380000,
-      "lines": [
-        "one"
-      ],
+      "lines": ["one"],
       "font_css": "Inter, system-ui, sans-serif",
       "font_ass_name": "Inter",
       "font_size_px": 48,
@@ -61,9 +49,7 @@
       "index": 2,
       "start_us": 500000,
       "end_us": 880000,
-      "lines": [
-        "two"
-      ],
+      "lines": ["two"],
       "font_css": "Inter, system-ui, sans-serif",
       "font_ass_name": "Inter",
       "font_size_px": 48,
@@ -92,9 +78,7 @@
       "index": 3,
       "start_us": 1000000,
       "end_us": 1380000,
-      "lines": [
-        "three"
-      ],
+      "lines": ["three"],
       "font_css": "Inter, system-ui, sans-serif",
       "font_ass_name": "Inter",
       "font_size_px": 48,
@@ -123,9 +107,7 @@
       "index": 4,
       "start_us": 1500000,
       "end_us": 1880000,
-      "lines": [
-        "four"
-      ],
+      "lines": ["four"],
       "font_css": "Inter, system-ui, sans-serif",
       "font_ass_name": "Inter",
       "font_size_px": 48,
@@ -154,9 +136,7 @@
       "index": 5,
       "start_us": 2000000,
       "end_us": 2380000,
-      "lines": [
-        "five"
-      ],
+      "lines": ["five"],
       "font_css": "Inter, system-ui, sans-serif",
       "font_ass_name": "Inter",
       "font_size_px": 48,
@@ -185,9 +165,7 @@
       "index": 6,
       "start_us": 2500000,
       "end_us": 2880000,
-      "lines": [
-        "six"
-      ],
+      "lines": ["six"],
       "font_css": "Inter, system-ui, sans-serif",
       "font_ass_name": "Inter",
       "font_size_px": 48,
@@ -216,9 +194,7 @@
       "index": 7,
       "start_us": 3000000,
       "end_us": 3380000,
-      "lines": [
-        "seven"
-      ],
+      "lines": ["seven"],
       "font_css": "Inter, system-ui, sans-serif",
       "font_ass_name": "Inter",
       "font_size_px": 48,
@@ -247,9 +223,7 @@
       "index": 8,
       "start_us": 3500000,
       "end_us": 3880000,
-      "lines": [
-        "eight"
-      ],
+      "lines": ["eight"],
       "font_css": "Inter, system-ui, sans-serif",
       "font_ass_name": "Inter",
       "font_size_px": 48,

@@ -46,11 +46,12 @@ export const CaptionSettings: React.FC<CaptionSettingsProps> = React.memo(
   ({ descriptionMode = "tooltip", grouped = false }) => {
     const { getSetting, updateSetting } = useSettings();
 
-    const profileSet =
-      (getSetting("caption_profiles") as CaptionProfileSet | undefined) ?? {
-        desktop: DEFAULT_DESKTOP,
-        mobile: DEFAULT_MOBILE,
-      };
+    const profileSet = (getSetting("caption_profiles") as
+      | CaptionProfileSet
+      | undefined) ?? {
+      desktop: DEFAULT_DESKTOP,
+      mobile: DEFAULT_MOBILE,
+    };
 
     const [previewOrientation, setPreviewOrientation] =
       useState<CaptionMockOrientation>("horizontal");
@@ -96,4 +97,3 @@ export const CaptionSettings: React.FC<CaptionSettingsProps> = React.memo(
     );
   },
 );
-

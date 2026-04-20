@@ -43,35 +43,48 @@ export function usePreviewCache({
   >("idle");
   const [previewAudioUrl, setPreviewAudioUrl] = useState<string | null>(null);
   const [previewAudioReady, setPreviewAudioReady] = useState(false);
-  const previewRenderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const previewInvalidationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previewRenderTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const previewInvalidationTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const previewRenderSeq = useRef(0);
   const previewMetadataRef = useRef<CachedPreviewMetadata | null>(null);
 
   const hasPreviewAudio = !!previewAudioUrl;
   const usePreviewCacheFlag =
-    previewEdits &&
-    hasPreviewAudio &&
-    previewCacheState === "ready";
+    previewEdits && hasPreviewAudio && previewCacheState === "ready";
   const previewCacheMode: PreviewCacheMode =
     !previewEdits || previewCacheState === "error"
       ? "fallback"
-      : previewCacheState === "loading" || (hasPreviewAudio && !previewAudioReady)
+      : previewCacheState === "loading" ||
+          (hasPreviewAudio && !previewAudioReady)
         ? "building"
         : usePreviewCacheFlag
           ? "ready"
           : "fallback";
-  const previewToggleLabel = previewEdits ? t("player.previewEditsOn") : t("player.previewEditsOff");
-  const previewCacheModeLabel = previewCacheMode === "building"
-    ? t("player.cacheModeBuilding")
-    : previewCacheMode === "ready"
-      ? t("player.cacheModeReady")
-      : t("player.cacheModeFallback");
+  const previewToggleLabel = previewEdits
+    ? t("player.previewEditsOn")
+    : t("player.previewEditsOff");
+  const previewCacheModeLabel =
+    previewCacheMode === "building"
+      ? t("player.cacheModeBuilding")
+      : previewCacheMode === "ready"
+        ? t("player.cacheModeReady")
+        : t("player.cacheModeFallback");
 
   const hasVideoPreviewCandidate = mediaType === "video" && usePreviewCacheFlag;
   const isDualTrackVideoPreview = hasVideoPreviewCandidate && previewAudioReady;
-  const primarySrc = mediaType === "video" ? mediaUrl : usePreviewCacheFlag ? previewAudioUrl : mediaUrl;
-  const activePlaybackSrc = isDualTrackVideoPreview ? previewAudioUrl : primarySrc;
+  const primarySrc =
+    mediaType === "video"
+      ? mediaUrl
+      : usePreviewCacheFlag
+        ? previewAudioUrl
+        : mediaUrl;
+  const activePlaybackSrc = isDualTrackVideoPreview
+    ? previewAudioUrl
+    : primarySrc;
 
   const schedulePreviewInvalidation = useCallback(
     (stalePreview: CachedPreviewMetadata | null, reason: string) => {
@@ -134,7 +147,10 @@ export function usePreviewCache({
   }, []);
 
   // Reset preview cache on media change
-  const previousPreviewLifecycleRef = useRef<{ mediaUrl: string | null; words: Word[] } | null>(null);
+  const previousPreviewLifecycleRef = useRef<{
+    mediaUrl: string | null;
+    words: Word[];
+  } | null>(null);
   useEffect(() => {
     const previous = previousPreviewLifecycleRef.current;
     previousPreviewLifecycleRef.current = { mediaUrl, words };
@@ -147,7 +163,6 @@ export function usePreviewCache({
       resetPreviewCache("media-change", true);
       return;
     }
-
   }, [mediaUrl, resetPreviewCache, words]);
 
   // Normalize playback audio contract
@@ -157,7 +172,9 @@ export function usePreviewCache({
 
     void (async () => {
       try {
-        const contract = await invoke<PlaybackAudioContract>("normalize_playback_audio_contract");
+        const contract = await invoke<PlaybackAudioContract>(
+          "normalize_playback_audio_contract",
+        );
         if (cancelled) return;
         if (contract.mismatch_detected) {
           console.warn(
@@ -165,7 +182,9 @@ export function usePreviewCache({
           );
         }
         if (!contract.selected_output_device_available) {
-          console.warn("[audio-contract] selected output device missing; fell back to default output device");
+          console.warn(
+            "[audio-contract] selected output device missing; fell back to default output device",
+          );
         }
       } catch (error) {
         if (!cancelled) {
@@ -182,9 +201,7 @@ export function usePreviewCache({
   // Debounced preview cache generation
   useEffect(() => {
     if (!previewEdits || words.length === 0) {
-      const reason = previewEdits
-        ? "empty-transcript"
-        : "preview-disabled";
+      const reason = previewEdits ? "empty-transcript" : "preview-disabled";
       resetPreviewCache(reason, true);
       return;
     }
@@ -218,7 +235,10 @@ export function usePreviewCache({
             setPreviewAudioReady(false);
             setPreviewAudioUrl(convertFileSrc(meta.preview_url_safe_path));
             setPreviewCacheState("ready");
-            if (stalePreview?.generationToken && stalePreview.generationToken !== meta.generation_token) {
+            if (
+              stalePreview?.generationToken &&
+              stalePreview.generationToken !== meta.generation_token
+            ) {
               schedulePreviewInvalidation(stalePreview, "preview-replaced");
             }
           } else {

@@ -38,7 +38,11 @@ export default defineConfig(async () => ({
         // time of writing: react ~150 kB, icons ~120 kB, tauri ~30 kB.
         manualChunks: (id) => {
           if (!id.includes("node_modules")) return undefined;
-          if (id.includes("/react") || id.includes("/react-dom") || id.includes("/scheduler")) {
+          if (
+            id.includes("/react") ||
+            id.includes("/react-dom") ||
+            id.includes("/scheduler")
+          ) {
             return "vendor-react";
           }
           if (id.includes("/lucide-react")) {

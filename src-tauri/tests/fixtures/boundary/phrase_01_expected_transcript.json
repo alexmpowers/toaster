@@ -1,15 +1,5 @@
 {
-  "expected": [
-    "four_forty",
-    "eight_eighty"
-  ],
-  "hypothesis_clean": [
-    "four_forty",
-    "eight_eighty"
-  ],
-  "hypothesis_leaky": [
-    "four_forty",
-    "six_sixty",
-    "eight_eighty"
-  ]
+  "expected": ["four_forty", "eight_eighty"],
+  "hypothesis_clean": ["four_forty", "eight_eighty"],
+  "hypothesis_leaky": ["four_forty", "six_sixty", "eight_eighty"]
 }

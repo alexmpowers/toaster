@@ -151,7 +151,10 @@ const settingUpdaters: {
 };
 
 // Tracks pending values for keys that are currently mid-update (race dedup)
-const pendingUpdates = new Map<string, { key: keyof Settings; value: unknown }>();
+const pendingUpdates = new Map<
+  string,
+  { key: keyof Settings; value: unknown }
+>();
 
 export const useSettingsStore = create<SettingsStore>()(
   subscribeWithSelector((set, get) => ({
@@ -253,9 +256,7 @@ export const useSettingsStore = create<SettingsStore>()(
         pendingUpdates.set(updateKey, { key, value });
         // Optimistically apply the new value to the UI immediately
         set((state) => ({
-          settings: state.settings
-            ? { ...state.settings, [key]: value }
-            : null,
+          settings: state.settings ? { ...state.settings, [key]: value } : null,
         }));
         return;
       }

@@ -21,16 +21,16 @@ eval/caption-parity/fixtures/
 
 ## Fixture schema (`input.json`)
 
-| Field                  | Type                          | Required | Notes |
-|------------------------|-------------------------------|----------|-------|
-| `id`                   | string                        | yes      | Echoed into dump output for diagnostics. |
-| `timeline_domain`      | `"Source"` \| `"Edited"`      | yes      | Passed to `build_blocks`. |
-| `video_dims`           | `{ width, height }`           | yes      | Authoritative geometry space. |
-| `caption_profile`      | `CaptionProfile`              | yes      | Full settings profile. |
-| `words`                | `Word[]`                      | yes      | Post-edit word list. |
-| `keep_segments`        | `[i64, i64][]`                | no       | Source-clock keep ranges; only used when `timeline_domain == "Edited"`. Defaults to `[]`. |
-| `preview_scale_factor` | number                        | no       | `rendered_height / frame_height` the harness should assume. Defaults to `1.0`. |
-| `config_overrides`     | `{ max_segment_duration_us?, include_silenced? }` | no | Pins layout knobs not covered by `CaptionProfile`. |
+| Field                  | Type                                              | Required | Notes                                                                                     |
+| ---------------------- | ------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------- |
+| `id`                   | string                                            | yes      | Echoed into dump output for diagnostics.                                                  |
+| `timeline_domain`      | `"Source"` \| `"Edited"`                          | yes      | Passed to `build_blocks`.                                                                 |
+| `video_dims`           | `{ width, height }`                               | yes      | Authoritative geometry space.                                                             |
+| `caption_profile`      | `CaptionProfile`                                  | yes      | Full settings profile.                                                                    |
+| `words`                | `Word[]`                                          | yes      | Post-edit word list.                                                                      |
+| `keep_segments`        | `[i64, i64][]`                                    | no       | Source-clock keep ranges; only used when `timeline_domain == "Edited"`. Defaults to `[]`. |
+| `preview_scale_factor` | number                                            | no       | `rendered_height / frame_height` the harness should assume. Defaults to `1.0`.            |
+| `config_overrides`     | `{ max_segment_duration_us?, include_silenced? }` | no       | Pins layout knobs not covered by `CaptionProfile`.                                        |
 
 `Word` shape matches `src-tauri/src/managers/editor/types.rs::Word`.
 
@@ -67,11 +67,11 @@ unintended drift will produce a surprising one.
 
 ## Designed fixtures
 
-| Fixture            | What it pins |
-|--------------------|--------------|
-| `single_line_01`   | 4 short words, 1920x1080, default 90% width. Single block, single line — proves basic geometry + time parity with no wrapping decisions. |
-| `multi_line_wrap_01` | 14 words at 40% max-width, font_size=48. Forces 2–3 visual lines inside one block — proves pixel-wrap-point parity. |
-| `rapid_fire_01`    | 8 one-word captions forced into separate blocks by a 600 ms `max_segment_duration_us` override. Proves block-boundary time parity. |
+| Fixture              | What it pins                                                                                                                             |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `single_line_01`     | 4 short words, 1920x1080, default 90% width. Single block, single line — proves basic geometry + time parity with no wrapping decisions. |
+| `multi_line_wrap_01` | 14 words at 40% max-width, font_size=48. Forces 2–3 visual lines inside one block — proves pixel-wrap-point parity.                      |
+| `rapid_fire_01`      | 8 one-word captions forced into separate blocks by a 600 ms `max_segment_duration_us` override. Proves block-boundary time parity.       |
 
 Add new fixtures only when there is a concrete parity regression to
 regression-test. Re-snapshot with `-Regenerate` and stage both

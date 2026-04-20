@@ -141,13 +141,13 @@ describe("editorStore", () => {
   describe("deleteWord", () => {
     it("invokes editor_delete_word with index", async () => {
       const projection = makeProjection([makeWord({ deleted: true })]);
-      mockInvoke
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(projection);
+      mockInvoke.mockResolvedValueOnce(true).mockResolvedValueOnce(projection);
 
       await useEditorStore.getState().deleteWord(3);
 
-      expect(mockInvoke).toHaveBeenCalledWith("editor_delete_word", { index: 3 });
+      expect(mockInvoke).toHaveBeenCalledWith("editor_delete_word", {
+        index: 3,
+      });
       expect(mockInvoke).toHaveBeenCalledWith("editor_get_projection");
       expect(useEditorStore.getState().words).toEqual(projection.words);
     });
@@ -156,13 +156,13 @@ describe("editorStore", () => {
   describe("restoreWord", () => {
     it("invokes editor_restore_word with index", async () => {
       const projection = makeProjection([makeWord()]);
-      mockInvoke
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(projection);
+      mockInvoke.mockResolvedValueOnce(true).mockResolvedValueOnce(projection);
 
       await useEditorStore.getState().restoreWord(1);
 
-      expect(mockInvoke).toHaveBeenCalledWith("editor_restore_word", { index: 1 });
+      expect(mockInvoke).toHaveBeenCalledWith("editor_restore_word", {
+        index: 1,
+      });
       expect(mockInvoke).toHaveBeenCalledWith("editor_get_projection");
     });
   });
@@ -170,15 +170,16 @@ describe("editorStore", () => {
   describe("deleteRange", () => {
     it("invokes editor_delete_range and clears selection", async () => {
       const projection = makeProjection([]);
-      mockInvoke
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(projection);
+      mockInvoke.mockResolvedValueOnce(true).mockResolvedValueOnce(projection);
 
       useEditorStore.setState({ selectedIndex: 1, selectionRange: [0, 3] });
 
       await useEditorStore.getState().deleteRange(0, 3);
 
-      expect(mockInvoke).toHaveBeenCalledWith("editor_delete_range", { start: 0, end: 3 });
+      expect(mockInvoke).toHaveBeenCalledWith("editor_delete_range", {
+        start: 0,
+        end: 3,
+      });
       const state = useEditorStore.getState();
       expect(state.selectedIndex).toBeNull();
       expect(state.selectionRange).toBeNull();
@@ -188,9 +189,7 @@ describe("editorStore", () => {
   describe("restoreAll", () => {
     it("invokes editor_restore_all", async () => {
       const projection = makeProjection([makeWord()]);
-      mockInvoke
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(projection);
+      mockInvoke.mockResolvedValueOnce(true).mockResolvedValueOnce(projection);
 
       await useEditorStore.getState().restoreAll();
 
@@ -201,16 +200,20 @@ describe("editorStore", () => {
 
   describe("splitWord", () => {
     it("invokes editor_split_word and clears selectedIndex", async () => {
-      const projection = makeProjection([makeWord({ text: "hel" }), makeWord({ text: "lo" })]);
-      mockInvoke
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(projection);
+      const projection = makeProjection([
+        makeWord({ text: "hel" }),
+        makeWord({ text: "lo" }),
+      ]);
+      mockInvoke.mockResolvedValueOnce(true).mockResolvedValueOnce(projection);
 
       useEditorStore.setState({ selectedIndex: 0 });
 
       await useEditorStore.getState().splitWord(0, 3);
 
-      expect(mockInvoke).toHaveBeenCalledWith("editor_split_word", { index: 0, position: 3 });
+      expect(mockInvoke).toHaveBeenCalledWith("editor_split_word", {
+        index: 0,
+        position: 3,
+      });
       expect(useEditorStore.getState().selectedIndex).toBeNull();
     });
   });
@@ -218,13 +221,13 @@ describe("editorStore", () => {
   describe("silenceWord", () => {
     it("invokes editor_silence_word with index", async () => {
       const projection = makeProjection([makeWord({ silenced: true })]);
-      mockInvoke
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(projection);
+      mockInvoke.mockResolvedValueOnce(true).mockResolvedValueOnce(projection);
 
       await useEditorStore.getState().silenceWord(2);
 
-      expect(mockInvoke).toHaveBeenCalledWith("editor_silence_word", { index: 2 });
+      expect(mockInvoke).toHaveBeenCalledWith("editor_silence_word", {
+        index: 2,
+      });
       expect(mockInvoke).toHaveBeenCalledWith("editor_get_projection");
     });
   });
@@ -232,9 +235,7 @@ describe("editorStore", () => {
   describe("undo", () => {
     it("invokes editor_undo and refreshes projection", async () => {
       const projection = makeProjection([makeWord()]);
-      mockInvoke
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(projection);
+      mockInvoke.mockResolvedValueOnce(true).mockResolvedValueOnce(projection);
 
       await useEditorStore.getState().undo();
 
@@ -247,9 +248,7 @@ describe("editorStore", () => {
   describe("redo", () => {
     it("invokes editor_redo and refreshes projection", async () => {
       const projection = makeProjection([makeWord()]);
-      mockInvoke
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(projection);
+      mockInvoke.mockResolvedValueOnce(true).mockResolvedValueOnce(projection);
 
       await useEditorStore.getState().redo();
 
@@ -268,13 +267,18 @@ describe("editorStore", () => {
 
       expect(mockInvoke).toHaveBeenCalledWith("editor_get_projection");
       expect(useEditorStore.getState().words).toEqual(projection.words);
-      expect(useEditorStore.getState().timingContract).toEqual(projection.timing_contract);
+      expect(useEditorStore.getState().timingContract).toEqual(
+        projection.timing_contract,
+      );
     });
   });
 
   describe("getKeepSegments", () => {
     it("invokes editor_get_keep_segments and returns result", async () => {
-      const segments: [number, number][] = [[0, 500_000], [700_000, 1_000_000]];
+      const segments: [number, number][] = [
+        [0, 500_000],
+        [700_000, 1_000_000],
+      ];
       mockInvoke.mockResolvedValueOnce(segments);
 
       const result = await useEditorStore.getState().getKeepSegments();

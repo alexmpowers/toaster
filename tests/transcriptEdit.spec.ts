@@ -130,7 +130,10 @@ test.describe("Transcript edit flow", () => {
     const result = await page.evaluate(async (words) => {
       const { commands } = await import("@/bindings");
       const activeText = (ws: Array<{ text: string; deleted?: boolean }>) =>
-        ws.filter((w) => !w.deleted).map((w) => w.text).join(" ");
+        ws
+          .filter((w) => !w.deleted)
+          .map((w) => w.text)
+          .join(" ");
 
       await commands.editorSetWords(words as never);
       const initial = await commands.editorGetWords();

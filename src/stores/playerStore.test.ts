@@ -48,7 +48,11 @@ describe("playerStore", () => {
   describe("clearMedia", () => {
     it("nulls out media refs and stops playback", () => {
       usePlayerStore.getState().setMedia("file:///x.mp4", "video");
-      usePlayerStore.setState({ isPlaying: true, currentTime: 10, duration: 20 });
+      usePlayerStore.setState({
+        isPlaying: true,
+        currentTime: 10,
+        duration: 20,
+      });
       usePlayerStore.getState().clearMedia();
       const s = usePlayerStore.getState();
       expect(s.mediaUrl).toBeNull();

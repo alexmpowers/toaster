@@ -166,7 +166,10 @@ export const ModelsSettings: React.FC = () => {
   }
 
   return (
-    <div className="max-w-5xl w-full mx-auto space-y-6" data-testid="settings-outer">
+    <div
+      className="max-w-5xl w-full mx-auto space-y-6"
+      data-testid="settings-outer"
+    >
       <div className="mb-4">
         <h1 className="text-xl font-semibold mb-2">
           {t("settings.models.title")}

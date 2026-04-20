@@ -131,7 +131,10 @@ export const CaptionMockFrame: React.FC<CaptionMockFrameProps> = ({
           x={layout.margin_h_px * (w / layout.frame_width)}
           y={layout.margin_v_px * (h / layout.frame_height)}
           width={layout.box_width_px * (w / layout.frame_width)}
-          height={(layout.font_size_px + layout.padding_y_px * 2) * (h / layout.frame_height)}
+          height={
+            (layout.font_size_px + layout.padding_y_px * 2) *
+            (h / layout.frame_height)
+          }
           rx={layout.radius_px * (w / layout.frame_width)}
           ry={layout.radius_px * (w / layout.frame_width)}
           fill="none"
