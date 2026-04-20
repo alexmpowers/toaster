@@ -315,14 +315,21 @@ pub fn cleanup_all(
     // cleanup pass; when it isn't we fall back to the positional rule so
     // offline unit tests keep working. The live app always has media
     // loaded, so this is the expected path in practice.
-    let smart_audio: Option<(Vec<f32>, u32)> = {
+    //
+    // `decode_media_audio_cached` keeps the decoded buffer on `MediaStore`
+    // keyed by path + mtime, so repeated cleanup invocations on the same
+    // file skip the multi-second ffmpeg spawn.
+    let smart_audio: Option<(std::sync::Arc<Vec<f32>>, u32)> = {
         let media_path = {
             let media = crate::lock_recovery::try_lock(media_store.0.lock()).map_err(|e| e.to_string())?;
             media.current().map(|m| m.path.clone())
         };
         match media_path {
-            Some(path) => match crate::commands::disfluency::decode_media_audio(&path) {
-                Ok(samples) => Some((samples, 16_000u32)),
+            Some(path) => match crate::commands::disfluency::decode_media_audio_cached(
+                &path,
+                &media_store,
+            ) {
+                Ok(pair) => Some(pair),
                 Err(e) => {
                     log::warn!(
                         "cleanup_all: audio decode failed, falling back to positional collapse: {}",

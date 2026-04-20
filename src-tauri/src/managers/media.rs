@@ -6,7 +6,8 @@
 use log::info;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use std::time::SystemTime;
 
 /// Supported media file extensions.
 const VIDEO_EXTENSIONS: &[&str] = &[
@@ -34,9 +35,27 @@ pub struct MediaInfo {
     pub extension: String,
 }
 
+/// Cached decoded audio for the currently loaded media file.
+///
+/// Populated on demand by `commands::disfluency::decode_media_audio_cached`
+/// and reused across repeated cleanup / smart-duplicate calls. Keyed by
+/// file path + modified-time so edits to the source file on disk force a
+/// re-decode, and cleared outright on `import()` / `clear()`.
+///
+/// `samples` is wrapped in `Arc` so callers can hold a reference without
+/// keeping the `MediaState` mutex locked during their work.
+#[derive(Clone)]
+pub struct AudioCache {
+    pub path: PathBuf,
+    pub modified: SystemTime,
+    pub samples: Arc<Vec<f32>>,
+    pub sample_rate: u32,
+}
+
 /// Manages the currently loaded media file.
 pub struct MediaState {
     current: Option<MediaInfo>,
+    audio_cache: Option<AudioCache>,
 }
 
 impl Default for MediaState {
@@ -47,7 +66,10 @@ impl Default for MediaState {
 
 impl MediaState {
     pub fn new() -> Self {
-        Self { current: None }
+        Self {
+            current: None,
+            audio_cache: None,
+        }
     }
 
     /// Import a media file. Validates it exists and has a supported extension.
@@ -101,6 +123,10 @@ impl MediaState {
             info.file_name, info.media_type, info.file_size
         );
         self.current = Some(info.clone());
+        // Invalidate the decoded-audio cache: we might be loading a
+        // different file, or the same path after the user edited it
+        // on disk, or any other reason the previous samples are stale.
+        self.audio_cache = None;
         Ok(info)
     }
 
@@ -115,6 +141,37 @@ impl MediaState {
             info!("Cleared media: {}", info.file_name);
         }
         self.current = None;
+        self.audio_cache = None;
+    }
+
+    /// Look up a cached decoded audio buffer for `path` with matching
+    /// modified-time. Returns `None` on cache miss (different path, stale
+    /// mtime, or never populated). Cheap to call — does no I/O.
+    pub fn audio_cache_get(&self, path: &Path, modified: SystemTime) -> Option<(Arc<Vec<f32>>, u32)> {
+        let cache = self.audio_cache.as_ref()?;
+        if cache.path == path && cache.modified == modified {
+            Some((cache.samples.clone(), cache.sample_rate))
+        } else {
+            None
+        }
+    }
+
+    /// Store a freshly decoded audio buffer in the cache. Overwrites any
+    /// previous entry; callers should only populate after a verified
+    /// decode success.
+    pub fn audio_cache_put(
+        &mut self,
+        path: PathBuf,
+        modified: SystemTime,
+        samples: Arc<Vec<f32>>,
+        sample_rate: u32,
+    ) {
+        self.audio_cache = Some(AudioCache {
+            path,
+            modified,
+            samples,
+            sample_rate,
+        });
     }
 
     /// Get the asset protocol URL for the current media file.
@@ -252,5 +309,65 @@ mod tests {
     #[test]
     fn urlencoding_preserves_slashes() {
         assert_eq!(urlencoding("C:/path/to/file.mp4"), "C:/path/to/file.mp4");
+    }
+
+    #[test]
+    fn audio_cache_miss_when_empty() {
+        let state = MediaState::new();
+        assert!(state
+            .audio_cache_get(Path::new("/nowhere.mp4"), SystemTime::UNIX_EPOCH)
+            .is_none());
+    }
+
+    #[test]
+    fn audio_cache_hit_on_exact_path_and_mtime() {
+        let mut state = MediaState::new();
+        let path = PathBuf::from("/tmp/foo.mp4");
+        let mtime = SystemTime::UNIX_EPOCH;
+        let samples = Arc::new(vec![0.1f32, 0.2, 0.3]);
+        state.audio_cache_put(path.clone(), mtime, samples.clone(), 16_000);
+
+        let hit = state.audio_cache_get(&path, mtime).expect("cache hit");
+        assert_eq!(hit.1, 16_000);
+        assert!(Arc::ptr_eq(&hit.0, &samples));
+    }
+
+    #[test]
+    fn audio_cache_miss_on_stale_mtime() {
+        let mut state = MediaState::new();
+        let path = PathBuf::from("/tmp/foo.mp4");
+        let old_mtime = SystemTime::UNIX_EPOCH;
+        let new_mtime = old_mtime + std::time::Duration::from_secs(60);
+        state.audio_cache_put(path.clone(), old_mtime, Arc::new(vec![0.0f32]), 16_000);
+
+        assert!(state.audio_cache_get(&path, new_mtime).is_none());
+    }
+
+    #[test]
+    fn audio_cache_invalidated_on_import() {
+        let path = temp_file("cache_invalidate.mp4", b"data");
+        let mut state = MediaState::new();
+        state.audio_cache_put(
+            PathBuf::from("/tmp/stale.mp4"),
+            SystemTime::UNIX_EPOCH,
+            Arc::new(vec![1.0f32]),
+            16_000,
+        );
+        state.import(&path).unwrap();
+        assert!(state
+            .audio_cache_get(Path::new("/tmp/stale.mp4"), SystemTime::UNIX_EPOCH)
+            .is_none());
+        std::fs::remove_file(&path).ok();
+    }
+
+    #[test]
+    fn audio_cache_invalidated_on_clear() {
+        let mut state = MediaState::new();
+        let path = PathBuf::from("/tmp/foo.mp4");
+        let mtime = SystemTime::UNIX_EPOCH;
+        state.audio_cache_put(path.clone(), mtime, Arc::new(vec![0.5f32]), 16_000);
+        assert!(state.audio_cache_get(&path, mtime).is_some());
+        state.clear();
+        assert!(state.audio_cache_get(&path, mtime).is_none());
     }
 }
