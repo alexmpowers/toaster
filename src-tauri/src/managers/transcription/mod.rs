@@ -26,7 +26,6 @@ pub mod adapter;
 mod adapter_normalize;
 mod engine_call;
 mod job;
-mod prefilter;
 #[allow(unused_imports)]
 pub use accelerators::{
     apply_accelerator_settings, get_available_accelerators, AvailableAccelerators, GpuDeviceOption,

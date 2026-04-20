@@ -6,7 +6,6 @@ import { AllowWords } from "../AllowWords";
 import { ModelUnloadTimeoutSetting } from "../ModelUnloadTimeout";
 import { CaptionSettings } from "../captions/CaptionSettings";
 import { ExperimentalGroup } from "./ExperimentalGroup";
-import { VadPrefilterToggle } from "../VadPrefilterToggle";
 import { VadRefineBoundariesToggle } from "../VadRefineBoundariesToggle";
 
 export const AdvancedSettings: React.FC = () => {
@@ -28,17 +27,16 @@ export const AdvancedSettings: React.FC = () => {
         <AllowWords descriptionMode="tooltip" grouped />
       </SettingsGroup>
 
+      <SettingsGroup title={t("settings.advanced.groups.vad.title")}>
+        <VadRefineBoundariesToggle descriptionMode="tooltip" grouped />
+      </SettingsGroup>
+
       <SettingsGroup title={t("settings.advanced.groups.performance.title")}>
         <ModelUnloadTimeoutSetting descriptionMode="tooltip" grouped />
       </SettingsGroup>
 
       <SettingsGroup title={t("settings.advanced.groups.captions.title")}>
         <CaptionSettings descriptionMode="tooltip" grouped />
-      </SettingsGroup>
-
-      <SettingsGroup title={t("settings.advanced.groups.vad.title")}>
-        <VadPrefilterToggle descriptionMode="tooltip" grouped />
-        <VadRefineBoundariesToggle descriptionMode="tooltip" grouped />
       </SettingsGroup>
 
       <SettingsGroup title={t("settings.advanced.groups.experimental.title")}>

@@ -33,8 +33,7 @@ pub enum ModelCategory {
     Transcription,
     /// File-based analyzer models that are not transcription engines —
     /// currently only the Silero VAD ONNX consumed by
-    /// `managers::transcription::prefilter`,
-    /// `managers::splice::boundaries`, and `managers::filler`.
+    /// `managers::splice::boundaries` and `managers::filler`.
     /// Filtered out of the ASR model picker.
     VoiceActivityDetection,
 }

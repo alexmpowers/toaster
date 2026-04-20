@@ -9,8 +9,9 @@ const SILERO_VAD_ID = "silero-vad";
  * Footer pill that mirrors the ModelStatusButton visual language for the
  * Silero VAD model. Visible only when:
  *   - the Silero ONNX is downloaded, AND
- *   - at least one VAD consumer toggle is enabled
- *     (vad_prefilter_enabled || vad_refine_boundaries).
+ *   - the sole remaining VAD consumer toggle is enabled
+ *     (vad_refine_boundaries — the R-002 ASR pre-filter was removed
+ *     after user feedback that it degraded transcript timing edits).
  *
  * Kept intentionally minimal (read-only pill, no dropdown). The Models
  * settings tab remains the download entry point; this component is the
@@ -25,9 +26,8 @@ export const VadStatusPill: React.FC = React.memo(() => {
   const getDownloadProgress = useModelStore((s) => s.getDownloadProgress);
   const getSetting = useSettingsStore((s) => s.getSetting);
 
-  const prefilterEnabled = getSetting("vad_prefilter_enabled") ?? false;
   const refineEnabled = getSetting("vad_refine_boundaries") ?? false;
-  const consumerActive = prefilterEnabled || refineEnabled;
+  const consumerActive = refineEnabled;
 
   const model = getModelInfo(SILERO_VAD_ID);
   const downloading = isModelDownloading(SILERO_VAD_ID);

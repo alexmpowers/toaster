@@ -2,15 +2,19 @@
 //!
 //! The Silero ONNX is **not** a transcription engine; it is a
 //! file-based analyzer consumed by
-//! [`managers::transcription::prefilter`] (R-002),
-//! [`managers::splice::boundaries`] (R-003), and
+//! [`managers::splice::boundaries`] (R-003) and
 //! [`managers::filler`] (R-004). Phase 4 wires it through the same
 //! `ModelManager` download / SHA-256 / cancel / delete pipeline used
 //! for ASR models, differentiated by
 //! [`ModelCategory::VoiceActivityDetection`] so the ASR model picker
 //! filters it out.
 //!
-//! All three consumers must call [`silero_vad_model_path`] to discover
+//! **Note:** R-002 (`managers::transcription::prefilter`) was removed
+//! after live QC showed it degraded transcript timing edits. The
+//! `vad_prefilter_enabled` setting and the prefilter orchestrator
+//! module no longer exist.
+//!
+//! Both remaining consumers must call [`silero_vad_model_path`] to discover
 //! the ONNX location, and must treat absence as a graceful-fallback
 //! signal per BLUEPRINT AD-8.
 

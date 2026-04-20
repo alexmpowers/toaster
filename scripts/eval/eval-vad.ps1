@@ -3,6 +3,11 @@
     Silero VAD feature eval harness — Phase-3/4 gate for
     features/reintroduce-silero-vad.
 
+    SUPERSEDED (2026-04-19): the R-002 / AC-005-c "prefilter_degrades"
+    gate is no longer meaningful because the ASR pre-filter consumer
+    was removed. The remaining gates (catalog_pin, catalog_registered,
+    boundary_ssot, gap_classification, runtime_delta) still apply.
+
 .DESCRIPTION
     Produces a structured pass/fail report for the VAD reintroduction
     feature. Runs cheaply (seconds, no GPU, no ONNX download required)

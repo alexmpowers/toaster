@@ -142,22 +142,6 @@ async changeNormalizeAudioSetting(enabled: boolean) : Promise<Result<null, strin
 }
 },
 /**
- * R-006 — master toggle for the Silero VAD pre-filter ASR path.
- * See features/reintroduce-silero-vad/PRD.md R-006 / AC-006-a.
- * When true, the transcription manager slices audio into detected
- * speech windows before calling the ASR; when false, the legacy
- * whole-file path runs. The setting is read once per transcription
- * job — flipping it mid-job has no effect on the in-flight job.
- */
-async changeVadPrefilterEnabledSetting(enabled: boolean) : Promise<Result<null, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("change_vad_prefilter_enabled_setting", { enabled }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e as string };
-}
-},
-/**
  * R-006 — opt-in toggle for VAD-biased splice-boundary refinement.
  * See features/reintroduce-silero-vad/PRD.md R-006 / AC-006-b.
  * When false (default) preview + export keep the existing
@@ -975,16 +959,6 @@ export type AppSettings = { bindings?: Partial<{ [key in string]: ShortcutBindin
  */
 experimental_enabled?: boolean; lazy_stream_close?: boolean; custom_filler_words?: string[] | null; whisper_accelerator?: WhisperAcceleratorSetting; ort_accelerator?: OrtAcceleratorSetting; whisper_gpu_device?: number; normalize_audio_on_export?: boolean; 
 /**
- * **R-006 (Silero VAD reintroduction)** — when true, the
- * transcription manager runs Silero over the decoded file audio
- * before any `transcribe-rs` pass and hands only the speech
- * windows to the ASR. Falls back silently to the full-file path
- * when the Silero ONNX is not on disk or ORT init fails
- * (BLUEPRINT AD-8). Default `true` because the happy path is a
- * wall-time + hallucination-rate win per R-002.
- */
-vad_prefilter_enabled?: boolean; 
-/**
  * **R-006 (Silero VAD reintroduction)** — when true, the splice
  * boundary snap in `managers::splice::boundaries` consults a
  * P(speech) curve within the existing zero-crossing / energy
@@ -1250,8 +1224,7 @@ export type ModelCategory = "Transcription" |
 /**
  * File-based analyzer models that are not transcription engines —
  * currently only the Silero VAD ONNX consumed by
- * `managers::transcription::prefilter`,
- * `managers::splice::boundaries`, and `managers::filler`.
+ * `managers::splice::boundaries` and `managers::filler`.
  * Filtered out of the ASR model picker.
  */
 "VoiceActivityDetection"

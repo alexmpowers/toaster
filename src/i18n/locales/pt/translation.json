@@ -321,10 +321,6 @@
         "maxWidth": "Maximum width",
         "maxWidthDescription": "How wide the caption is allowed to grow before it wraps onto a second line, as a percentage of the video frame."
       },
-      "vadPrefilter": {
-        "label": "Speech Pre-filter (VAD)",
-        "description": "Slice audio into speech regions before transcription, skipping long silences. May drop very short filler words (uh, um) and other low-energy fragments — disabled by default until a precision-eval win is recorded. When the Silero VAD model is not installed, the full-file path runs as normal."
-      },
       "vadRefineBoundaries": {
         "label": "Refine Splice Boundaries (VAD)",
         "description": "Use the per-frame speech probability curve as an extra bias when snapping splice boundaries. Leaves boundaries unchanged where the pre-feature zero-crossing and energy-valley snap already lands on silence. Defaults off; enable for tricky overlapping phoneme seams."
@@ -337,16 +333,15 @@
           "single": "looking crispy",
           "multiLine": "looking crispy and readable\neven when the caption text\nwraps onto a third line",
           "label": {
-            "single": "[single line]",
-            "multiLine": "[multi-line]"
+            "single": "single line",
+            "multiLine": "multi-line"
           }
         },
         "orientation": {
           "label": "Orientação da pré-visualização",
           "horizontal": "Horizontal",
           "vertical": "Vertical"
-        },
-        "heading": "Live preview"
+        }
       }
     },
     "experimental": {

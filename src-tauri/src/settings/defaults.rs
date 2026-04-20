@@ -141,22 +141,6 @@ pub(super) fn default_whisper_gpu_device() -> i32 {
     -1 // auto
 }
 
-/// R-006 (features/reintroduce-silero-vad): default-on. The prefilter
-/// silently falls back when the model is absent, so an always-on
-/// default is safe and maximises the runtime / hallucination win
-/// described in R-002.
-/// R-006 (features/reintroduce-silero-vad): default-off pending a
-/// precision-eval win. Live QC on 2026-04-19 surfaced reports of
-/// word-loss at the splice (`And uh` → `And` was welcome, but broader
-/// filler / short-word loss is not). The ASR adapter silently falls
-/// back when the model is absent *and* when this flag is off, so the
-/// default-off path stays byte-identical to the pre-feature pipeline
-/// until the evals (`scripts/eval/eval-edit-quality.ps1` A/B) show a
-/// measurable improvement.
-pub(super) fn default_vad_prefilter_enabled() -> bool {
-    false
-}
-
 /// R-006 (features/reintroduce-silero-vad): default-off. Boundary
 /// refinement is gated on the AC-003 eval win; until we record a
 /// measured improvement in journal.md, the default stays off and the
@@ -271,7 +255,6 @@ pub fn get_default_settings() -> AppSettings {
         ort_accelerator: OrtAcceleratorSetting::default(),
         whisper_gpu_device: default_whisper_gpu_device(),
         normalize_audio_on_export: false,
-        vad_prefilter_enabled: default_vad_prefilter_enabled(),
         vad_refine_boundaries: default_vad_refine_boundaries(),
         loudness_target: crate::managers::splice::loudness::LoudnessTarget::Off,
         export_volume_db: 0.0,

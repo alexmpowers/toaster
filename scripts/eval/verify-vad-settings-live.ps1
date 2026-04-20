@@ -2,6 +2,10 @@
 .SYNOPSIS
     AC-006-c operator helper: live-app verification of the VAD toggles.
 
+    SUPERSEDED (2026-04-19): `vad_prefilter_enabled` has been removed.
+    Only `vad_refine_boundaries` remains. Script still works but the
+    prefilter-flip assertions are no-ops.
+
 .DESCRIPTION
     Walks an operator through the manual verification of acceptance
     criterion AC-006-c from features/reintroduce-silero-vad/PRD.md:

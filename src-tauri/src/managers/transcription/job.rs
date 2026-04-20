@@ -14,7 +14,6 @@ use std::panic::{catch_unwind, AssertUnwindSafe};
 use tauri::Emitter;
 
 use super::engine_call::call_engine_chunk;
-use super::prefilter::{run as run_prefilter, PrefilterOutcome};
 use super::{adapter, ModelStateEvent, TranscriptionManager};
 
 impl TranscriptionManager {
@@ -139,29 +138,17 @@ impl TranscriptionManager {
 
             let transcribe_result = catch_unwind(AssertUnwindSafe(
                 || -> Result<transcribe_rs::TranscriptionResult> {
-                    // R-002 — try the VAD prefilter chunk path first.
-                    // The orchestrator returns `Fallback` when the
-                    // toggle is off, the model is missing, ORT init
-                    // fails, the buffer is too short, or no speech
-                    // windows are detected. In every fall-back case
-                    // we run the standard full-buffer pass below so
-                    // behavior is at least as broad as the no-VAD
-                    // path. (BLUEPRINT §AD-8 graceful-degradation.)
-                    match run_prefilter(
+                    // Always take the full-buffer ASR path. The R-002 VAD
+                    // pre-filter has been removed — user feedback showed it
+                    // degraded transcript timing edits (short words / fillers
+                    // at splice boundaries were clipped). Boundary refinement
+                    // (R-003) remains available via `vad_refine_boundaries`.
+                    call_engine_chunk(
                         &mut engine,
                         &audio,
                         &settings,
                         &normalized_language,
-                        &self.model_manager,
-                    )? {
-                        PrefilterOutcome::Ran(merged) => Ok(merged),
-                        PrefilterOutcome::Fallback => call_engine_chunk(
-                            &mut engine,
-                            &audio,
-                            &settings,
-                            &normalized_language,
-                        ),
-                    }
+                    )
                 },
             ));
 
