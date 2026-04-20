@@ -321,23 +321,23 @@ pub fn cleanup_all(
     // file skip the multi-second ffmpeg spawn.
     let smart_audio: Option<(std::sync::Arc<Vec<f32>>, u32)> = {
         let media_path = {
-            let media = crate::lock_recovery::try_lock(media_store.0.lock()).map_err(|e| e.to_string())?;
+            let media =
+                crate::lock_recovery::try_lock(media_store.0.lock()).map_err(|e| e.to_string())?;
             media.current().map(|m| m.path.clone())
         };
         match media_path {
-            Some(path) => match crate::commands::disfluency::decode_media_audio_cached(
-                &path,
-                &media_store,
-            ) {
-                Ok(pair) => Some(pair),
-                Err(e) => {
-                    log::warn!(
+            Some(path) => {
+                match crate::commands::disfluency::decode_media_audio_cached(&path, &media_store) {
+                    Ok(pair) => Some(pair),
+                    Err(e) => {
+                        log::warn!(
                         "cleanup_all: audio decode failed, falling back to positional collapse: {}",
                         e
                     );
-                    None
+                        None
+                    }
                 }
-            },
+            }
             None => None,
         }
     };
@@ -420,8 +420,7 @@ mod remove_silence_tests {
     //! in either helper surface here before they reach the editor UI.
     use crate::managers::editor::Word;
     use crate::managers::filler::{
-        count_trimmable_pauses, trim_pauses, REMOVE_SILENCE_MAX_GAP_US,
-        REMOVE_SILENCE_THRESHOLD_US,
+        count_trimmable_pauses, trim_pauses, REMOVE_SILENCE_MAX_GAP_US, REMOVE_SILENCE_THRESHOLD_US,
     };
 
     fn word(text: &str, start_us: i64, end_us: i64) -> Word {
@@ -437,7 +436,10 @@ mod remove_silence_tests {
     }
 
     fn deleted_word(text: &str, start_us: i64, end_us: i64) -> Word {
-        Word { deleted: true, ..word(text, start_us, end_us) }
+        Word {
+            deleted: true,
+            ..word(text, start_us, end_us)
+        }
     }
 
     #[test]
@@ -461,11 +463,8 @@ mod remove_silence_tests {
             ],
         ];
         for mut f in fixtures {
-            let predicted = count_trimmable_pauses(
-                &f,
-                REMOVE_SILENCE_THRESHOLD_US,
-                REMOVE_SILENCE_MAX_GAP_US,
-            );
+            let predicted =
+                count_trimmable_pauses(&f, REMOVE_SILENCE_THRESHOLD_US, REMOVE_SILENCE_MAX_GAP_US);
             let applied = trim_pauses(
                 &mut f,
                 REMOVE_SILENCE_THRESHOLD_US,

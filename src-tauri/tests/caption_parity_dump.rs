@@ -122,7 +122,8 @@ fn caption_parity_dump() {
     // Build config the same way the production path does
     // (`CaptionLayoutConfig::from_profile`), then fold in any overrides.
     let layout = compute_caption_layout(&fixture.caption_profile, fixture.video_dims);
-    let mut config = CaptionLayoutConfig::from_profile(&fixture.caption_profile, fixture.video_dims);
+    let mut config =
+        CaptionLayoutConfig::from_profile(&fixture.caption_profile, fixture.video_dims);
     if let Some(v) = fixture.config_overrides.max_segment_duration_us {
         config.max_segment_duration_us = v;
     }

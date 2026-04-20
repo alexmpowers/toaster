@@ -326,8 +326,7 @@ mod tests {
         project.save(&path).expect("save should succeed");
 
         let raw = fs::read_to_string(&path).expect("read-back");
-        let parsed: serde_json::Value =
-            serde_json::from_str(&raw).expect("valid json");
+        let parsed: serde_json::Value = serde_json::from_str(&raw).expect("valid json");
         assert_eq!(parsed["version"], "1.1.0");
         assert!(parsed["settings"]["caption_profiles"].is_object());
         assert!(parsed["settings"]["caption_profiles"]["desktop"].is_object());
@@ -372,8 +371,7 @@ mod tests {
             .join("caption-profiles-persistence")
             .join("fixtures")
             .join("project_v1_0_0.toaster");
-        let mut project =
-            ToasterProject::load(&fixture).expect("v1.0.0 fixture must load");
+        let mut project = ToasterProject::load(&fixture).expect("v1.0.0 fixture must load");
         assert_eq!(project.version, "1.0.0");
         assert!(project.settings.caption_profiles.is_none());
 

@@ -72,9 +72,7 @@ impl SileroVad {
         threshold: f32,
     ) -> Result<Self> {
         if !(0.0..=1.0).contains(&threshold) {
-            return Err(anyhow!(
-                "threshold must be in [0.0, 1.0], got {threshold}"
-            ));
+            return Err(anyhow!("threshold must be in [0.0, 1.0], got {threshold}"));
         }
         if !SUPPORTED_SAMPLE_RATES.contains(&sample_rate_hz) {
             return Err(anyhow!(
@@ -83,10 +81,7 @@ impl SileroVad {
         }
         let path = model_path.as_ref();
         if !path.exists() {
-            return Err(anyhow!(
-                "Silero VAD model not found at {}",
-                path.display()
-            ));
+            return Err(anyhow!("Silero VAD model not found at {}", path.display()));
         }
 
         let session = Session::builder()
@@ -120,11 +115,9 @@ impl SileroVad {
             return Err(anyhow!("empty frame"));
         }
 
-        let input_tensor = Tensor::<f32>::from_array((
-            Shape::new([1i64, samples.len() as i64]),
-            samples.to_vec(),
-        ))
-        .map_err(|e| anyhow!("failed to build input tensor: {e}"))?;
+        let input_tensor =
+            Tensor::<f32>::from_array((Shape::new([1i64, samples.len() as i64]), samples.to_vec()))
+                .map_err(|e| anyhow!("failed to build input tensor: {e}"))?;
         let sr_tensor = Tensor::<i64>::from_array((Shape::new([1i64]), vec![self.sample_rate_hz]))
             .map_err(|e| anyhow!("failed to build sr tensor: {e}"))?;
         let h_tensor = Tensor::<f32>::from_array((

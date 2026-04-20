@@ -670,7 +670,6 @@ fn cleanup_cascade_produces_correct_keep_segments() {
     assert!(!segments.is_empty(), "expected non-empty keep-segments");
 }
 
-
 // ---------------------------- R-004 --------------------------------
 
 #[test]
@@ -708,10 +707,7 @@ fn classify_gap_non_speech_acoustic_in_middle_band() {
 
 #[test]
 fn classify_pauses_maps_one_to_one_with_empty_curve() {
-    let words = vec![
-        word("a", 0, 200_000),
-        word("b", 2_000_000, 2_200_000),
-    ];
+    let words = vec![word("a", 0, 200_000), word("b", 2_000_000, 2_200_000)];
     let config = FillerConfig::default();
     let pauses = detect_pauses(&words, &config);
     let classified = classify_pauses(&pauses, &words, &[]);

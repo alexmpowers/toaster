@@ -178,10 +178,8 @@ pub fn score_word(word: &Word, samples: &[f32], sample_rate: u32) -> WordClarity
 
     let spectral = clarity::analyze(window, sample_rate);
 
-    let articulation = 0.40 * peak_term
-        + 0.25 * rms_term
-        + 0.15 * silence_term
-        + 0.20 * spectral.score;
+    let articulation =
+        0.40 * peak_term + 0.25 * rms_term + 0.15 * silence_term + 0.20 * spectral.score;
 
     WordClarity {
         articulation,

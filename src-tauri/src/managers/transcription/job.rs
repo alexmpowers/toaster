@@ -143,12 +143,7 @@ impl TranscriptionManager {
                     // degraded transcript timing edits (short words / fillers
                     // at splice boundaries were clipped). Boundary refinement
                     // (R-003) remains available via `vad_refine_boundaries`.
-                    call_engine_chunk(
-                        &mut engine,
-                        &audio,
-                        &settings,
-                        &normalized_language,
-                    )
+                    call_engine_chunk(&mut engine, &audio, &settings, &normalized_language)
                 },
             ));
 

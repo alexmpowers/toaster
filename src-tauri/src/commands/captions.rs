@@ -28,11 +28,7 @@ fn select(profile_set: &CaptionProfileSet, orientation: Orientation) -> CaptionP
     }
 }
 
-fn write(
-    profile_set: &mut CaptionProfileSet,
-    orientation: Orientation,
-    profile: CaptionProfile,
-) {
+fn write(profile_set: &mut CaptionProfileSet, orientation: Orientation, profile: CaptionProfile) {
     match orientation {
         Orientation::Desktop => profile_set.desktop = profile,
         Orientation::Mobile => profile_set.mobile = profile,

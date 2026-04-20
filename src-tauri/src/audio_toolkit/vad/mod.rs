@@ -64,13 +64,13 @@ pub trait VoiceActivityDetector: Send + Sync {
     fn reset(&mut self) {}
 }
 
+pub mod prefilter;
 mod silero;
 mod smoothed;
-pub mod prefilter;
 
 #[allow(unused_imports)] // consumed by Phase 2 callers per PRD R-002 / R-003 / R-004.
-pub use silero::{
-    SileroVad, DEFAULT_SILERO_THRESHOLD, SILERO_FRAME_MS, SILERO_FRAME_SAMPLES_16K,
-};
+pub use silero::{SileroVad, DEFAULT_SILERO_THRESHOLD, SILERO_FRAME_MS, SILERO_FRAME_SAMPLES_16K};
 #[allow(unused_imports)]
-pub use smoothed::{SmoothedVad, DEFAULT_HANGOVER_FRAMES, DEFAULT_ONSET_FRAMES, DEFAULT_PREFILL_FRAMES};
+pub use smoothed::{
+    SmoothedVad, DEFAULT_HANGOVER_FRAMES, DEFAULT_ONSET_FRAMES, DEFAULT_PREFILL_FRAMES,
+};

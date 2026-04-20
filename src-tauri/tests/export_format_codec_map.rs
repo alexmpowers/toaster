@@ -14,7 +14,10 @@ use toaster_app_lib::commands::waveform::{
 #[test]
 fn export_format_codec_map() {
     // Spec from features/export-audio-only/PRD.md R-002.
-    assert!(codec_map(AudioExportFormat::Mp4).is_none(), "mp4 has no audio-only spec");
+    assert!(
+        codec_map(AudioExportFormat::Mp4).is_none(),
+        "mp4 has no audio-only spec"
+    );
 
     let mp3 = codec_map(AudioExportFormat::Mp3).expect("mp3 spec must exist");
     assert_eq!(mp3.extension, ".mp3");

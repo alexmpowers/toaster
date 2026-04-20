@@ -306,7 +306,8 @@ impl ModelManager {
                 // Clean up any leftover .extracting directories from interrupted extractions
                 // But only if this model is NOT currently being extracted
                 let is_currently_extracting = {
-                    let extracting = crate::lock_recovery::recover_lock(self.extracting_models.lock());
+                    let extracting =
+                        crate::lock_recovery::recover_lock(self.extracting_models.lock());
                     extracting.contains(&model.id)
                 };
                 if extracting_path.exists() && !is_currently_extracting {

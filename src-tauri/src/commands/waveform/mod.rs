@@ -5,8 +5,8 @@ use std::time::Duration;
 use crate::managers::editor::{EditorState, TimingContractSnapshot};
 use crate::managers::splice::loudness::{build_loudnorm_filter, LoudnessTarget};
 
-mod preview_cache;
 mod export_format;
+mod preview_cache;
 mod vad_snap;
 pub use export_format::{
     allowed_formats_for_source, export_format_codec_map, AllowedExportFormat, AudioExportFormat,
@@ -330,9 +330,7 @@ fn select_raw_keep_segments_for_media(
     raw
 }
 
-fn canonical_keep_segments_for_media(
-    state: &EditorState,
-) -> Vec<(i64, i64)> {
+fn canonical_keep_segments_for_media(state: &EditorState) -> Vec<(i64, i64)> {
     // Default: no outer trim (Whisper / unknown engines — see todo
     // p0-waveform-boundary-policy). Callers that know they're running a
     // transcription engine whose word timestamps include significant
@@ -349,8 +347,7 @@ fn canonical_keep_segments_for_media_with_options(
 ) -> Vec<(i64, i64)> {
     let snapshot = state.timing_contract_snapshot();
     let legacy_segments = state.get_keep_segments();
-    let mut raw =
-        select_raw_keep_segments_for_media(&snapshot, &legacy_segments);
+    let mut raw = select_raw_keep_segments_for_media(&snapshot, &legacy_segments);
 
     if raw.is_empty() {
         return raw;

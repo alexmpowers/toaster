@@ -85,8 +85,18 @@ impl Default for CaptionLayoutConfig {
         Self {
             font_family: CaptionFontFamily::Inter,
             font_size_px: 24,
-            text_color: Rgba { r: 255, g: 255, b: 255, a: 255 },
-            background: Rgba { r: 0, g: 0, b: 0, a: 0xB3 },
+            text_color: Rgba {
+                r: 255,
+                g: 255,
+                b: 255,
+                a: 255,
+            },
+            background: Rgba {
+                r: 0,
+                g: 0,
+                b: 0,
+                a: 0xB3,
+            },
             position_pct: 90,
             radius_px: 4,
             padding_x_px: 12,
@@ -339,8 +349,7 @@ pub fn build_blocks(
             padding_x_px: cfg.padding_x_px,
             padding_y_px: cfg.padding_y_px,
             radius_px: cfg.radius_px,
-            margin_v_px: (cfg.frame_height as f32
-                * (100.0 - cfg.position_pct.min(100) as f32)
+            margin_v_px: (cfg.frame_height as f32 * (100.0 - cfg.position_pct.min(100) as f32)
                 / 100.0) as u32,
             text_width_px: max_w,
             line_height_px: line_h,
@@ -374,7 +383,11 @@ pub fn build_blocks(
 
         let cur_idx = cur_lines.len() - 1;
         let cur_w = cur_line_widths[cur_idx];
-        let sep_w = if cur_lines[cur_idx].is_empty() { 0 } else { space_w };
+        let sep_w = if cur_lines[cur_idx].is_empty() {
+            0
+        } else {
+            space_w
+        };
         let candidate_w = if cur_lines.iter().all(|l| l.is_empty()) {
             word_w
         } else {
@@ -516,7 +529,10 @@ mod tests {
             serde_json::from_str(&desktop_json).expect("desktop fixture parses");
         let desktop_actual = compute_caption_layout(
             &default_desktop_profile(),
-            VideoDims { width: 1920, height: 1080 },
+            VideoDims {
+                width: 1920,
+                height: 1080,
+            },
         );
         assert_eq!(
             desktop_actual, desktop_expected,
@@ -529,7 +545,10 @@ mod tests {
             serde_json::from_str(&mobile_json).expect("mobile fixture parses");
         let mobile_actual = compute_caption_layout(
             &default_mobile_profile(),
-            VideoDims { width: 1080, height: 1920 },
+            VideoDims {
+                width: 1080,
+                height: 1920,
+            },
         );
         assert_eq!(
             mobile_actual, mobile_expected,
@@ -547,10 +566,34 @@ mod tests {
         // for the same inputs. If this ever drifts, the dual-path bug
         // we institutionalized against has returned.
         for (profile, dims) in [
-            (default_desktop_profile(), VideoDims { width: 1920, height: 1080 }),
-            (default_desktop_profile(), VideoDims { width: 1280, height: 720 }),
-            (default_mobile_profile(), VideoDims { width: 1080, height: 1920 }),
-            (default_mobile_profile(), VideoDims { width: 720, height: 1280 }),
+            (
+                default_desktop_profile(),
+                VideoDims {
+                    width: 1920,
+                    height: 1080,
+                },
+            ),
+            (
+                default_desktop_profile(),
+                VideoDims {
+                    width: 1280,
+                    height: 720,
+                },
+            ),
+            (
+                default_mobile_profile(),
+                VideoDims {
+                    width: 1080,
+                    height: 1920,
+                },
+            ),
+            (
+                default_mobile_profile(),
+                VideoDims {
+                    width: 720,
+                    height: 1280,
+                },
+            ),
         ] {
             let preview = compute_caption_layout(&profile, dims);
             let cfg = CaptionLayoutConfig::from_profile(&profile, dims);
@@ -560,14 +603,10 @@ mod tests {
                 margin_v_px: ((cfg.frame_height as f64) * (cfg.position_pct.min(100) as f64)
                     / 100.0)
                     .round() as u32,
-                margin_h_px: cfg
-                    .frame_width
-                    .saturating_sub(
-                        ((cfg.frame_width as f64) * (cfg.max_width_pct.clamp(20, 100) as f64)
-                            / 100.0)
-                            .round() as u32,
-                    )
-                    / 2,
+                margin_h_px: cfg.frame_width.saturating_sub(
+                    ((cfg.frame_width as f64) * (cfg.max_width_pct.clamp(20, 100) as f64) / 100.0)
+                        .round() as u32,
+                ) / 2,
                 box_width_px: ((cfg.frame_width as f64) * (cfg.max_width_pct.clamp(20, 100) as f64)
                     / 100.0)
                     .round() as u32,
@@ -575,8 +614,18 @@ mod tests {
                 padding_x_px: cfg.padding_x_px,
                 padding_y_px: cfg.padding_y_px,
                 radius_px: cfg.radius_px,
-                bg_rgba: [cfg.background.r, cfg.background.g, cfg.background.b, cfg.background.a],
-                fg_rgba: [cfg.text_color.r, cfg.text_color.g, cfg.text_color.b, cfg.text_color.a],
+                bg_rgba: [
+                    cfg.background.r,
+                    cfg.background.g,
+                    cfg.background.b,
+                    cfg.background.a,
+                ],
+                fg_rgba: [
+                    cfg.text_color.r,
+                    cfg.text_color.g,
+                    cfg.text_color.b,
+                    cfg.text_color.a,
+                ],
                 font_family: cfg.font_family,
                 frame_width: cfg.frame_width,
                 frame_height: cfg.frame_height,
@@ -600,7 +649,13 @@ mod tests {
     #[test]
     fn empty_words_produce_no_blocks() {
         let fonts = FontRegistry::new().unwrap();
-        let blocks = build_blocks(&[], &[(0, 10_000_000)], &cfg(), &fonts, TimelineDomain::Source);
+        let blocks = build_blocks(
+            &[],
+            &[(0, 10_000_000)],
+            &cfg(),
+            &fonts,
+            TimelineDomain::Source,
+        );
         assert!(blocks.is_empty());
     }
 
@@ -641,7 +696,11 @@ mod tests {
             &fonts,
             TimelineDomain::Source,
         );
-        let text: String = blocks.iter().flat_map(|b| b.lines.clone()).collect::<Vec<_>>().join(" ");
+        let text: String = blocks
+            .iter()
+            .flat_map(|b| b.lines.clone())
+            .collect::<Vec<_>>()
+            .join(" ");
         assert!(!text.contains("rude"));
         assert!(text.contains("Hello"));
         assert!(text.contains("world"));
@@ -650,10 +709,7 @@ mod tests {
     #[test]
     fn edited_timeline_drops_removed_and_compacts() {
         let fonts = FontRegistry::new().unwrap();
-        let words = vec![
-            mk_word("A", 0, 500_000),
-            mk_word("B", 2_000_000, 2_500_000),
-        ];
+        let words = vec![mk_word("A", 0, 500_000), mk_word("B", 2_000_000, 2_500_000)];
         let keeps = [(0, 500_000), (2_000_000, 2_500_000)];
         let blocks = build_blocks(&words, &keeps, &cfg(), &fonts, TimelineDomain::Edited);
         assert_eq!(blocks.len(), 1);
@@ -677,7 +733,11 @@ mod tests {
             &fonts,
             TimelineDomain::Source,
         );
-        assert!(blocks.len() >= 2, "expected >=2 blocks, got {}", blocks.len());
+        assert!(
+            blocks.len() >= 2,
+            "expected >=2 blocks, got {}",
+            blocks.len()
+        );
         for b in &blocks {
             assert!(b.end_us - b.start_us <= 5_100_000);
         }
@@ -712,7 +772,10 @@ mod tests {
                 b.text_width_px,
                 max_w_px
             );
-            assert!(b.lines.len() >= 2, "narrow frame should wrap onto multiple lines");
+            assert!(
+                b.lines.len() >= 2,
+                "narrow frame should wrap onto multiple lines"
+            );
         }
     }
 
@@ -723,13 +786,7 @@ mod tests {
         c.position_pct = 80;
         c.frame_height = 1080;
         let words = vec![mk_word("hi", 0, 200_000)];
-        let blocks = build_blocks(
-            &words,
-            &[(0, 200_000)],
-            &c,
-            &fonts,
-            TimelineDomain::Source,
-        );
+        let blocks = build_blocks(&words, &[(0, 200_000)], &c, &fonts, TimelineDomain::Source);
         assert_eq!(blocks[0].frame_height, 1080);
         assert_eq!(blocks[0].frame_width, 1280);
         // 20% of 1080 = 216

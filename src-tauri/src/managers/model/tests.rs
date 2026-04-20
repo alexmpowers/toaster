@@ -177,7 +177,6 @@ fn test_verify_sha256_fails_and_deletes_partial_when_file_missing() {
     assert!(result.is_err(), "missing file must return an error");
 }
 
-
 #[test]
 fn model_category_variants() {
     let variants = [
@@ -211,15 +210,20 @@ fn silero_vad_is_registered_in_static_catalog() {
         "silero-vad must be VoiceActivityDetection-category, not Transcription",
     );
     assert!(
-        silero.url.as_ref().is_some_and(|u| u.contains("silero_vad.onnx")),
+        silero
+            .url
+            .as_ref()
+            .is_some_and(|u| u.contains("silero_vad.onnx")),
         "silero-vad URL must point at the pinned v4.0 ONNX payload",
     );
     assert!(
-        silero.sha256.as_ref().is_some_and(|s| s.len() == 64 && s.chars().all(|c| c.is_ascii_hexdigit())),
+        silero
+            .sha256
+            .as_ref()
+            .is_some_and(|s| s.len() == 64 && s.chars().all(|c| c.is_ascii_hexdigit())),
         "silero-vad SHA-256 must be a 64-char hex digest",
     );
 }
-
 
 #[test]
 fn per_category_metadata_populated() {

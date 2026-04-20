@@ -268,9 +268,7 @@ pub struct AppSettings {
 /// Preview and libass export both consume geometry derived from this
 /// via `managers::captions::compute_caption_layout` — the single
 /// source of truth for caption layout math (AGENTS.md, Slice B).
-#[derive(
-    Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type,
-)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub struct CaptionProfile {
     pub font_size: u32,
     pub bg_color: String,
@@ -285,9 +283,7 @@ pub struct CaptionProfile {
 
 /// Pair of caption profiles selected by orientation. Desktop is used
 /// for landscape (width/height > 1.0), Mobile for portrait or square.
-#[derive(
-    Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type,
-)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub struct CaptionProfileSet {
     pub desktop: CaptionProfile,
     pub mobile: CaptionProfile,
@@ -296,9 +292,7 @@ pub struct CaptionProfileSet {
 /// Orientation selector for caption commands. Auto-detection happens
 /// in the frontend editor radio; the Tauri surface only exposes the
 /// two concrete profiles.
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub enum Orientation {
     Desktop,
     Mobile,
@@ -307,18 +301,14 @@ pub enum Orientation {
 /// Scope for `set_caption_profile` — whether the write lands on
 /// `AppSettings` (user-default) or the currently-open `ProjectSettings`
 /// (per-project override).
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub enum ProfileScope {
     App,
     Project,
 }
 
 /// Video dimensions in pixels. Input to `compute_caption_layout`.
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub struct VideoDims {
     pub width: u32,
     pub height: u32,
@@ -326,9 +316,7 @@ pub struct VideoDims {
 
 /// Font family choice for captions. The preview CSS and the exported ASS
 /// both read from this enum so they stay in visual sync.
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default, specta::Type,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default, specta::Type)]
 pub enum CaptionFontFamily {
     #[default]
     Inter,

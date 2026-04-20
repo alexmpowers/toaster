@@ -85,12 +85,7 @@ fn run_one(format: AudioExportFormat) {
 
     let temp_dir = std::env::temp_dir().join("toaster-audio-only-roundtrip");
     let _ = std::fs::create_dir_all(&temp_dir);
-    let out_name = format!(
-        "rt-{:?}{}",
-        format,
-        format.extension(),
-    )
-    .to_lowercase();
+    let out_name = format!("rt-{:?}{}", format, format.extension(),).to_lowercase();
     let out_path = temp_dir.join(out_name);
     let _ = std::fs::remove_file(&out_path);
 
@@ -103,7 +98,11 @@ fn run_one(format: AudioExportFormat) {
     );
 
     // Sanity: the args must drop video and pick the right codec.
-    assert!(args.iter().any(|a| a == "-vn"), "{:?}: must contain -vn", format);
+    assert!(
+        args.iter().any(|a| a == "-vn"),
+        "{:?}: must contain -vn",
+        format
+    );
     assert!(
         !args.iter().any(|a| a == "-c:v"),
         "{:?}: must NOT contain -c:v",

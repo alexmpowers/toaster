@@ -34,9 +34,7 @@ fn export_format_args_no_video_stream() {
     ];
 
     for (format, codec) in cases {
-        for (label, segments) in
-            [("single", &single), ("multi", &multi)]
-        {
+        for (label, segments) in [("single", &single), ("multi", &multi)] {
             let args = args_for(*format, segments);
             assert!(
                 args.iter().any(|a| a == "-vn"),

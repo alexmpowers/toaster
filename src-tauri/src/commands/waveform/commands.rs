@@ -244,7 +244,8 @@ pub async fn render_temp_preview_audio(
     let edit_version = edit_version_token(&segments, &silenced_ranges);
 
     let media_info = {
-        let state = crate::lock_recovery::try_lock(media_store.0.lock()).map_err(|e| e.to_string())?;
+        let state =
+            crate::lock_recovery::try_lock(media_store.0.lock()).map_err(|e| e.to_string())?;
         state.current().cloned()
     };
 
@@ -446,20 +447,19 @@ pub async fn export_edited_media(
         crate::commands::waveform::AudioExportFormat::Wav
     };
     let export_format = format_override.unwrap_or(default_format);
-    let ass_temp_path = if burn_captions.unwrap_or(false)
-        && has_video
-        && !export_format.is_audio_only()
-    {
-        let blocks = crate::commands::export::build_caption_blocks_for_export(
-            &words, &segments, &settings, frame_size,
-        );
-        let doc = crate::managers::captions::blocks_to_ass(&blocks);
-        let ass_file = std::path::Path::new(&output_path).with_extension("burn_captions.ass");
-        std::fs::write(&ass_file, &doc).map_err(|e| format!("Failed to write temp ASS: {}", e))?;
-        Some(ass_file)
-    } else {
-        None
-    };
+    let ass_temp_path =
+        if burn_captions.unwrap_or(false) && has_video && !export_format.is_audio_only() {
+            let blocks = crate::commands::export::build_caption_blocks_for_export(
+                &words, &segments, &settings, frame_size,
+            );
+            let doc = crate::managers::captions::blocks_to_ass(&blocks);
+            let ass_file = std::path::Path::new(&output_path).with_extension("burn_captions.ass");
+            std::fs::write(&ass_file, &doc)
+                .map_err(|e| format!("Failed to write temp ASS: {}", e))?;
+            Some(ass_file)
+        } else {
+            None
+        };
 
     let audio_opts = ExportAudioOptions {
         loudness_target: crate::settings::migrate_loudness_setting(
