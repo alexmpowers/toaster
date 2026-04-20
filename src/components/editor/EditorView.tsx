@@ -14,6 +14,7 @@ import {
   AudioLines,
   RotateCcw,
   Scissors,
+  Keyboard,
 } from "lucide-react";
 import { SettingsGroup } from "@/components/ui/SettingsGroup";
 import { Button } from "@/components/ui/Button";
@@ -26,6 +27,7 @@ import MediaPlayer from "@/components/player/MediaPlayer";
 import Waveform from "@/components/player/Waveform";
 import EditorToolbar from "@/components/editor/EditorToolbar";
 import ExportMenu from "@/components/editor/ExportMenu";
+import KeyboardShortcutsDialog from "@/components/editor/KeyboardShortcutsDialog";
 import { unwrapResult } from "@/components/editor/EditorView.util";
 import { useEditorExports } from "@/components/editor/hooks/useEditorExports";
 
@@ -104,6 +106,7 @@ const EditorView: React.FC = () => {
   const [isCleaningUp, setIsCleaningUp] = useState(false);
   const [modelMissing, setModelMissing] = useState(false);
   const [lastSavedPath, setLastSavedPath] = useState<string | null>(null);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const {
     handleExport,
     handleFFmpegScript,
@@ -142,9 +145,33 @@ const EditorView: React.FC = () => {
         highlightType: hlType,
       } = useEditorStore.getState();
 
+      // Help overlay: "?" (Shift+/) or F1, plus Escape-to-close is owned by the dialog.
+      if ((e.key === "?" || e.key === "F1") && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        setShortcutsOpen((v) => !v);
+        return;
+      }
+
       if (e.key === " " && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         setPlaying(!isPlaying);
+      } else if (e.key === "k" && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        // J/K/L transport — standard video-editor muscle memory. K toggles play
+        // like Space; J/L jog by 10 s and force-pause so the user lands on a
+        // precise frame. We pause on jog to keep behaviour predictable — users
+        // can press K / Space to resume.
+        e.preventDefault();
+        setPlaying(!isPlaying);
+      } else if (e.key === "j" && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        e.preventDefault();
+        const store = usePlayerStore.getState();
+        store.setPlaying(false);
+        store.seekTo(Math.max(0, store.currentTime - 10));
+      } else if (e.key === "l" && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+        e.preventDefault();
+        const store = usePlayerStore.getState();
+        store.setPlaying(false);
+        store.seekTo(Math.min(store.duration, store.currentTime + 10));
       } else if (
         (e.key === "Delete" || e.key === "Backspace") &&
         !e.ctrlKey &&
@@ -671,6 +698,29 @@ const EditorView: React.FC = () => {
         onBurnCaptionsChange={setBurnCaptions}
         normalizeAudio={normalizeAudio}
         onNormalizeAudioToggle={handleNormalizeToggle}
+      />
+
+      {/* Floating help button — always visible, keyboard-first users open via
+          "?" / F1 (wired in the global key handler). Bottom-right to stay out
+          of the way of editor content. Uses <Button> so the button-variant
+          gate (R-007) stays green. */}
+      <div className="fixed bottom-16 right-4 z-40">
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={() => setShortcutsOpen(true)}
+          aria-label={t("shortcuts.openButton")}
+          title={t("shortcuts.openButton")}
+          className="!rounded-full p-2 shadow-lg"
+        >
+          <Keyboard size={16} />
+        </Button>
+      </div>
+
+      <KeyboardShortcutsDialog
+        open={shortcutsOpen}
+        onClose={() => setShortcutsOpen(false)}
       />
     </div>
   );
