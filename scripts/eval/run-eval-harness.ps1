@@ -36,7 +36,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
+$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 Set-Location $RepoRoot
 
 function New-EvalEntry {
@@ -98,7 +98,7 @@ $evals += New-EvalEntry `
 
 # --- 2. Audio-boundary eval -----------------------------------------------
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
-$boundaryScript = Join-Path $RepoRoot 'scripts\eval-audio-boundary.ps1'
+$boundaryScript = Join-Path $RepoRoot 'scripts\eval\eval-audio-boundary.ps1'
 $boundaryFixturesRoot = Join-Path $RepoRoot 'src-tauri\tests\fixtures\boundary'
 $boundaryDetails = @{}
 if ($SkipAudioBoundary.IsPresent) {
@@ -131,7 +131,7 @@ $evals += New-EvalEntry `
 
 # --- 3. Export parity ------------------------------------------------------
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
-$exportScript = Join-Path $RepoRoot 'scripts\eval-edit-quality.ps1'
+$exportScript = Join-Path $RepoRoot 'scripts\eval\eval-edit-quality.ps1'
 $baselinePath = Join-Path $RepoRoot 'tests\fixtures\edit-quality.baseline.json'
 $exportOut = Join-Path $outDir 'edit-quality.json'
 $exportDetails = @{}
