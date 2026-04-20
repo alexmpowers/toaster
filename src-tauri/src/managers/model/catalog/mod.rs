@@ -33,7 +33,9 @@ pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
 /// Flat view of every curated catalog entry.
 #[allow(dead_code)]
 pub fn all() -> Vec<ModelInfo> {
-    transcription::entries()
+    let mut out = transcription::entries();
+    out.extend(vad::entries());
+    out
 }
 
 pub(super) fn discover_custom_whisper_models(
