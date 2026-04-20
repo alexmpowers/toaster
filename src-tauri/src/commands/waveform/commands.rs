@@ -232,7 +232,6 @@ pub async fn render_temp_preview_audio(
     store: State<'_, EditorStore>,
     media_store: State<'_, MediaStore>,
 ) -> Result<PreviewRenderMetadata, String> {
-    let _ = app;
     let render_started_at = Instant::now();
     let (segments, silenced_ranges) = {
         let state = crate::lock_recovery::try_lock(store.0.lock()).map_err(|e| e.to_string())?;
@@ -309,7 +308,7 @@ pub async fn render_temp_preview_audio(
             .unwrap_or(false);
 
     if !cache_hit {
-        let snapped_segments = snap_segments_against_media(&segments, &media.path);
+        let snapped_segments = snap_segments_against_media(&app, &segments, &media.path);
         let args = build_preview_render_args(
             &media.path,
             &output_path,
@@ -498,7 +497,7 @@ pub async fn export_edited_media(
     let ass_path_str = ass_temp_path
         .as_ref()
         .map(|p| p.to_string_lossy().to_string());
-    let snapped_segments = snap_segments_against_media(&segments, input);
+    let snapped_segments = snap_segments_against_media(&app, &segments, input);
     let args = build_export_args(
         &input_path,
         &output_path_str,
@@ -593,7 +592,6 @@ pub async fn loudness_preflight(
     media_store: State<'_, MediaStore>,
     target: crate::managers::splice::loudness::LoudnessTarget,
 ) -> Result<LoudnessPreflight, String> {
-    let _ = app;
     let (segments, silenced_ranges) = {
         let state = crate::lock_recovery::try_lock(store.0.lock()).map_err(|e| e.to_string())?;
         (
@@ -621,7 +619,7 @@ pub async fn loudness_preflight(
 
     // Same seam-fade policy as preview/export so the preflight numbers
     // describe the audio the user will actually hear/export.
-    let snapped_segments = snap_segments_against_media(&segments, &media.path);
+    let snapped_segments = snap_segments_against_media(&app, &segments, &media.path);
     let mut filter = build_audio_concat_filter_with_fade(&snapped_segments, SEAM_FADE_US);
     let silenced_edit_ranges = silenced_edit_time_ranges(&silenced_ranges, &snapped_segments);
     append_silence_gate(&mut filter, &silenced_edit_ranges);

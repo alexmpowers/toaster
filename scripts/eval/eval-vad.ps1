@@ -24,8 +24,13 @@
                                   known-leaky boundary fixtures with
                                   VAD snap enabled. SKIP until a
                                   live-model eval fixture exists.
+      G8  boundary_live_wired     R-003 live-caller regression guard:
+                                  commands/waveform/mod.rs must consume
+                                  vad_refine_boundaries from settings
+                                  and route through snap_segments_vad_biased.
+                                  Pure source-grep, runs in ms.
 
-    G1-G5 are binary (pass/fail). G6-G7 are explicitly skipped with
+    G1-G5 + G8 are binary (pass/fail). G6-G7 are explicitly skipped with
     notes until the feature picks up an end-to-end perf fixture.
 
     Invocation:
@@ -46,6 +51,7 @@ Set-StrictMode -Version Latest
 $RepoRoot   = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $CatalogRs  = Join-Path $RepoRoot 'src-tauri\src\managers\model\catalog\vad.rs'
 $CatalogMod = Join-Path $RepoRoot 'src-tauri\src\managers\model\catalog\mod.rs'
+$WaveformDir = Join-Path $RepoRoot 'src-tauri\src\commands\waveform'
 
 # Source the repo's Windows build env so cargo can find cmake/clang/ffmpeg.
 # Hygiene R rule: cargo must be invoked with setup-env.ps1 loaded.
@@ -144,6 +150,25 @@ $results += New-DeferredGate 'G6_runtime_delta' 'AC-002-b/c/d' `
     'Requires silence-heavy ASR fixture + downloaded Silero ONNX; track as follow-up eval-surface expansion.'
 $results += New-DeferredGate 'G7_seam_rms_delta' 'AC-003-d-perf' `
     'Requires known-leaky boundary fixture with VAD snap enabled; track as follow-up eval-surface expansion.'
+
+# G8: live-wiring regression guard ----------------------------------------
+function Invoke-G8-BoundaryLiveWired {
+    if (-not (Test-Path $WaveformDir)) {
+        return (New-Result 'G8_boundary_live_wired' 'error' @{} "missing: $WaveformDir")
+    }
+    $src = (Get-ChildItem -Path $WaveformDir -Filter *.rs -Recurse | Get-Content -Raw) -join "`n"
+    $checks = [ordered]@{
+        reads_settings_flag      = ($src -match 'vad_refine_boundaries')
+        calls_vad_biased_snap    = ($src -match 'snap_segments_vad_biased\(')
+        opens_silero_via_helper  = ($src -match 'try_open_silero|compute_vad_curve_for_app')
+        threads_app_handle       = ($src -match 'snap_segments_against_media\(\s*&?app\b')
+    }
+    $allPass = -not ($checks.Values | Where-Object { -not $_ })
+    $status = if ($allPass) { 'pass' } else { 'fail' }
+    return (New-Result 'G8_boundary_live_wired' $status $checks `
+        'R-003 live wiring: commands/waveform/ must consume the setting AND call snap_segments_vad_biased.')
+}
+$results += Invoke-G8-BoundaryLiveWired
 
 # -------------------------------------------------------------------------
 # Aggregate

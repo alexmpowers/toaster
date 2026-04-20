@@ -3,13 +3,11 @@ use std::path::Path;
 use std::time::Duration;
 
 use crate::managers::editor::{EditorState, TimingContractSnapshot};
-use crate::managers::splice::boundaries::{
-    snap_segments_energy_biased, DEFAULT_ENERGY_RADIUS_US, DEFAULT_SNAP_RADIUS_US,
-};
 use crate::managers::splice::loudness::{build_loudnorm_filter, LoudnessTarget};
 
 mod preview_cache;
 mod export_format;
+mod vad_snap;
 pub use export_format::{
     allowed_formats_for_source, export_format_codec_map, AllowedExportFormat, AudioExportFormat,
     CodecSpec,
@@ -18,6 +16,7 @@ use preview_cache::{
     edit_version_token, preview_generation_token, preview_output_path, source_media_fingerprint,
     urlencoding,
 };
+use vad_snap::snap_segments_against_media;
 
 /// Seam fade applied symmetrically on both the preview and export paths.
 /// 20 ms matches one AAC MDCT window (~23 ms at 44.1 kHz), so the codec sees a
@@ -405,54 +404,6 @@ fn map_edit_time_to_source_time_from_segments(edit_time_us: i64, segments: &[(i6
     }
 
     segments.last().map_or(0, |&(_, end)| end)
-}
-
-/// Snap every `(start_us, end_us)` pair to the nearest **energy valley**
-/// (plus zero-crossing) in the decoded source audio.
-///
-/// Zero-crossing snap alone eliminates the *click* at a seam but still lands
-/// the boundary at whichever ZC is arithmetically closest — which, right at
-/// the trailing edge of a deleted phoneme, is often a few ms *inside* that
-/// phoneme. The result is faint bleed-through of the deleted sound ("uh"
-/// after "And uh" → "And").
-///
-/// This energy-biased variant widens the search to ±`DEFAULT_ENERGY_RADIUS_US`
-/// (20 ms), picks the quietest short frame, then snaps that to the nearest
-/// zero-crossing within ±`DEFAULT_SNAP_RADIUS_US`. In voiced-only audio with
-/// no energy gradient the behaviour degenerates back to plain ZC snap.
-///
-/// Decodes the media exactly once (via `ffmpeg -f f32le`), so preview and
-/// export pay the same decode cost they already pay during the current
-/// render. Returns the input segments unchanged if decode fails — **never**
-/// regresses the current behavior.
-fn snap_segments_against_media(segments: &[(i64, i64)], media_path: &Path) -> Vec<(i64, i64)> {
-    if segments.len() < 2 {
-        return segments.to_vec();
-    }
-    match crate::commands::disfluency::decode_media_audio(media_path) {
-        Ok(samples) => {
-            let snapped = snap_segments_energy_biased(
-                segments,
-                &samples,
-                16_000,
-                DEFAULT_ENERGY_RADIUS_US,
-                DEFAULT_SNAP_RADIUS_US,
-            );
-            if snapped.is_empty() {
-                segments.to_vec()
-            } else {
-                snapped
-            }
-        }
-        Err(e) => {
-            warn!(
-                "Zero-crossing snap skipped for {}: decode failed ({}). Falling back to original segments.",
-                media_path.display(),
-                e
-            );
-            segments.to_vec()
-        }
-    }
 }
 
 fn build_preview_render_args(
