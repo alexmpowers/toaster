@@ -111,6 +111,9 @@ jobs:
 
       - name: Use mock TranscriptionManager (CI only)
         run: |
+          # `transcription` is now a directory module; remove it before
+          # dropping in the single-file mock so rustc doesn't see both.
+          rm -rf src/managers/transcription
           cp src/managers/transcription_mock.rs src/managers/transcription.rs
           sed -i '/^transcribe-rs/d' Cargo.toml
 
@@ -137,7 +140,10 @@ jobs:
       - name: Use mock TranscriptionManager (CI only)
         working-directory: src-tauri
         run: |
-          # Swap to mock adapter - avoids compiling whisper/Vulkan
+          # Swap to mock adapter - avoids compiling whisper/Vulkan.
+          # `transcription` is now a directory module; remove it before
+          # dropping in the single-file mock so rustc doesn't see both.
+          rm -rf src/managers/transcription
           cp src/managers/transcription_mock.rs src/managers/transcription.rs
           sed -i '/^transcribe-rs/d' Cargo.toml
 
