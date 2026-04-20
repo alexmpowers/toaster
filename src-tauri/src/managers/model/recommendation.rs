@@ -103,7 +103,7 @@ fn best_in_tier<'a>(
 /// Smallest transcription model by `size_mb`. Used as the fallback
 /// "insufficient disk" name so the UI always has a target even when
 /// nothing fits.
-fn smallest_transcription<'a>(models: &'a [ModelInfo]) -> Option<&'a ModelInfo> {
+fn smallest_transcription(models: &[ModelInfo]) -> Option<&ModelInfo> {
     models
         .iter()
         .filter(|m| m.category == ModelCategory::Transcription)
