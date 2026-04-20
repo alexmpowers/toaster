@@ -583,6 +583,11 @@
       "body": "All current word edits, deletions, and splits will be lost. The source media is unchanged.",
       "confirm": "Reprocess",
       "cancel": "Cancel"
+    },
+    "removeSilence": {
+      "button": "Remove silence",
+      "tooltip": "Collapse long pauses (≥ 750 ms) between words to a hard cut. Undoable.",
+      "empty": "No long pauses found."
     }
   },
   "experiments": {

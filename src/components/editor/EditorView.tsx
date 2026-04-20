@@ -12,6 +12,7 @@ import {
   X,
   AudioLines,
   RotateCcw,
+  Scissors,
 } from "lucide-react";
 import { SettingsGroup } from "@/components/ui/SettingsGroup";
 import { Button } from "@/components/ui/Button";
@@ -313,6 +314,23 @@ const EditorView: React.FC = () => {
     }
   }, [clearHighlights, refreshFromBackend]);
 
+  const handleRemoveSilence = useCallback(async () => {
+    clearHighlights();
+    setIsCleaningUp(true);
+    try {
+      const count = unwrapResult(await commands.removeSilence());
+      if (count === 0) {
+        toast(t("editor.removeSilence.empty"));
+      } else {
+        await refreshFromBackend();
+      }
+    } catch (err) {
+      console.error("Remove silence failed:", err);
+    } finally {
+      setIsCleaningUp(false);
+    }
+  }, [clearHighlights, refreshFromBackend, t]);
+
   const handleReset = useCallback(async () => {
     if (!mediaInfo) return;
     const confirmed = await ask(t("editor.resetConfirm.body"), {
@@ -533,6 +551,17 @@ const EditorView: React.FC = () => {
               >
                 <AudioLines size={14} />
                 {t("editor.cleanup")}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleRemoveSilence}
+                disabled={isCleaningUp || isTranscribing}
+                title={t("editor.removeSilence.tooltip")}
+                className="inline-flex items-center gap-1.5"
+              >
+                <Scissors size={14} />
+                {t("editor.removeSilence.button")}
               </Button>
               <Button
                 variant="secondary"

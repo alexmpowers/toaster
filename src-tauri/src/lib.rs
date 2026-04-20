@@ -283,6 +283,7 @@ pub fn run(cli_args: CliArgs) {
             commands::filler::silence_pauses,
             commands::filler::trim_pauses,
             commands::filler::tighten_gaps,
+            commands::filler::remove_silence,
             commands::filler::cleanup_all,
             commands::disfluency::cleanup_smart_duplicates,
             commands::project::save_project,

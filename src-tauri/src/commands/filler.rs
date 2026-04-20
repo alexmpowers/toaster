@@ -234,6 +234,62 @@ pub fn tighten_gaps(
     Ok(count)
 }
 
+/// Remove silence: collapse inter-word gaps ≥ 750 ms to 0 ms.
+///
+/// Word-gap based (no VAD / RMS) — reuses whisper's existing per-word
+/// timings. Wraps `filler::trim_pauses(words, 750_000, 0)` so preview
+/// and export stay on the single source of truth (the same time-map
+/// shift the trim-pauses path already uses).
+///
+/// Returns the number of gaps collapsed. When `0`, the call is a no-op
+/// (no undo snapshot, no revision bump) so the UI can surface a subtle
+/// "no dead-air found" notice without polluting the undo stack.
+#[tauri::command]
+#[specta::specta]
+pub fn remove_silence(store: State<EditorStore>) -> Result<usize, String> {
+    const REMOVE_SILENCE_THRESHOLD_US: i64 = 750_000; // 750 ms
+    const REMOVE_SILENCE_MAX_GAP_US: i64 = 0; // collapse hard-cut
+
+    let mut state = crate::lock_recovery::try_lock(store.0.lock()).map_err(|e| e.to_string())?;
+
+    // Dry-run detection first so we can skip the undo snapshot on no-op
+    // runs (AC-001-f: no destructive edit recorded when nothing to do).
+    let prelim_count = {
+        let words = state.get_words();
+        if words.len() < 2 {
+            0
+        } else {
+            let mut count = 0usize;
+            let mut prev_end: Option<i64> = None;
+            for word in words.iter() {
+                if word.deleted {
+                    continue;
+                }
+                if let Some(pe) = prev_end {
+                    let gap = word.start_us - pe;
+                    if gap >= REMOVE_SILENCE_THRESHOLD_US && (gap - REMOVE_SILENCE_MAX_GAP_US) > 0 {
+                        count += 1;
+                    }
+                }
+                prev_end = Some(word.end_us);
+            }
+            count
+        }
+    };
+
+    if prelim_count == 0 {
+        return Ok(0);
+    }
+
+    state.push_undo_snapshot();
+    let words = state.get_words_mut();
+    let count = filler::trim_pauses(words, REMOVE_SILENCE_THRESHOLD_US, REMOVE_SILENCE_MAX_GAP_US);
+    if count > 0 {
+        state.bump_revision();
+    }
+    Ok(count)
+}
+
 /// Combined iterative cleanup: delete fillers, then delete cascading
 /// duplicates, then trim pauses — all in a single undo snapshot.
 ///

@@ -820,6 +820,14 @@ async tightenGaps(targetGapUs: number | null) : Promise<Result<number, string>> 
     else return { status: "error", error: e as string };
 }
 },
+async removeSilence() : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("remove_silence") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
 async cleanupAll(minPauseUs: number | null, maxGapUs: number | null) : Promise<Result<CleanupResult, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("cleanup_all", { minPauseUs, maxGapUs }) };
