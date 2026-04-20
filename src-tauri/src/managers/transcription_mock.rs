@@ -163,9 +163,7 @@ pub mod adapter {
                     }
                 }
             }
-            let word_level = segs
-                .iter()
-                .all(|s| s.text.split_whitespace().count() == 1);
+            let word_level = segs.iter().all(|s| s.text.split_whitespace().count() == 1);
             let _ = audio_info;
             Ok(NormalizedTranscriptionResult {
                 words,
@@ -256,8 +254,6 @@ impl MockTranscription {
         })
     }
 }
-
-
 
 #[derive(Clone)]
 pub struct TranscriptionManager {
