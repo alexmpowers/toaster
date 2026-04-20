@@ -69,3 +69,27 @@ features/*/tasks/*/context.md
 !features/example-pm-dryrun/journal.md
 !features/example-pm-dryrun/tasks/*/context.md
 
+# ── Local AI-assisted maintainer workflow ──────────────────────────────
+# The following paths describe the maintainer's personal setup for using
+# AI coding assistants (agent definitions, skills, session hooks, prompt
+# templates, PM-flow planning artifacts, agents.md spec files, etc.).
+# They are not required to build, test, or contribute to Toaster — if you
+# want to plug in your own AI tooling you are welcome to, this is just
+# one way of doing it. The public-facing convention files (CI workflows,
+# PR/issue templates, repo actions) remain tracked.
+.github/agents/
+.github/skills/
+.github/hooks/
+.github/instructions/
+.github/prompts/
+.github/registry/
+.github/templates/
+.github/copilot-instructions.md
+
+# agents.md convention files (AI coding assistants — nearest-file wins)
+/AGENTS.md
+/src/AGENTS.md
+/src-tauri/AGENTS.md
+
+# Per-feature planning artifacts (maintainer's PRD/Blueprint/tasks flow)
+/features/

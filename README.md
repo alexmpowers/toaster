@@ -6,11 +6,15 @@
   <img src="src/assets/toaster_text.svg" alt="Toaster" width="200" />
 </p>
 
-<h1 align="center">Toaster</h1>
-
 <p align="center">
   <strong>Helping you sound crispy.</strong><br/>
   Edit video by editing text — entirely on your machine.
+</p>
+
+<p align="center">
+  <a href="https://github.com/itsnotaboutthecell/toaster/releases"><img src="https://img.shields.io/github/v/release/itsnotaboutthecell/toaster?include_prereleases&label=latest&style=flat-square" alt="Latest release" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/itsnotaboutthecell/toaster?style=flat-square" alt="License" /></a>
+  <a href="https://github.com/itsnotaboutthecell/toaster/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/itsnotaboutthecell/toaster/ci.yml?branch=main&style=flat-square&label=ci" alt="CI status" /></a>
 </p>
 
 <p align="center">
