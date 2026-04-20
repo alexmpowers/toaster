@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { ask, open, save } from "@tauri-apps/plugin-dialog";
-import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import {
   FileVideo,
   Upload,
@@ -305,7 +305,7 @@ const EditorView: React.FC = () => {
     clearHighlights();
     setIsCleaningUp(true);
     try {
-      await invoke("cleanup_all", {});
+      unwrapResult(await commands.cleanupAll(null, null));
       await refreshFromBackend();
     } catch (err) {
       console.error("Cleanup failed:", err);
@@ -323,6 +323,7 @@ const EditorView: React.FC = () => {
         toast(t("editor.removeSilence.empty"));
       } else {
         await refreshFromBackend();
+        toast.success(t("editor.removeSilence.success", { count }));
       }
     } catch (err) {
       console.error("Remove silence failed:", err);

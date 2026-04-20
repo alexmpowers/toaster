@@ -587,7 +587,9 @@
     "removeSilence": {
       "button": "Remove silence",
       "tooltip": "Collapse long pauses (≥ 750 ms) between words to a hard cut. Undoable.",
-      "empty": "No long pauses found."
+      "empty": "No long pauses found.",
+      "success": "Removed silence from {{count}} pause",
+      "success_plural": "Removed silence from {{count}} pauses"
     }
   },
   "experiments": {

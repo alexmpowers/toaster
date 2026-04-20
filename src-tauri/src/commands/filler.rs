@@ -237,9 +237,9 @@ pub fn tighten_gaps(
 /// Remove silence: collapse inter-word gaps ≥ 750 ms to 0 ms.
 ///
 /// Word-gap based (no VAD / RMS) — reuses whisper's existing per-word
-/// timings. Wraps `filler::trim_pauses(words, 750_000, 0)` so preview
-/// and export stay on the single source of truth (the same time-map
-/// shift the trim-pauses path already uses).
+/// timings. Delegates the actual shift to `filler::trim_pauses` so
+/// preview and export stay on the single source of truth (the same
+/// time-map shift the trim-pauses path already uses).
 ///
 /// Returns the number of gaps collapsed. When `0`, the call is a no-op
 /// (no undo snapshot, no revision bump) so the UI can surface a subtle
@@ -247,35 +247,16 @@ pub fn tighten_gaps(
 #[tauri::command]
 #[specta::specta]
 pub fn remove_silence(store: State<EditorStore>) -> Result<usize, String> {
-    const REMOVE_SILENCE_THRESHOLD_US: i64 = 750_000; // 750 ms
-    const REMOVE_SILENCE_MAX_GAP_US: i64 = 0; // collapse hard-cut
-
     let mut state = crate::lock_recovery::try_lock(store.0.lock()).map_err(|e| e.to_string())?;
 
     // Dry-run detection first so we can skip the undo snapshot on no-op
     // runs (AC-001-f: no destructive edit recorded when nothing to do).
-    let prelim_count = {
-        let words = state.get_words();
-        if words.len() < 2 {
-            0
-        } else {
-            let mut count = 0usize;
-            let mut prev_end: Option<i64> = None;
-            for word in words.iter() {
-                if word.deleted {
-                    continue;
-                }
-                if let Some(pe) = prev_end {
-                    let gap = word.start_us - pe;
-                    if gap >= REMOVE_SILENCE_THRESHOLD_US && (gap - REMOVE_SILENCE_MAX_GAP_US) > 0 {
-                        count += 1;
-                    }
-                }
-                prev_end = Some(word.end_us);
-            }
-            count
-        }
-    };
+    // Same lock is held through the mutating call below — no TOCTOU.
+    let prelim_count = filler::count_trimmable_pauses(
+        state.get_words(),
+        filler::REMOVE_SILENCE_THRESHOLD_US,
+        filler::REMOVE_SILENCE_MAX_GAP_US,
+    );
 
     if prelim_count == 0 {
         return Ok(0);
@@ -283,7 +264,11 @@ pub fn remove_silence(store: State<EditorStore>) -> Result<usize, String> {
 
     state.push_undo_snapshot();
     let words = state.get_words_mut();
-    let count = filler::trim_pauses(words, REMOVE_SILENCE_THRESHOLD_US, REMOVE_SILENCE_MAX_GAP_US);
+    let count = filler::trim_pauses(
+        words,
+        filler::REMOVE_SILENCE_THRESHOLD_US,
+        filler::REMOVE_SILENCE_MAX_GAP_US,
+    );
     if count > 0 {
         state.bump_revision();
     }
@@ -418,4 +403,112 @@ pub fn cleanup_all(
         gaps_tightened: 0,
         passes,
     })
+}
+
+#[cfg(test)]
+mod remove_silence_tests {
+    //! Unit tests for the Remove silence threshold/collapse pair.
+    //! Exercises `filler::count_trimmable_pauses` + `filler::trim_pauses`
+    //! at the exact constants `remove_silence` applies, so regressions
+    //! in either helper surface here before they reach the editor UI.
+    use crate::managers::editor::Word;
+    use crate::managers::filler::{
+        count_trimmable_pauses, trim_pauses, REMOVE_SILENCE_MAX_GAP_US,
+        REMOVE_SILENCE_THRESHOLD_US,
+    };
+
+    fn word(text: &str, start_us: i64, end_us: i64) -> Word {
+        Word {
+            text: text.to_string(),
+            start_us,
+            end_us,
+            deleted: false,
+            silenced: false,
+            confidence: 1.0,
+            speaker_id: -1,
+        }
+    }
+
+    fn deleted_word(text: &str, start_us: i64, end_us: i64) -> Word {
+        Word { deleted: true, ..word(text, start_us, end_us) }
+    }
+
+    #[test]
+    fn count_trimmable_agrees_with_trim_pauses_return() {
+        // Parity gate: the dry-run count used by remove_silence must
+        // match the mutating trim_pauses count for every fixture.
+        let fixtures: Vec<Vec<Word>> = vec![
+            // no gaps
+            vec![word("a", 0, 500_000), word("b", 500_000, 1_000_000)],
+            // one long gap at/above threshold (800 ms)
+            vec![word("a", 0, 500_000), word("b", 1_300_000, 1_600_000)],
+            // threshold boundary — exactly 750 ms, collapse 0 ⇒ count
+            vec![word("a", 0, 500_000), word("b", 1_250_000, 1_500_000)],
+            // threshold boundary — 749 ms, below ⇒ no count
+            vec![word("a", 0, 500_000), word("b", 1_249_000, 1_500_000)],
+            // deleted words skipped
+            vec![
+                word("a", 0, 500_000),
+                deleted_word("x", 600_000, 700_000),
+                word("b", 2_000_000, 2_500_000),
+            ],
+        ];
+        for mut f in fixtures {
+            let predicted = count_trimmable_pauses(
+                &f,
+                REMOVE_SILENCE_THRESHOLD_US,
+                REMOVE_SILENCE_MAX_GAP_US,
+            );
+            let applied = trim_pauses(
+                &mut f,
+                REMOVE_SILENCE_THRESHOLD_US,
+                REMOVE_SILENCE_MAX_GAP_US,
+            );
+            assert_eq!(predicted, applied, "dry-run vs mutating count must match");
+        }
+    }
+
+    #[test]
+    fn collapses_one_second_gap_to_zero() {
+        let mut words = vec![
+            word("hello", 0, 500_000),
+            word("world", 1_500_000, 2_000_000), // 1 s gap
+        ];
+        let count = trim_pauses(
+            &mut words,
+            REMOVE_SILENCE_THRESHOLD_US,
+            REMOVE_SILENCE_MAX_GAP_US,
+        );
+        assert_eq!(count, 1);
+        // gap was 1_000_000, target 0 ⇒ shift = 1_000_000
+        assert_eq!(words[1].start_us, 500_000);
+        assert_eq!(words[1].end_us, 1_000_000);
+    }
+
+    #[test]
+    fn idempotent_on_second_call() {
+        let mut words = vec![
+            word("hello", 0, 500_000),
+            word("world", 1_500_000, 2_000_000),
+            word("there", 3_500_000, 4_000_000),
+        ];
+        let first = trim_pauses(
+            &mut words,
+            REMOVE_SILENCE_THRESHOLD_US,
+            REMOVE_SILENCE_MAX_GAP_US,
+        );
+        assert!(first > 0);
+        let second = trim_pauses(
+            &mut words,
+            REMOVE_SILENCE_THRESHOLD_US,
+            REMOVE_SILENCE_MAX_GAP_US,
+        );
+        assert_eq!(second, 0);
+        let dry = count_trimmable_pauses(
+            &words,
+            REMOVE_SILENCE_THRESHOLD_US,
+            REMOVE_SILENCE_MAX_GAP_US,
+        );
+        assert_eq!(dry, 0);
+    }
 }

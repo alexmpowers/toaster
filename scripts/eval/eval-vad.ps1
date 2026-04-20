@@ -4,9 +4,10 @@
     features/reintroduce-silero-vad.
 
     SUPERSEDED (2026-04-19): the R-002 / AC-005-c "prefilter_degrades"
-    gate is no longer meaningful because the ASR pre-filter consumer
-    was removed. The remaining gates (catalog_pin, catalog_registered,
-    boundary_ssot, gap_classification, runtime_delta) still apply.
+    gate (G3) and R-002 live-wiring gate (G9) have been **removed**
+    because the ASR pre-filter consumer is gone. The remaining gates
+    (catalog_pin, catalog_registered, boundary_ssot, gap_classification,
+    runtime_delta) still apply.
 
 .DESCRIPTION
     Produces a structured pass/fail report for the VAD reintroduction
@@ -17,7 +18,6 @@
 
       G1  catalog_pin             URL + SHA pinned in catalog/vad.rs
       G2  catalog_registered      silero-vad ModelInfo in build_static_catalog
-      G3  prefilter_degrades      3 R-002 graceful-absence tests (AC-005-c)
       G4  boundary_ssot           snap_segments_vad_biased(&[], ...)
                                   byte-identical to energy path (AC-003-d)
       G5  gap_classification      5 R-004 classification bucket tests
@@ -34,16 +34,9 @@
                                   vad_refine_boundaries from settings
                                   and route through snap_segments_vad_biased.
                                   Pure source-grep, runs in ms.
-      G9  prefilter_live_wired    R-002 live-caller regression guard:
-                                  managers/transcription/ must consume
-                                  vad_prefilter_enabled, route through the
-                                  prefilter orchestrator, and reuse
-                                  remap_words / try_open_silero rather
-                                  than open-coding the shift / load.
-                                  Pure source-grep, runs in ms.
 
-    G1-G5 + G8-G9 are binary (pass/fail). G6-G7 are explicitly skipped with
-    notes until the feature picks up an end-to-end perf fixture.
+    G1-G2, G4-G5, G8 are binary (pass/fail). G6-G7 are explicitly skipped
+    with notes until the feature picks up an end-to-end perf fixture.
 
     Invocation:
         pwsh -NoProfile -File scripts/eval/eval-vad.ps1
@@ -64,7 +57,6 @@ $RepoRoot   = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $CatalogRs  = Join-Path $RepoRoot 'src-tauri\src\managers\model\catalog\vad.rs'
 $CatalogMod = Join-Path $RepoRoot 'src-tauri\src\managers\model\catalog\mod.rs'
 $WaveformDir = Join-Path $RepoRoot 'src-tauri\src\commands\waveform'
-$TranscriptionDir = Join-Path $RepoRoot 'src-tauri\src\managers\transcription'
 
 # Source the repo's Windows build env so cargo can find cmake/clang/ffmpeg.
 # Hygiene R rule: cargo must be invoked with setup-env.ps1 loaded.
@@ -150,9 +142,6 @@ Write-Host "=== Silero VAD eval ===" -ForegroundColor Cyan
 $results = @()
 $results += Invoke-G1-CatalogPin
 $results += Invoke-G2-CatalogRegistered
-$results += Invoke-CargoTest -TestName 'prefilter_degrades_gracefully' `
-    -ExpectedPassing 3 -Gate 'G3_prefilter_degrades' `
-    -Ac 'AC-005-c, AC-002-shape'
 $results += Invoke-CargoTest -TestName 'vad_biased_snap_disabled_matches_baseline' `
     -ExpectedPassing 1 -Gate 'G4_boundary_ssot' `
     -Ac 'AC-003-d'
@@ -183,26 +172,8 @@ function Invoke-G8-BoundaryLiveWired {
 }
 $results += Invoke-G8-BoundaryLiveWired
 
-# G9: prefilter live-wiring regression guard ------------------------------
-function Invoke-G9-PrefilterLiveWired {
-    if (-not (Test-Path $TranscriptionDir)) {
-        return (New-Result 'G9_prefilter_live_wired' 'error' @{} "missing: $TranscriptionDir")
-    }
-    $src = (Get-ChildItem -Path $TranscriptionDir -Filter *.rs -Recurse | Get-Content -Raw) -join "`n"
-    $checks = [ordered]@{
-        reads_settings_flag      = ($src -match 'vad_prefilter_enabled')
-        calls_prefilter_windows  = ($src -match 'prefilter_speech_windows\(')
-        opens_silero_via_helper  = ($src -match 'try_open_silero')
-        uses_offset_timestamps   = ($src -match 'offset_timestamps\(')
-        routes_through_orch      = ($src -match 'PrefilterOutcome::')
-        uses_chunk_helper        = ($src -match 'call_engine_chunk\(')
-    }
-    $allPass = -not ($checks.Values | Where-Object { -not $_ })
-    $status = if ($allPass) { 'pass' } else { 'fail' }
-    return (New-Result 'G9_prefilter_live_wired' $status $checks `
-        'R-002 live wiring: managers/transcription/ must consume the setting AND route through the prefilter orchestrator.')
-}
-$results += Invoke-G9-PrefilterLiveWired
+# G9 (prefilter_live_wired) removed 2026-04-19 — R-002 consumer no
+# longer exists; see synopsis SUPERSEDED block.
 
 # -------------------------------------------------------------------------
 # Aggregate
