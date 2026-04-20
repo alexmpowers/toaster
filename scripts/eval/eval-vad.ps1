@@ -29,8 +29,15 @@
                                   vad_refine_boundaries from settings
                                   and route through snap_segments_vad_biased.
                                   Pure source-grep, runs in ms.
+      G9  prefilter_live_wired    R-002 live-caller regression guard:
+                                  managers/transcription/ must consume
+                                  vad_prefilter_enabled, route through the
+                                  prefilter orchestrator, and reuse
+                                  remap_words / try_open_silero rather
+                                  than open-coding the shift / load.
+                                  Pure source-grep, runs in ms.
 
-    G1-G5 + G8 are binary (pass/fail). G6-G7 are explicitly skipped with
+    G1-G5 + G8-G9 are binary (pass/fail). G6-G7 are explicitly skipped with
     notes until the feature picks up an end-to-end perf fixture.
 
     Invocation:
@@ -52,6 +59,7 @@ $RepoRoot   = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $CatalogRs  = Join-Path $RepoRoot 'src-tauri\src\managers\model\catalog\vad.rs'
 $CatalogMod = Join-Path $RepoRoot 'src-tauri\src\managers\model\catalog\mod.rs'
 $WaveformDir = Join-Path $RepoRoot 'src-tauri\src\commands\waveform'
+$TranscriptionDir = Join-Path $RepoRoot 'src-tauri\src\managers\transcription'
 
 # Source the repo's Windows build env so cargo can find cmake/clang/ffmpeg.
 # Hygiene R rule: cargo must be invoked with setup-env.ps1 loaded.
@@ -169,6 +177,27 @@ function Invoke-G8-BoundaryLiveWired {
         'R-003 live wiring: commands/waveform/ must consume the setting AND call snap_segments_vad_biased.')
 }
 $results += Invoke-G8-BoundaryLiveWired
+
+# G9: prefilter live-wiring regression guard ------------------------------
+function Invoke-G9-PrefilterLiveWired {
+    if (-not (Test-Path $TranscriptionDir)) {
+        return (New-Result 'G9_prefilter_live_wired' 'error' @{} "missing: $TranscriptionDir")
+    }
+    $src = (Get-ChildItem -Path $TranscriptionDir -Filter *.rs -Recurse | Get-Content -Raw) -join "`n"
+    $checks = [ordered]@{
+        reads_settings_flag      = ($src -match 'vad_prefilter_enabled')
+        calls_prefilter_windows  = ($src -match 'prefilter_speech_windows\(')
+        opens_silero_via_helper  = ($src -match 'try_open_silero')
+        uses_offset_timestamps   = ($src -match 'offset_timestamps\(')
+        routes_through_orch      = ($src -match 'PrefilterOutcome::')
+        uses_chunk_helper        = ($src -match 'call_engine_chunk\(')
+    }
+    $allPass = -not ($checks.Values | Where-Object { -not $_ })
+    $status = if ($allPass) { 'pass' } else { 'fail' }
+    return (New-Result 'G9_prefilter_live_wired' $status $checks `
+        'R-002 live wiring: managers/transcription/ must consume the setting AND route through the prefilter orchestrator.')
+}
+$results += Invoke-G9-PrefilterLiveWired
 
 # -------------------------------------------------------------------------
 # Aggregate

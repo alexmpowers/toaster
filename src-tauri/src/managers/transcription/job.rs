@@ -12,16 +12,10 @@ use anyhow::Result;
 use log::{debug, error, info, warn};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use tauri::Emitter;
-use transcribe_rs::{
-    onnx::{
-        parakeet::{ParakeetParams, TimestampGranularity},
-        sense_voice::SenseVoiceParams,
-    },
-    whisper_cpp::WhisperInferenceParams,
-    SpeechModel, TranscribeOptions,
-};
 
-use super::{adapter, LoadedEngine, ModelStateEvent, TranscriptionManager};
+use super::engine_call::call_engine_chunk;
+use super::prefilter::{run as run_prefilter, PrefilterOutcome};
+use super::{adapter, ModelStateEvent, TranscriptionManager};
 
 impl TranscriptionManager {
     pub fn transcribe(&self, audio: Vec<f32>) -> Result<adapter::NormalizedTranscriptionResult> {
@@ -145,75 +139,28 @@ impl TranscriptionManager {
 
             let transcribe_result = catch_unwind(AssertUnwindSafe(
                 || -> Result<transcribe_rs::TranscriptionResult> {
-                    match &mut engine {
-                        LoadedEngine::Whisper(whisper_engine) => {
-                            let params = WhisperInferenceParams {
-                                language: normalized_language.clone(),
-                                translate: settings.translate_to_english,
-                                initial_prompt: if settings.custom_words.is_empty() {
-                                    None
-                                } else {
-                                    Some(settings.custom_words.join(", "))
-                                },
-                                ..Default::default()
-                            };
-
-                            whisper_engine
-                                .transcribe_with(&audio, &params)
-                                .map_err(|e| anyhow::anyhow!("Whisper transcription failed: {}", e))
-                        }
-                        LoadedEngine::Parakeet(parakeet_engine) => {
-                            let params = ParakeetParams {
-                                timestamp_granularity: Some(TimestampGranularity::Word),
-                                ..Default::default()
-                            };
-                            parakeet_engine
-                                .transcribe_with(&audio, &params)
-                                .map_err(|e| {
-                                    anyhow::anyhow!("Parakeet transcription failed: {}", e)
-                                })
-                        }
-                        LoadedEngine::Moonshine(moonshine_engine) => moonshine_engine
-                            .transcribe(&audio, &TranscribeOptions::default())
-                            .map_err(|e| anyhow::anyhow!("Moonshine transcription failed: {}", e)),
-                        LoadedEngine::MoonshineStreaming(streaming_engine) => streaming_engine
-                            .transcribe(&audio, &TranscribeOptions::default())
-                            .map_err(|e| {
-                                anyhow::anyhow!("Moonshine streaming transcription failed: {}", e)
-                            }),
-                        LoadedEngine::SenseVoice(sense_voice_engine) => {
-                            let params = SenseVoiceParams {
-                                language: normalized_language.clone(),
-                                use_itn: Some(true),
-                            };
-                            sense_voice_engine
-                                .transcribe_with(&audio, &params)
-                                .map_err(|e| {
-                                    anyhow::anyhow!("SenseVoice transcription failed: {}", e)
-                                })
-                        }
-                        LoadedEngine::GigaAM(gigaam_engine) => gigaam_engine
-                            .transcribe(&audio, &TranscribeOptions::default())
-                            .map_err(|e| anyhow::anyhow!("GigaAM transcription failed: {}", e)),
-                        LoadedEngine::Canary(canary_engine) => {
-                            let options = TranscribeOptions {
-                                language: normalized_language.clone(),
-                                translate: settings.translate_to_english,
-                                ..Default::default()
-                            };
-                            canary_engine
-                                .transcribe(&audio, &options)
-                                .map_err(|e| anyhow::anyhow!("Canary transcription failed: {}", e))
-                        }
-                        LoadedEngine::Cohere(cohere_engine) => {
-                            let options = TranscribeOptions {
-                                language: normalized_language.clone(),
-                                ..Default::default()
-                            };
-                            cohere_engine
-                                .transcribe(&audio, &options)
-                                .map_err(|e| anyhow::anyhow!("Cohere transcription failed: {}", e))
-                        }
+                    // R-002 — try the VAD prefilter chunk path first.
+                    // The orchestrator returns `Fallback` when the
+                    // toggle is off, the model is missing, ORT init
+                    // fails, the buffer is too short, or no speech
+                    // windows are detected. In every fall-back case
+                    // we run the standard full-buffer pass below so
+                    // behavior is at least as broad as the no-VAD
+                    // path. (BLUEPRINT §AD-8 graceful-degradation.)
+                    match run_prefilter(
+                        &mut engine,
+                        &audio,
+                        &settings,
+                        &normalized_language,
+                        &self.model_manager,
+                    )? {
+                        PrefilterOutcome::Ran(merged) => Ok(merged),
+                        PrefilterOutcome::Fallback => call_engine_chunk(
+                            &mut engine,
+                            &audio,
+                            &settings,
+                            &normalized_language,
+                        ),
                     }
                 },
             ));
