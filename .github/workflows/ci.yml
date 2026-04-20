@@ -120,7 +120,7 @@ jobs:
           # heavy whisper/onnx/Vulkan features. Rewrite every
           # `transcribe-rs = ...` line (workspace + platform sections) to a
           # minimal, feature-free entry.
-          sed -i 's/^transcribe-rs = .*/transcribe-rs = { version = "0.3.8", default-features = false }/' Cargo.toml
+          sed -i 's/^transcribe-rs = .*/transcribe-rs = { version = "0.3.8", default-features = false, features = ["whisper-cpp"] }/' Cargo.toml
 
       - name: Check formatting
         run: cargo fmt --check
@@ -152,7 +152,7 @@ jobs:
           cp src/managers/transcription_mock.rs src/managers/transcription.rs
           # Keep transcribe-rs (mock imports `TranscriptionSegment` / `TranscriptionResult`)
           # but strip its heavy whisper/onnx/Vulkan features.
-          sed -i 's/^transcribe-rs = .*/transcribe-rs = { version = "0.3.8", default-features = false }/' Cargo.toml
+          sed -i 's/^transcribe-rs = .*/transcribe-rs = { version = "0.3.8", default-features = false, features = ["whisper-cpp"] }/' Cargo.toml
 
       - name: Run Rust tests
         working-directory: src-tauri
