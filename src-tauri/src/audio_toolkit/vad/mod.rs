@@ -2,15 +2,19 @@
 //!
 //! Reintroduced after the Handy-era prune (see
 //! `.github/skills/handy-legacy-pruning/SKILL.md` — "VAD reintroduced"
-//! section) for three strictly file-based editor use cases specified
+//! section) for two strictly file-based editor use cases specified
 //! in `features/reintroduce-silero-vad/PRD.md`:
 //!
-//! * **R-002** — ASR silence pre-filter in
-//!   `managers::transcription::prefilter`.
 //! * **R-003** — P(speech)-aware splice-boundary refinement in
 //!   `managers::splice::boundaries`.
 //! * **R-004** — acoustic classification of long filler/pause gaps in
 //!   `managers::filler`.
+//!
+//! **Removed:** R-002 (ASR silence pre-filter) — user feedback during
+//! live QC showed it degraded transcript timing edits (short words at
+//! splice boundaries were clipped). The `vad_prefilter_enabled`
+//! setting, its Tauri command, and the `managers::transcription::prefilter`
+//! orchestrator module were all deleted in a follow-up branch.
 //!
 //! The microphone path is **not** reintroduced — no push-to-talk, no
 //! recorder, no overlay. Everything here operates on already-decoded

@@ -180,14 +180,44 @@ fn test_verify_sha256_fails_and_deletes_partial_when_file_missing() {
 
 #[test]
 fn model_category_variants() {
-    let variants = [ModelCategory::Transcription];
+    let variants = [
+        ModelCategory::Transcription,
+        ModelCategory::VoiceActivityDetection,
+    ];
     for v in variants {
         let classified = match v {
             ModelCategory::Transcription => "transcription",
+            ModelCategory::VoiceActivityDetection => "voice-activity-detection",
         };
         assert!(!classified.is_empty());
     }
     assert_eq!(ModelCategory::default(), ModelCategory::Transcription);
+}
+
+#[test]
+fn silero_vad_is_registered_in_static_catalog() {
+    // Phase-4 downloader wiring — the Silero VAD ModelInfo must be
+    // reachable from ModelManager::new via build_static_catalog so the
+    // existing download / SHA-verify / cancel pipeline handles it for
+    // free. Regression guard for AC-005-a.
+    let catalog = super::catalog::all();
+    let silero = catalog
+        .iter()
+        .find(|m| m.id == "silero-vad")
+        .expect("silero-vad entry missing from catalog");
+    assert_eq!(
+        silero.category,
+        ModelCategory::VoiceActivityDetection,
+        "silero-vad must be VoiceActivityDetection-category, not Transcription",
+    );
+    assert!(
+        silero.url.as_ref().is_some_and(|u| u.contains("silero_vad.onnx")),
+        "silero-vad URL must point at the pinned v4.0 ONNX payload",
+    );
+    assert!(
+        silero.sha256.as_ref().is_some_and(|s| s.len() == 64 && s.chars().all(|c| c.is_ascii_hexdigit())),
+        "silero-vad SHA-256 must be a 64-char hex digest",
+    );
 }
 
 

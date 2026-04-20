@@ -230,8 +230,8 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
               <Select
                 value={selectedSampleKey}
                 options={[
-                  { value: "single", label: t("settings.captions.preview.sample.single") },
-                  { value: "multiLine", label: t("settings.captions.preview.sample.multiLine").replace(/\n/g, " / ") },
+                  { value: "single", label: t("settings.captions.preview.sample.label.single") },
+                  { value: "multiLine", label: t("settings.captions.preview.sample.label.multiLine") },
                 ]}
                 onChange={(v) => {
                   if (v === "single" || v === "multiLine") setSelectedSampleKey(v);

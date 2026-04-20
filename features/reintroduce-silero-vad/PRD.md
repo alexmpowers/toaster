@@ -1,5 +1,17 @@
 # PRD: reintroduce Silero VAD (file-based, editor use cases)
 
+> **SUPERSEDED — 2026-04-19 (partial):** R-006 / AC-006-a (the ASR
+> silence pre-filter surfaced as `vad_prefilter_enabled`) has been
+> **removed**. Live QC showed the pre-filter degraded transcript
+> timing edits (short words at splice boundaries were clipped),
+> which is a non-starter for a transcript-first editor. The
+> setting, its Tauri command, the `managers::transcription::prefilter`
+> orchestrator module, and `scripts/eval/measure-prefilter-runtime.ps1`
+> were all deleted. R-003 (splice-boundary refinement, toggle
+> `vad_refine_boundaries`) and R-004 (filler gap classification)
+> remain in force. Sections below that reference the pre-filter
+> are kept as historical context, not as requirements.
+
 ## Background
 
 Handy — Toaster's fork parent — used Silero VAD (via `vad-rs`) in the

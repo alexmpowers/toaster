@@ -345,6 +345,44 @@ pub fn detect_pauses(words: &[Word], config: &FillerConfig) -> Vec<(usize, i64)>
 /// Default maximum gap after trimming (300 ms).
 pub const DEFAULT_MAX_GAP_US: i64 = 300_000;
 
+/// Pause threshold for the "Remove silence" command (750 ms).
+/// Shorter than `DEFAULT_PAUSE_THRESHOLD_US` because the user-facing
+/// action targets natural breathing/thinking pauses that still feel like
+/// dead air, not only the very long ones the cleanup pipeline catches.
+pub const REMOVE_SILENCE_THRESHOLD_US: i64 = 750_000;
+
+/// Collapse target for "Remove silence" — hard cut (0 ms).
+pub const REMOVE_SILENCE_MAX_GAP_US: i64 = 0;
+
+/// Count how many gaps `trim_pauses` would trim for the given thresholds,
+/// without mutating anything. Shares the gap-walk predicate with
+/// `trim_pauses` so callers that need a pre-flight (e.g. to skip
+/// push_undo_snapshot on no-op) cannot drift from the real behavior.
+pub fn count_trimmable_pauses(
+    words: &[Word],
+    pause_threshold_us: i64,
+    max_gap_us: i64,
+) -> usize {
+    if words.len() < 2 {
+        return 0;
+    }
+    let mut count = 0usize;
+    let mut prev_end: Option<i64> = None;
+    for word in words.iter() {
+        if word.deleted {
+            continue;
+        }
+        if let Some(pe) = prev_end {
+            let gap = word.start_us.saturating_sub(pe);
+            if gap >= pause_threshold_us && gap.saturating_sub(max_gap_us) > 0 {
+                count += 1;
+            }
+        }
+        prev_end = Some(word.end_us);
+    }
+    count
+}
+
 /// Trim long pauses by reducing gaps to `max_gap_us`.
 ///
 /// Walks the word list and, for every gap between non-deleted words that

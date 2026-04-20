@@ -122,6 +122,11 @@
       "languageOnly": "Само {{language}}",
       "translation": "Може да превежда на английски",
       "translate": "Превод на английски"
+    },
+    "vad": {
+      "active": "Silero VAD",
+      "downloading": "Silero VAD · {{percent}}%",
+      "verifying": "Silero VAD · Verifying…"
     }
   },
   "settings": {
@@ -216,7 +221,7 @@
         "intro": "Toaster extends its engine with transcript-first video and audio editing capabilities from the following projects.",
         "handy": {
           "title": "Handy",
-          "description": "Handy is built on the foundation of Handy by cjpais",
+          "description": "Toaster is built on the foundation of Handy by cjpais",
           "details": "Handy is an open-source, local-first speech-to-text application. Thank you to cjpais and all Handy contributors.",
           "button": "View Handy on GitHub"
         },
@@ -316,10 +321,6 @@
         "maxWidth": "Maximum width",
         "maxWidthDescription": "How wide the caption is allowed to grow before it wraps onto a second line, as a percentage of the video frame."
       },
-      "vadPrefilter": {
-        "label": "Speech Pre-filter (VAD)",
-        "description": "Slice audio into speech regions before transcription, skipping long silences. Reduces runtime and cuts down on false-positive words in silent / music regions. When the Silero VAD model is not installed, the full-file path runs as normal."
-      },
       "vadRefineBoundaries": {
         "label": "Refine Splice Boundaries (VAD)",
         "description": "Use the per-frame speech probability curve as an extra bias when snapping splice boundaries. Leaves boundaries unchanged where the pre-feature zero-crossing and energy-valley snap already lands on silence. Defaults off; enable for tricky overlapping phoneme seams."
@@ -330,7 +331,11 @@
         "sampleLegend": "Sample text",
         "sample": {
           "single": "looking crispy",
-          "multiLine": "looking crispy and readable\neven when the caption text\nwraps onto a third line"
+          "multiLine": "looking crispy and readable\neven when the caption text\nwraps onto a third line",
+          "label": {
+            "single": "single line",
+            "multiLine": "multi-line"
+          }
         },
         "orientation": {
           "label": "Ориентация на прегледа",
@@ -378,7 +383,7 @@
           "description": "Model unload timing and related runtime behavior."
         },
         "captions": {
-          "title": "Live preview",
+          "title": "Captions",
           "description": "Caption preview and export styling."
         },
         "export": {
@@ -388,6 +393,10 @@
         "experimental": {
           "title": "Experimental",
           "description": "Opt-in features that may change or be removed. Gated by the master toggle below."
+        },
+        "vad": {
+          "title": "Voice activity detection",
+          "description": "Opt-in Silero VAD consumers: ASR pre-filter and splice-boundary refinement. Requires a one-time ~2 MB model download."
         }
       },
       "experimentalMaster": {
@@ -566,6 +575,21 @@
         "m4a": "M4A audio",
         "opus": "Opus audio"
       }
+    },
+    "reset": "Reset",
+    "resetTooltip": "Reprocess this file's transcription from the source media. All current word edits will be discarded.",
+    "resetConfirm": {
+      "title": "Reprocess transcription?",
+      "body": "All current word edits, deletions, and splits will be lost. The source media is unchanged.",
+      "confirm": "Reprocess",
+      "cancel": "Cancel"
+    },
+    "removeSilence": {
+      "button": "Remove silence",
+      "tooltip": "Collapse long pauses (≥ 750 ms) between words to a hard cut. Undoable.",
+      "empty": "No long pauses found.",
+      "success": "Removed silence from {{count}} pause",
+      "success_plural": "Removed silence from {{count}} pauses"
     }
   },
   "experiments": {

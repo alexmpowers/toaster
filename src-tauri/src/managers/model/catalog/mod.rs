@@ -24,13 +24,18 @@ pub(super) fn build_static_catalog() -> HashMap<String, ModelInfo> {
     for entry in transcription::entries() {
         out.insert(entry.id.clone(), entry);
     }
+    for entry in vad::entries() {
+        out.insert(entry.id.clone(), entry);
+    }
     out
 }
 
 /// Flat view of every curated catalog entry.
 #[allow(dead_code)]
 pub fn all() -> Vec<ModelInfo> {
-    transcription::entries()
+    let mut out = transcription::entries();
+    out.extend(vad::entries());
+    out
 }
 
 pub(super) fn discover_custom_whisper_models(
