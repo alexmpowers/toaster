@@ -82,6 +82,49 @@ pub(crate) fn decode_media_audio(path: &Path) -> Result<Vec<f32>, String> {
     Ok(samples)
 }
 
+/// Decode the current media file with a path+mtime keyed cache on
+/// `MediaStore`. Returns a cheap clone of the cached `Arc<Vec<f32>>` on
+/// hit; runs `decode_media_audio` on miss and populates the cache.
+///
+/// The cache lives on `MediaStore` and is invalidated automatically on
+/// `import()` / `clear()`. We never hold the store mutex across the
+/// decode itself, so concurrent callers degrade to "decode twice and
+/// last-writer wins" in the rare race, not deadlock.
+///
+/// Motivation: `cleanup_all` and `cleanup_smart_duplicates` used to spawn
+/// ffmpeg on every invocation, a multi-second cost on non-trivial media.
+/// Repeated cleanup passes on the same file now pay that cost once.
+pub(crate) fn decode_media_audio_cached(
+    path: &Path,
+    media_store: &MediaStore,
+) -> Result<(std::sync::Arc<Vec<f32>>, u32), String> {
+    let modified = std::fs::metadata(path)
+        .and_then(|m| m.modified())
+        .map_err(|e| format!("cannot read media mtime: {e}"))?;
+
+    // Fast path — check cache under a short-held lock.
+    {
+        let state =
+            crate::lock_recovery::try_lock(media_store.0.lock()).map_err(|e| e.to_string())?;
+        if let Some(hit) = state.audio_cache_get(path, modified) {
+            return Ok(hit);
+        }
+    }
+
+    // Cache miss: decode without holding the lock so we don't block
+    // unrelated `MediaStore` access for several seconds.
+    let samples = std::sync::Arc::new(decode_media_audio(path)?);
+    let sample_rate = 16_000u32;
+
+    {
+        let mut state =
+            crate::lock_recovery::try_lock(media_store.0.lock()).map_err(|e| e.to_string())?;
+        state.audio_cache_put(path.to_path_buf(), modified, samples.clone(), sample_rate);
+    }
+
+    Ok((samples, sample_rate))
+}
+
 /// Run the audio-aware survivor planner over `words`, returning the
 /// (decisions, total_deleted) pair. Pure helper for both the command
 /// below and the existing `cleanup_all` flow.
@@ -130,8 +173,8 @@ pub fn cleanup_smart_duplicates(
             .ok_or_else(|| "no media loaded — cannot score audio clarity".to_string())?
     };
 
-    let samples = decode_media_audio(&media_path)?;
-    let sample_rate = 16_000u32;
+    let (samples, sample_rate) =
+        decode_media_audio_cached(&media_path, &media_store)?;
 
     let mut state = crate::lock_recovery::try_lock(store.0.lock()).map_err(|e| e.to_string())?;
     let (decisions, indices_to_delete) =
