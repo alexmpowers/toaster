@@ -145,8 +145,16 @@ pub(super) fn default_whisper_gpu_device() -> i32 {
 /// silently falls back when the model is absent, so an always-on
 /// default is safe and maximises the runtime / hallucination win
 /// described in R-002.
+/// R-006 (features/reintroduce-silero-vad): default-off pending a
+/// precision-eval win. Live QC on 2026-04-19 surfaced reports of
+/// word-loss at the splice (`And uh` → `And` was welcome, but broader
+/// filler / short-word loss is not). The ASR adapter silently falls
+/// back when the model is absent *and* when this flag is off, so the
+/// default-off path stays byte-identical to the pre-feature pipeline
+/// until the evals (`scripts/eval/eval-edit-quality.ps1` A/B) show a
+/// measurable improvement.
 pub(super) fn default_vad_prefilter_enabled() -> bool {
-    true
+    false
 }
 
 /// R-006 (features/reintroduce-silero-vad): default-off. Boundary

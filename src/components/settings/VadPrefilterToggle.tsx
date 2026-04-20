@@ -22,7 +22,7 @@ export const VadPrefilterToggle: React.FC<VadPrefilterToggleProps> =
     const { t } = useTranslation();
     const { getSetting, updateSetting, isUpdating } = useSettings();
 
-    const enabled = getSetting("vad_prefilter_enabled") ?? true;
+    const enabled = getSetting("vad_prefilter_enabled") ?? false;
 
     return (
       <ToggleSwitch

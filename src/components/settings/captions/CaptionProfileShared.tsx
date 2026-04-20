@@ -230,8 +230,8 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
               <Select
                 value={selectedSampleKey}
                 options={[
-                  { value: "single", label: t("settings.captions.preview.sample.single") },
-                  { value: "multiLine", label: t("settings.captions.preview.sample.multiLine").replace(/\n/g, " / ") },
+                  { value: "single", label: t("settings.captions.preview.sample.label.single") },
+                  { value: "multiLine", label: t("settings.captions.preview.sample.label.multiLine") },
                 ]}
                 onChange={(v) => {
                   if (v === "single" || v === "multiLine") setSelectedSampleKey(v);
@@ -241,6 +241,9 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
           </div>
         </div>
       </div>
+      <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-mid-gray">
+        {t("settings.captions.preview.heading")}
+      </h3>
       <div
         className="mx-auto w-full rounded-[20px] bg-[#000000]/85 p-2 shadow-inner"
         style={{ maxWidth: screenMaxWidth ?? "36rem" }}

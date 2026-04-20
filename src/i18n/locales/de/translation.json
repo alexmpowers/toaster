@@ -221,7 +221,7 @@
         "intro": "Toaster extends its engine with transcript-first video and audio editing capabilities from the following projects.",
         "handy": {
           "title": "Handy",
-          "description": "Handy is built on the foundation of Handy by cjpais",
+          "description": "Toaster is built on the foundation of Handy by cjpais",
           "details": "Handy is an open-source, local-first speech-to-text application. Thank you to cjpais and all Handy contributors.",
           "button": "View Handy on GitHub"
         },
@@ -323,7 +323,7 @@
       },
       "vadPrefilter": {
         "label": "Speech Pre-filter (VAD)",
-        "description": "Slice audio into speech regions before transcription, skipping long silences. Reduces runtime and cuts down on false-positive words in silent / music regions. When the Silero VAD model is not installed, the full-file path runs as normal."
+        "description": "Slice audio into speech regions before transcription, skipping long silences. May drop very short filler words (uh, um) and other low-energy fragments — disabled by default until a precision-eval win is recorded. When the Silero VAD model is not installed, the full-file path runs as normal."
       },
       "vadRefineBoundaries": {
         "label": "Refine Splice Boundaries (VAD)",
@@ -335,13 +335,18 @@
         "sampleLegend": "Sample text",
         "sample": {
           "single": "looking crispy",
-          "multiLine": "looking crispy and readable\neven when the caption text\nwraps onto a third line"
+          "multiLine": "looking crispy and readable\neven when the caption text\nwraps onto a third line",
+          "label": {
+            "single": "[single line]",
+            "multiLine": "[multi-line]"
+          }
         },
         "orientation": {
           "label": "Vorschau-Ausrichtung",
           "horizontal": "Horizontal",
           "vertical": "Vertikal"
-        }
+        },
+        "heading": "Live preview"
       }
     },
     "experimental": {
@@ -383,7 +388,7 @@
           "description": "Model unload timing and related runtime behavior."
         },
         "captions": {
-          "title": "Live preview",
+          "title": "Captions",
           "description": "Caption preview and export styling."
         },
         "export": {
@@ -575,6 +580,14 @@
         "m4a": "M4A audio",
         "opus": "Opus audio"
       }
+    },
+    "reset": "Reset",
+    "resetTooltip": "Reprocess this file's transcription from the source media. All current word edits will be discarded.",
+    "resetConfirm": {
+      "title": "Reprocess transcription?",
+      "body": "All current word edits, deletions, and splits will be lost. The source media is unchanged.",
+      "confirm": "Reprocess",
+      "cancel": "Cancel"
     }
   },
   "experiments": {

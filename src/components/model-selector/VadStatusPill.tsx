@@ -25,7 +25,7 @@ export const VadStatusPill: React.FC = React.memo(() => {
   const getDownloadProgress = useModelStore((s) => s.getDownloadProgress);
   const getSetting = useSettingsStore((s) => s.getSetting);
 
-  const prefilterEnabled = getSetting("vad_prefilter_enabled") ?? true;
+  const prefilterEnabled = getSetting("vad_prefilter_enabled") ?? false;
   const refineEnabled = getSetting("vad_refine_boundaries") ?? false;
   const consumerActive = prefilterEnabled || refineEnabled;
 

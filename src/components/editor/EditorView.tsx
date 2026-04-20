@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { open, save } from "@tauri-apps/plugin-dialog";
+import { ask, open, save } from "@tauri-apps/plugin-dialog";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import {
   FileVideo,
@@ -11,6 +11,7 @@ import {
   FolderOpen,
   X,
   AudioLines,
+  RotateCcw,
 } from "lucide-react";
 import { SettingsGroup } from "@/components/ui/SettingsGroup";
 import { Button } from "@/components/ui/Button";
@@ -312,6 +313,30 @@ const EditorView: React.FC = () => {
     }
   }, [clearHighlights, refreshFromBackend]);
 
+  const handleReset = useCallback(async () => {
+    if (!mediaInfo) return;
+    const confirmed = await ask(t("editor.resetConfirm.body"), {
+      title: t("editor.resetConfirm.title"),
+      kind: "warning",
+      okLabel: t("editor.resetConfirm.confirm"),
+      cancelLabel: t("editor.resetConfirm.cancel"),
+    });
+    if (!confirmed) return;
+    clearHighlights();
+    selectWord(null);
+    setSelectionRange(null);
+    await setWords([]);
+    await handleTranscribe();
+  }, [
+    mediaInfo,
+    t,
+    clearHighlights,
+    selectWord,
+    setSelectionRange,
+    setWords,
+    handleTranscribe,
+  ]);
+
   const handleNormalizeToggle = useCallback(() => {
     updateSetting("normalize_audio_on_export", !normalizeAudio);
   }, [updateSetting, normalizeAudio]);
@@ -498,16 +523,27 @@ const EditorView: React.FC = () => {
             {/* Cleanup is a transcript modification, not an export action,
                 so it lives with the transcript itself. Left-aligned above
                 the transcript per Round 7 user feedback. */}
-            <div className="flex justify-start">
+            <div className="flex justify-start gap-2">
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={handleCleanup}
-                disabled={isCleaningUp}
+                disabled={isCleaningUp || isTranscribing}
                 className="inline-flex items-center gap-1.5"
               >
                 <AudioLines size={14} />
                 {t("editor.cleanup")}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleReset}
+                disabled={isCleaningUp || isTranscribing}
+                title={t("editor.resetTooltip")}
+                className="inline-flex items-center gap-1.5"
+              >
+                <RotateCcw size={14} />
+                {isTranscribing ? t("editor.transcribing") : t("editor.reset")}
               </Button>
             </div>
             <TranscriptEditor onWordClick={handleWordClick} />
