@@ -12,8 +12,8 @@ use tauri::{AppHandle, Emitter, Manager};
 
 pub mod catalog;
 mod download;
-mod hash;
 pub mod hardware_profile;
+mod hash;
 pub mod recommendation;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type, Default)]
