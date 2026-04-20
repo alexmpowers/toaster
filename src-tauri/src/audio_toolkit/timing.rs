@@ -177,7 +177,7 @@ mod tests {
         // Large values near i64::MAX / 2 must not panic and must remain finite.
         let big_us = i64::MAX / 4;
         let _ = us_to_sample(big_us, SR); // saturates to usize::MAX rather than UB
-        let big_sample = (1_usize << 40).min(usize::MAX);
+        let big_sample = 1_usize << 40;
         let _ = sample_to_us(big_sample, SR);
 
         // Saturation on overflow: clearly out-of-range f64 → i64::MAX, not UB.

@@ -92,4 +92,8 @@ features/*/tasks/*/context.md
 /src-tauri/AGENTS.md
 
 # Per-feature planning artifacts (maintainer's PRD/Blueprint/tasks flow)
-/features/
+/features/**
+!/features/
+!/features/*/
+!/features/*/fixtures/
+!/features/*/fixtures/**

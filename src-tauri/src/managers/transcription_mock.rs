@@ -165,7 +165,7 @@ pub mod adapter {
             }
             let word_level = segs
                 .iter()
-                .all(|s| s.text.trim().split_whitespace().count() == 1);
+                .all(|s| s.text.split_whitespace().count() == 1);
             let _ = audio_info;
             Ok(NormalizedTranscriptionResult {
                 words,
@@ -205,7 +205,7 @@ struct FixtureFile {
 }
 
 /// Configures what the mock returns from `transcribe`.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub enum MockTranscription {
     /// Inline text. Segments are **mock-synthesized, equal-duration** — the
     /// text is split on sentence punctuation and time is distributed evenly
@@ -222,6 +222,7 @@ pub enum MockTranscription {
     },
     /// Empty transcription (historical default — preserves prior behavior for
     /// call sites that were content with `Ok(String::new())`).
+    #[default]
     Empty,
 }
 
@@ -256,11 +257,7 @@ impl MockTranscription {
     }
 }
 
-impl Default for MockTranscription {
-    fn default() -> Self {
-        Self::Empty
-    }
-}
+
 
 #[derive(Clone)]
 pub struct TranscriptionManager {

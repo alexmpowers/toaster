@@ -362,7 +362,7 @@ mod tests {
         let snapped = snap_to_zero_crossing(2_500, &buf, sr, DEFAULT_SNAP_RADIUS_US);
         // Convert back to sample index; integer truncation can land us one
         // sample before the true snap point, so accept a ±1 window.
-        let sample = ((snapped as i64 * sr as i64) / 1_000_000) as usize;
+        let sample = ((snapped * sr as i64) / 1_000_000) as usize;
         let window_lo = sample.saturating_sub(1);
         let window_hi = (sample + 2).min(buf.len() - 1);
         let mut found = false;
