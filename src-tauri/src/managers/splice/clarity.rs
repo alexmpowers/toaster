@@ -105,7 +105,11 @@ pub fn analyze(samples: &[f32], sample_rate_hz: u32) -> SpectralClarity {
         let n = mags.len() as f64;
         let geo = (geo_log_sum / n).exp();
         let arith = arith_sum / n;
-        let flatness = if arith > 0.0 { (geo / arith) as f32 } else { 1.0 };
+        let flatness = if arith > 0.0 {
+            (geo / arith) as f32
+        } else {
+            1.0
+        };
 
         // HF / total energy ratio.
         let hf_energy: f32 = mags
@@ -186,7 +190,9 @@ mod tests {
         let mut state: u64 = 0x5EED_BEEFu64;
         (0..samples)
             .map(|_| {
-                state = state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
+                state = state
+                    .wrapping_mul(6364136223846793005)
+                    .wrapping_add(1442695040888963407);
                 let x = ((state >> 33) as i32 as f32) / (i32::MAX as f32);
                 x * amp
             })
@@ -218,7 +224,12 @@ mod tests {
             n.tonal
         );
         // Combined score must also favour the tone.
-        assert!(t.score > n.score, "score tone={} noise={}", t.score, n.score);
+        assert!(
+            t.score > n.score,
+            "score tone={} noise={}",
+            t.score,
+            n.score
+        );
     }
 
     #[test]

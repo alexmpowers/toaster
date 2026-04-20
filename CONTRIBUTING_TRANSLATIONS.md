@@ -56,11 +56,13 @@ Update `src/i18n/languages.ts` with language name + native name.
 ## Translation guidelines
 
 Do:
+
 - Use natural, concise phrasing
 - Keep product terminology consistent
 - Preserve variables exactly
 
 Do not:
+
 - Translate placeholders (`{{...}}`)
 - Change key names
 - Break JSON formatting

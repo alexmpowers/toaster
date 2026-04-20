@@ -229,10 +229,7 @@ pub fn change_normalize_audio_setting(app: AppHandle, enabled: bool) -> Result<(
 /// as an additional bias at snap time.
 #[tauri::command]
 #[specta::specta]
-pub fn change_vad_refine_boundaries_setting(
-    app: AppHandle,
-    enabled: bool,
-) -> Result<(), String> {
+pub fn change_vad_refine_boundaries_setting(app: AppHandle, enabled: bool) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
     settings.vad_refine_boundaries = enabled;
     settings::write_settings(&app, settings);

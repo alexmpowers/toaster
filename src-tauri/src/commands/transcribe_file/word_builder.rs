@@ -75,7 +75,7 @@ pub(super) fn build_words_from_segments(
             samples,
             SAMPLE_RATE_HZ,
         ) {
-            for (sw, (ws, we)) in seg_words.iter().zip(aligned.into_iter()) {
+            for (sw, (ws, we)) in seg_words.iter().zip(aligned) {
                 segment_words.push(((*sw).to_string(), ws, we));
             }
             continue;

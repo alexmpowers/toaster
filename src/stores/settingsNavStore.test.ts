@@ -39,9 +39,7 @@ describe("settingsNavStore", () => {
   describe("consumePendingModelsFilter", () => {
     it("returns the pending filter and clears it (one-shot)", () => {
       useSettingsNavStore.getState().navigateToModels("Transcription");
-      const first = useSettingsNavStore
-        .getState()
-        .consumePendingModelsFilter();
+      const first = useSettingsNavStore.getState().consumePendingModelsFilter();
       expect(first).toBe("Transcription");
       const second = useSettingsNavStore
         .getState()
@@ -52,7 +50,9 @@ describe("settingsNavStore", () => {
 
     it("returns null when nothing is pending (no state change)", () => {
       const before = useSettingsNavStore.getState();
-      const result = useSettingsNavStore.getState().consumePendingModelsFilter();
+      const result = useSettingsNavStore
+        .getState()
+        .consumePendingModelsFilter();
       expect(result).toBeNull();
       expect(useSettingsNavStore.getState()).toEqual(before);
     });

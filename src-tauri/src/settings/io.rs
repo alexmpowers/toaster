@@ -34,7 +34,10 @@ pub fn get_settings(app: &AppHandle) -> AppSettings {
     if ensure_caption_defaults(&mut settings) {
         match serde_json::to_value(&settings) {
             Ok(val) => store.set("settings", val),
-            Err(e) => warn!("Failed to serialize settings after default migration: {}", e),
+            Err(e) => warn!(
+                "Failed to serialize settings after default migration: {}",
+                e
+            ),
         }
     }
 

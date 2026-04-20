@@ -103,7 +103,9 @@ export const DiscardWords: React.FC<DiscardWordsProps> = React.memo(
                 variant="secondary"
                 size="sm"
                 className="inline-flex items-center gap-1 cursor-pointer"
-                aria-label={t("settings.controls.discardWords.remove", { word })}
+                aria-label={t("settings.controls.discardWords.remove", {
+                  word,
+                })}
               >
                 <span>{word}</span>
                 <svg

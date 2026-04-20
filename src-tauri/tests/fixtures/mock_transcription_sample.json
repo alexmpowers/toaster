@@ -2,8 +2,8 @@
   "_comment": "Fixture for MockTranscription::from_fixture. Timings are illustrative, sourced from a real transcript snippet, and safe to use in tests that care about segment timing monotonicity.",
   "text": "Hello world. This is a mock transcription. It has three segments.",
   "segments": [
-    { "start": 0.00, "end": 1.20, "text": "Hello world." },
-    { "start": 1.20, "end": 3.40, "text": " This is a mock transcription." },
-    { "start": 3.40, "end": 5.10, "text": " It has three segments." }
+    { "start": 0.0, "end": 1.2, "text": "Hello world." },
+    { "start": 1.2, "end": 3.4, "text": " This is a mock transcription." },
+    { "start": 3.4, "end": 5.1, "text": " It has three segments." }
   ]
 }

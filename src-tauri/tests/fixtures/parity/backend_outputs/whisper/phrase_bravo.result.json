@@ -1,13 +1,43 @@
 {
   "_comment": "Golden-synthetic NormalizedTranscriptionResult for phrase_bravo.wav simulating a Whisper adapter run. Same provenance as phrase_alpha.result.json.",
   "words": [
-    { "text": "the",     "start_us": 14000,   "end_us": 168000,  "confidence": null },
-    { "text": "quick",   "start_us": 246000,  "end_us": 498000,  "confidence": null },
-    { "text": "brown",   "start_us": 572000,  "end_us": 904000,  "confidence": null },
-    { "text": "fox",     "start_us": 1336000, "end_us": 1654000, "confidence": null },
-    { "text": "jumps",   "start_us": 1742000, "end_us": 2102000, "confidence": null },
-    { "text": "over",    "start_us": 2202000, "end_us": 2462000, "confidence": null },
-    { "text": "lazily",  "start_us": 2546000, "end_us": 3128000, "confidence": null }
+    { "text": "the", "start_us": 14000, "end_us": 168000, "confidence": null },
+    {
+      "text": "quick",
+      "start_us": 246000,
+      "end_us": 498000,
+      "confidence": null
+    },
+    {
+      "text": "brown",
+      "start_us": 572000,
+      "end_us": 904000,
+      "confidence": null
+    },
+    {
+      "text": "fox",
+      "start_us": 1336000,
+      "end_us": 1654000,
+      "confidence": null
+    },
+    {
+      "text": "jumps",
+      "start_us": 1742000,
+      "end_us": 2102000,
+      "confidence": null
+    },
+    {
+      "text": "over",
+      "start_us": 2202000,
+      "end_us": 2462000,
+      "confidence": null
+    },
+    {
+      "text": "lazily",
+      "start_us": 2546000,
+      "end_us": 3128000,
+      "confidence": null
+    }
   ],
   "language": "en-US",
   "word_timestamps_authoritative": false,

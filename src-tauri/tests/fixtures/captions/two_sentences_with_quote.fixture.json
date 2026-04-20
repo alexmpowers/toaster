@@ -2,23 +2,98 @@
   "_comment": "Caption grouping fixture. 12 words across two sentences; the natural break is after 'today.' at word index 5. Candidate 'balanced_natural' groups into two clean lines at the sentence boundary. 'single_line' shoves everything into one long line (unreadable). 'one_word_per_line' goes the other way. 'splits_quote' breaks inside a quoted span (word index 4 'hello' is inside quotes).",
   "fixture": "two_sentences_with_quote",
   "oracle_words": [
-    { "text": "Welcome",        "start_us":       0, "end_us":  500000, "is_sentence_end": false, "in_quote": false },
-    { "text": "back",           "start_us":  560000, "end_us":  820000, "is_sentence_end": false, "in_quote": false },
-    { "text": "everyone",       "start_us":  880000, "end_us": 1400000, "is_sentence_end": false, "in_quote": false },
-    { "text": "she",            "start_us": 1460000, "end_us": 1620000, "is_sentence_end": false, "in_quote": false },
-    { "text": "said",           "start_us": 1680000, "end_us": 1880000, "is_sentence_end": false, "in_quote": false },
-    { "text": "\"hello\"",      "start_us": 1940000, "end_us": 2320000, "is_sentence_end": true,  "in_quote": true  },
-    { "text": "then",           "start_us": 2600000, "end_us": 2820000, "is_sentence_end": false, "in_quote": false },
-    { "text": "we",             "start_us": 2880000, "end_us": 3000000, "is_sentence_end": false, "in_quote": false },
-    { "text": "dove",           "start_us": 3060000, "end_us": 3300000, "is_sentence_end": false, "in_quote": false },
-    { "text": "into",           "start_us": 3360000, "end_us": 3560000, "is_sentence_end": false, "in_quote": false },
-    { "text": "the",            "start_us": 3620000, "end_us": 3740000, "is_sentence_end": false, "in_quote": false },
-    { "text": "details.",       "start_us": 3800000, "end_us": 4320000, "is_sentence_end": true,  "in_quote": false }
+    {
+      "text": "Welcome",
+      "start_us": 0,
+      "end_us": 500000,
+      "is_sentence_end": false,
+      "in_quote": false
+    },
+    {
+      "text": "back",
+      "start_us": 560000,
+      "end_us": 820000,
+      "is_sentence_end": false,
+      "in_quote": false
+    },
+    {
+      "text": "everyone",
+      "start_us": 880000,
+      "end_us": 1400000,
+      "is_sentence_end": false,
+      "in_quote": false
+    },
+    {
+      "text": "she",
+      "start_us": 1460000,
+      "end_us": 1620000,
+      "is_sentence_end": false,
+      "in_quote": false
+    },
+    {
+      "text": "said",
+      "start_us": 1680000,
+      "end_us": 1880000,
+      "is_sentence_end": false,
+      "in_quote": false
+    },
+    {
+      "text": "\"hello\"",
+      "start_us": 1940000,
+      "end_us": 2320000,
+      "is_sentence_end": true,
+      "in_quote": true
+    },
+    {
+      "text": "then",
+      "start_us": 2600000,
+      "end_us": 2820000,
+      "is_sentence_end": false,
+      "in_quote": false
+    },
+    {
+      "text": "we",
+      "start_us": 2880000,
+      "end_us": 3000000,
+      "is_sentence_end": false,
+      "in_quote": false
+    },
+    {
+      "text": "dove",
+      "start_us": 3060000,
+      "end_us": 3300000,
+      "is_sentence_end": false,
+      "in_quote": false
+    },
+    {
+      "text": "into",
+      "start_us": 3360000,
+      "end_us": 3560000,
+      "is_sentence_end": false,
+      "in_quote": false
+    },
+    {
+      "text": "the",
+      "start_us": 3620000,
+      "end_us": 3740000,
+      "is_sentence_end": false,
+      "in_quote": false
+    },
+    {
+      "text": "details.",
+      "start_us": 3800000,
+      "end_us": 4320000,
+      "is_sentence_end": true,
+      "in_quote": false
+    }
   ],
   "candidates": [
     {
       "name": "balanced_natural",
-      "lines": [[0, 1, 2, 3, 4, 5], [6, 7, 8, 9, 10, 11]]
+      "lines": [
+        [0, 1, 2, 3, 4, 5],
+        [6, 7, 8, 9, 10, 11]
+      ]
     },
     {
       "name": "single_line",
@@ -30,11 +105,17 @@
     },
     {
       "name": "splits_quote",
-      "lines": [[0, 1, 2, 3, 4], [5, 6, 7, 8, 9, 10, 11]]
+      "lines": [
+        [0, 1, 2, 3, 4],
+        [5, 6, 7, 8, 9, 10, 11]
+      ]
     },
     {
       "name": "drops_word",
-      "lines": [[0, 1, 2, 3, 4, 5], [6, 7, 8, 9, 11]]
+      "lines": [
+        [0, 1, 2, 3, 4, 5],
+        [6, 7, 8, 9, 11]
+      ]
     }
   ],
   "expected_winner": "balanced_natural"

@@ -53,7 +53,20 @@ const EditorView: React.FC = () => {
   // useShallow mandatory here — otherwise every keystroke triggers a
   // full EditorView re-render, which cascades into TranscriptEditor
   // rendering 10k+ word spans. Audit finding F3.
-  const { words, setWords, deleteWord, silenceWord, splitWord, undo, redo, deleteRange, selectWord, setSelectionRange, clearHighlights, refreshFromBackend } = useEditorStore(
+  const {
+    words,
+    setWords,
+    deleteWord,
+    silenceWord,
+    splitWord,
+    undo,
+    redo,
+    deleteRange,
+    selectWord,
+    setSelectionRange,
+    clearHighlights,
+    refreshFromBackend,
+  } = useEditorStore(
     useShallow((s) => ({
       words: s.words,
       setWords: s.setWords,
@@ -122,26 +135,38 @@ const EditorView: React.FC = () => {
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
       const { setPlaying, isPlaying } = usePlayerStore.getState();
-      const { selectedIndex: selIdx, selectionRange: selRange, highlightedIndices: hlIndices, highlightType: hlType } = useEditorStore.getState();
+      const {
+        selectedIndex: selIdx,
+        selectionRange: selRange,
+        highlightedIndices: hlIndices,
+        highlightType: hlType,
+      } = useEditorStore.getState();
 
       if (e.key === " " && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         setPlaying(!isPlaying);
-      } else if ((e.key === "Delete" || e.key === "Backspace") && !e.ctrlKey && !e.metaKey) {
+      } else if (
+        (e.key === "Delete" || e.key === "Backspace") &&
+        !e.ctrlKey &&
+        !e.metaKey
+      ) {
         e.preventDefault();
         if (hlIndices.length > 0) {
           // Bulk-delete highlighted words (fillers or pause-adjacent)
           if (hlType === "filler") {
-            commands.deleteFillers().then(async (result) => {
-              const count = unwrapResult(result);
-              if (count > 0) {
-                await refreshFromBackend();
-              }
-              clearHighlights();
-            }).catch((err) => {
-              console.error("Failed to delete fillers:", err);
-              clearHighlights();
-            });
+            commands
+              .deleteFillers()
+              .then(async (result) => {
+                const count = unwrapResult(result);
+                if (count > 0) {
+                  await refreshFromBackend();
+                }
+                clearHighlights();
+              })
+              .catch((err) => {
+                console.error("Failed to delete fillers:", err);
+                clearHighlights();
+              });
           } else {
             (async () => {
               for (const idx of hlIndices) {
@@ -162,7 +187,9 @@ const EditorView: React.FC = () => {
       } else if (e.key === "ArrowRight" && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         const store = usePlayerStore.getState();
-        usePlayerStore.getState().seekTo(Math.min(store.duration, store.currentTime + 5));
+        usePlayerStore
+          .getState()
+          .seekTo(Math.min(store.duration, store.currentTime + 5));
       } else if (e.key === "d" && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         if (selRange) {
@@ -205,14 +232,27 @@ const EditorView: React.FC = () => {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [deleteWord, deleteRange, silenceWord, splitWord, undo, redo, selectWord, setSelectionRange, clearHighlights, refreshFromBackend]);
+  }, [
+    deleteWord,
+    deleteRange,
+    silenceWord,
+    splitWord,
+    undo,
+    redo,
+    selectWord,
+    setSelectionRange,
+    clearHighlights,
+    refreshFromBackend,
+  ]);
 
   const handleTranscribe = useCallback(async () => {
     if (!mediaInfo) return;
     setIsTranscribing(true);
     setModelMissing(false);
     try {
-      const result = unwrapResult(await commands.transcribeMediaFile(mediaInfo.path));
+      const result = unwrapResult(
+        await commands.transcribeMediaFile(mediaInfo.path),
+      );
       await setWords(result);
     } catch (err) {
       const errStr = String(err);
@@ -247,8 +287,22 @@ const EditorView: React.FC = () => {
           {
             name: t("editor.mediaFiles"),
             extensions: [
-              "mp4", "mkv", "webm", "avi", "mov", "wmv", "flv", "m4v",
-              "mp3", "wav", "flac", "ogg", "aac", "m4a", "wma", "opus",
+              "mp4",
+              "mkv",
+              "webm",
+              "avi",
+              "mov",
+              "wmv",
+              "flv",
+              "m4v",
+              "mp3",
+              "wav",
+              "flac",
+              "ogg",
+              "aac",
+              "m4a",
+              "wma",
+              "opus",
             ],
           },
         ],
@@ -271,7 +325,9 @@ const EditorView: React.FC = () => {
           if (storeInfo) {
             setIsTranscribing(true);
             setModelMissing(false);
-            const result = unwrapResult(await commands.transcribeMediaFile(storeInfo.path));
+            const result = unwrapResult(
+              await commands.transcribeMediaFile(storeInfo.path),
+            );
             await setWords(result);
             setIsTranscribing(false);
           }
@@ -441,7 +497,9 @@ const EditorView: React.FC = () => {
                 onClick={handleImportMedia}
               >
                 <Upload size={40} className="text-mid-gray/50" />
-                <p className="text-sm text-mid-gray">{t("editor.importMedia")}</p>
+                <p className="text-sm text-mid-gray">
+                  {t("editor.importMedia")}
+                </p>
                 <p className="text-xs text-mid-gray/60">
                   {t("editor.supportedFormats")}
                 </p>
@@ -544,9 +602,7 @@ const EditorView: React.FC = () => {
             className="inline-flex items-center gap-2"
           >
             <FileText size={16} />
-            {isTranscribing
-              ? t("editor.transcribing")
-              : t("editor.transcribe")}
+            {isTranscribing ? t("editor.transcribing") : t("editor.transcribe")}
           </Button>
           {modelMissing && (
             <p className="text-xs text-amber-400">

@@ -14,20 +14,132 @@
     "max_width_percent": 40
   },
   "words": [
-    { "text": "The",         "start_us": 0,        "end_us": 180000,  "deleted": false, "silenced": false, "confidence": 0.98, "speaker_id": 0 },
-    { "text": "authoritative","start_us": 200000,  "end_us": 700000,  "deleted": false, "silenced": false, "confidence": 0.97, "speaker_id": 0 },
-    { "text": "caption",     "start_us": 720000,   "end_us": 1060000, "deleted": false, "silenced": false, "confidence": 0.97, "speaker_id": 0 },
-    { "text": "layout",      "start_us": 1080000,  "end_us": 1380000, "deleted": false, "silenced": false, "confidence": 0.96, "speaker_id": 0 },
-    { "text": "engine",      "start_us": 1400000,  "end_us": 1760000, "deleted": false, "silenced": false, "confidence": 0.98, "speaker_id": 0 },
-    { "text": "wraps",       "start_us": 1780000,  "end_us": 2060000, "deleted": false, "silenced": false, "confidence": 0.99, "speaker_id": 0 },
-    { "text": "visual",      "start_us": 2080000,  "end_us": 2400000, "deleted": false, "silenced": false, "confidence": 0.95, "speaker_id": 0 },
-    { "text": "lines",       "start_us": 2420000,  "end_us": 2700000, "deleted": false, "silenced": false, "confidence": 0.97, "speaker_id": 0 },
-    { "text": "by",          "start_us": 2720000,  "end_us": 2880000, "deleted": false, "silenced": false, "confidence": 0.99, "speaker_id": 0 },
-    { "text": "measured",    "start_us": 2900000,  "end_us": 3280000, "deleted": false, "silenced": false, "confidence": 0.96, "speaker_id": 0 },
-    { "text": "pixel",       "start_us": 3300000,  "end_us": 3580000, "deleted": false, "silenced": false, "confidence": 0.98, "speaker_id": 0 },
-    { "text": "advance",     "start_us": 3600000,  "end_us": 3960000, "deleted": false, "silenced": false, "confidence": 0.97, "speaker_id": 0 },
-    { "text": "widths",      "start_us": 3980000,  "end_us": 4280000, "deleted": false, "silenced": false, "confidence": 0.97, "speaker_id": 0 },
-    { "text": "only",        "start_us": 4300000,  "end_us": 4560000, "deleted": false, "silenced": false, "confidence": 0.99, "speaker_id": 0 }
+    {
+      "text": "The",
+      "start_us": 0,
+      "end_us": 180000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.98,
+      "speaker_id": 0
+    },
+    {
+      "text": "authoritative",
+      "start_us": 200000,
+      "end_us": 700000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.97,
+      "speaker_id": 0
+    },
+    {
+      "text": "caption",
+      "start_us": 720000,
+      "end_us": 1060000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.97,
+      "speaker_id": 0
+    },
+    {
+      "text": "layout",
+      "start_us": 1080000,
+      "end_us": 1380000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.96,
+      "speaker_id": 0
+    },
+    {
+      "text": "engine",
+      "start_us": 1400000,
+      "end_us": 1760000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.98,
+      "speaker_id": 0
+    },
+    {
+      "text": "wraps",
+      "start_us": 1780000,
+      "end_us": 2060000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.99,
+      "speaker_id": 0
+    },
+    {
+      "text": "visual",
+      "start_us": 2080000,
+      "end_us": 2400000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.95,
+      "speaker_id": 0
+    },
+    {
+      "text": "lines",
+      "start_us": 2420000,
+      "end_us": 2700000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.97,
+      "speaker_id": 0
+    },
+    {
+      "text": "by",
+      "start_us": 2720000,
+      "end_us": 2880000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.99,
+      "speaker_id": 0
+    },
+    {
+      "text": "measured",
+      "start_us": 2900000,
+      "end_us": 3280000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.96,
+      "speaker_id": 0
+    },
+    {
+      "text": "pixel",
+      "start_us": 3300000,
+      "end_us": 3580000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.98,
+      "speaker_id": 0
+    },
+    {
+      "text": "advance",
+      "start_us": 3600000,
+      "end_us": 3960000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.97,
+      "speaker_id": 0
+    },
+    {
+      "text": "widths",
+      "start_us": 3980000,
+      "end_us": 4280000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.97,
+      "speaker_id": 0
+    },
+    {
+      "text": "only",
+      "start_us": 4300000,
+      "end_us": 4560000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.99,
+      "speaker_id": 0
+    }
   ],
   "keep_segments": [],
   "preview_scale_factor": 0.5,

@@ -69,7 +69,8 @@ async function* walk(dir: string): AsyncGenerator<string> {
 async function parseUpdaterKeys(): Promise<Set<string>> {
   const src = await readFile(STORE, "utf8");
   const mapStart = src.indexOf("const settingUpdaters");
-  if (mapStart < 0) throw new Error("settingUpdaters map not found in settingsStore.ts");
+  if (mapStart < 0)
+    throw new Error("settingUpdaters map not found in settingsStore.ts");
   // Skip the type annotation `: { ... }` and anchor on the `= {` that
   // opens the actual object literal.
   const eqMatch = src.slice(mapStart).match(/=\s*\{/);
@@ -133,9 +134,14 @@ async function findCallSites(): Promise<CallSite[]> {
 
 async function main() {
   try {
-    const [keys, sites] = await Promise.all([parseUpdaterKeys(), findCallSites()]);
+    const [keys, sites] = await Promise.all([
+      parseUpdaterKeys(),
+      findCallSites(),
+    ]);
     if (keys.size === 0) {
-      console.error("[settings-updater-coverage] parsed zero keys from settingUpdaters — parser bug?");
+      console.error(
+        "[settings-updater-coverage] parsed zero keys from settingUpdaters — parser bug?",
+      );
       process.exit(2);
     }
 

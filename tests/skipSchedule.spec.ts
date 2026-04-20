@@ -31,7 +31,11 @@ async function loadHelper(page: import("@playwright/test").Page) {
     return page.evaluate(
       async ({ currentTime, ranges, playbackRate }) => {
         const mod = await import("@/components/player/MediaPlayer");
-        const result = mod.computeNextDeletedSkip(currentTime, ranges, playbackRate);
+        const result = mod.computeNextDeletedSkip(
+          currentTime,
+          ranges,
+          playbackRate,
+        );
         return result as SkipResult;
       },
       { currentTime, ranges, playbackRate },
@@ -40,13 +44,24 @@ async function loadHelper(page: import("@playwright/test").Page) {
 }
 
 test.describe("computeNextDeletedSkip", () => {
-  test("returns null when all ranges are behind currentTime", async ({ page }) => {
+  test("returns null when all ranges are behind currentTime", async ({
+    page,
+  }) => {
     const compute = await loadHelper(page);
-    const result = await compute(10, [{ start: 1, end: 2 }, { start: 3, end: 4 }], 1);
+    const result = await compute(
+      10,
+      [
+        { start: 1, end: 2 },
+        { start: 3, end: 4 },
+      ],
+      1,
+    );
     expect(result).toBeNull();
   });
 
-  test("returns delay=0 when currentTime is inside a range", async ({ page }) => {
+  test("returns delay=0 when currentTime is inside a range", async ({
+    page,
+  }) => {
     const compute = await loadHelper(page);
     const result = await compute(1.5, [{ start: 1, end: 2 }], 1);
     expect(result).not.toBeNull();
@@ -54,7 +69,9 @@ test.describe("computeNextDeletedSkip", () => {
     expect(result!.delayMs).toBe(0);
   });
 
-  test("delay reflects distance to next range start at 1x rate", async ({ page }) => {
+  test("delay reflects distance to next range start at 1x rate", async ({
+    page,
+  }) => {
     const compute = await loadHelper(page);
     const result = await compute(1.0, [{ start: 2.0, end: 2.5 }], 1);
     expect(result).not.toBeNull();
@@ -68,7 +85,9 @@ test.describe("computeNextDeletedSkip", () => {
     expect(result!.delayMs).toBeCloseTo(500, 1);
   });
 
-  test("picks earliest-starting future range even if input is unsorted", async ({ page }) => {
+  test("picks earliest-starting future range even if input is unsorted", async ({
+    page,
+  }) => {
     const compute = await loadHelper(page);
     const result = await compute(
       0,
@@ -100,9 +119,9 @@ test.describe("computeNextDeletedSkip", () => {
     const compute = await loadHelper(page);
     const epsilon = 1 / 48000;
     const ranges: Range[] = [
-      { start: 1.000, end: 1.010 },
+      { start: 1.0, end: 1.01 },
       { start: 1.015, end: 1.025 },
-      { start: 1.030, end: 1.040 },
+      { start: 1.03, end: 1.04 },
     ];
     let t = 0.95;
     const fires: number[] = [];
@@ -112,6 +131,6 @@ test.describe("computeNextDeletedSkip", () => {
       fires.push(next.range.start);
       t = next.range.end + epsilon; // simulate the seek past the inclusive end
     }
-    expect(fires).toEqual([1.000, 1.015, 1.030]);
+    expect(fires).toEqual([1.0, 1.015, 1.03]);
   });
 });

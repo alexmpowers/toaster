@@ -3,12 +3,48 @@
   "fixture": "phrase_alpha_audio",
   "audio_path": "../parity/phrase_alpha.wav",
   "oracle_words": [
-    { "text": "hello",   "start_us":       0, "end_us":  420000, "is_filler": false, "in_quote": false },
-    { "text": "world",   "start_us":  500000, "end_us":  860000, "is_filler": true,  "in_quote": false },
-    { "text": "[gap]",   "start_us":  860000, "end_us":  980000, "is_filler": true,  "in_quote": false },
-    { "text": "this",    "start_us":  980000, "end_us": 1260000, "is_filler": false, "in_quote": false },
-    { "text": "is",      "start_us": 1360000, "end_us": 1560000, "is_filler": false, "in_quote": false },
-    { "text": "toaster", "start_us": 1650000, "end_us": 2190000, "is_filler": false, "in_quote": false }
+    {
+      "text": "hello",
+      "start_us": 0,
+      "end_us": 420000,
+      "is_filler": false,
+      "in_quote": false
+    },
+    {
+      "text": "world",
+      "start_us": 500000,
+      "end_us": 860000,
+      "is_filler": true,
+      "in_quote": false
+    },
+    {
+      "text": "[gap]",
+      "start_us": 860000,
+      "end_us": 980000,
+      "is_filler": true,
+      "in_quote": false
+    },
+    {
+      "text": "this",
+      "start_us": 980000,
+      "end_us": 1260000,
+      "is_filler": false,
+      "in_quote": false
+    },
+    {
+      "text": "is",
+      "start_us": 1360000,
+      "end_us": 1560000,
+      "is_filler": false,
+      "in_quote": false
+    },
+    {
+      "text": "toaster",
+      "start_us": 1650000,
+      "end_us": 2190000,
+      "is_filler": false,
+      "in_quote": false
+    }
   ],
   "desired_kept_indices": [0, 3, 4, 5],
   "candidates": [

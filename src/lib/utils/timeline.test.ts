@@ -10,11 +10,7 @@ import {
 import type { Word } from "@/stores/editorStore";
 
 // Helper to create a minimal Word for testing
-function makeWord(
-  start_us: number,
-  end_us: number,
-  deleted = false,
-): Word {
+function makeWord(start_us: number, end_us: number, deleted = false): Word {
   return {
     text: "test",
     start_us,
@@ -180,10 +176,7 @@ describe("snapOutOfDeletedRange", () => {
 
 describe("getDeletedRanges", () => {
   it("returns empty array when no words are deleted", () => {
-    const words = [
-      makeWord(0, 1_000_000),
-      makeWord(1_000_000, 2_000_000),
-    ];
+    const words = [makeWord(0, 1_000_000), makeWord(1_000_000, 2_000_000)];
     expect(getDeletedRanges(words, 3.0)).toEqual([]);
   });
 
@@ -219,9 +212,7 @@ describe("getDeletedRanges", () => {
   });
 
   it("clamps ranges to duration", () => {
-    const words = [
-      makeWord(0, 500_000, true),
-    ];
+    const words = [makeWord(0, 500_000, true)];
     const ranges = getDeletedRanges(words, 0.3);
     expect(ranges).toHaveLength(1);
     expect(ranges[0].end).toBeLessThanOrEqual(0.3);
@@ -237,10 +228,7 @@ describe("getDeletedRangesFromKeepSegments", () => {
   });
 
   it("returns empty when keepSegments cover entire transcript", () => {
-    const words = [
-      makeWord(0, 1_000_000),
-      makeWord(1_000_000, 2_000_000),
-    ];
+    const words = [makeWord(0, 1_000_000), makeWord(1_000_000, 2_000_000)];
     const segs = [{ start_us: 0, end_us: 2_000_000 }];
     expect(getDeletedRangesFromKeepSegments(words, segs)).toEqual([]);
   });

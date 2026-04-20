@@ -94,8 +94,7 @@ fn canonical_keep_segments_with_parakeet_outer_trim_removes_outer_padding() {
     // Parakeet opt-in: 300 ms outer trim. Exercises the with_options
     // API to cover the outer-trim path (the only remaining tunable on
     // this function after CUT_GUARD_US was removed).
-    let segments =
-        canonical_keep_segments_for_media_with_options(&state, PARAKEET_OUTER_TRIM_US);
+    let segments = canonical_keep_segments_for_media_with_options(&state, PARAKEET_OUTER_TRIM_US);
     assert_eq!(segments, vec![(300_000, 1_000_000), (2_000_000, 2_700_000)]);
 }
 

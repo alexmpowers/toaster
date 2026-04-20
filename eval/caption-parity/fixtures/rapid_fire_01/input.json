@@ -14,14 +14,78 @@
     "max_width_percent": 90
   },
   "words": [
-    { "text": "one",   "start_us": 0,       "end_us": 380000,  "deleted": false, "silenced": false, "confidence": 0.98, "speaker_id": 0 },
-    { "text": "two",   "start_us": 500000,  "end_us": 880000,  "deleted": false, "silenced": false, "confidence": 0.97, "speaker_id": 0 },
-    { "text": "three", "start_us": 1000000, "end_us": 1380000, "deleted": false, "silenced": false, "confidence": 0.98, "speaker_id": 0 },
-    { "text": "four",  "start_us": 1500000, "end_us": 1880000, "deleted": false, "silenced": false, "confidence": 0.96, "speaker_id": 0 },
-    { "text": "five",  "start_us": 2000000, "end_us": 2380000, "deleted": false, "silenced": false, "confidence": 0.99, "speaker_id": 0 },
-    { "text": "six",   "start_us": 2500000, "end_us": 2880000, "deleted": false, "silenced": false, "confidence": 0.97, "speaker_id": 0 },
-    { "text": "seven", "start_us": 3000000, "end_us": 3380000, "deleted": false, "silenced": false, "confidence": 0.98, "speaker_id": 0 },
-    { "text": "eight", "start_us": 3500000, "end_us": 3880000, "deleted": false, "silenced": false, "confidence": 0.97, "speaker_id": 0 }
+    {
+      "text": "one",
+      "start_us": 0,
+      "end_us": 380000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.98,
+      "speaker_id": 0
+    },
+    {
+      "text": "two",
+      "start_us": 500000,
+      "end_us": 880000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.97,
+      "speaker_id": 0
+    },
+    {
+      "text": "three",
+      "start_us": 1000000,
+      "end_us": 1380000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.98,
+      "speaker_id": 0
+    },
+    {
+      "text": "four",
+      "start_us": 1500000,
+      "end_us": 1880000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.96,
+      "speaker_id": 0
+    },
+    {
+      "text": "five",
+      "start_us": 2000000,
+      "end_us": 2380000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.99,
+      "speaker_id": 0
+    },
+    {
+      "text": "six",
+      "start_us": 2500000,
+      "end_us": 2880000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.97,
+      "speaker_id": 0
+    },
+    {
+      "text": "seven",
+      "start_us": 3000000,
+      "end_us": 3380000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.98,
+      "speaker_id": 0
+    },
+    {
+      "text": "eight",
+      "start_us": 3500000,
+      "end_us": 3880000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.97,
+      "speaker_id": 0
+    }
   ],
   "keep_segments": [],
   "preview_scale_factor": 0.5,

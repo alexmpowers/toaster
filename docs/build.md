@@ -84,6 +84,7 @@ It runs environment setup, starts `cargo tauri dev`, and prints:
 ### First Build Timing
 
 The first build after cloning (or after clearing `target/`) takes **2-4 minutes** due to:
+
 - whisper-rs-sys Vulkan/ONNX compilation (~60s)
 - Full Rust dependency compilation (~90s)
 - Vite bundling (~15s)
@@ -130,14 +131,14 @@ For full details see the
 
 ## Troubleshooting
 
-| Symptom | Cause | Fix |
-|---|---|---|
-| `libclang not found` | LLVM missing | Install LLVM and set `LIBCLANG_PATH` |
-| `VULKAN_SDK not set` | Vulkan SDK missing | Install Vulkan SDK and set `VULKAN_SDK` |
-| `link.exe not found` | MSVC env not loaded | Run `scripts/setup-env.ps1` in current shell |
-| `ort does not provide prebuilt binaries for gnu` | Wrong target | Use `stable-x86_64-pc-windows-msvc` |
-| `Generator Ninja does not support platform specification, but platform x64 was specified` | `Platform=x64` (set by `vcvars64.bat`) leaked into the env alongside `CMAKE_GENERATOR=Ninja`. CMake on Windows reads `Platform` as the implicit default for `CMAKE_GENERATOR_PLATFORM`. | `setup-env.ps1` strips it after sourcing vcvars; if you bypass that script, `Remove-Item Env:Platform` before invoking cargo. Stale `target/debug/build/whisper-rs-sys-*/CMakeCache.txt` remembers the bad generator — delete those dirs once after the fix. |
-| `Generator Ninja does not support instance specification, but instance C:/Program Files (x86)/...` | Stale `CMakeCache.txt` from a prior VS-generator build of `whisper-rs-sys` has `CMAKE_GENERATOR_INSTANCE:INTERNAL=...` baked in. When cmake re-runs with `CMAKE_GENERATOR=Ninja`, the cached internal conflicts with Ninja. | `scripts/gate/check-cmake-ninja-env.ps1 -WipeStaleCaches` (auto-invoked by `launch-toaster-monitored.ps1`), or `cargo clean -p whisper-rs-sys --manifest-path src-tauri\Cargo.toml`. |
+| Symptom                                                                                            | Cause                                                                                                                                                                                                                       | Fix                                                                                                                                                                                                                                                          |
+| -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `libclang not found`                                                                               | LLVM missing                                                                                                                                                                                                                | Install LLVM and set `LIBCLANG_PATH`                                                                                                                                                                                                                         |
+| `VULKAN_SDK not set`                                                                               | Vulkan SDK missing                                                                                                                                                                                                          | Install Vulkan SDK and set `VULKAN_SDK`                                                                                                                                                                                                                      |
+| `link.exe not found`                                                                               | MSVC env not loaded                                                                                                                                                                                                         | Run `scripts/setup-env.ps1` in current shell                                                                                                                                                                                                                 |
+| `ort does not provide prebuilt binaries for gnu`                                                   | Wrong target                                                                                                                                                                                                                | Use `stable-x86_64-pc-windows-msvc`                                                                                                                                                                                                                          |
+| `Generator Ninja does not support platform specification, but platform x64 was specified`          | `Platform=x64` (set by `vcvars64.bat`) leaked into the env alongside `CMAKE_GENERATOR=Ninja`. CMake on Windows reads `Platform` as the implicit default for `CMAKE_GENERATOR_PLATFORM`.                                     | `setup-env.ps1` strips it after sourcing vcvars; if you bypass that script, `Remove-Item Env:Platform` before invoking cargo. Stale `target/debug/build/whisper-rs-sys-*/CMakeCache.txt` remembers the bad generator — delete those dirs once after the fix. |
+| `Generator Ninja does not support instance specification, but instance C:/Program Files (x86)/...` | Stale `CMakeCache.txt` from a prior VS-generator build of `whisper-rs-sys` has `CMAKE_GENERATOR_INSTANCE:INTERNAL=...` baked in. When cmake re-runs with `CMAKE_GENERATOR=Ninja`, the cached internal conflicts with Ninja. | `scripts/gate/check-cmake-ninja-env.ps1 -WipeStaleCaches` (auto-invoked by `launch-toaster-monitored.ps1`), or `cargo clean -p whisper-rs-sys --manifest-path src-tauri\Cargo.toml`.                                                                         |
 
 ## Build environment gotchas
 
@@ -178,16 +179,16 @@ error at the first `project()` call. `setup-env.ps1` strips them in a
 single named block; do not extend that list elsewhere — keep it as the
 single source of truth.
 
-| Env var | What CMake does with it | Ninja error if leaked |
-|---|---|---|
-| `Platform` | Treated as implicit `CMAKE_GENERATOR_PLATFORM=$Platform` | "does not support platform specification, but platform x64 was specified" |
-| `CMAKE_GENERATOR_PLATFORM` | Equivalent to `-A x64` | "does not support platform specification" |
-| `CMAKE_GENERATOR_TOOLSET` | Equivalent to `-T host=x64` | "does not support toolset specification" |
-| `CMAKE_GENERATOR_INSTANCE` | VS install path; equivalent to `-DCMAKE_GENERATOR_INSTANCE=...` | "does not support instance specification, but instance C:/.../BuildTools was specified" |
-| `VSINSTALLDIR` | vcvars-side; cmake-rs promotes to `-DCMAKE_GENERATOR_INSTANCE=$VSINSTALLDIR` on the cmake command line | Same instance-specification error as `CMAKE_GENERATOR_INSTANCE` |
-| `VCINSTALLDIR` | vcvars-side; cmake-rs hint for the VC install root (used to locate cl.exe / link.exe / toolset metadata) | Toolset-mismatch noise; can also re-trigger instance specification via cmake-rs |
-| `VCToolsInstallDir` | vcvars-side; cmake-rs hint for the active toolset version path | Toolset-mismatch noise; cmake-rs may forward as `-T` |
-| `VisualStudioVersion` | vcvars-side; cmake-rs hint for the VS major version (e.g. `17.0`) | Triggers VS-generator auto-detection branches that conflict with Ninja |
+| Env var                    | What CMake does with it                                                                                  | Ninja error if leaked                                                                   |
+| -------------------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `Platform`                 | Treated as implicit `CMAKE_GENERATOR_PLATFORM=$Platform`                                                 | "does not support platform specification, but platform x64 was specified"               |
+| `CMAKE_GENERATOR_PLATFORM` | Equivalent to `-A x64`                                                                                   | "does not support platform specification"                                               |
+| `CMAKE_GENERATOR_TOOLSET`  | Equivalent to `-T host=x64`                                                                              | "does not support toolset specification"                                                |
+| `CMAKE_GENERATOR_INSTANCE` | VS install path; equivalent to `-DCMAKE_GENERATOR_INSTANCE=...`                                          | "does not support instance specification, but instance C:/.../BuildTools was specified" |
+| `VSINSTALLDIR`             | vcvars-side; cmake-rs promotes to `-DCMAKE_GENERATOR_INSTANCE=$VSINSTALLDIR` on the cmake command line   | Same instance-specification error as `CMAKE_GENERATOR_INSTANCE`                         |
+| `VCINSTALLDIR`             | vcvars-side; cmake-rs hint for the VC install root (used to locate cl.exe / link.exe / toolset metadata) | Toolset-mismatch noise; can also re-trigger instance specification via cmake-rs         |
+| `VCToolsInstallDir`        | vcvars-side; cmake-rs hint for the active toolset version path                                           | Toolset-mismatch noise; cmake-rs may forward as `-T`                                    |
+| `VisualStudioVersion`      | vcvars-side; cmake-rs hint for the VS major version (e.g. `17.0`)                                        | Triggers VS-generator auto-detection branches that conflict with Ninja                  |
 
 The same shape can also surface from a stale `CMakeCache.txt` even when
 the live env is clean — the `_INSTANCE` / `_PLATFORM` / `_TOOLSET`

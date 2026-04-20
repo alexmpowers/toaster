@@ -21,9 +21,7 @@
 use std::path::Path;
 
 use super::silero::{SileroVad, DEFAULT_SILERO_THRESHOLD, SILERO_FRAME_SAMPLES_16K};
-use super::smoothed::{
-    DEFAULT_HANGOVER_FRAMES, DEFAULT_ONSET_FRAMES, DEFAULT_PREFILL_FRAMES,
-};
+use super::smoothed::{DEFAULT_HANGOVER_FRAMES, DEFAULT_ONSET_FRAMES, DEFAULT_PREFILL_FRAMES};
 use super::VoiceActivityDetector;
 
 /// Hard-coded working sample rate for the VAD path. Silero accepts
@@ -144,8 +142,7 @@ pub fn prefilter_speech_windows<V: VoiceActivityDetector>(
                     // Open the window at the start of the onset run,
                     // backdated by the onset length so the first
                     // qualifying voice frame is included.
-                    let start_us = frame_start_us
-                        - frame_us * (DEFAULT_ONSET_FRAMES as i64 - 1);
+                    let start_us = frame_start_us - frame_us * (DEFAULT_ONSET_FRAMES as i64 - 1);
                     current = Some((start_us.max(0), frame_end_us));
                 }
             }
@@ -237,7 +234,11 @@ mod tests {
         fn push_frame<'a>(&'a mut self, frame: &'a [f32]) -> Result<VadFrame<'a>> {
             let v = *self.script.get(self.pos).unwrap_or(&false);
             self.pos += 1;
-            Ok(if v { VadFrame::Speech(frame) } else { VadFrame::Noise })
+            Ok(if v {
+                VadFrame::Speech(frame)
+            } else {
+                VadFrame::Noise
+            })
         }
     }
 
@@ -247,13 +248,19 @@ mod tests {
 
     #[test]
     fn empty_buffer_returns_no_windows() {
-        let mut vad = ScriptedVad { script: vec![], pos: 0 };
+        let mut vad = ScriptedVad {
+            script: vec![],
+            pos: 0,
+        };
         assert!(prefilter_speech_windows(&[], &mut vad).is_empty());
     }
 
     #[test]
     fn sub_frame_buffer_returns_no_windows() {
-        let mut vad = ScriptedVad { script: vec![true], pos: 0 };
+        let mut vad = ScriptedVad {
+            script: vec![true],
+            pos: 0,
+        };
         let short = vec![0.0; SILERO_FRAME_SAMPLES_16K - 1];
         assert!(prefilter_speech_windows(&short, &mut vad).is_empty());
     }
@@ -261,7 +268,10 @@ mod tests {
     #[test]
     fn all_silence_returns_no_windows() {
         let samples = make_samples(20);
-        let mut vad = ScriptedVad { script: vec![false; 20], pos: 0 };
+        let mut vad = ScriptedVad {
+            script: vec![false; 20],
+            pos: 0,
+        };
         assert!(prefilter_speech_windows(&samples, &mut vad).is_empty());
     }
 
@@ -301,12 +311,23 @@ mod tests {
     #[test]
     fn remap_words_shifts_by_window_start() {
         let mut words = vec![
-            PrefilterWord { text: "hello".into(), start_us: 0, end_us: 300_000 },
-            PrefilterWord { text: "world".into(), start_us: 400_000, end_us: 700_000 },
+            PrefilterWord {
+                text: "hello".into(),
+                start_us: 0,
+                end_us: 300_000,
+            },
+            PrefilterWord {
+                text: "world".into(),
+                start_us: 400_000,
+                end_us: 700_000,
+            },
         ];
         remap_words(
             &mut words,
-            SpeechWindow { start_us: 5_000_000, end_us: 6_000_000 },
+            SpeechWindow {
+                start_us: 5_000_000,
+                end_us: 6_000_000,
+            },
         );
         assert_eq!(words[0].start_us, 5_000_000);
         assert_eq!(words[0].end_us, 5_300_000);
@@ -319,14 +340,25 @@ mod tests {
         // AC-002-a guard: no equal-duration synthesis. Irregular
         // durations must survive the shift unchanged.
         let mut words = vec![
-            PrefilterWord { text: "a".into(), start_us: 10_101, end_us: 137_777 },
-            PrefilterWord { text: "b".into(), start_us: 137_777, end_us: 389_123 },
+            PrefilterWord {
+                text: "a".into(),
+                start_us: 10_101,
+                end_us: 137_777,
+            },
+            PrefilterWord {
+                text: "b".into(),
+                start_us: 137_777,
+                end_us: 389_123,
+            },
         ];
         let d0 = words[0].end_us - words[0].start_us;
         let d1 = words[1].end_us - words[1].start_us;
         remap_words(
             &mut words,
-            SpeechWindow { start_us: 7_654_321, end_us: 9_999_999 },
+            SpeechWindow {
+                start_us: 7_654_321,
+                end_us: 9_999_999,
+            },
         );
         assert_eq!(words[0].end_us - words[0].start_us, d0);
         assert_eq!(words[1].end_us - words[1].start_us, d1);
@@ -336,9 +368,8 @@ mod tests {
     fn try_open_silero_missing_model_returns_ok_none() {
         // R-005 / AC-005-c core shape: absence is a graceful-fallback
         // signal, never an error.
-        let out =
-            try_open_silero(Path::new("does_not_exist_silero_vad.onnx"))
-                .expect("missing model should yield Ok(None), not Err");
+        let out = try_open_silero(Path::new("does_not_exist_silero_vad.onnx"))
+            .expect("missing model should yield Ok(None), not Err");
         assert!(out.is_none());
     }
 }

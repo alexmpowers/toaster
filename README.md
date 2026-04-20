@@ -61,11 +61,11 @@ The entire workflow stays on your machine. Your media never leaves your computer
 
 Download the latest installer from the [Releases](https://github.com/itsnotaboutthecell/toaster/releases) page.
 
-| Platform | Format |
-| --- | --- |
-| Windows | `.msi` / `.exe` |
-| macOS | `.dmg` |
-| Linux | `.AppImage` / `.deb` |
+| Platform | Format               |
+| -------- | -------------------- |
+| Windows  | `.msi` / `.exe`      |
+| macOS    | `.dmg`               |
+| Linux    | `.AppImage` / `.deb` |
 
 ### Build from source
 
@@ -80,14 +80,14 @@ On Windows, run `.\scripts\setup-env.ps1` first to configure the MSVC + LLVM bui
 
 ## Tech Stack
 
-| Layer | Technology |
-| --- | --- |
-| Desktop shell | [Tauri 2.x](https://tauri.app/) |
-| Backend | Rust |
-| Frontend | React · TypeScript · Tailwind CSS |
-| State | Zustand |
+| Layer         | Technology                                |
+| ------------- | ----------------------------------------- |
+| Desktop shell | [Tauri 2.x](https://tauri.app/)           |
+| Backend       | Rust                                      |
+| Frontend      | React · TypeScript · Tailwind CSS         |
+| State         | Zustand                                   |
 | Transcription | Local model inference (Whisper ecosystem) |
-| Export | FFmpeg 7 |
+| Export        | FFmpeg 7                                  |
 
 ## Contributing
 

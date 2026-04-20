@@ -7,7 +7,9 @@ import {
 } from "@/lib/utils/timeline";
 import type { useEditorStore } from "@/stores/editorStore";
 
-type TimingContract = ReturnType<typeof useEditorStore.getState>["timingContract"];
+type TimingContract = ReturnType<
+  typeof useEditorStore.getState
+>["timingContract"];
 
 interface UseTimingContractParams {
   words: ReturnType<typeof useEditorStore.getState>["words"];
@@ -31,11 +33,18 @@ export function useTimingContract({
   activeDeletedRanges: TimeSegment[];
   backendKeepSegments: TimeSegment[];
 } {
-  const [backendDeletedRanges, setBackendDeletedRanges] = useState<TimeSegment[] | null>(null);
-  const [backendKeepSegments, setBackendKeepSegments] = useState<TimeSegment[]>([]);
+  const [backendDeletedRanges, setBackendDeletedRanges] = useState<
+    TimeSegment[] | null
+  >(null);
+  const [backendKeepSegments, setBackendKeepSegments] = useState<TimeSegment[]>(
+    [],
+  );
   const backendFetchSeq = useRef(0);
 
-  const deletedRanges = useMemo(() => getDeletedRanges(words, duration), [words, duration]);
+  const deletedRanges = useMemo(
+    () => getDeletedRanges(words, duration),
+    [words, duration],
+  );
   const activeDeletedRanges = backendDeletedRanges ?? deletedRanges;
 
   useEffect(() => {
@@ -52,10 +61,15 @@ export function useTimingContract({
       const keepSegments =
         timingContract.keep_segments?.length > 0
           ? timingContract.keep_segments
-          : timingContract.quantized_keep_segments ?? [];
-      setBackendDeletedRanges(getDeletedRangesFromKeepSegments(words, keepSegments));
+          : (timingContract.quantized_keep_segments ?? []);
+      setBackendDeletedRanges(
+        getDeletedRangesFromKeepSegments(words, keepSegments),
+      );
       const normalized = keepSegments
-        .map((s) => ({ start: s.start_us / 1_000_000, end: s.end_us / 1_000_000 }))
+        .map((s) => ({
+          start: s.start_us / 1_000_000,
+          end: s.end_us / 1_000_000,
+        }))
         .filter((s) => s.end > s.start)
         .sort((a, b) => a.start - b.start);
       setBackendKeepSegments(normalized);
@@ -73,9 +87,14 @@ export function useTimingContract({
         const result = await commands.getKeepSegments();
         if (isCancelled || seq !== backendFetchSeq.current) return;
         if (result.status === "ok") {
-          setBackendDeletedRanges(getDeletedRangesFromKeepSegments(words, result.data));
+          setBackendDeletedRanges(
+            getDeletedRangesFromKeepSegments(words, result.data),
+          );
           const normalized = result.data
-            .map((s) => ({ start: s.start_us / 1_000_000, end: s.end_us / 1_000_000 }))
+            .map((s) => ({
+              start: s.start_us / 1_000_000,
+              end: s.end_us / 1_000_000,
+            }))
             .filter((s) => s.end > s.start)
             .sort((a, b) => a.start - b.start);
           setBackendKeepSegments(normalized);

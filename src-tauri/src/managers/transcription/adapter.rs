@@ -61,12 +61,12 @@ use anyhow::{anyhow, Result};
 use log::warn;
 use transcribe_rs::{TranscriptionResult, TranscriptionSegment};
 
+#[cfg(test)]
+use super::adapter_normalize::is_non_speech_token;
 use super::adapter_normalize::{
     make_normalized, segments_are_word_level, words_from_segments_native,
     words_from_segments_proportional,
 };
-#[cfg(test)]
-use super::adapter_normalize::is_non_speech_token;
 
 /// Fallback input sample rate when an adapter doesn't declare one — matches
 /// what every current ASR engine in transcribe-rs actually accepts.

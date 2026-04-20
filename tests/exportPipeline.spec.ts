@@ -54,10 +54,17 @@ test.describe("Export pipeline bindings contract", () => {
 
     const recorded = await page.evaluate(async () => {
       const { commands } = await import("@/bindings");
-      await commands.exportTranscriptToFile("Srt", "C:/out/transcript.srt", null, null);
-      return (window as unknown as {
-        __invokeCalls: Array<{ cmd: string; args: unknown }>;
-      }).__invokeCalls.filter((c) => c.cmd === "export_transcript_to_file");
+      await commands.exportTranscriptToFile(
+        "Srt",
+        "C:/out/transcript.srt",
+        null,
+        null,
+      );
+      return (
+        window as unknown as {
+          __invokeCalls: Array<{ cmd: string; args: unknown }>;
+        }
+      ).__invokeCalls.filter((c) => c.cmd === "export_transcript_to_file");
     });
 
     expect(recorded).toHaveLength(1);
@@ -77,9 +84,11 @@ test.describe("Export pipeline bindings contract", () => {
     const recorded = await page.evaluate(async () => {
       const { commands } = await import("@/bindings");
       await commands.exportTranscript("Vtt", 42, true);
-      return (window as unknown as {
-        __invokeCalls: Array<{ cmd: string; args: unknown }>;
-      }).__invokeCalls.filter((c) => c.cmd === "export_transcript");
+      return (
+        window as unknown as {
+          __invokeCalls: Array<{ cmd: string; args: unknown }>;
+        }
+      ).__invokeCalls.filter((c) => c.cmd === "export_transcript");
     });
 
     expect(recorded).toHaveLength(1);

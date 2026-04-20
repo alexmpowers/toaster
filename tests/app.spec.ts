@@ -127,9 +127,7 @@ test.describe("Toaster App", () => {
     // Click "Models" — about content disappears, models container appears
     await page.getByText("Models", { exact: true }).click();
     await expect(page.getByText("Source Code")).not.toBeVisible();
-    await expect(
-      page.locator("div.max-w-3xl.w-full.mx-auto"),
-    ).toBeVisible();
+    await expect(page.locator("div.max-w-3xl.w-full.mx-auto")).toBeVisible();
 
     // Click "Editor" — models container disappears
     await page.getByText("Editor", { exact: true }).click();
@@ -230,9 +228,7 @@ test.describe("Toaster App", () => {
     await expect(uploadArea).toBeVisible();
 
     // Import prompt text
-    await expect(
-      page.getByText(/click to import media/i),
-    ).toBeVisible();
+    await expect(page.getByText(/click to import media/i)).toBeVisible();
   });
 
   test("editor page shows project section when no media loaded", async ({
@@ -375,9 +371,7 @@ test.describe("Toaster App", () => {
     // by checking that the app loaded without showing the fallback.
     // The fallback text "Something went wrong" should NOT be visible
     // under normal operation — this confirms the boundary is passive.
-    await expect(
-      page.getByText("Something went wrong"),
-    ).not.toBeVisible();
+    await expect(page.getByText("Something went wrong")).not.toBeVisible();
   });
 
   test("all five nav items navigate without console errors", async ({
@@ -390,11 +384,7 @@ test.describe("Toaster App", () => {
 
     await page.goto("/");
 
-    for (const label of [
-      "Editor",
-      "Models",
-      "About",
-    ]) {
+    for (const label of ["Editor", "Models", "About"]) {
       await page.getByText(label, { exact: true }).click();
       // Brief wait for any async renders
       await page.waitForTimeout(300);

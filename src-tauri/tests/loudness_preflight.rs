@@ -8,9 +8,7 @@
 //! against the lib without `cfg(test)`, so they bypass that breakage and
 //! still exercise the public surface that AC-002-a requires.
 
-use toaster_app_lib::managers::splice::loudness::{
-    compute_loudness_preflight, LoudnessTarget,
-};
+use toaster_app_lib::managers::splice::loudness::{compute_loudness_preflight, LoudnessTarget};
 
 const SR: u32 = 48_000;
 const CH: u32 = 1;
@@ -32,8 +30,7 @@ fn loudness_preflight_roundtrip() {
     let buf = sine_buffer(1.0, 1_000.0, 0.5);
 
     // Off target: integrated should be finite, target/delta should be None.
-    let off = compute_loudness_preflight(&buf, SR, CH, LoudnessTarget::Off)
-        .expect("preflight off");
+    let off = compute_loudness_preflight(&buf, SR, CH, LoudnessTarget::Off).expect("preflight off");
     assert!(off.integrated_lufs.is_finite(), "integrated must be finite");
     assert!(off.true_peak_dbtp.is_finite(), "true peak must be finite");
     assert!(off.lra >= 0.0, "lra must be non-negative");
@@ -41,9 +38,8 @@ fn loudness_preflight_roundtrip() {
     assert_eq!(off.delta_lu, None);
 
     // Podcast target: target = -16, delta_lu = -16 - integrated, computed in Rust.
-    let podcast =
-        compute_loudness_preflight(&buf, SR, CH, LoudnessTarget::PodcastMinus16)
-            .expect("preflight podcast");
+    let podcast = compute_loudness_preflight(&buf, SR, CH, LoudnessTarget::PodcastMinus16)
+        .expect("preflight podcast");
     assert_eq!(podcast.target_lufs, Some(-16.0));
     let expected_delta = -16.0 - podcast.integrated_lufs;
     let actual_delta = podcast.delta_lu.expect("delta must be Some when finite");
@@ -55,9 +51,8 @@ fn loudness_preflight_roundtrip() {
     );
 
     // Streaming target: target = -14.
-    let streaming =
-        compute_loudness_preflight(&buf, SR, CH, LoudnessTarget::StreamingMinus14)
-            .expect("preflight streaming");
+    let streaming = compute_loudness_preflight(&buf, SR, CH, LoudnessTarget::StreamingMinus14)
+        .expect("preflight streaming");
     assert_eq!(streaming.target_lufs, Some(-14.0));
     assert!(streaming.delta_lu.is_some());
 
@@ -65,9 +60,8 @@ fn loudness_preflight_roundtrip() {
     // an active target (cannot subtract from -inf without surfacing a bogus
     // number to the UI).
     let silent = vec![0.0f32; SR as usize];
-    let dto =
-        compute_loudness_preflight(&silent, SR, CH, LoudnessTarget::PodcastMinus16)
-            .expect("preflight silent");
+    let dto = compute_loudness_preflight(&silent, SR, CH, LoudnessTarget::PodcastMinus16)
+        .expect("preflight silent");
     assert!(dto.integrated_lufs.is_infinite() || dto.integrated_lufs < -70.0);
     assert_eq!(dto.target_lufs, Some(-16.0));
     if dto.integrated_lufs.is_infinite() {

@@ -32,7 +32,8 @@ const SRC = join(ROOT, "src");
 
 // Hex literals of lengths 3, 4, 6, or 8. The leading `#` must NOT be
 // followed by another hex char (prevents eating into longer tokens).
-const HEX_REGEX = /#([0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{4}|[0-9a-fA-F]{3})\b/g;
+const HEX_REGEX =
+  /#([0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{4}|[0-9a-fA-F]{3})\b/g;
 
 // Drift sites that predate this gate and haven't been migrated yet.
 // Each entry MUST be justified. Prefer migration over allowlist growth.

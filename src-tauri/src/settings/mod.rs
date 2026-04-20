@@ -20,8 +20,8 @@ pub use defaults::{
 pub use io::{get_settings, write_settings};
 pub use types::{
     AppSettings, CaptionFontFamily, CaptionProfile, CaptionProfileSet, LogLevel,
-    ModelUnloadTimeout, Orientation, OrtAcceleratorSetting, ProfileScope,
-    VideoDims, WhisperAcceleratorSetting,
+    ModelUnloadTimeout, Orientation, OrtAcceleratorSetting, ProfileScope, VideoDims,
+    WhisperAcceleratorSetting,
 };
 
 /// Known experimental feature keys. Each variant maps 1:1 to a

@@ -9,8 +9,8 @@
 //! library surface.
 
 use toaster_app_lib::managers::splice::boundaries::{
-    snap_segments_energy_biased, snap_segments_vad_biased,
-    DEFAULT_ENERGY_RADIUS_US, DEFAULT_SNAP_RADIUS_US,
+    snap_segments_energy_biased, snap_segments_vad_biased, DEFAULT_ENERGY_RADIUS_US,
+    DEFAULT_SNAP_RADIUS_US,
 };
 
 const SR: u32 = 16_000;
@@ -25,11 +25,7 @@ fn sine(freq_hz: f32, sr: u32, samples: usize, amp: f32) -> Vec<f32> {
 #[test]
 fn empty_vad_curve_matches_energy_path() {
     let buf = sine(120.0, SR, 16_000, 0.6);
-    let segments = vec![
-        (100_000, 400_000),
-        (450_000, 700_000),
-        (780_000, 950_000),
-    ];
+    let segments = vec![(100_000, 400_000), (450_000, 700_000), (780_000, 950_000)];
     let baseline = snap_segments_energy_biased(
         &segments,
         &buf,

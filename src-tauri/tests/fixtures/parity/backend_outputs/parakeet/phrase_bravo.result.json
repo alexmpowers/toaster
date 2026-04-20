@@ -1,13 +1,43 @@
 {
   "_comment": "Golden-synthetic NormalizedTranscriptionResult for phrase_bravo.wav simulating a Parakeet adapter run. Same provenance as phrase_alpha.result.json.",
   "words": [
-    { "text": "the",     "start_us": 6000,    "end_us": 177000,  "confidence": 0.88 },
-    { "text": "quick",   "start_us": 252000,  "end_us": 512000,  "confidence": 0.93 },
-    { "text": "brown",   "start_us": 578000,  "end_us": 893000,  "confidence": 0.92 },
-    { "text": "fox",     "start_us": 1341000, "end_us": 1645000, "confidence": 0.94 },
-    { "text": "jumps",   "start_us": 1747000, "end_us": 2090000, "confidence": 0.90 },
-    { "text": "over",    "start_us": 2193000, "end_us": 2478000, "confidence": 0.91 },
-    { "text": "lazily",  "start_us": 2553000, "end_us": 3118000, "confidence": 0.89 }
+    { "text": "the", "start_us": 6000, "end_us": 177000, "confidence": 0.88 },
+    {
+      "text": "quick",
+      "start_us": 252000,
+      "end_us": 512000,
+      "confidence": 0.93
+    },
+    {
+      "text": "brown",
+      "start_us": 578000,
+      "end_us": 893000,
+      "confidence": 0.92
+    },
+    {
+      "text": "fox",
+      "start_us": 1341000,
+      "end_us": 1645000,
+      "confidence": 0.94
+    },
+    {
+      "text": "jumps",
+      "start_us": 1747000,
+      "end_us": 2090000,
+      "confidence": 0.9
+    },
+    {
+      "text": "over",
+      "start_us": 2193000,
+      "end_us": 2478000,
+      "confidence": 0.91
+    },
+    {
+      "text": "lazily",
+      "start_us": 2553000,
+      "end_us": 3118000,
+      "confidence": 0.89
+    }
   ],
   "language": "en-US",
   "word_timestamps_authoritative": true,

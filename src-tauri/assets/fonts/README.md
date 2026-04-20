@@ -5,9 +5,9 @@ These TTFs are the authoritative font files for both the preview
 FFmpeg `subtitles=` filter with `fontsdir=`). Keep the filenames
 stable — `managers/captions/fonts.rs` looks them up by name.
 
-| File         | Family name (CSS / ASS) | License | Source |
-|--------------|-------------------------|---------|--------|
-| `Inter.ttf`  | Inter                   | OFL-1.1 | https://github.com/rsms/inter |
+| File         | Family name (CSS / ASS) | License    | Source                                |
+| ------------ | ----------------------- | ---------- | ------------------------------------- |
+| `Inter.ttf`  | Inter                   | OFL-1.1    | https://github.com/rsms/inter         |
 | `Roboto.ttf` | Roboto                  | Apache-2.0 | https://github.com/openmaptiles/fonts |
 
 `SystemUi` is not a bundled file — the preview falls back to the OS

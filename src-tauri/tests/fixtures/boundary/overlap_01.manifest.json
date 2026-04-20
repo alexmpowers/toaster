@@ -22,10 +22,6 @@
       "sample": 32640
     }
   ],
-  "expected_final_transcript": [
-    "four_forty",
-    "the_1",
-    "eight_eighty"
-  ],
+  "expected_final_transcript": ["four_forty", "the_1", "eight_eighty"],
   "notes": "Regression guard for forced-alignment overlap on repeated adjacent tokens ('the the'). word_01.end_us=700_000 overlaps word_02.start_us=680_000; deleting word_02 must clamp seg1 end to word_02.start_us, not word_01.end_us. Leaky variant simulates pre-clamp bug (20 ms of 660 Hz word_02 onset leaks into the edit). word_00=440Hz 'A', word_01/word_02=660Hz 'the the', word_03=880Hz 'B'. Regenerate via _generate_overlap_01.py."
 }

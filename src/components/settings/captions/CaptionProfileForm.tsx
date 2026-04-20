@@ -80,7 +80,9 @@ export const CaptionProfileForm: React.FC<CaptionProfileFormProps> = ({
 
       <SettingContainer
         title={t("settings.controls.captionSettings.bgTransparency")}
-        description={t("settings.controls.captionSettings.bgTransparencyDescription")}
+        description={t(
+          "settings.controls.captionSettings.bgTransparencyDescription",
+        )}
         descriptionMode={descriptionMode}
         grouped={grouped}
       >
@@ -112,7 +114,9 @@ export const CaptionProfileForm: React.FC<CaptionProfileFormProps> = ({
 
       <SettingContainer
         title={t("settings.controls.captionSettings.textColor")}
-        description={t("settings.controls.captionSettings.textColorDescription")}
+        description={t(
+          "settings.controls.captionSettings.textColorDescription",
+        )}
         descriptionMode={descriptionMode}
         grouped={grouped}
       >
@@ -125,16 +129,27 @@ export const CaptionProfileForm: React.FC<CaptionProfileFormProps> = ({
 
       <SettingContainer
         title={t("settings.controls.captionSettings.fontFamily")}
-        description={t("settings.controls.captionSettings.fontFamilyDescription")}
+        description={t(
+          "settings.controls.captionSettings.fontFamilyDescription",
+        )}
         descriptionMode={descriptionMode}
         grouped={grouped}
       >
         <Select
           value={profile.font_family}
           options={[
-            { value: "Inter", label: t("settings.controls.captionSettings.fontInter") },
-            { value: "Roboto", label: t("settings.controls.captionSettings.fontRoboto") },
-            { value: "SystemUi", label: t("settings.controls.captionSettings.fontSystemUi") },
+            {
+              value: "Inter",
+              label: t("settings.controls.captionSettings.fontInter"),
+            },
+            {
+              value: "Roboto",
+              label: t("settings.controls.captionSettings.fontRoboto"),
+            },
+            {
+              value: "SystemUi",
+              label: t("settings.controls.captionSettings.fontSystemUi"),
+            },
           ]}
           onChange={(v) => {
             if (v) onChange({ font_family: v as CaptionFontFamily });
@@ -145,7 +160,9 @@ export const CaptionProfileForm: React.FC<CaptionProfileFormProps> = ({
 
       <SettingContainer
         title={t("settings.controls.captionSettings.cornerRadius")}
-        description={t("settings.controls.captionSettings.cornerRadiusDescription")}
+        description={t(
+          "settings.controls.captionSettings.cornerRadiusDescription",
+        )}
         descriptionMode={descriptionMode}
         grouped={grouped}
       >
@@ -161,7 +178,9 @@ export const CaptionProfileForm: React.FC<CaptionProfileFormProps> = ({
 
       <SettingContainer
         title={t("settings.controls.captionSettings.paddingHorizontal")}
-        description={t("settings.controls.captionSettings.paddingHorizontalDescription")}
+        description={t(
+          "settings.controls.captionSettings.paddingHorizontalDescription",
+        )}
         descriptionMode={descriptionMode}
         grouped={grouped}
       >
@@ -177,7 +196,9 @@ export const CaptionProfileForm: React.FC<CaptionProfileFormProps> = ({
 
       <SettingContainer
         title={t("settings.controls.captionSettings.paddingVertical")}
-        description={t("settings.controls.captionSettings.paddingVerticalDescription")}
+        description={t(
+          "settings.controls.captionSettings.paddingVerticalDescription",
+        )}
         descriptionMode={descriptionMode}
         grouped={grouped}
       >

@@ -30,13 +30,13 @@
 
 [CmdletBinding()]
 param(
-    [string]$OutputJson = (Join-Path $PSScriptRoot '..\.eval-output\eval-harness-report.json'),
+    [string]$OutputJson = (Join-Path $PSScriptRoot '..\..\.eval-output\eval-harness-report.json'),
     [switch]$SkipAudioBoundary,
     [switch]$SkipExportParity
 )
 
 $ErrorActionPreference = 'Stop'
-$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
+$RepoRoot = Resolve-Path (Join-Path $PSScriptRoot '..\..')
 Set-Location $RepoRoot
 
 function New-EvalEntry {
@@ -98,7 +98,8 @@ $evals += New-EvalEntry `
 
 # --- 2. Audio-boundary eval -----------------------------------------------
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
-$boundaryScript = Join-Path $RepoRoot 'scripts\eval-audio-boundary.ps1'
+$boundaryScript = Join-Path $RepoRoot 'scripts\eval\eval-audio-boundary.ps1'
+$boundaryLib = Join-Path $RepoRoot 'scripts\eval\lib\AudioBoundary.psm1'
 $boundaryFixturesRoot = Join-Path $RepoRoot 'src-tauri\tests\fixtures\boundary'
 $boundaryDetails = @{}
 if ($SkipAudioBoundary.IsPresent) {
@@ -107,6 +108,9 @@ if ($SkipAudioBoundary.IsPresent) {
 } elseif (-not (Test-Path $boundaryScript)) {
     $boundaryStatus = 'skip'
     $boundaryNotes = 'eval-audio-boundary.ps1 not present'
+} elseif (-not (Test-Path $boundaryLib)) {
+    $boundaryStatus = 'skip'
+    $boundaryNotes = 'scripts/eval/lib/AudioBoundary.psm1 not present (eval not yet wired)'
 } elseif (-not (Test-Path $boundaryFixturesRoot)) {
     $boundaryStatus = 'skip'
     $boundaryNotes = 'boundary fixtures not present; run scripts/eval/generate-boundary-fixtures.ps1'
@@ -131,7 +135,7 @@ $evals += New-EvalEntry `
 
 # --- 3. Export parity ------------------------------------------------------
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
-$exportScript = Join-Path $RepoRoot 'scripts\eval-edit-quality.ps1'
+$exportScript = Join-Path $RepoRoot 'scripts\eval\eval-edit-quality.ps1'
 $baselinePath = Join-Path $RepoRoot 'tests\fixtures\edit-quality.baseline.json'
 $exportOut = Join-Path $outDir 'edit-quality.json'
 $exportDetails = @{}

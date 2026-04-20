@@ -26,18 +26,19 @@ That block is the only place hex colors may be declared. Component code
 references tokens via Tailwind utilities (`bg-logo-primary`, `text-text`)
 or `var(--color-*)` in inline styles.
 
-| CSS var | Tailwind prefix | Hex (light) | Purpose |
-|---------|-----------------|-------------|---------|
-| `--color-text` | `text-text`, `bg-text` | `#0f0f0f` / `#fbfbfb` dark | Body text + neutral foreground. |
-| `--color-background` | `bg-background` | `#fbfbfb` / `#1E1E1E` dark | Page background. |
-| `--color-background-ui` | `bg-background-ui` | `#D9D8D8` | Neutral chrome. `Button variant="primary"`. **Not brand.** |
-| `--color-logo-primary` | `bg-logo-primary`, `text-logo-primary`, `ring-logo-primary` | `#E8A838` | **Brand accent.** `Button variant="brand"`, `Slider` fill, `ToggleSwitch` checked, `Badge primary`, progress bars, hover/focus rings. |
-| `--color-logo-stroke` | `logo-stroke` | `#3D2B1F` / `#E8A838` dark | SVG logo stroke (flips in dark theme). |
-| `--color-text-stroke` | `text-stroke` | `#f6f6f6` | `.text-stroke` utility only. |
-| `--color-mid-gray` | `text-mid-gray`, `bg-mid-gray`, `border-mid-gray` | `#808080` | Muted/disabled text, 10–20 % tints. |
-| `--color-accent` | `bg-accent`, `text-accent` | `#E8A838` | Legacy alias of `--color-logo-primary`. New code uses `logo-primary`. |
+| CSS var                 | Tailwind prefix                                             | Hex (light)                | Purpose                                                                                                                               |
+| ----------------------- | ----------------------------------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `--color-text`          | `text-text`, `bg-text`                                      | `#0f0f0f` / `#fbfbfb` dark | Body text + neutral foreground.                                                                                                       |
+| `--color-background`    | `bg-background`                                             | `#fbfbfb` / `#1E1E1E` dark | Page background.                                                                                                                      |
+| `--color-background-ui` | `bg-background-ui`                                          | `#D9D8D8`                  | Neutral chrome. `Button variant="primary"`. **Not brand.**                                                                            |
+| `--color-logo-primary`  | `bg-logo-primary`, `text-logo-primary`, `ring-logo-primary` | `#E8A838`                  | **Brand accent.** `Button variant="brand"`, `Slider` fill, `ToggleSwitch` checked, `Badge primary`, progress bars, hover/focus rings. |
+| `--color-logo-stroke`   | `logo-stroke`                                               | `#3D2B1F` / `#E8A838` dark | SVG logo stroke (flips in dark theme).                                                                                                |
+| `--color-text-stroke`   | `text-stroke`                                               | `#f6f6f6`                  | `.text-stroke` utility only.                                                                                                          |
+| `--color-mid-gray`      | `text-mid-gray`, `bg-mid-gray`, `border-mid-gray`           | `#808080`                  | Muted/disabled text, 10–20 % tints.                                                                                                   |
+| `--color-accent`        | `bg-accent`, `text-accent`                                  | `#E8A838`                  | Legacy alias of `--color-logo-primary`. New code uses `logo-primary`.                                                                 |
 
 ### Rules
+
 1. **No hex literals** in `.ts`/`.tsx`/component `.css`. Only `src/App.css @theme`.
 2. **Brand yellow has exactly one name.** Prefer `logo-primary`. `accent` is migration-legacy.
 3. **Primary ≠ brand.** `Button variant="primary"` uses `background-ui`; `variant="brand"` uses `logo-primary`.
@@ -45,23 +46,24 @@ or `var(--color-*)` in inline styles.
 
 ## 2. Primitive → token contract
 
-| Primitive | Brand-carrying surface | Token |
-|-----------|------------------------|-------|
-| `Button` variant `brand` | background + border | `logo-primary` |
-| `Button` variant `primary` | background + border | `background-ui` (neutral) |
-| `Button` variant `secondary` | border, transparent fill | `mid-gray/20` |
-| `Slider` / `SliderWithInput` | track fill + thumb | `logo-primary` |
-| `ToggleSwitch` | checked background | `logo-primary` |
-| `Badge` variant `primary` | background | `logo-primary` |
-| `ProgressBar` | value fill | `logo-primary` |
-| `Dropdown` (selected row + focus ring) | text + ring | `text-text` on `bg-background`; ring `logo-primary` |
-| `Alert` variant `warning` | border + icon | `logo-primary` |
+| Primitive                              | Brand-carrying surface   | Token                                               |
+| -------------------------------------- | ------------------------ | --------------------------------------------------- |
+| `Button` variant `brand`               | background + border      | `logo-primary`                                      |
+| `Button` variant `primary`             | background + border      | `background-ui` (neutral)                           |
+| `Button` variant `secondary`           | border, transparent fill | `mid-gray/20`                                       |
+| `Slider` / `SliderWithInput`           | track fill + thumb       | `logo-primary`                                      |
+| `ToggleSwitch`                         | checked background       | `logo-primary`                                      |
+| `Badge` variant `primary`              | background               | `logo-primary`                                      |
+| `ProgressBar`                          | value fill               | `logo-primary`                                      |
+| `Dropdown` (selected row + focus ring) | text + ring              | `text-text` on `bg-background`; ring `logo-primary` |
+| `Alert` variant `warning`              | border + icon            | `logo-primary`                                      |
 
 If a design calls for the brand color, use `logo-primary`. If it calls
 for neutral chrome, use `background-ui`. If neither, `mid-gray` tints.
 There is no fourth choice.
 
 ### Raw `<button>` is forbidden
+
 Any raw `<button>` that carries `bg-logo-primary`, `bg-background-ui`, or
 `bg-mid-gray/10` is a drift site — the shared `<Button>` component owns
 variant → color → hover/focus/disabled mapping. Gate:
@@ -76,18 +78,15 @@ suit.
 ```tsx
 <div className="max-w-5xl w-full mx-auto space-y-6">
   <div className="mb-4">
-    <h1 className="text-xl font-semibold mb-2">
-      {t("settings.<page>.title")}
-    </h1>
-    <p className="text-sm text-text/60">
-      {t("settings.<page>.description")}
-    </p>
+    <h1 className="text-xl font-semibold mb-2">{t("settings.<page>.title")}</h1>
+    <p className="text-sm text-text/60">{t("settings.<page>.description")}</p>
   </div>
   {/* … SettingsGroup children … */}
 </div>
 ```
 
 Rules:
+
 - Both `title` and `description` i18n keys must exist in all 20 locale files.
 - Hero `<h1>` is the only `h1` on the page. `SettingsGroup` titles are `<h2>`.
 - Do not repeat the page title as the first `SettingsGroup` title.
@@ -106,6 +105,7 @@ framing (e.g. Experimental's "This is off by default" banner).
 ```
 
 Rules:
+
 - Titles are `<h2 text-xs font-medium text-mid-gray uppercase tracking-wide>`.
 - If you render a hero on the page, do not also render a `SettingsGroup` whose title duplicates it.
 - Per-group descriptions are opt-in, not default.
@@ -139,16 +139,16 @@ Rules:
 
 ## 6. Control primitives catalog
 
-| Primitive | When | Required token | Never reach for |
-|-----------|------|----------------|-----------------|
-| `Button` | Any user action | `brand` for primary CTA in a flow, `primary` for neutral, `secondary` for cancel/dismiss | Raw `<button>` with `bg-*` |
-| `ToggleSwitch` | Boolean setting | `logo-primary` checked | `bg-background-ui` for "on" |
-| `Slider` / `SliderWithInput` | Numeric setting | `logo-primary` fill+thumb | Non-live `onChange` (see §7) |
-| `Dropdown` | One-of-N with > 3 options | `text-text` on `bg-background`; ring `logo-primary` | Yellow-on-yellow (round-2 contrast bug) |
-| `Badge` | State indicator | `logo-primary` (primary), `mid-gray` (neutral) | Inventing new hue |
-| `Alert` | Inline warning/info | `logo-primary` border; `warning`/`success` variants use **`text-black` for icon + body** against the pale tinted container fill — yellow-on-yellow and green-on-green fail WCAG (round-2 + FB-7 bug) | Red-on-dark (readability); `text-yellow-*` on `bg-yellow-500/10` |
-| `ProgressBar` | Async work | `logo-primary` fill | Flashing/pulsing beyond 2 Hz |
-| `Tooltip` | Info-icon description | `bg-background` + `border-mid-gray/20` | Long prose (>2 lines) — use stacked description |
+| Primitive                    | When                      | Required token                                                                                                                                                                                       | Never reach for                                                  |
+| ---------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `Button`                     | Any user action           | `brand` for primary CTA in a flow, `primary` for neutral, `secondary` for cancel/dismiss                                                                                                             | Raw `<button>` with `bg-*`                                       |
+| `ToggleSwitch`               | Boolean setting           | `logo-primary` checked                                                                                                                                                                               | `bg-background-ui` for "on"                                      |
+| `Slider` / `SliderWithInput` | Numeric setting           | `logo-primary` fill+thumb                                                                                                                                                                            | Non-live `onChange` (see §7)                                     |
+| `Dropdown`                   | One-of-N with > 3 options | `text-text` on `bg-background`; ring `logo-primary`                                                                                                                                                  | Yellow-on-yellow (round-2 contrast bug)                          |
+| `Badge`                      | State indicator           | `logo-primary` (primary), `mid-gray` (neutral)                                                                                                                                                       | Inventing new hue                                                |
+| `Alert`                      | Inline warning/info       | `logo-primary` border; `warning`/`success` variants use **`text-black` for icon + body** against the pale tinted container fill — yellow-on-yellow and green-on-green fail WCAG (round-2 + FB-7 bug) | Red-on-dark (readability); `text-yellow-*` on `bg-yellow-500/10` |
+| `ProgressBar`                | Async work                | `logo-primary` fill                                                                                                                                                                                  | Flashing/pulsing beyond 2 Hz                                     |
+| `Tooltip`                    | Info-icon description     | `bg-background` + `border-mid-gray/20`                                                                                                                                                               | Long prose (>2 lines) — use stacked description                  |
 
 ## 7. Live-update contract
 
@@ -187,17 +187,19 @@ stale (round 3 caption_profiles bug).
 
 ```ts
 // src/stores/settingsStore.ts
-const settingUpdaters: { [K in keyof Settings]?: (value) => Promise<unknown> } = {
-  caption_profiles: async (value) => {
-    const set = value as CaptionProfileSet;
-    await commands.setCaptionProfile("Desktop", set.desktop, "App");
-    await commands.setCaptionProfile("Mobile", set.mobile, "App");
-  },
-  // … every caption_/export_/loudness_/normalize_ key has an entry …
-};
+const settingUpdaters: { [K in keyof Settings]?: (value) => Promise<unknown> } =
+  {
+    caption_profiles: async (value) => {
+      const set = value as CaptionProfileSet;
+      await commands.setCaptionProfile("Desktop", set.desktop, "App");
+      await commands.setCaptionProfile("Mobile", set.mobile, "App");
+    },
+    // … every caption_/export_/loudness_/normalize_ key has an entry …
+  };
 ```
 
 Rules:
+
 - Any `Settings` field with prefix `caption_`, `export_`, `loudness_`,
   or `normalize_audio_` must appear in `settingUpdaters`.
 - Complex values (like `CaptionProfileSet`) fan out to multiple
@@ -213,13 +215,13 @@ Rules:
 
 ## 10. CI gates
 
-| Gate | Script | What it catches |
-|------|--------|-----------------|
-| Hex-token drift | `bun run check:design-tokens` | Any `#RRGGBB` outside `src/App.css @theme` |
-| Button-variant drift | `bun run check:button-variants` | Raw `<button>` duplicating a `Button` variant |
+| Gate                      | Script                                    | What it catches                                                                             |
+| ------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Hex-token drift           | `bun run check:design-tokens`             | Any `#RRGGBB` outside `src/App.css @theme`                                                  |
+| Button-variant drift      | `bun run check:button-variants`           | Raw `<button>` duplicating a `Button` variant                                               |
 | Settings updater coverage | `bun run check:settings-updater-coverage` | `caption_*`/`export_*`/`loudness_*`/`normalize_audio_*` keys missing from `settingUpdaters` |
-| i18n parity | `bun run check:translations` | Keys present in `en/` but missing elsewhere |
-| File-size cap | `bun run check:file-sizes` | Files > 800 lines under `src/` / `src-tauri/src/` |
+| i18n parity               | `bun run check:translations`              | Keys present in `en/` but missing elsewhere                                                 |
+| File-size cap             | `bun run check:file-sizes`                | Files > 800 lines under `src/` / `src-tauri/src/`                                           |
 
 All five run in `.github/workflows/ci.yml > frontend-quality`. Don't
 `--no-verify` past them; fix the drift.

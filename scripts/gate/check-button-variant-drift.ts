@@ -45,12 +45,9 @@ const ALLOWED_PATHS = new Set<string>([
   // visual tokens per Round 7 user feedback.
   "src/components/editor/ExportMenu.tsx",
 ]);
-const BRAND_CLASSES = [
-  "bg-logo-primary",
-  "bg-background-ui",
-  "bg-mid-gray/10",
-];
-const BUTTON_REGEX = /<button\b[^>]*className\s*=\s*\{?\s*[`"']([^`"']+)[`"']/gms;
+const BRAND_CLASSES = ["bg-logo-primary", "bg-background-ui", "bg-mid-gray/10"];
+const BUTTON_REGEX =
+  /<button\b[^>]*className\s*=\s*\{?\s*[`"']([^`"']+)[`"']/gms;
 
 type Violation = {
   file: string;
@@ -112,9 +109,7 @@ async function main(): Promise<number> {
     `[R-007] ${verb} — ${violations.length} raw <button> element(s) use brand/ui background classes that should route through <Button variant=...>:`,
   );
   for (const v of violations) {
-    console.error(
-      `  ${v.file}:${v.line}  [${v.offendingClass}]  ${v.match}`,
-    );
+    console.error(`  ${v.file}:${v.line}  [${v.offendingClass}]  ${v.match}`);
   }
   console.error(
     "\nFix: replace with <Button variant='brand' | 'primary' | 'secondary' ...> from src/components/ui/Button.tsx.",

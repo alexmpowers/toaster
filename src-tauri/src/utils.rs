@@ -17,6 +17,7 @@ pub fn cancel_current_operation(app: &AppHandle) {
 
 /// Check if using the Wayland display server protocol
 #[cfg(target_os = "linux")]
+#[allow(dead_code)]
 pub fn is_wayland() -> bool {
     std::env::var("WAYLAND_DISPLAY").is_ok()
         || std::env::var("XDG_SESSION_TYPE")
@@ -26,6 +27,7 @@ pub fn is_wayland() -> bool {
 
 /// Check if running on KDE Plasma desktop environment
 #[cfg(target_os = "linux")]
+#[allow(dead_code)]
 pub fn is_kde_plasma() -> bool {
     std::env::var("XDG_CURRENT_DESKTOP")
         .map(|v| v.to_uppercase().contains("KDE"))
@@ -35,6 +37,7 @@ pub fn is_kde_plasma() -> bool {
 
 /// Check if running on KDE Plasma with Wayland
 #[cfg(target_os = "linux")]
+#[allow(dead_code)]
 pub fn is_kde_wayland() -> bool {
     is_wayland() && is_kde_plasma()
 }

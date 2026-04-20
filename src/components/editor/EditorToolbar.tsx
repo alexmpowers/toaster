@@ -15,7 +15,11 @@ interface EditorToolbarProps {
   onNormalizeAudioToggle: () => void;
 }
 
-const LOUDNESS_TARGETS: LoudnessTarget[] = ["off", "podcast_-16", "streaming_-14"];
+const LOUDNESS_TARGETS: LoudnessTarget[] = [
+  "off",
+  "podcast_-16",
+  "streaming_-14",
+];
 
 /**
  * Per-project export knobs. Shown alongside the editor when words are
@@ -30,68 +34,70 @@ const LOUDNESS_TARGETS: LoudnessTarget[] = ["off", "podcast_-16", "streaming_-14
  * setting. The loudness target stayed here because it's a
  * per-project audio-render concern, not a format choice.
  */
-const EditorToolbar: React.FC<EditorToolbarProps> = React.memo(({
-  words,
-  burnCaptions,
-  onBurnCaptionsChange,
-  normalizeAudio,
-  onNormalizeAudioToggle,
-}) => {
-  const { t } = useTranslation();
-  const { settings, updateSetting, isUpdating } = useSettings();
-  const loudnessTarget: LoudnessTarget = settings?.loudness_target ?? "off";
+const EditorToolbar: React.FC<EditorToolbarProps> = React.memo(
+  ({
+    words,
+    burnCaptions,
+    onBurnCaptionsChange,
+    normalizeAudio,
+    onNormalizeAudioToggle,
+  }) => {
+    const { t } = useTranslation();
+    const { settings, updateSetting, isUpdating } = useSettings();
+    const loudnessTarget: LoudnessTarget = settings?.loudness_target ?? "off";
 
-  if (words.length === 0) return null;
+    if (words.length === 0) return null;
 
-  const loudnessOptions: DropdownOption[] = LOUDNESS_TARGETS.map((value) => ({
-    value,
-    label: t(`settings.export.loudness.options.${value}.label`),
-  }));
+    const loudnessOptions: DropdownOption[] = LOUDNESS_TARGETS.map((value) => ({
+      value,
+      label: t(`settings.export.loudness.options.${value}.label`),
+    }));
 
-  const handleLoudnessChange = (value: string) => {
-    const next = value as LoudnessTarget;
-    if (next === loudnessTarget) return;
-    void updateSetting("loudness_target", next);
-  };
+    const handleLoudnessChange = (value: string) => {
+      const next = value as LoudnessTarget;
+      if (next === loudnessTarget) return;
+      void updateSetting("loudness_target", next);
+    };
 
-  return (
-    <SettingsGroup title={t("editor.sections.exportSettings")}>
-      <div className="space-y-1">
-        <ToggleSwitch
-          checked={burnCaptions}
-          onChange={onBurnCaptionsChange}
-          label={t("editor.addCaptions")}
-          description={t("editor.addCaptionsDescription")}
-          grouped
-        />
-
-        <ToggleSwitch
-          checked={normalizeAudio}
-          onChange={onNormalizeAudioToggle}
-          label={t("editor.normalizeAudio")}
-          description={t("editor.normalizeAudioDescription")}
-          grouped
-        />
-
-        {normalizeAudio && (
-          <SettingContainer
-            title={t("settings.export.loudness.title")}
-            description={t("settings.export.loudness.description")}
+    return (
+      <SettingsGroup title={t("editor.sections.exportSettings")}>
+        <div className="space-y-1">
+          <ToggleSwitch
+            checked={burnCaptions}
+            onChange={onBurnCaptionsChange}
+            label={t("editor.addCaptions")}
+            description={t("editor.addCaptionsDescription")}
             grouped
-            layout="horizontal"
-          >
-            <Dropdown
-              options={loudnessOptions}
-              selectedValue={loudnessTarget}
-              onSelect={handleLoudnessChange}
-              disabled={!settings || isUpdating("loudness_target")}
-            />
-          </SettingContainer>
-        )}
-      </div>
-    </SettingsGroup>
-  );
-});
+          />
+
+          <ToggleSwitch
+            checked={normalizeAudio}
+            onChange={onNormalizeAudioToggle}
+            label={t("editor.normalizeAudio")}
+            description={t("editor.normalizeAudioDescription")}
+            grouped
+          />
+
+          {normalizeAudio && (
+            <SettingContainer
+              title={t("settings.export.loudness.title")}
+              description={t("settings.export.loudness.description")}
+              grouped
+              layout="horizontal"
+            >
+              <Dropdown
+                options={loudnessOptions}
+                selectedValue={loudnessTarget}
+                onSelect={handleLoudnessChange}
+                disabled={!settings || isUpdating("loudness_target")}
+              />
+            </SettingContainer>
+          )}
+        </div>
+      </SettingsGroup>
+    );
+  },
+);
 
 EditorToolbar.displayName = "EditorToolbar";
 

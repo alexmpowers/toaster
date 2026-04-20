@@ -166,15 +166,15 @@ pub fn cleanup_smart_duplicates(
     media_store: State<'_, MediaStore>,
 ) -> Result<SmartCleanupResult, String> {
     let media_path = {
-        let media = crate::lock_recovery::try_lock(media_store.0.lock()).map_err(|e| e.to_string())?;
+        let media =
+            crate::lock_recovery::try_lock(media_store.0.lock()).map_err(|e| e.to_string())?;
         media
             .current()
             .map(|m| m.path.clone())
             .ok_or_else(|| "no media loaded — cannot score audio clarity".to_string())?
     };
 
-    let (samples, sample_rate) =
-        decode_media_audio_cached(&media_path, &media_store)?;
+    let (samples, sample_rate) = decode_media_audio_cached(&media_path, &media_store)?;
 
     let mut state = crate::lock_recovery::try_lock(store.0.lock()).map_err(|e| e.to_string())?;
     let (decisions, indices_to_delete) =

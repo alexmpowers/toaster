@@ -1,9 +1,17 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { useShallow } from "zustand/react/shallow";
 import { useEditorStore } from "@/stores/editorStore";
-import TranscriptContextMenu, { type ContextMenuState } from "./TranscriptContextMenu";
+import TranscriptContextMenu, {
+  type ContextMenuState,
+} from "./TranscriptContextMenu";
 import FindReplaceBar from "./FindReplaceBar";
 
 // Speaker colors for visual differentiation — distinct palette of 8
@@ -104,7 +112,10 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
 
   const [cleanupSummary, setCleanupSummary] = useState<string | null>(null);
 
-  const highlightedSet = useMemo(() => new Set(highlightedIndices), [highlightedIndices]);
+  const highlightedSet = useMemo(
+    () => new Set(highlightedIndices),
+    [highlightedIndices],
+  );
 
   const closeContextMenu = useCallback(() => {
     setContextMenu((prev) => ({ ...prev, visible: false }));
@@ -163,7 +174,14 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
       dragStartRef.current = null;
       isDraggingRef.current = false;
     },
-    [selectedIndex, selectWord, setSelectionRange, onWordClick, highlightedIndices, clearHighlights],
+    [
+      selectedIndex,
+      selectWord,
+      setSelectionRange,
+      onWordClick,
+      highlightedIndices,
+      clearHighlights,
+    ],
   );
 
   // Clear drag on global mouseup (in case mouse leaves the container)
@@ -204,7 +222,8 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   const navigateFind = useCallback(
     (direction: 1 | -1) => {
       if (findMatches.length === 0) return;
-      const next = (findMatchIndex + direction + findMatches.length) % findMatches.length;
+      const next =
+        (findMatchIndex + direction + findMatches.length) % findMatches.length;
       setFindMatchIndex(next);
       selectWord(findMatches[next]);
     },
@@ -224,7 +243,12 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
     (index: number, e: React.MouseEvent) => {
       e.preventDefault();
       selectWord(index);
-      setContextMenu({ visible: true, x: e.clientX, y: e.clientY, wordIndex: index });
+      setContextMenu({
+        visible: true,
+        x: e.clientX,
+        y: e.clientY,
+        wordIndex: index,
+      });
     },
     [selectWord],
   );
@@ -250,7 +274,17 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
       await deleteWord(selectedIndex);
     }
     closeContextMenu();
-  }, [selectedIndex, selectionRange, highlightedIndices, highlightType, deleteWord, deleteRange, closeContextMenu, clearHighlights, refreshFromBackend]);
+  }, [
+    selectedIndex,
+    selectionRange,
+    highlightedIndices,
+    highlightType,
+    deleteWord,
+    deleteRange,
+    closeContextMenu,
+    clearHighlights,
+    refreshFromBackend,
+  ]);
 
   const handleRestoreSelected = useCallback(async () => {
     if (selectedIndex !== null) {
@@ -312,7 +346,8 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
     );
   }
 
-  const contextWord = contextMenu.wordIndex >= 0 ? words[contextMenu.wordIndex] : null;
+  const contextWord =
+    contextMenu.wordIndex >= 0 ? words[contextMenu.wordIndex] : null;
   const findMatchSet = new Set(findMatches);
 
   return (
@@ -325,9 +360,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
       {/* Detection toolbar — cleanup summary only */}
       {cleanupSummary && (
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-[11px] text-mid-gray/60">
-            {cleanupSummary}
-          </span>
+          <span className="text-[11px] text-mid-gray/60">{cleanupSummary}</span>
         </div>
       )}
 
@@ -355,7 +388,8 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
           const isSelected = selectedIndex === index;
           const isRangeSelected = isInSelectionRange(index);
           const isFindMatch = findMatchSet.has(index);
-          const isCurrentFindMatch = findMatches.length > 0 && findMatches[findMatchIndex] === index;
+          const isCurrentFindMatch =
+            findMatches.length > 0 && findMatches[findMatchIndex] === index;
           const isHighlighted = highlightedSet.has(index);
           const prevWord = index > 0 ? words[index - 1] : null;
           const showSpeakerLabel =
@@ -364,10 +398,15 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
             (!prevWord || prevWord.speaker_id !== word.speaker_id);
 
           const confidenceStyle =
-            showConfidence && !word.deleted ? getConfidenceStyle(word.confidence) : {};
+            showConfidence && !word.deleted
+              ? getConfidenceStyle(word.confidence)
+              : {};
           const speakerBorderStyle =
             showSpeakers && word.speaker_id >= 0
-              ? { borderLeft: `2px solid ${getSpeakerColor(word.speaker_id)}`, paddingLeft: "3px" }
+              ? {
+                  borderLeft: `2px solid ${getSpeakerColor(word.speaker_id)}`,
+                  paddingLeft: "3px",
+                }
               : {};
 
           return (
@@ -376,7 +415,9 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                 <div className="w-full mt-2 mb-0.5 flex items-center gap-1.5">
                   <span
                     className="inline-block w-2 h-2 rounded-full"
-                    style={{ backgroundColor: getSpeakerColor(word.speaker_id) }}
+                    style={{
+                      backgroundColor: getSpeakerColor(word.speaker_id),
+                    }}
                   />
                   <span className="text-[10px] uppercase tracking-wider text-mid-gray/60">
                     {t("editor.speaker", { id: word.speaker_id + 1 })}
@@ -406,14 +447,38 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                   "cursor-pointer rounded px-1 py-0.5 transition-colors",
                   word.deleted && "line-through opacity-40",
                   word.silenced && !word.deleted && "opacity-60 italic",
-                  isHighlighted && highlightType === "filler" && "bg-red-400/50 text-black",
-                  isHighlighted && highlightType === "duplicate" && "bg-orange-400/50 text-black",
-                  isHighlighted && highlightType === "pause" && "bg-yellow-400/50 text-black",
-                  isCurrentFindMatch && !isHighlighted && "ring-2 ring-logo-primary bg-logo-primary/30",
-                  isFindMatch && !isCurrentFindMatch && !isHighlighted && "bg-logo-primary/15",
-                  isSelected && !isFindMatch && !isHighlighted && "bg-logo-primary text-black",
-                  isRangeSelected && !isSelected && !isFindMatch && !isHighlighted && "bg-logo-primary/40",
-                  !isSelected && !isRangeSelected && !isFindMatch && !isHighlighted && !word.deleted && !word.silenced && "hover:bg-mid-gray/20",
+                  isHighlighted &&
+                    highlightType === "filler" &&
+                    "bg-red-400/50 text-black",
+                  isHighlighted &&
+                    highlightType === "duplicate" &&
+                    "bg-orange-400/50 text-black",
+                  isHighlighted &&
+                    highlightType === "pause" &&
+                    "bg-yellow-400/50 text-black",
+                  isCurrentFindMatch &&
+                    !isHighlighted &&
+                    "ring-2 ring-logo-primary bg-logo-primary/30",
+                  isFindMatch &&
+                    !isCurrentFindMatch &&
+                    !isHighlighted &&
+                    "bg-logo-primary/15",
+                  isSelected &&
+                    !isFindMatch &&
+                    !isHighlighted &&
+                    "bg-logo-primary text-black",
+                  isRangeSelected &&
+                    !isSelected &&
+                    !isFindMatch &&
+                    !isHighlighted &&
+                    "bg-logo-primary/40",
+                  !isSelected &&
+                    !isRangeSelected &&
+                    !isFindMatch &&
+                    !isHighlighted &&
+                    !word.deleted &&
+                    !word.silenced &&
+                    "hover:bg-mid-gray/20",
                 ]
                   .filter(Boolean)
                   .join(" ")}

@@ -10,25 +10,28 @@ evals are reproducible across machines and CI.
 
 ## Contents
 
-| File | Purpose |
-|---|---|
-| `toaster_example.mp4` | Original real-speech source clip (~24 MB). |
+| File                         | Purpose                                                   |
+| ---------------------------- | --------------------------------------------------------- |
+| `toaster_example.mp4`        | Original real-speech source clip (~24 MB).                |
 | `toaster_example-edited.mp4` | Hand-edited baseline used as the parity target (~4.4 MB). |
-| `*.png` | Screenshots used by README / docs. |
+| `*.png`                      | Screenshots used by README / docs.                        |
 
 ## Dependents
 
 Skills (`.github/skills/`):
+
 - `audio-boundary-eval/SKILL.md`
 - `transcript-precision-eval/SKILL.md`
 - `transcription-adapter-contract/SKILL.md`
 
 Agents (`.github/agents/`):
+
 - `cut-drift-fuzzer.md`
 - `eval-harness-runner.md`
 - `waveform-diff.md`
 
 Scripts (`scripts/`):
+
 - `eval-edit-quality.ps1` (default `-Original` / `-Edited` arguments)
 
 ## Notes

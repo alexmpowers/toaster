@@ -181,7 +181,11 @@ pub fn measure_loudness(
     let mut peak = f64::NEG_INFINITY;
     for ch in 0..channels {
         if let Ok(p) = meter.true_peak(ch) {
-            let db = if p > 0.0 { 20.0 * p.log10() } else { f64::NEG_INFINITY };
+            let db = if p > 0.0 {
+                20.0 * p.log10()
+            } else {
+                f64::NEG_INFINITY
+            };
             if db > peak {
                 peak = db;
             }
@@ -242,7 +246,11 @@ mod tests {
             a.integrated_lufs, b.integrated_lufs,
             "measurement must be deterministic"
         );
-        assert!(a.true_peak_dbtp > -40.0, "peak {} too low", a.true_peak_dbtp);
+        assert!(
+            a.true_peak_dbtp > -40.0,
+            "peak {} too low",
+            a.true_peak_dbtp
+        );
     }
 
     #[test]
@@ -306,8 +314,8 @@ mod tests {
         let amp = 10f32.powf(-20.0 / 20.0);
         let buf = sine(1_000.0, sr, 5.0, amp);
 
-        let off = compute_loudness_preflight(&buf, sr, 1, LoudnessTarget::Off)
-            .expect("preflight off");
+        let off =
+            compute_loudness_preflight(&buf, sr, 1, LoudnessTarget::Off).expect("preflight off");
         assert!(off.integrated_lufs.is_finite());
         assert!(off.integrated_lufs < 0.0);
         assert!(off.true_peak_dbtp.is_finite());
@@ -324,9 +332,8 @@ mod tests {
             "delta_lu must be target - integrated"
         );
 
-        let streaming =
-            compute_loudness_preflight(&buf, sr, 1, LoudnessTarget::StreamingMinus14)
-                .expect("preflight streaming");
+        let streaming = compute_loudness_preflight(&buf, sr, 1, LoudnessTarget::StreamingMinus14)
+            .expect("preflight streaming");
         assert_eq!(streaming.target_lufs, Some(-14.0));
 
         // Silent buffer: delta_lu must be None even when target is set

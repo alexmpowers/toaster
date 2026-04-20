@@ -1,11 +1,36 @@
 {
   "_comment": "Golden-synthetic NormalizedTranscriptionResult for phrase_alpha.wav simulating a Whisper adapter run (segment-level timings split proportionally by character count; authoritative=false). Generated deterministically from the oracle with +/- 15-30 ms per-boundary jitter that mimics the drift introduced by char-proportional splitting on a multi-word segment. Stays under the p95<=40 ms gate; a regression in the split logic (e.g. synthesizing equal durations) would blow this past 40 ms and fail G2.",
   "words": [
-    { "text": "hello",   "start_us": 15000,   "end_us": 405000,  "confidence": null },
-    { "text": "world",   "start_us": 485000,  "end_us": 875000,  "confidence": null },
-    { "text": "this",    "start_us": 995000,  "end_us": 1275000, "confidence": null },
-    { "text": "is",      "start_us": 1349000, "end_us": 1578000, "confidence": null },
-    { "text": "toaster", "start_us": 1663000, "end_us": 2177000, "confidence": null }
+    {
+      "text": "hello",
+      "start_us": 15000,
+      "end_us": 405000,
+      "confidence": null
+    },
+    {
+      "text": "world",
+      "start_us": 485000,
+      "end_us": 875000,
+      "confidence": null
+    },
+    {
+      "text": "this",
+      "start_us": 995000,
+      "end_us": 1275000,
+      "confidence": null
+    },
+    {
+      "text": "is",
+      "start_us": 1349000,
+      "end_us": 1578000,
+      "confidence": null
+    },
+    {
+      "text": "toaster",
+      "start_us": 1663000,
+      "end_us": 2177000,
+      "confidence": null
+    }
   ],
   "language": "en-US",
   "word_timestamps_authoritative": false,

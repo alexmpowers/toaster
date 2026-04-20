@@ -405,12 +405,10 @@ mod tests {
     fn export_to_file_invalid_path() {
         let words = sample_words();
         let config = ExportConfig::default();
-        let result = export_to_file(
-            &words,
-            ExportFormat::Srt,
-            &config,
-            std::path::Path::new("Z:\\nonexistent\\dir\\file.srt"),
-        );
+        let bad = std::env::temp_dir()
+            .join("toaster_nonexistent_xyz_42")
+            .join("file.srt");
+        let result = export_to_file(&words, ExportFormat::Srt, &config, &bad);
         assert!(result.is_err());
     }
 

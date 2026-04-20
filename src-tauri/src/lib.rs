@@ -324,8 +324,7 @@ pub fn run(cli_args: CliArgs) {
             // `bun run build`. Append a void-reference trailer so both
             // identifiers count as used until events are added back. Idempotent
             // — skipped once the trailer is already present.
-            const VOID_TRAILER: &str =
-                "\nvoid TAURI_CHANNEL;\nvoid __makeEvents__;\n";
+            const VOID_TRAILER: &str = "\nvoid TAURI_CHANNEL;\nvoid __makeEvents__;\n";
             if !patched.contains("void TAURI_CHANNEL;") {
                 patched.push_str(VOID_TRAILER);
             }

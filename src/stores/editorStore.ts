@@ -67,7 +67,10 @@ interface EditorState {
   getKeepSegments: () => Promise<[number, number][]>;
   selectWord: (index: number | null) => void;
   setSelectionRange: (range: [number, number] | null) => void;
-  setHighlightedIndices: (indices: number[], type: "filler" | "pause" | "duplicate" | null) => void;
+  setHighlightedIndices: (
+    indices: number[],
+    type: "filler" | "pause" | "duplicate" | null,
+  ) => void;
   clearHighlights: () => void;
   setBurnCaptions: (next: boolean) => void;
 }
@@ -98,13 +101,19 @@ export const useEditorStore = create<EditorState>()((set) => ({
   deleteWord: async (index: number) => {
     await invoke<boolean>("editor_delete_word", { index });
     const projection = await fetchProjection();
-    set({ words: projection.words, timingContract: projection.timing_contract });
+    set({
+      words: projection.words,
+      timingContract: projection.timing_contract,
+    });
   },
 
   restoreWord: async (index: number) => {
     await invoke<boolean>("editor_restore_word", { index });
     const projection = await fetchProjection();
-    set({ words: projection.words, timingContract: projection.timing_contract });
+    set({
+      words: projection.words,
+      timingContract: projection.timing_contract,
+    });
   },
 
   deleteRange: async (start: number, end: number) => {
@@ -121,7 +130,10 @@ export const useEditorStore = create<EditorState>()((set) => ({
   restoreAll: async () => {
     await invoke<boolean>("editor_restore_all");
     const projection = await fetchProjection();
-    set({ words: projection.words, timingContract: projection.timing_contract });
+    set({
+      words: projection.words,
+      timingContract: projection.timing_contract,
+    });
   },
 
   splitWord: async (index: number, position: number) => {
@@ -137,24 +149,36 @@ export const useEditorStore = create<EditorState>()((set) => ({
   silenceWord: async (index: number) => {
     await invoke<boolean>("editor_silence_word", { index });
     const projection = await fetchProjection();
-    set({ words: projection.words, timingContract: projection.timing_contract });
+    set({
+      words: projection.words,
+      timingContract: projection.timing_contract,
+    });
   },
 
   undo: async () => {
     await invoke<boolean>("editor_undo");
     const projection = await fetchProjection();
-    set({ words: projection.words, timingContract: projection.timing_contract });
+    set({
+      words: projection.words,
+      timingContract: projection.timing_contract,
+    });
   },
 
   redo: async () => {
     await invoke<boolean>("editor_redo");
     const projection = await fetchProjection();
-    set({ words: projection.words, timingContract: projection.timing_contract });
+    set({
+      words: projection.words,
+      timingContract: projection.timing_contract,
+    });
   },
 
   refreshFromBackend: async () => {
     const projection = await fetchProjection();
-    set({ words: projection.words, timingContract: projection.timing_contract });
+    set({
+      words: projection.words,
+      timingContract: projection.timing_contract,
+    });
   },
 
   getKeepSegments: async () => {
@@ -169,7 +193,10 @@ export const useEditorStore = create<EditorState>()((set) => ({
     set({ selectionRange: range });
   },
 
-  setHighlightedIndices: (indices: number[], type: "filler" | "pause" | "duplicate" | null) => {
+  setHighlightedIndices: (
+    indices: number[],
+    type: "filler" | "pause" | "duplicate" | null,
+  ) => {
     set({ highlightedIndices: indices, highlightType: type });
   },
 

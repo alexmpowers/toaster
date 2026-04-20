@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { getKeyName, formatKeyCombination, normalizeKey, type OSType } from "./keyboard";
+import {
+  getKeyName,
+  formatKeyCombination,
+  normalizeKey,
+  type OSType,
+} from "./keyboard";
 
 // Helper to create a minimal KeyboardEvent-like object
 function makeKeyEvent(overrides: Partial<KeyboardEvent>): KeyboardEvent {
@@ -30,7 +35,9 @@ describe("getKeyName", () => {
 
     it("maps numpad keys", () => {
       expect(getKeyName(makeKeyEvent({ code: "Numpad7" }))).toBe("numpad 7");
-      expect(getKeyName(makeKeyEvent({ code: "NumpadMultiply" }))).toBe("numpad *");
+      expect(getKeyName(makeKeyEvent({ code: "NumpadMultiply" }))).toBe(
+        "numpad *",
+      );
       expect(getKeyName(makeKeyEvent({ code: "NumpadAdd" }))).toBe("numpad +");
     });
 
@@ -60,25 +67,37 @@ describe("getKeyName", () => {
 
   describe("OS-specific modifier names", () => {
     it("maps Alt → option on macOS", () => {
-      expect(getKeyName(makeKeyEvent({ code: "AltLeft" }), "macos")).toBe("option");
+      expect(getKeyName(makeKeyEvent({ code: "AltLeft" }), "macos")).toBe(
+        "option",
+      );
     });
 
     it("maps Alt → alt on Windows", () => {
-      expect(getKeyName(makeKeyEvent({ code: "AltLeft" }), "windows")).toBe("alt");
+      expect(getKeyName(makeKeyEvent({ code: "AltLeft" }), "windows")).toBe(
+        "alt",
+      );
     });
 
     it("maps Meta → command on macOS", () => {
-      expect(getKeyName(makeKeyEvent({ code: "MetaLeft" }), "macos")).toBe("command");
+      expect(getKeyName(makeKeyEvent({ code: "MetaLeft" }), "macos")).toBe(
+        "command",
+      );
     });
 
     it("maps Meta → super on Windows/Linux", () => {
-      expect(getKeyName(makeKeyEvent({ code: "MetaLeft" }), "windows")).toBe("super");
-      expect(getKeyName(makeKeyEvent({ code: "MetaLeft" }), "linux")).toBe("super");
+      expect(getKeyName(makeKeyEvent({ code: "MetaLeft" }), "windows")).toBe(
+        "super",
+      );
+      expect(getKeyName(makeKeyEvent({ code: "MetaLeft" }), "linux")).toBe(
+        "super",
+      );
     });
 
     it("maps Shift consistently across platforms", () => {
       for (const os of ["macos", "windows", "linux"] as OSType[]) {
-        expect(getKeyName(makeKeyEvent({ code: "ShiftLeft" }), os)).toBe("shift");
+        expect(getKeyName(makeKeyEvent({ code: "ShiftLeft" }), os)).toBe(
+          "shift",
+        );
       }
     });
   });
@@ -94,14 +113,20 @@ describe("getKeyName", () => {
     });
 
     it("maps Meta key with OS context via key fallback", () => {
-      expect(getKeyName(makeKeyEvent({ code: "", key: "Meta" }), "macos")).toBe("command");
-      expect(getKeyName(makeKeyEvent({ code: "", key: "Meta" }), "windows")).toBe("win");
+      expect(getKeyName(makeKeyEvent({ code: "", key: "Meta" }), "macos")).toBe(
+        "command",
+      );
+      expect(
+        getKeyName(makeKeyEvent({ code: "", key: "Meta" }), "windows"),
+      ).toBe("win");
     });
   });
 
   describe("edge cases", () => {
     it("returns unknown-N when no code or key available", () => {
-      expect(getKeyName(makeKeyEvent({ code: "", key: "", keyCode: 42 }))).toBe("unknown-42");
+      expect(getKeyName(makeKeyEvent({ code: "", key: "", keyCode: 42 }))).toBe(
+        "unknown-42",
+      );
     });
   });
 });

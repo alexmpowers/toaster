@@ -6,10 +6,10 @@
   "seg_start_us": 0,
   "seg_end_us": 1900000,
   "oracle_words": [
-    { "text": "alpha",   "start_us": 0,       "end_us": 300000  },
-    { "text": "bravo",   "start_us": 500000,  "end_us": 800000  },
+    { "text": "alpha", "start_us": 0, "end_us": 300000 },
+    { "text": "bravo", "start_us": 500000, "end_us": 800000 },
     { "text": "charlie", "start_us": 1000000, "end_us": 1300000 },
-    { "text": "delta",   "start_us": 1500000, "end_us": 1800000 }
+    { "text": "delta", "start_us": 1500000, "end_us": 1800000 }
   ],
   "_note_last_end": "Synthesis ends at the last word's end (1800 ms). The final seg_end_us (1900000) pads 100 ms of silence at the tail so the aligner has an unambiguous right edge and word 4's end is not clipped to the word's acoustic end by a silent pad exactly zero frames wide.",
   "max_boundary_error_us": 30000

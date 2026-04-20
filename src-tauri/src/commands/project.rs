@@ -24,7 +24,8 @@ pub fn save_project(
     path: String,
     name: Option<String>,
 ) -> Result<(), String> {
-    let editor = crate::lock_recovery::try_lock(editor_store.0.lock()).map_err(|e| e.to_string())?;
+    let editor =
+        crate::lock_recovery::try_lock(editor_store.0.lock()).map_err(|e| e.to_string())?;
     let media = crate::lock_recovery::try_lock(media_store.0.lock()).map_err(|e| e.to_string())?;
 
     let project_name = name.unwrap_or_else(|| {
@@ -41,11 +42,7 @@ pub fn save_project(
     // Caption profiles: persist the currently open project's override.
     // If the project has no override yet, crystallize the app-level
     // profiles so the saved file is fully self-describing.
-    let project_profiles = project_store
-        .0
-        .lock()
-        .ok()
-        .and_then(|g| g.clone());
+    let project_profiles = project_store.0.lock().ok().and_then(|g| g.clone());
     let profiles = project_profiles.unwrap_or_else(|| {
         let settings = crate::settings::get_settings(&app);
         settings.caption_profiles
@@ -67,7 +64,8 @@ pub fn load_project(
     let project = ToasterProject::load(std::path::Path::new(&path))?;
 
     // Restore editor words
-    let mut editor = crate::lock_recovery::try_lock(editor_store.0.lock()).map_err(|e| e.to_string())?;
+    let mut editor =
+        crate::lock_recovery::try_lock(editor_store.0.lock()).map_err(|e| e.to_string())?;
     editor.set_words(project.words);
 
     // Restore caption profiles into the shared project store. v1.0.0
@@ -80,7 +78,8 @@ pub fn load_project(
     // Restore media if path exists
     if let Some(ref media_path) = project.source_media {
         if media_path.exists() {
-            let mut media = crate::lock_recovery::try_lock(media_store.0.lock()).map_err(|e| e.to_string())?;
+            let mut media =
+                crate::lock_recovery::try_lock(media_store.0.lock()).map_err(|e| e.to_string())?;
             media.import(media_path)?;
         }
     }

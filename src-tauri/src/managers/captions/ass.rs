@@ -48,14 +48,18 @@ pub fn blocks_to_ass(blocks: &[CaptionBlock]) -> String {
         .map(|b| b.font_ass_name.as_str())
         .unwrap_or("Arial");
     let font_size = blocks.first().map(|b| b.font_size_px).unwrap_or(24);
-    let text_c = blocks
-        .first()
-        .map(|b| b.text_color)
-        .unwrap_or(Rgba { r: 255, g: 255, b: 255, a: 255 });
-    let bg_c = blocks
-        .first()
-        .map(|b| b.background)
-        .unwrap_or(Rgba { r: 0, g: 0, b: 0, a: 0xB3 });
+    let text_c = blocks.first().map(|b| b.text_color).unwrap_or(Rgba {
+        r: 255,
+        g: 255,
+        b: 255,
+        a: 255,
+    });
+    let bg_c = blocks.first().map(|b| b.background).unwrap_or(Rgba {
+        r: 0,
+        g: 0,
+        b: 0,
+        a: 0xB3,
+    });
     let padding = blocks.first().map(box_padding_px).unwrap_or(4);
 
     let primary = ass_color_abgr(text_c);
@@ -103,10 +107,7 @@ pub fn blocks_to_ass(blocks: &[CaptionBlock]) -> String {
         // Alignment=2 it's the distance from the bottom of the frame to
         // the baseline of the last line.
         let mv = block.margin_v_px;
-        let _ = writeln!(
-            out,
-            "Dialogue: 0,{start},{end},Default,,0,0,{mv},,{joined}"
-        );
+        let _ = writeln!(out, "Dialogue: 0,{start},{end},Default,,0,0,{mv},,{joined}");
     }
 
     out
@@ -162,8 +163,18 @@ mod tests {
             font_css: "Inter, sans-serif".into(),
             font_ass_name: "Inter".into(),
             font_size_px: 32,
-            text_color: Rgba { r: 255, g: 255, b: 255, a: 255 },
-            background: Rgba { r: 0, g: 0, b: 0, a: 0xB3 },
+            text_color: Rgba {
+                r: 255,
+                g: 255,
+                b: 255,
+                a: 255,
+            },
+            background: Rgba {
+                r: 0,
+                g: 0,
+                b: 0,
+                a: 0xB3,
+            },
             padding_x_px: 12,
             padding_y_px: 4,
             radius_px: 4,
@@ -185,13 +196,28 @@ mod tests {
     #[test]
     fn rgba_to_abgr_encodes_alpha_and_bgr() {
         // Fully opaque white → alpha 00, BGR FFFFFF.
-        let c = Rgba { r: 0xFF, g: 0xFF, b: 0xFF, a: 0xFF };
+        let c = Rgba {
+            r: 0xFF,
+            g: 0xFF,
+            b: 0xFF,
+            a: 0xFF,
+        };
         assert_eq!(ass_color_abgr(c), "&H00FFFFFF");
         // 0xB3 CSS alpha → 0x4C ASS alpha.
-        let d = Rgba { r: 0x00, g: 0x00, b: 0x00, a: 0xB3 };
+        let d = Rgba {
+            r: 0x00,
+            g: 0x00,
+            b: 0x00,
+            a: 0xB3,
+        };
         assert_eq!(ass_color_abgr(d), "&H4C000000");
         // Distinct channels confirm BGR byte order (not RGB).
-        let e = Rgba { r: 0xAA, g: 0xBB, b: 0xCC, a: 0xFF };
+        let e = Rgba {
+            r: 0xAA,
+            g: 0xBB,
+            b: 0xCC,
+            a: 0xFF,
+        };
         assert_eq!(ass_color_abgr(e), "&H00CCBBAA");
     }
 
@@ -254,8 +280,18 @@ mod tests {
     #[test]
     fn style_colors_come_from_first_block_not_defaults() {
         let mut block = mk_block(1, 0, 1_000_000);
-        block.text_color = Rgba { r: 0xFF, g: 0x88, b: 0x00, a: 0xFF };
-        block.background = Rgba { r: 0x10, g: 0x20, b: 0x30, a: 0x80 };
+        block.text_color = Rgba {
+            r: 0xFF,
+            g: 0x88,
+            b: 0x00,
+            a: 0xFF,
+        };
+        block.background = Rgba {
+            r: 0x10,
+            g: 0x20,
+            b: 0x30,
+            a: 0x80,
+        };
         let doc = blocks_to_ass(&[block]);
         // PrimaryColour = orange text, fully opaque.
         assert!(doc.contains("&H000088FF"));

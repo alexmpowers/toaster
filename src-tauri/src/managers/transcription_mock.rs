@@ -163,7 +163,7 @@ pub mod adapter {
                     }
                 }
             }
-            let word_level = segs.iter().all(|s| s.text.trim().split_whitespace().count() == 1);
+            let word_level = segs.iter().all(|s| s.text.split_whitespace().count() == 1);
             let _ = audio_info;
             Ok(NormalizedTranscriptionResult {
                 words,
@@ -203,7 +203,7 @@ struct FixtureFile {
 }
 
 /// Configures what the mock returns from `transcribe`.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub enum MockTranscription {
     /// Inline text. Segments are **mock-synthesized, equal-duration** — the
     /// text is split on sentence punctuation and time is distributed evenly
@@ -220,6 +220,7 @@ pub enum MockTranscription {
     },
     /// Empty transcription (historical default — preserves prior behavior for
     /// call sites that were content with `Ok(String::new())`).
+    #[default]
     Empty,
 }
 
@@ -251,12 +252,6 @@ impl MockTranscription {
             text: file.text,
             segments,
         })
-    }
-}
-
-impl Default for MockTranscription {
-    fn default() -> Self {
-        Self::Empty
     }
 }
 
@@ -306,10 +301,7 @@ impl TranscriptionManager {
         None
     }
 
-    pub fn transcribe(
-        &self,
-        audio: Vec<f32>,
-    ) -> Result<adapter::NormalizedTranscriptionResult> {
+    pub fn transcribe(&self, audio: Vec<f32>) -> Result<adapter::NormalizedTranscriptionResult> {
         let mock = crate::lock_recovery::recover_lock(self.mock.lock()).clone();
         let (text, segments) = match mock {
             MockTranscription::Empty => (String::new(), None),
@@ -338,7 +330,10 @@ impl TranscriptionManager {
 /// **Mock-synthesized, equal-duration — not representative of any real ASR
 /// engine.** Any test that asserts on precise per-word or per-segment timing
 /// MUST use `MockTranscription::from_fixture` instead.
-fn synthesize_equal_duration_segments(text: &str, audio_samples: usize) -> Vec<TranscriptionSegment> {
+fn synthesize_equal_duration_segments(
+    text: &str,
+    audio_samples: usize,
+) -> Vec<TranscriptionSegment> {
     const SAMPLE_RATE: f32 = 16_000.0;
     let total_duration = (audio_samples as f32 / SAMPLE_RATE).max(0.0);
 
@@ -439,8 +434,7 @@ mod tests {
 
     #[test]
     fn fixture_returns_non_empty_monotonic_segments() {
-        let mock = MockTranscription::from_fixture(fixture_path())
-            .expect("fixture must load");
+        let mock = MockTranscription::from_fixture(fixture_path()).expect("fixture must load");
         let (text, segments) = match mock {
             MockTranscription::Fixture { text, segments } => (text, segments),
             _ => panic!("from_fixture must produce Fixture variant"),

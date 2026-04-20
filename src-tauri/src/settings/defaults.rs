@@ -7,8 +7,7 @@
 
 use super::types::{
     AppSettings, CaptionFontFamily, CaptionProfile, CaptionProfileSet, LogLevel,
-    ModelUnloadTimeout, OrtAcceleratorSetting, ShortcutBinding,
-    WhisperAcceleratorSetting,
+    ModelUnloadTimeout, OrtAcceleratorSetting, ShortcutBinding, WhisperAcceleratorSetting,
 };
 use std::collections::HashMap;
 

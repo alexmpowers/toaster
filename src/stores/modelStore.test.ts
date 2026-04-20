@@ -6,10 +6,12 @@ const eventListeners: Record<string, (event: { payload: unknown }) => void> =
   {};
 
 vi.mock("@tauri-apps/api/event", () => ({
-  listen: vi.fn((eventName: string, handler: (event: { payload: unknown }) => void) => {
-    eventListeners[eventName] = handler;
-    return Promise.resolve(() => {});
-  }),
+  listen: vi.fn(
+    (eventName: string, handler: (event: { payload: unknown }) => void) => {
+      eventListeners[eventName] = handler;
+      return Promise.resolve(() => {});
+    },
+  ),
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({
@@ -35,7 +37,8 @@ const mockCommands = {
 };
 
 vi.mock("@/bindings", async () => {
-  const actual = await vi.importActual<typeof import("@/bindings")>("@/bindings");
+  const actual =
+    await vi.importActual<typeof import("@/bindings")>("@/bindings");
   return {
     ...actual,
     commands: mockCommands,

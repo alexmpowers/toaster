@@ -26,9 +26,7 @@ use specta::Type;
 /// picker can offer real alternatives to MP4 for video projects; both
 /// re-use FFmpeg's container-default codecs (H.264 + AAC) so no extra
 /// codec-map entries are required.
-#[derive(
-    Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type, Default,
-)]
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Type, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum AudioExportFormat {
     #[default]
@@ -290,7 +288,11 @@ mod tests {
             AudioExportFormat::Mkv,
         ];
         for video_ext in ["mp4", "mkv", "mov", "avi", "webm", "flv"] {
-            assert_eq!(allowed_formats_for_source(video_ext), expected, "ext={video_ext}");
+            assert_eq!(
+                allowed_formats_for_source(video_ext),
+                expected,
+                "ext={video_ext}"
+            );
             // Uppercase + leading-dot normalization.
             assert_eq!(
                 allowed_formats_for_source(&format!(".{}", video_ext.to_uppercase())),
@@ -323,7 +325,11 @@ mod tests {
             AudioExportFormat::Opus,
         ];
         for audio_ext in ["mp3", "wav", "m4a", "opus", "flac", "ogg", ""] {
-            assert_eq!(allowed_formats_for_source(audio_ext), expected, "ext={audio_ext}");
+            assert_eq!(
+                allowed_formats_for_source(audio_ext),
+                expected,
+                "ext={audio_ext}"
+            );
         }
     }
 

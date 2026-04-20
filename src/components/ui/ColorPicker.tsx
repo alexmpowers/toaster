@@ -7,7 +7,12 @@ interface ColorPickerProps {
   label?: string;
 }
 
-export const ColorPicker: React.FC<ColorPickerProps> = ({ value, onChange, disabled, label }) => {
+export const ColorPicker: React.FC<ColorPickerProps> = ({
+  value,
+  onChange,
+  disabled,
+  label,
+}) => {
   // Extract the 6-char hex color (ignore alpha if present)
   const colorOnly = value.length > 7 ? value.slice(0, 7) : value;
   const alpha = value.length > 7 ? value.slice(7) : "";

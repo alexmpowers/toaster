@@ -11,9 +11,7 @@ use tauri::{AppHandle, State};
 /// but gives `build_caption_blocks` an `O(1)` call path.
 fn fonts() -> &'static FontRegistry {
     static CELL: OnceCell<FontRegistry> = OnceCell::new();
-    CELL.get_or_init(|| {
-        FontRegistry::new().expect("bundled caption fonts must parse at startup")
-    })
+    CELL.get_or_init(|| FontRegistry::new().expect("bundled caption fonts must parse at startup"))
 }
 
 #[tauri::command]

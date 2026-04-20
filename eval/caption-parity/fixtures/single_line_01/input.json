@@ -14,10 +14,42 @@
     "max_width_percent": 90
   },
   "words": [
-    { "text": "hello", "start_us": 0,       "end_us": 400000,  "deleted": false, "silenced": false, "confidence": 0.98, "speaker_id": 0 },
-    { "text": "there", "start_us": 420000,  "end_us": 820000,  "deleted": false, "silenced": false, "confidence": 0.97, "speaker_id": 0 },
-    { "text": "world", "start_us": 840000,  "end_us": 1240000, "deleted": false, "silenced": false, "confidence": 0.99, "speaker_id": 0 },
-    { "text": "now",   "start_us": 1260000, "end_us": 1600000, "deleted": false, "silenced": false, "confidence": 0.96, "speaker_id": 0 }
+    {
+      "text": "hello",
+      "start_us": 0,
+      "end_us": 400000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.98,
+      "speaker_id": 0
+    },
+    {
+      "text": "there",
+      "start_us": 420000,
+      "end_us": 820000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.97,
+      "speaker_id": 0
+    },
+    {
+      "text": "world",
+      "start_us": 840000,
+      "end_us": 1240000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.99,
+      "speaker_id": 0
+    },
+    {
+      "text": "now",
+      "start_us": 1260000,
+      "end_us": 1600000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": 0.96,
+      "speaker_id": 0
+    }
   ],
   "keep_segments": [],
   "preview_scale_factor": 0.5

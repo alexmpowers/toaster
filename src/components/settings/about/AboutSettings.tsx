@@ -28,7 +28,10 @@ export const AboutSettings: React.FC = () => {
   }, []);
 
   return (
-    <div className="max-w-5xl w-full mx-auto space-y-6" data-testid="settings-outer">
+    <div
+      className="max-w-5xl w-full mx-auto space-y-6"
+      data-testid="settings-outer"
+    >
       <div className="mb-4">
         <h1 className="text-xl font-semibold mb-2">
           {t("settings.about.title")}
@@ -56,7 +59,9 @@ export const AboutSettings: React.FC = () => {
           <Button
             variant="secondary"
             size="md"
-            onClick={() => openUrl("https://github.com/itsnotaboutthecell/toaster")}
+            onClick={() =>
+              openUrl("https://github.com/itsnotaboutthecell/toaster")
+            }
           >
             {t("settings.about.sourceCode.button")}
           </Button>

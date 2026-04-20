@@ -91,8 +91,7 @@ pub fn classify_gap(gap_start_us: i64, gap_end_us: i64, vad_curve: &[f32]) -> Ga
     }
     let frame_us: i64 = 30_000; // 30 ms, matches VAD cadence.
     let lo = (gap_start_us / frame_us).max(0) as usize;
-    let hi_inclusive =
-        ((gap_end_us - 1) / frame_us).max(0) as usize;
+    let hi_inclusive = ((gap_end_us - 1) / frame_us).max(0) as usize;
     let hi = hi_inclusive.min(vad_curve.len().saturating_sub(1));
     if hi < lo {
         return GapClassification::Unknown;
@@ -131,7 +130,6 @@ pub fn classify_pauses(
         })
         .collect()
 }
-
 
 /// Configuration for filler/pause detection.
 pub struct FillerConfig {
@@ -353,11 +351,7 @@ pub const REMOVE_SILENCE_MAX_GAP_US: i64 = 0;
 /// without mutating anything. Shares the gap-walk predicate with
 /// `trim_pauses` so callers that need a pre-flight (e.g. to skip
 /// push_undo_snapshot on no-op) cannot drift from the real behavior.
-pub fn count_trimmable_pauses(
-    words: &[Word],
-    pause_threshold_us: i64,
-    max_gap_us: i64,
-) -> usize {
+pub fn count_trimmable_pauses(words: &[Word], pause_threshold_us: i64, max_gap_us: i64) -> usize {
     if words.len() < 2 {
         return 0;
     }

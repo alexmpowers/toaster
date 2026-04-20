@@ -252,7 +252,8 @@ impl ModelManager {
         if model_info.is_directory {
             // Track that this model is being extracted
             {
-                let mut extracting = crate::lock_recovery::recover_lock(self.extracting_models.lock());
+                let mut extracting =
+                    crate::lock_recovery::recover_lock(self.extracting_models.lock());
                 extracting.insert(model_id.to_string());
             }
 
@@ -287,7 +288,8 @@ impl ModelManager {
                 let _ = fs::remove_file(&partial_path);
                 // Remove from extracting set
                 {
-                    let mut extracting = crate::lock_recovery::recover_lock(self.extracting_models.lock());
+                    let mut extracting =
+                        crate::lock_recovery::recover_lock(self.extracting_models.lock());
                     extracting.remove(model_id);
                 }
                 let _ = self.app_handle.emit(
@@ -326,7 +328,8 @@ impl ModelManager {
             info!("Successfully extracted archive for model: {}", model_id);
             // Remove from extracting set
             {
-                let mut extracting = crate::lock_recovery::recover_lock(self.extracting_models.lock());
+                let mut extracting =
+                    crate::lock_recovery::recover_lock(self.extracting_models.lock());
                 extracting.remove(model_id);
             }
             // Emit extraction completed event
@@ -414,8 +417,7 @@ pub(crate) async fn fetch_and_verify(
         resume_from = 0;
         response = client.get(url).send().await?;
     }
-    if !response.status().is_success()
-        && response.status() != reqwest::StatusCode::PARTIAL_CONTENT
+    if !response.status().is_success() && response.status() != reqwest::StatusCode::PARTIAL_CONTENT
     {
         return Err(anyhow::anyhow!(
             "Failed to download {}: HTTP {}",

@@ -69,7 +69,11 @@ function parseFrontmatter(src: string): Frontmatter {
   return out;
 }
 
-function readSkills(): Array<{ name: string; description: string; path: string }> {
+function readSkills(): Array<{
+  name: string;
+  description: string;
+  path: string;
+}> {
   if (!fs.existsSync(SKILLS_DIR)) return [];
   const out: Array<{ name: string; description: string; path: string }> = [];
   for (const dir of fs.readdirSync(SKILLS_DIR)) {
@@ -91,7 +95,11 @@ function readSkills(): Array<{ name: string; description: string; path: string }
   return out;
 }
 
-function readAgents(): Array<{ name: string; description: string; path: string }> {
+function readAgents(): Array<{
+  name: string;
+  description: string;
+  path: string;
+}> {
   if (!fs.existsSync(AGENTS_DIR)) return [];
   const out: Array<{ name: string; description: string; path: string }> = [];
   for (const entry of fs.readdirSync(AGENTS_DIR)) {
@@ -154,7 +162,9 @@ function main(): void {
       );
       process.exit(1);
     }
-    console.log(`registry OK: ${skills.length} skills, ${agents.length} agents`);
+    console.log(
+      `registry OK: ${skills.length} skills, ${agents.length} agents`,
+    );
     return;
   }
 

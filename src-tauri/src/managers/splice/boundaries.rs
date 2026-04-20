@@ -362,7 +362,7 @@ mod tests {
         let snapped = snap_to_zero_crossing(2_500, &buf, sr, DEFAULT_SNAP_RADIUS_US);
         // Convert back to sample index; integer truncation can land us one
         // sample before the true snap point, so accept a ±1 window.
-        let sample = ((snapped as i64 * sr as i64) / 1_000_000) as usize;
+        let sample = ((snapped * sr as i64) / 1_000_000) as usize;
         let window_lo = sample.saturating_sub(1);
         let window_hi = (sample + 2).min(buf.len() - 1);
         let mut found = false;
@@ -405,10 +405,7 @@ mod tests {
     #[test]
     fn snap_handles_empty_and_tiny_buffers() {
         assert_eq!(snap_to_zero_crossing(1_000, &[], 16_000, 5_000), 1_000);
-        assert_eq!(
-            snap_to_zero_crossing(1_000, &[0.1, -0.1], 16_000, 5_000),
-            0,
-        );
+        assert_eq!(snap_to_zero_crossing(1_000, &[0.1, -0.1], 16_000, 5_000), 0,);
     }
 
     #[test]
@@ -459,7 +456,10 @@ mod tests {
                 break;
             }
         }
-        assert!(found, "energy snap landed off a zero-crossing in voiced audio");
+        assert!(
+            found,
+            "energy snap landed off a zero-crossing in voiced audio"
+        );
     }
 
     #[test]
@@ -486,11 +486,8 @@ mod tests {
         let sr = 16_000u32;
         let buf = sine(80.0, sr, 16_000, 0.7);
         let segments = vec![(100_000, 400_000), (450_000, 900_000)];
-        let baseline =
-            snap_segments_energy_biased(&segments, &buf, sr, 20_000, 5_000);
-        let vad_empty = snap_segments_vad_biased(
-            &segments, &buf, sr, &[], 20_000, 5_000,
-        );
+        let baseline = snap_segments_energy_biased(&segments, &buf, sr, 20_000, 5_000);
+        let vad_empty = snap_segments_vad_biased(&segments, &buf, sr, &[], 20_000, 5_000);
         assert_eq!(baseline, vad_empty);
     }
 
@@ -505,9 +502,7 @@ mod tests {
         curve[7] = 0.1;
         // Target near frame 9 (270ms) with ±120ms radius should reach
         // frame 7 (210ms) and prefer it.
-        let snapped = snap_to_vad_valley(
-            270_000, &buf, sr, &curve, 120_000, 5_000,
-        );
+        let snapped = snap_to_vad_valley(270_000, &buf, sr, &curve, 120_000, 5_000);
         // Expect snap close to frame 7 (210ms) ± one frame.
         assert!(
             (snapped - 210_000).abs() <= 30_000,
@@ -515,4 +510,3 @@ mod tests {
         );
     }
 }
-

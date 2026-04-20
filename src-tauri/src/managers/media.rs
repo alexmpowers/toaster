@@ -147,7 +147,11 @@ impl MediaState {
     /// Look up a cached decoded audio buffer for `path` with matching
     /// modified-time. Returns `None` on cache miss (different path, stale
     /// mtime, or never populated). Cheap to call — does no I/O.
-    pub fn audio_cache_get(&self, path: &Path, modified: SystemTime) -> Option<(Arc<Vec<f32>>, u32)> {
+    pub fn audio_cache_get(
+        &self,
+        path: &Path,
+        modified: SystemTime,
+    ) -> Option<(Arc<Vec<f32>>, u32)> {
         let cache = self.audio_cache.as_ref()?;
         if cache.path == path && cache.modified == modified {
             Some((cache.samples.clone(), cache.sample_rate))
