@@ -71,7 +71,7 @@ Windows code signing (`signCommand` in `tauri.conf.json`) is currently empty —
 ### Release mechanics
 
 - [ ] Bump version in `src-tauri/tauri.conf.json` (currently `0.1.0`) and `package.json` if needed
-- [ ] Update `plugins.updater.endpoints` URL in `tauri.conf.json` to point to `alexmpowers/toaster` (currently points to `itsnotaboutthecell/toaster`)
+- [x] Update `plugins.updater.endpoints` URL in `tauri.conf.json` to point to `alexmpowers/toaster` (currently points to `itsnotaboutthecell/toaster`)
 - [ ] Trigger `release.yml` (workflow_dispatch) — creates draft GitHub release, builds all platforms, uploads installers
 - [ ] Verify all installer artifacts attached to the draft release
 - [ ] Publish the draft release
