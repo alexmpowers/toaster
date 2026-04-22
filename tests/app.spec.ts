@@ -127,12 +127,12 @@ test.describe("Toaster App", () => {
     // Click "Models" — about content disappears, models container appears
     await page.getByText("Models", { exact: true }).click();
     await expect(page.getByText("Source Code")).not.toBeVisible();
-    await expect(page.locator("div.max-w-3xl.w-full.mx-auto")).toBeVisible();
+    await expect(page.locator("div.max-w-5xl.w-full.mx-auto")).toBeVisible();
 
     // Click "Editor" — models container disappears
     await page.getByText("Editor", { exact: true }).click();
     await expect(
-      page.locator("h2", { hasText: /project/i }).first(),
+      page.locator("h2", { hasText: /media/i }).first(),
     ).toBeVisible();
   });
 
@@ -163,7 +163,7 @@ test.describe("Toaster App", () => {
         .getPropertyValue("--color-background")
         .trim(),
     );
-    expect(bgColor).toBe("#1E1E1E");
+    expect(bgColor).toBe("#1e1e1e");
 
     await context.close();
   });
@@ -192,12 +192,12 @@ test.describe("Toaster App", () => {
     await page.goto("/");
     await page.getByText("Editor", { exact: true }).click();
 
-    // Editor renders Project / Words headings
+    // Editor renders Media heading via SettingsGroup
     const groupHeadings = page.locator("h2.text-xs.font-medium");
     await expect(groupHeadings.first()).toBeVisible();
     const headingTexts = await groupHeadings.allTextContents();
     const upper = headingTexts.map((t) => t.toUpperCase());
-    expect(upper).toEqual(expect.arrayContaining(["PROJECT"]));
+    expect(upper).toEqual(expect.arrayContaining(["MEDIA"]));
   });
 
   test("toggling a setting checkbox changes its checked state", async ({
@@ -228,20 +228,21 @@ test.describe("Toaster App", () => {
     await expect(uploadArea).toBeVisible();
 
     // Import prompt text
-    await expect(page.getByText(/click to import media/i)).toBeVisible();
+    await expect(page.getByText(/click to import/i)).toBeVisible();
   });
 
-  test("editor page shows project section when no media loaded", async ({
+  test("editor page shows media section when no media loaded", async ({
     page,
   }) => {
     await page.goto("/");
     await page.getByText("Editor", { exact: true }).click();
 
-    // The "Project" settings group heading should be visible
-    const projectHeading = page.locator("h2.text-xs.font-medium", {
-      hasText: /project/i,
+    // The "Media" settings group heading should be visible (Project section was
+    // collapsed into the empty-state import area in the KISS pass 1 refactor).
+    const mediaHeading = page.locator("h2.text-xs.font-medium", {
+      hasText: /media/i,
     });
-    await expect(projectHeading).toBeVisible();
+    await expect(mediaHeading).toBeVisible();
   });
 
   test("models page renders header and empty state", async ({ page }) => {
@@ -254,7 +255,7 @@ test.describe("Toaster App", () => {
 
     // With empty model arrays returned from mock, the page should still render
     // without crashing — verify the container exists
-    const container = page.locator("div.max-w-3xl.w-full.mx-auto");
+    const container = page.locator("div.max-w-5xl.w-full.mx-auto");
     await expect(container).toBeVisible();
   });
 
@@ -343,7 +344,7 @@ test.describe("Toaster App", () => {
 
     // Navigate to settings and verify content is centered
     await page.getByText("Models", { exact: true }).click();
-    const container = page.locator("div.max-w-3xl.w-full.mx-auto");
+    const container = page.locator("div.max-w-5xl.w-full.mx-auto");
     await expect(container).toBeVisible();
 
     await context.close();
