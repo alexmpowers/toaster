@@ -292,9 +292,12 @@ fn timing_contract_snapshot_reports_expected_counts_and_duration() {
 }
 
 #[test]
-fn timing_contract_snapshot_flags_duration_mismatch() {
+fn timing_contract_snapshot_flags_zero_length_segment() {
     let mut editor = EditorState::new();
-    // Unsorted active words produce a malformed keep-segment duration aggregate.
+    // Unsorted words: timestamps are reversed so `get_keep_segments` collapses
+    // them into a single zero-duration segment whose end equals its start.
+    // Validation must reject this because a zero-duration keep segment is
+    // structurally invalid (end <= start check).
     editor.set_words(vec![
         Word {
             text: "later".into(),
@@ -319,6 +322,61 @@ fn timing_contract_snapshot_flags_duration_mismatch() {
     let snapshot = editor.timing_contract_snapshot();
     assert!(!snapshot.keep_segments_valid);
     assert!(snapshot.warning.is_some());
+}
+
+/// Real transcripts have inter-word silence gaps (typically 20-200 ms between
+/// words). Keep-segments intentionally span those gaps, so
+/// `total_keep_duration_us` exceeds the sum of active-word durations.
+/// `keep_segments_valid` must be `true` for such transcripts — the old
+/// duration-equality check was a false positive that flagged every realistic
+/// input.
+#[test]
+fn timing_contract_snapshot_valid_for_gapped_transcript() {
+    let mut editor = EditorState::new();
+    // Words with ~30 ms gaps between them — typical forced-alignment output.
+    editor.set_words(vec![
+        Word {
+            text: "Hello".into(),
+            start_us: 100_000,
+            end_us: 400_000,
+            deleted: false,
+            silenced: false,
+            confidence: 0.99,
+            speaker_id: 0,
+        },
+        Word {
+            text: "world".into(),
+            start_us: 430_000,
+            end_us: 850_000,
+            deleted: false,
+            silenced: false,
+            confidence: 0.97,
+            speaker_id: 0,
+        },
+        Word {
+            text: "today".into(),
+            start_us: 880_000,
+            end_us: 1_300_000,
+            deleted: false,
+            silenced: false,
+            confidence: 0.95,
+            speaker_id: 0,
+        },
+    ]);
+
+    let snapshot = editor.timing_contract_snapshot();
+    assert!(
+        snapshot.keep_segments_valid,
+        "gapped transcript must pass validation; warning: {:?}",
+        snapshot.warning
+    );
+    assert!(snapshot.warning.is_none());
+    // Active-word duration: 300k + 420k + 420k = 1_140_000
+    // Keep-segment duration includes the gaps: ~1_200_000 (100k..1_300k)
+    assert!(
+        snapshot.total_keep_duration_us >= 1_140_000,
+        "keep duration must be >= active word duration"
+    );
 }
 
 #[test]

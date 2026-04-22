@@ -12,9 +12,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/itsnotaboutthecell/toaster/releases"><img src="https://img.shields.io/github/v/release/itsnotaboutthecell/toaster?include_prereleases&label=latest&style=flat-square" alt="Latest release" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/itsnotaboutthecell/toaster?style=flat-square" alt="License" /></a>
-  <a href="https://github.com/itsnotaboutthecell/toaster/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/itsnotaboutthecell/toaster/ci.yml?branch=main&style=flat-square&label=ci" alt="CI status" /></a>
+  <a href="https://github.com/alexmpowers/toaster/releases"><img src="https://img.shields.io/github/v/release/alexmpowers/toaster?include_prereleases&label=latest&style=flat-square" alt="Latest release" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/alexmpowers/toaster?style=flat-square" alt="License" /></a>
+  <a href="https://github.com/alexmpowers/toaster/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/alexmpowers/toaster/ci.yml?branch=main&style=flat-square&label=ci" alt="CI status" /></a>
 </p>
 
 <p align="center">
@@ -59,7 +59,7 @@ The entire workflow stays on your machine. Your media never leaves your computer
 
 ### Install from release
 
-Download the latest installer from the [Releases](https://github.com/itsnotaboutthecell/toaster/releases) page.
+Download the latest installer from the [Releases](https://github.com/alexmpowers/toaster/releases) page.
 
 | Platform | Format               |
 | -------- | -------------------- |

@@ -435,10 +435,12 @@ impl EditorState {
         let mut total_keep_duration_us = 0_i64;
 
         for (idx, (start, end)) in segments.iter().enumerate() {
-            if end < start {
+            if end <= start {
                 return (
                     false,
-                    Some(format!("invalid keep segment at index {idx}: end < start")),
+                    Some(format!(
+                        "invalid keep segment at index {idx}: end ({end}) <= start ({start})"
+                    )),
                     total_keep_duration_us,
                 );
             }
@@ -466,22 +468,13 @@ impl EditorState {
             previous_end = Some(*end);
         }
 
-        let active_duration_us: i64 = self
-            .words
-            .iter()
-            .filter(|w| !w.deleted && w.end_us >= w.start_us)
-            .map(|w| w.end_us - w.start_us)
-            .sum();
-
-        if active_duration_us != total_keep_duration_us {
-            return (
-                false,
-                Some(format!(
-                    "active word duration ({active_duration_us}) != keep-segment duration ({total_keep_duration_us})"
-                )),
-                total_keep_duration_us,
-            );
-        }
+        // Note: keep-segment total duration intentionally exceeds the sum of
+        // active-word durations for any transcript with inter-word silence gaps
+        // (≤ 200 ms). Segments span from the first to the last word in a phrase,
+        // inclusive of those gaps. Comparing the two values would produce false
+        // positives on every realistic transcript and is therefore not checked
+        // here.  The structural invariants above (sorted, non-overlapping, within
+        // source bounds) are sufficient to guarantee correctness.
 
         (true, None, total_keep_duration_us)
     }
