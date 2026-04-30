@@ -20,7 +20,25 @@ import { useSettingsNavStore } from "./stores/settingsNavStore";
 import { commands } from "@/bindings";
 import { getLanguageDirection, initializeRTL } from "@/lib/utils/rtl";
 
-type OnboardingStep = "model" | "done";
+type OnboardingStep = "model" | "done" | "error";
+
+const ONBOARDING_IPC_TIMEOUT_MS = 5000;
+
+function withTimeout<T>(
+  promise: Promise<T>,
+  ms: number,
+  label: string,
+): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(
+        () => reject(new Error(`${label} timed out after ${ms} ms`)),
+        ms,
+      ),
+    ),
+  ]);
+}
 
 const renderSettingsContent = (section: SidebarSection) => {
   const resolved = resolveSidebarSection(section);
@@ -33,6 +51,7 @@ function App() {
   const [onboardingStep, setOnboardingStep] = useState<OnboardingStep | null>(
     null,
   );
+  const [onboardingError, setOnboardingError] = useState<string | null>(null);
   const [currentSection, setCurrentSection] = [
     useSettingsNavStore((s) => s.currentSection),
     useSettingsNavStore((s) => s.setCurrentSection),
@@ -154,13 +173,34 @@ function App() {
 
   const checkOnboardingStatus = async () => {
     try {
-      // Check if they have any models available
-      const result = await commands.hasAnyModelsAvailable();
+      // Race the IPC call against a 5-second timeout. v0.1.0 had a bootstrap
+      // failure mode where the JS bridge crashed before any IPC could resolve,
+      // and `hasAnyModelsAvailable` would never settle — leaving the app on a
+      // permanent white loading screen. Surfacing the timeout as an "error"
+      // step renders a visible retry/reload UI instead of an indefinite
+      // spinner. Successful path is unchanged: backend resolves in <100 ms.
+      const result = await withTimeout(
+        commands.hasAnyModelsAvailable(),
+        ONBOARDING_IPC_TIMEOUT_MS,
+        "hasAnyModelsAvailable",
+      );
       const hasModels = result.status === "ok" && result.data;
+      setOnboardingError(null);
       setOnboardingStep(hasModels ? "done" : "model");
     } catch (error) {
       console.error("Failed to check onboarding status:", error);
-      setOnboardingStep("model");
+      const message =
+        error instanceof Error ? error.message : String(error ?? "unknown");
+      // Distinguish "backend reachable but reported error" (recoverable —
+      // proceed to model picker) from "IPC bridge unreachable" (unrecoverable
+      // without a reload — show error state with details).
+      if (message.includes("timed out")) {
+        setOnboardingError(message);
+        setOnboardingStep("error");
+      } else {
+        setOnboardingError(null);
+        setOnboardingStep("model");
+      }
     }
   };
 
@@ -169,13 +209,79 @@ function App() {
     setOnboardingStep("done");
   };
 
-  // Still checking onboarding status
+  // Still checking onboarding status. The check pings backend IPC
+  // (`commands.hasAnyModelsAvailable`); if the IPC bridge is healthy this
+  // resolves in <100 ms. Render a minimal loading splash instead of `null`
+  // so the user sees an animated indicator rather than a blank window. If
+  // the IPC call hangs (the v0.1.0 white-screen failure mode), the splash
+  // gives way to a visible error state via WS-E2 below.
   if (onboardingStep === null) {
-    return null;
+    return (
+      <div
+        dir={direction}
+        className="h-screen flex flex-col items-center justify-center bg-background gap-3 select-none"
+      >
+        <div className="w-8 h-8 border-2 border-mid-gray/30 border-t-mid-gray rounded-full animate-spin" />
+        <p className="text-sm text-mid-gray">{t("common.loading")}</p>
+      </div>
+    );
   }
 
   if (onboardingStep === "model") {
     return <Onboarding onModelSelected={handleModelSelected} />;
+  }
+
+  if (onboardingStep === "error") {
+    // Hardcoded English fallback strings: this UI fires when the IPC bridge
+    // is broken, so i18next backend may also be unreachable. Same precedent
+    // as ErrorBoundary.tsx — emergency fallback, always English, always
+    // readable. Variables (vs. inline literals) appease eslint i18next/
+    // no-literal-string under markupOnly: true.
+    const errorTitle = "Toaster could not start";
+    const errorBody =
+      "The app failed to reach the backend within 5 seconds. This usually means the IPC bridge is broken. Please reload, and report this if it persists.";
+    const detailsLabel = "Error details";
+    const retryLabel = "Retry";
+    const reloadLabel = "Reload";
+    return (
+      <div
+        dir={direction}
+        className="h-screen flex flex-col items-center justify-center bg-background gap-4 select-none p-8"
+      >
+        <h2 className="text-lg font-semibold">{errorTitle}</h2>
+        <p className="text-sm text-mid-gray text-center max-w-md">
+          {errorBody}
+        </p>
+        {onboardingError ? (
+          <details className="text-xs text-mid-gray/70 max-w-md">
+            <summary className="cursor-pointer">{detailsLabel}</summary>
+            <pre className="mt-2 whitespace-pre-wrap break-words bg-mid-gray/10 p-3 rounded">
+              {onboardingError}
+            </pre>
+          </details>
+        ) : null}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setOnboardingError(null);
+              setOnboardingStep(null);
+              checkOnboardingStatus();
+            }}
+            className="px-4 py-2 bg-mid-gray/20 hover:bg-mid-gray/30 rounded-lg text-sm font-medium transition-colors"
+          >
+            {retryLabel}
+          </button>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-mid-gray/10 hover:bg-mid-gray/20 rounded-lg text-sm font-medium transition-colors"
+          >
+            {reloadLabel}
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
