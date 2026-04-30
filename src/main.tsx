@@ -26,15 +26,15 @@ function renderBootFailure(error: unknown): void {
     error instanceof Error ? error.message : String(error ?? "Unknown error");
   const stack = error instanceof Error && error.stack ? error.stack : "";
   root.innerHTML = `
-    <div style="font-family: system-ui, sans-serif; padding: 2rem; max-width: 640px; margin: 0 auto; color: #e5e5e5; background: #171717; min-height: 100vh; box-sizing: border-box;">
-      <h1 style="font-size: 1.25rem; margin: 0 0 0.5rem 0;">Toaster failed to start</h1>
-      <p style="color: #a3a3a3; font-size: 0.875rem; margin: 0 0 1rem 0;">
+    <div class="boot-failure">
+      <h1 class="boot-failure__title">Toaster failed to start</h1>
+      <p class="boot-failure__message">
         Toaster v${BOOT_VERSION} hit an unrecoverable error before the editor could load.
         Please report this with the message and stack below.
       </p>
-      <pre style="background: #262626; padding: 0.75rem; border-radius: 0.375rem; font-size: 0.8125rem; white-space: pre-wrap; word-break: break-word; color: #fca5a5; margin: 0 0 1rem 0;">${escapeHtml(message)}</pre>
-      ${stack ? `<details style="font-size: 0.75rem; color: #737373;"><summary style="cursor: pointer;">Stack trace</summary><pre style="background: #262626; padding: 0.75rem; border-radius: 0.375rem; white-space: pre-wrap; word-break: break-word; margin-top: 0.5rem;">${escapeHtml(stack)}</pre></details>` : ""}
-      <button onclick="window.location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #404040; color: #e5e5e5; border: none; border-radius: 0.375rem; cursor: pointer; font-size: 0.875rem;">Reload</button>
+      <pre class="boot-failure__error">${escapeHtml(message)}</pre>
+      ${stack ? `<details class="boot-failure__details"><summary>Stack trace</summary><pre class="boot-failure__details-pre">${escapeHtml(stack)}</pre></details>` : ""}
+      <button class="boot-failure__button" onclick="window.location.reload()">Reload</button>
     </div>
   `;
 }
