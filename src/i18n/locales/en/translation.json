@@ -563,7 +563,13 @@
     "export": "Export",
     "exporting": "Exporting...",
     "addCaptions": "Add Captions",
-    "cleanup": "Remove fillers",
+    "cleanup": {
+      "button": "Remove fillers",
+      "empty": "Nothing to clean up.",
+      "success": "Removed {{fillers}} fillers · {{duplicates}} duplicates · {{pauses}} pauses",
+      "fillersOnly": "Removed {{count}} filler",
+      "fillersOnly_plural": "Removed {{count}} fillers"
+    },
     "addCaptionsDescription": "Burn captions directly into the exported video.",
     "normalizeAudioDescription": "Normalize loudness to the target LUFS on export.",
     "exportMenu": {

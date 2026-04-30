@@ -187,6 +187,9 @@ const EditorView: React.FC = () => {
                 const count = unwrapResult(result);
                 if (count > 0) {
                   await refreshFromBackend();
+                  toast.success(
+                    t("editor.cleanup.fillersOnly", { count }),
+                  );
                 }
                 clearHighlights();
               })
@@ -270,6 +273,7 @@ const EditorView: React.FC = () => {
     setSelectionRange,
     clearHighlights,
     refreshFromBackend,
+    t,
   ]);
 
   const handleTranscribe = useCallback(async () => {
@@ -413,14 +417,29 @@ const EditorView: React.FC = () => {
     clearHighlights();
     setIsCleaningUp(true);
     try {
-      unwrapResult(await commands.cleanupAll(null, null));
-      await refreshFromBackend();
+      const result = unwrapResult(await commands.cleanupAll(null, null));
+      const total =
+        result.fillers_removed +
+        result.duplicates_removed +
+        result.pauses_trimmed;
+      if (total === 0) {
+        toast(t("editor.cleanup.empty"));
+      } else {
+        await refreshFromBackend();
+        toast.success(
+          t("editor.cleanup.success", {
+            fillers: result.fillers_removed,
+            duplicates: result.duplicates_removed,
+            pauses: result.pauses_trimmed,
+          }),
+        );
+      }
     } catch (err) {
       console.error("Cleanup failed:", err);
     } finally {
       setIsCleaningUp(false);
     }
-  }, [clearHighlights, refreshFromBackend]);
+  }, [clearHighlights, refreshFromBackend, t]);
 
   const handleRemoveSilence = useCallback(async () => {
     clearHighlights();
@@ -659,7 +678,7 @@ const EditorView: React.FC = () => {
                 className="inline-flex items-center gap-1.5"
               >
                 <AudioLines size={14} />
-                {t("editor.cleanup")}
+                {t("editor.cleanup.button")}
               </Button>
               <Button
                 variant="secondary"
