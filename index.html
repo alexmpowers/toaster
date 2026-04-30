@@ -22,9 +22,20 @@
         padding: 0;
         height: 100%;
       }
-      body {
+      /*
+       * Pre-React background lives on <html>, NOT <body>, so the cascade
+       * hands off cleanly to App.css once the bundle parses. App.css themes
+       * `:root` (= the html element) via `background-color: var(--color-background)`,
+       * which has higher specificity (0,0,1,0) than `html` here (0,0,0,1)
+       * AND is parsed later — so it wins after mount, restoring the
+       * user's light/dark theme palette. If we put this on `body` instead,
+       * the body's own background paints over the themed html bg and
+       * forces dark mode on every user.
+       */
+      html {
         background: #171717;
-        color: #e5e5e5;
+      }
+      body {
         font-family:
           system-ui,
           -apple-system,
