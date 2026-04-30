@@ -1,13 +1,13 @@
 {
   "original": {
-    "path": "extras\\toaster_example.mp4",
+    "path": "eval/fixtures/toaster_example.mp4",
     "duration_s": 21.765,
     "silence_gaps": 13,
     "silence_total_s": 9.3,
     "silence_pct": 42.7
   },
   "edited": {
-    "path": "extras\\toaster_example-edited.mp4",
+    "path": "eval/fixtures/toaster_example-edited.mp4",
     "duration_s": 12.101,
     "silence_gaps": 5,
     "silence_total_s": 2.17,

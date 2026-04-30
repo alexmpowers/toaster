@@ -2,7 +2,7 @@
 name = "toaster"
 version = "0.1.0"
 description = "Toaster — edit video by editing text"
-authors = ["itsnotaboutthecell"]
+authors = ["alexmpowers"]
 edition = "2021"
 license = "MIT"
 default-run = "toaster"

@@ -449,13 +449,13 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                   word.silenced && !word.deleted && "opacity-60 italic",
                   isHighlighted &&
                     highlightType === "filler" &&
-                    "bg-red-400/50 text-black",
+                    "bg-red-400/50 text-text",
                   isHighlighted &&
                     highlightType === "duplicate" &&
-                    "bg-orange-400/50 text-black",
+                    "bg-orange-400/50 text-text",
                   isHighlighted &&
                     highlightType === "pause" &&
-                    "bg-yellow-400/50 text-black",
+                    "bg-yellow-400/50 text-text",
                   isCurrentFindMatch &&
                     !isHighlighted &&
                     "ring-2 ring-logo-primary bg-logo-primary/30",

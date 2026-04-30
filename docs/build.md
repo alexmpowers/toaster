@@ -23,7 +23,7 @@ This guide sets up and builds **Toaster** (Tauri + Rust + React).
 ### 1. Clone
 
 ```bash
-git clone https://github.com/itsnotaboutthecell/toaster.git
+git clone https://github.com/alexmpowers/toaster.git
 cd toaster
 ```
 
