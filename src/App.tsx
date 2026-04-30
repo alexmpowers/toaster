@@ -24,6 +24,14 @@ type OnboardingStep = "model" | "done" | "error";
 
 const ONBOARDING_IPC_TIMEOUT_MS = 5000;
 
+// Module-scope flag so React.StrictMode's intentional dev double-mount
+// doesn't fire `frontendBootComplete` twice. A useRef would reset on the
+// throwaway first mount, leading to two `[boot] frontend boot complete`
+// log lines per dev cold launch and undermining the "single line per boot"
+// triage promise. Production is single-pass either way; this purely
+// cleans up the dev signal.
+let bootCompleteReported = false;
+
 function withTimeout<T>(
   promise: Promise<T>,
   ms: number,
@@ -65,7 +73,6 @@ function App() {
     (state) => state.refreshOutputDevices,
   );
   const hasCompletedPostOnboardingInit = useRef(false);
-  const hasReportedBootComplete = useRef(false);
 
   useEffect(() => {
     checkOnboardingStatus();
@@ -92,9 +99,11 @@ function App() {
   // bootstrap latency without re-instrumenting. Single payload (vs.
   // per-phase commands) avoids the IPC round-trips themselves moving the
   // numbers we're recording. See `commands::boot::frontend_boot_complete`.
+  // Dedupe flag is module-scope (not useRef) so React.StrictMode's dev
+  // double-mount doesn't cause two `[boot]` lines per cold launch.
   useEffect(() => {
-    if (onboardingStep !== "done" || hasReportedBootComplete.current) return;
-    hasReportedBootComplete.current = true;
+    if (onboardingStep !== "done" || bootCompleteReported) return;
+    bootCompleteReported = true;
     const timings = window.__toasterBootTimings;
     if (!timings) return;
     const editorReadyMs = Math.round(

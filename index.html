@@ -47,12 +47,35 @@
       @keyframes boot-splash-spin {
         to { transform: rotate(360deg); }
       }
+      /*
+       * Honor OS-level reduced-motion for vestibular-disorder users. The
+       * splash is the very first thing they see, so leaving the spinner
+       * uncapped would override the system preference before any React
+       * code runs. The text label still tells them the app is loading.
+       */
+      @media (prefers-reduced-motion: reduce) {
+        .boot-splash__spinner { animation: none; }
+      }
     </style>
   </head>
 
   <body>
     <div id="root">
-      <div class="boot-splash" data-boot-splash>
+      <!--
+        role="status" + aria-live="polite" lets screen readers announce
+        that the app is loading. The "Loading Toaster…" string is in raw
+        English on purpose — i18next has not loaded yet at this point in
+        the boot sequence, and the whole point of this static splash is
+        to render before any framework module downloads. Keeping it
+        untranslated is the trade-off we're making for white-screen
+        defense in depth.
+      -->
+      <div
+        class="boot-splash"
+        data-boot-splash
+        role="status"
+        aria-live="polite"
+      >
         <div class="boot-splash__spinner" aria-hidden="true"></div>
         <p>Loading Toaster…</p>
       </div>
