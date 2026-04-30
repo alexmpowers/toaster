@@ -39,6 +39,7 @@ recording_*
 # Playwright
 playwright-report/
 test-results/
+test-results.txt
 blob-report/
 
 .direnv
@@ -85,6 +86,19 @@ features/*/tasks/*/context.md
 .github/registry/
 .github/templates/
 .github/copilot-instructions.md
+
+# Other AI assistant working dirs (defensive — contributors may use any
+# of these; their per-user config / session state should never be
+# committed even if it lands in the working tree).
+.cursor/
+.aider*
+.windsurf/
+.copilot/
+.continue/
+.codeium/
+.zed/
+.rtk/
+RTK.md
 
 # agents.md convention files (AI coding assistants — nearest-file wins)
 /AGENTS.md
