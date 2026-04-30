@@ -65,6 +65,7 @@ function App() {
     (state) => state.refreshOutputDevices,
   );
   const hasCompletedPostOnboardingInit = useRef(false);
+  const hasReportedBootComplete = useRef(false);
 
   useEffect(() => {
     checkOnboardingStatus();
@@ -83,6 +84,30 @@ function App() {
       refreshOutputDevices();
     }
   }, [onboardingStep, refreshAudioDevices, refreshOutputDevices]);
+
+  // Report frontend boot timings to the rust log exactly once, the first
+  // time the main editor surface mounts. The rust log is the single shared
+  // triage surface that survives across user machines (no devtools needed),
+  // so emitting one INFO line per cold boot lets us spot regressions in
+  // bootstrap latency without re-instrumenting. Single payload (vs.
+  // per-phase commands) avoids the IPC round-trips themselves moving the
+  // numbers we're recording. See `commands::boot::frontend_boot_complete`.
+  useEffect(() => {
+    if (onboardingStep !== "done" || hasReportedBootComplete.current) return;
+    hasReportedBootComplete.current = true;
+    const timings = window.__toasterBootTimings;
+    if (!timings) return;
+    const editorReadyMs = Math.round(
+      performance.now() - timings.bootstrap_start_ts,
+    );
+    void commands.frontendBootComplete({
+      bootstrap_start_ms: timings.bootstrap_start_ms,
+      imports_done_ms: timings.imports_done_ms ?? 0,
+      react_mount_ms: timings.react_mount_ms ?? 0,
+      editor_ready_ms: editorReadyMs,
+    });
+    console.info(`[boot] editor-ready +${editorReadyMs}ms`);
+  }, [onboardingStep]);
 
   // Handle keyboard shortcuts for debug mode toggle
   useEffect(() => {

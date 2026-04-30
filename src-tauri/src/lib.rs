@@ -296,6 +296,7 @@ pub fn run(cli_args: CliArgs) {
             commands::transcription::set_model_unload_timeout,
             commands::transcription::get_model_load_status,
             commands::transcription::unload_model_manually,
+            commands::boot::frontend_boot_complete,
         ])
         .events(collect_events![]);
 

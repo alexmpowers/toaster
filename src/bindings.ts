@@ -983,6 +983,9 @@ async unloadModelManually() : Promise<Result<null, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e as string };
 }
+},
+async frontendBootComplete(timings: FrontendBootTimings) : Promise<void> {
+    await TAURI_INVOKE("frontend_boot_complete", { timings });
 }
 }
 
@@ -1202,6 +1205,23 @@ pauses: PauseInfo[]; filler_count: number; pause_count: number;
  * Indices of the second word in each adjacent duplicate pair.
  */
 duplicate_indices: number[]; duplicate_count: number }
+/**
+ * Frontend-side boot timings, in milliseconds since the bootstrap entry point.
+ * 
+ * Phases, in order:
+ * 
+ * - `bootstrap_start_ms`: always 0. Anchors the marker so the rust log shows
+ * a clear start of the frontend boot phase.
+ * - `imports_done_ms`: i18n + modelStore dynamic imports both resolved
+ * (parallelized via `Promise.all`).
+ * - `react_mount_ms`: `ReactDOM.createRoot(...).render(<App />)` returned.
+ * React hasn't necessarily flushed yet, but the synchronous render call
+ * has been issued.
+ * - `editor_ready_ms`: App.tsx `onboardingStep === "done"` and the main
+ * editor surface (Sidebar + Footer + content) has mounted at least once.
+ * This is "user can see the editor" from the frontend's perspective.
+ */
+export type FrontendBootTimings = { bootstrap_start_ms: number; imports_done_ms: number; react_mount_ms: number; editor_ready_ms: number }
 export type GpuDeviceOption = { id: number; name: string; total_vram_mb: number }
 /**
  * Cached view of the user's machine capability. Every field is

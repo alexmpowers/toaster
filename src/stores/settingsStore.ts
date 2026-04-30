@@ -12,6 +12,7 @@ import type {
   OrtAcceleratorSetting,
 } from "@/bindings";
 import { commands } from "@/bindings";
+import { getCachedAppSettings } from "@/lib/cached-settings";
 
 /**
  * App-wide settings store. Mirrors the backend `AppSettings` struct (see
@@ -183,9 +184,8 @@ export const useSettingsStore = create<SettingsStore>()(
     // Load settings from store
     refreshSettings: async () => {
       try {
-        const result = await commands.getAppSettings();
-        if (result.status === "ok") {
-          const settings = result.data;
+        const settings = await getCachedAppSettings();
+        if (settings) {
           const normalizedSettings: Settings = {
             ...settings,
             selected_output_device:
@@ -193,7 +193,7 @@ export const useSettingsStore = create<SettingsStore>()(
           };
           set({ settings: normalizedSettings, isLoading: false });
         } else {
-          console.error("Failed to load settings:", result.error);
+          console.error("Failed to load settings: backend returned no data");
           set({ isLoading: false });
         }
       } catch (error) {

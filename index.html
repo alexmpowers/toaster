@@ -4,10 +4,59 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>toaster</title>
+    <style>
+      /*
+       * Static loading shell. Renders the instant WebView2 paints the document,
+       * before main.tsx finishes downloading + executing. Replaces the prior
+       * default-white window background that made every cold launch look like
+       * a white screen for the first 500-2000ms (and made the v0.1.0
+       * manualChunks crash visually indistinguishable from a healthy boot).
+       *
+       * Pure HTML+CSS — no React, no Tauri APIs, no fonts to download — so it
+       * survives even if every framework module is broken. React.createRoot
+       * replaces the children of #root on mount.
+       */
+      html, body { margin: 0; padding: 0; height: 100%; }
+      body {
+        background: #171717;
+        color: #e5e5e5;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        overflow: hidden;
+      }
+      #root { height: 100%; }
+      .boot-splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        background: #171717;
+        color: #a3a3a3;
+        font-size: 0.875rem;
+      }
+      .boot-splash__spinner {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 9999px;
+        border: 2px solid rgba(163, 163, 163, 0.25);
+        border-top-color: #a3a3a3;
+        animation: boot-splash-spin 0.8s linear infinite;
+      }
+      @keyframes boot-splash-spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="boot-splash" data-boot-splash>
+        <div class="boot-splash__spinner" aria-hidden="true"></div>
+        <p>Loading Toaster…</p>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

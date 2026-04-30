@@ -2,7 +2,7 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { locale } from "@tauri-apps/plugin-os";
 import { LANGUAGE_METADATA } from "./languages";
-import { commands } from "@/bindings";
+import { getCachedAppSettings } from "@/lib/cached-settings";
 import {
   getLanguageDirection,
   updateDocumentDirection,
@@ -88,9 +88,9 @@ i18n.use(initReactI18next).init({
 // Sync language from app settings
 export const syncLanguageFromSettings = async () => {
   try {
-    const result = await commands.getAppSettings();
-    if (result.status === "ok" && result.data.app_language) {
-      const supported = getSupportedLanguage(result.data.app_language);
+    const settings = await getCachedAppSettings();
+    if (settings && settings.app_language) {
+      const supported = getSupportedLanguage(settings.app_language);
       if (supported && supported !== i18n.language) {
         await i18n.changeLanguage(supported);
       }

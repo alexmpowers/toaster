@@ -1,5 +1,6 @@
 pub mod app_settings;
 pub mod audio;
+pub mod boot;
 pub mod captions;
 pub mod disfluency;
 pub mod editor;

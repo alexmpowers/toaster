@@ -55,18 +55,53 @@ window.addEventListener("unhandledrejection", (event) => {
   console.error("[boot] unhandledrejection", event.reason);
 });
 
+// Boot-timing collector. Populated by `bootstrap()` and read once by App.tsx
+// after the editor is visible — see `commands.frontendBootComplete` for why
+// we batch these into a single post-render IPC instead of phase-by-phase.
+//
+// All `*_ms` fields measure milliseconds elapsed from `bootstrap_start_ts`
+// (a `performance.now()` reading taken at the top of `bootstrap()`), NOT
+// from page navigation start. App.tsx subtracts `bootstrap_start_ts` from
+// its own `performance.now()` to compute `editor_ready_ms` on the same
+// origin.
+declare global {
+  interface Window {
+    __toasterBootTimings?: {
+      bootstrap_start_ts: number;
+      bootstrap_start_ms: number;
+      imports_done_ms?: number;
+      react_mount_ms?: number;
+    };
+  }
+}
+
 async function bootstrap(): Promise<void> {
+  const bootStart = performance.now();
+  window.__toasterBootTimings = {
+    bootstrap_start_ts: bootStart,
+    bootstrap_start_ms: Math.round(bootStart),
+  };
+  console.info(
+    `[boot] bootstrap-start +0ms (page-relative ${Math.round(bootStart)}ms)`,
+  );
+
   // Set platform before render so CSS can scope per-platform (e.g. scrollbar styles)
   document.documentElement.dataset.platform = platform();
 
-  // Initialize i18n
-  await import("./i18n");
+  // i18n and modelStore are independent — load them in parallel rather than
+  // serially. Eliminates ~one round-trip-per-import of latency on cold boot.
+  const [, modelStoreModule] = await Promise.all([
+    import("./i18n"),
+    import("./stores/modelStore"),
+  ]);
+  const importsDone = Math.round(performance.now() - bootStart);
+  window.__toasterBootTimings.imports_done_ms = importsDone;
+  console.info(`[boot] bootstrap-imports-done +${importsDone}ms`);
 
   // Initialize model store (loads models and sets up event listeners).
   // Fire-and-forget on purpose: the store handles its own loading state and
   // App.tsx already shows a splash/onboarding while these IPC calls resolve.
-  const { useModelStore } = await import("./stores/modelStore");
-  void useModelStore.getState().initialize();
+  void modelStoreModule.useModelStore.getState().initialize();
 
   const rootEl = document.getElementById("root");
   if (!rootEl) {
@@ -78,6 +113,9 @@ async function bootstrap(): Promise<void> {
       <App />
     </React.StrictMode>,
   );
+  const reactMount = Math.round(performance.now() - bootStart);
+  window.__toasterBootTimings.react_mount_ms = reactMount;
+  console.info(`[boot] react-mount +${reactMount}ms`);
 }
 
 bootstrap().catch((error) => {
