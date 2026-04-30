@@ -325,6 +325,8 @@ function App() {
     >
       <Toaster
         theme="system"
+        expand
+        visibleToasts={5}
         toastOptions={{
           unstyled: true,
           classNames: {
