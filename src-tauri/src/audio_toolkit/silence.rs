@@ -168,7 +168,12 @@ mod tests {
         let dur_us = 1_000_000; // 1 s
         let samples = silent_buffer(dur_us);
         let ranges = detect_silent_ranges(&samples, SR, &cfg());
-        assert_eq!(ranges.len(), 1, "expected one silence range, got {:?}", ranges);
+        assert_eq!(
+            ranges.len(),
+            1,
+            "expected one silence range, got {:?}",
+            ranges
+        );
         let (start, end) = ranges[0];
         assert_eq!(start, 0);
         assert!(
@@ -183,7 +188,11 @@ mod tests {
     fn full_energy_buffer_emits_no_ranges() {
         let samples = loud_buffer(1_000_000, 0.9);
         let ranges = detect_silent_ranges(&samples, SR, &cfg());
-        assert!(ranges.is_empty(), "expected no silence ranges, got {:?}", ranges);
+        assert!(
+            ranges.is_empty(),
+            "expected no silence ranges, got {:?}",
+            ranges
+        );
     }
 
     #[test]
@@ -198,7 +207,12 @@ mod tests {
         samples.extend(loud_buffer(200_000, 0.9));
 
         let ranges = detect_silent_ranges(&samples, SR, &cfg());
-        assert_eq!(ranges.len(), 1, "expected exactly one silence range, got {:?}", ranges);
+        assert_eq!(
+            ranges.len(),
+            1,
+            "expected exactly one silence range, got {:?}",
+            ranges
+        );
 
         let (start, end) = ranges[0];
         let one_window = cfg().window_us;
@@ -264,7 +278,11 @@ mod tests {
         samples.extend(loud_buffer(60_000, 0.9));
 
         let ranges = detect_silent_ranges(&samples, SR, &cfg);
-        assert!(ranges.is_empty(), "100 ms silence should be dropped: {:?}", ranges);
+        assert!(
+            ranges.is_empty(),
+            "100 ms silence should be dropped: {:?}",
+            ranges
+        );
     }
 
     #[test]
@@ -272,7 +290,11 @@ mod tests {
         // Default threshold is -45 dBFS ~= 0.0056 linear. Use 0.05 (well above).
         let samples = loud_buffer(1_000_000, 0.05);
         let ranges = detect_silent_ranges(&samples, SR, &cfg());
-        assert!(ranges.is_empty(), "0.05 amplitude should not be silence: {:?}", ranges);
+        assert!(
+            ranges.is_empty(),
+            "0.05 amplitude should not be silence: {:?}",
+            ranges
+        );
     }
 
     #[test]
@@ -280,7 +302,12 @@ mod tests {
         // 0.001 linear == -60 dBFS, well below -45.
         let samples = loud_buffer(1_000_000, 0.001);
         let ranges = detect_silent_ranges(&samples, SR, &cfg());
-        assert_eq!(ranges.len(), 1, "expected one silence range, got {:?}", ranges);
+        assert_eq!(
+            ranges.len(),
+            1,
+            "expected one silence range, got {:?}",
+            ranges
+        );
     }
 
     #[test]
@@ -294,7 +321,11 @@ mod tests {
 
         let ranges = detect_silent_ranges(&samples, SR, &cfg());
         assert_eq!(ranges.len(), 2, "expected two ranges, got {:?}", ranges);
-        assert!(ranges[0].1 <= ranges[1].0, "ranges overlap or out of order: {:?}", ranges);
+        assert!(
+            ranges[0].1 <= ranges[1].0,
+            "ranges overlap or out of order: {:?}",
+            ranges
+        );
     }
 
     #[test]

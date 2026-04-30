@@ -379,7 +379,11 @@ fn precision_eval_remove_silence_preserves_source_time_and_seams() {
     //     200 ms short gap stays inside one segment because the
     //     intra-segment-gap budget already absorbs it.
     let segs = editor.get_keep_segments();
-    assert_eq!(segs.len(), 3, "expected 3 segments split at the 2 sentinels");
+    assert_eq!(
+        segs.len(),
+        3,
+        "expected 3 segments split at the 2 sentinels"
+    );
     assert_eq!(segs[0], (0, 500_000), "segment-0 boundary drift");
     assert_eq!(
         segs[1],
@@ -441,8 +445,7 @@ fn precision_eval_remove_silence_preserves_source_time_and_seams() {
 #[test]
 fn precision_eval_remove_silence_finds_pauses_after_filler_deletion() {
     use crate::managers::filler::{
-        count_trimmable_pauses, trim_pauses, REMOVE_SILENCE_MAX_GAP_US,
-        REMOVE_SILENCE_THRESHOLD_US,
+        count_trimmable_pauses, trim_pauses, REMOVE_SILENCE_MAX_GAP_US, REMOVE_SILENCE_THRESHOLD_US,
     };
 
     // alpha — short gap — "um" filler — long silent gap — beta.
@@ -531,7 +534,10 @@ fn precision_eval_remove_silence_finds_pauses_after_filler_deletion() {
         REMOVE_SILENCE_THRESHOLD_US,
         REMOVE_SILENCE_MAX_GAP_US,
     );
-    assert_eq!(second_dry, 0, "second-call must report 0 — sentinel not bridging");
+    assert_eq!(
+        second_dry, 0,
+        "second-call must report 0 — sentinel not bridging"
+    );
     let words_mut = editor.get_words_vec_mut();
     let second_trim = trim_pauses(
         words_mut,

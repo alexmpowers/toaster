@@ -120,10 +120,7 @@ fn two_overlapping_sentinels_act_as_one_forbidden_range() {
     ]);
 
     let segments = editor.get_keep_segments();
-    assert_eq!(
-        segments,
-        vec![(600_000, 800_000), (5_000_000, 6_000_000)]
-    );
+    assert_eq!(segments, vec![(600_000, 800_000), (5_000_000, 6_000_000)]);
 }
 
 #[test]
@@ -163,7 +160,9 @@ fn audio_truth_pattern_five_long_silences_produces_five_seam_breaks() {
     let mut editor = EditorState::new();
     let mut words = Vec::new();
     // Six speech regions (between the five silences), each 5 seconds long.
-    let speech_starts = [0_i64, 7_000_000, 14_000_000, 21_000_000, 28_000_000, 35_000_000];
+    let speech_starts = [
+        0_i64, 7_000_000, 14_000_000, 21_000_000, 28_000_000, 35_000_000,
+    ];
     for (i, &start) in speech_starts.iter().enumerate() {
         words.push(make_word(
             &format!("speech_{}", i),
@@ -173,7 +172,13 @@ fn audio_truth_pattern_five_long_silences_produces_five_seam_breaks() {
         ));
     }
     // Five silence sentinels, one between each speech region (each 2 s).
-    for &start in &[5_000_000_i64, 12_000_000, 19_000_000, 26_000_000, 33_000_000] {
+    for &start in &[
+        5_000_000_i64,
+        12_000_000,
+        19_000_000,
+        26_000_000,
+        33_000_000,
+    ] {
         words.push(silence_sentinel(start, start + 2_000_000));
     }
 

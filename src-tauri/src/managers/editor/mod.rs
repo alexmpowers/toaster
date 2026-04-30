@@ -280,8 +280,7 @@ impl EditorState {
                 }
                 Some(s) => {
                     let gap = sub.start_us - seg_end;
-                    let split_required =
-                        opened_after_delete || gap > MAX_INTRA_SEGMENT_GAP_US;
+                    let split_required = opened_after_delete || gap > MAX_INTRA_SEGMENT_GAP_US;
                     if split_required {
                         if seg_end > s {
                             segments.push((s, seg_end));
@@ -614,10 +613,7 @@ fn merged_deleted_ranges(words: &[types::Word]) -> Vec<(i64, i64)> {
 /// (the audio-truth case: a silence sentinel inside a Parakeet-padded word).
 /// The head's `left_seam` reflects the inter-word gap that preceded the
 /// word; the tail's is always `SeamCause::Delete`.
-fn collect_kept_subintervals(
-    words: &[types::Word],
-    forbidden: &[(i64, i64)],
-) -> Vec<KeptSub> {
+fn collect_kept_subintervals(words: &[types::Word], forbidden: &[(i64, i64)]) -> Vec<KeptSub> {
     let mut subs: Vec<KeptSub> = Vec::new();
     // Tracks the source-time end of the last sub we emitted, used to
     // distinguish "natural gap" seams from "delete" seams when starting

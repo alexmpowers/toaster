@@ -437,11 +437,7 @@ pub fn count_trimmable_pauses(words: &[Word], pause_threshold_us: i64, max_gap_u
 /// deleted ranges collapse correctly inside `get_keep_segments`).
 ///
 /// Returns the number of sentinels inserted.
-pub fn trim_pauses(
-    words: &mut Vec<Word>,
-    pause_threshold_us: i64,
-    max_gap_us: i64,
-) -> usize {
+pub fn trim_pauses(words: &mut Vec<Word>, pause_threshold_us: i64, max_gap_us: i64) -> usize {
     if words.len() < 2 {
         return 0;
     }

@@ -415,10 +415,22 @@ fn trim_finds_silence_after_a_filler_was_deleted_in_the_gap() {
     );
     // Real word source-time still inviolate, including the user-deleted
     // filler — its boundaries describe what audio to excise.
-    assert_eq!(words.iter().find(|w| w.text == "hello").unwrap().end_us, 500_000);
-    assert_eq!(words.iter().find(|w| w.text == "um").unwrap().start_us, 600_000);
-    assert_eq!(words.iter().find(|w| w.text == "um").unwrap().end_us, 700_000);
-    assert_eq!(words.iter().find(|w| w.text == "world").unwrap().start_us, 2_500_000);
+    assert_eq!(
+        words.iter().find(|w| w.text == "hello").unwrap().end_us,
+        500_000
+    );
+    assert_eq!(
+        words.iter().find(|w| w.text == "um").unwrap().start_us,
+        600_000
+    );
+    assert_eq!(
+        words.iter().find(|w| w.text == "um").unwrap().end_us,
+        700_000
+    );
+    assert_eq!(
+        words.iter().find(|w| w.text == "world").unwrap().start_us,
+        2_500_000
+    );
     // Exactly one sentinel, covering [hello.end + max_gap, world.start].
     let sentinels: Vec<_> = words.iter().filter(|w| is_sentinel(w)).collect();
     assert_eq!(sentinels.len(), 1);
@@ -498,8 +510,14 @@ fn trim_inserts_a_sentinel_for_every_long_gap() {
     let sentinels: Vec<&Word> = words.iter().filter(|w| is_sentinel(w)).collect();
     assert_eq!(sentinels.len(), 2);
     // Real words preserved their source-time.
-    assert_eq!(words.iter().find(|w| w.text == "b").unwrap().start_us, 2_500_000);
-    assert_eq!(words.iter().find(|w| w.text == "c").unwrap().start_us, 5_000_000);
+    assert_eq!(
+        words.iter().find(|w| w.text == "b").unwrap().start_us,
+        2_500_000
+    );
+    assert_eq!(
+        words.iter().find(|w| w.text == "c").unwrap().start_us,
+        5_000_000
+    );
 }
 
 #[test]
@@ -512,9 +530,11 @@ fn trim_is_idempotent_on_repeated_invocation() {
     let first = trim_pauses(&mut words, DEFAULT_PAUSE_THRESHOLD_US, DEFAULT_MAX_GAP_US);
     assert!(first > 0);
     let second = trim_pauses(&mut words, DEFAULT_PAUSE_THRESHOLD_US, DEFAULT_MAX_GAP_US);
-    assert_eq!(second, 0, "second trim must be a no-op on already-trimmed transcript");
-    let dry =
-        count_trimmable_pauses(&words, DEFAULT_PAUSE_THRESHOLD_US, DEFAULT_MAX_GAP_US);
+    assert_eq!(
+        second, 0,
+        "second trim must be a no-op on already-trimmed transcript"
+    );
+    let dry = count_trimmable_pauses(&words, DEFAULT_PAUSE_THRESHOLD_US, DEFAULT_MAX_GAP_US);
     assert_eq!(dry, 0);
 }
 
@@ -562,8 +582,14 @@ fn tighten_inserts_independent_sentinels_for_each_gap() {
     let count = tighten_gaps(&mut words, DEFAULT_TIGHTEN_TARGET_US);
     assert_eq!(count, 2);
     // Real words at their original source-time.
-    assert_eq!(words.iter().find(|w| w.text == "b").unwrap().start_us, 1_000_000);
-    assert_eq!(words.iter().find(|w| w.text == "c").unwrap().start_us, 2_500_000);
+    assert_eq!(
+        words.iter().find(|w| w.text == "b").unwrap().start_us,
+        1_000_000
+    );
+    assert_eq!(
+        words.iter().find(|w| w.text == "c").unwrap().start_us,
+        2_500_000
+    );
 }
 
 #[test]
@@ -622,4 +648,3 @@ fn tighten_rejects_non_positive_target() {
     assert_eq!(tighten_gaps(&mut words, 0), 0);
     assert_eq!(tighten_gaps(&mut words, -100), 0);
 }
-

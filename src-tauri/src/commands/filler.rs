@@ -329,7 +329,10 @@ pub fn remove_silence(
         let insert_idx = match words.binary_search_by_key(start_us, |w| w.start_us) {
             Ok(idx) | Err(idx) => idx,
         };
-        words.insert(insert_idx, filler::make_silence_sentinel(*start_us, *end_us));
+        words.insert(
+            insert_idx,
+            filler::make_silence_sentinel(*start_us, *end_us),
+        );
     }
 
     state.bump_revision();
@@ -348,11 +351,7 @@ pub fn remove_silence(
 /// Mirrors the helper used inside `EditorState::get_keep_segments` but is
 /// inlined here so `remove_silence` doesn't have to expose internal
 /// state-machine plumbing.
-fn subtract_existing_coverage(
-    start: i64,
-    end: i64,
-    existing: &[(i64, i64)],
-) -> Vec<(i64, i64)> {
+fn subtract_existing_coverage(start: i64, end: i64, existing: &[(i64, i64)]) -> Vec<(i64, i64)> {
     if end <= start {
         return Vec::new();
     }
@@ -615,8 +614,14 @@ mod remove_silence_tests {
         );
         assert_eq!(count, 1);
         // "hello" and "world" must keep their original source-time.
-        assert_eq!(words.iter().find(|w| w.text == "hello").unwrap().end_us, 500_000);
-        assert_eq!(words.iter().find(|w| w.text == "world").unwrap().start_us, 1_500_000);
+        assert_eq!(
+            words.iter().find(|w| w.text == "hello").unwrap().end_us,
+            500_000
+        );
+        assert_eq!(
+            words.iter().find(|w| w.text == "world").unwrap().start_us,
+            1_500_000
+        );
         // The new entry is a silence sentinel covering the entire gap.
         let sentinel = words.iter().find(|w| is_silence_sentinel(w)).unwrap();
         assert_eq!(sentinel.start_us, 500_000);
