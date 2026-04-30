@@ -40,15 +40,15 @@ Windows code signing (`signCommand` in `tauri.conf.json`) is currently empty —
 
 ## Planned Installer Formats
 
-| Platform | Format | Status |
-|---|---|---|
-| Windows x64 | `.msi` + `.exe` (NSIS) | ❌ Blocked — NSIS bundler crash |
-| Windows ARM64 | `.msi` + `.exe` (NSIS) | ❌ Blocked — NSIS bundler crash |
-| macOS ARM (M1+) | `.dmg` | ❌ Blocked — no signing cert |
-| macOS Intel | `.dmg` | ❌ Blocked — no signing cert |
-| Linux x64 | `.deb` (Ubuntu 22.04) | ❌ Blocked — invalid signing key |
-| Linux x64 | `.AppImage` + `.rpm` (Ubuntu 24.04) | ❌ Blocked — invalid signing key |
-| Linux ARM64 | `.AppImage` + `.deb` + `.rpm` | ❌ Blocked — invalid signing key |
+| Platform        | Format                              | Status                           |
+| --------------- | ----------------------------------- | -------------------------------- |
+| Windows x64     | `.msi` + `.exe` (NSIS)              | ❌ Blocked — NSIS bundler crash  |
+| Windows ARM64   | `.msi` + `.exe` (NSIS)              | ❌ Blocked — NSIS bundler crash  |
+| macOS ARM (M1+) | `.dmg`                              | ❌ Blocked — no signing cert     |
+| macOS Intel     | `.dmg`                              | ❌ Blocked — no signing cert     |
+| Linux x64       | `.deb` (Ubuntu 22.04)               | ❌ Blocked — invalid signing key |
+| Linux x64       | `.AppImage` + `.rpm` (Ubuntu 24.04) | ❌ Blocked — invalid signing key |
+| Linux ARM64     | `.AppImage` + `.deb` + `.rpm`       | ❌ Blocked — invalid signing key |
 
 ---
 
