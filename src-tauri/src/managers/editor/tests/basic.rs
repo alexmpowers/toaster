@@ -292,12 +292,16 @@ fn timing_contract_snapshot_reports_expected_counts_and_duration() {
 }
 
 #[test]
-fn timing_contract_snapshot_flags_zero_length_segment() {
+fn timing_contract_snapshot_handles_unsorted_input_gracefully() {
     let mut editor = EditorState::new();
-    // Unsorted words: timestamps are reversed so `get_keep_segments` collapses
-    // them into a single zero-duration segment whose end equals its start.
-    // Validation must reject this because a zero-duration keep segment is
-    // structurally invalid (end <= start check).
+    // Unsorted words: timestamps are reversed. The legacy linear walker
+    // collapsed this into a `(1M, 1M)` zero-duration segment that the
+    // validator then rejected. The interval-subtraction rewrite is more
+    // robust: it produces a single valid segment by extending the open
+    // segment's end (max-of-ends merge) so unsorted input no longer
+    // generates structurally-invalid keep segments. Validator coverage of
+    // genuine zero-length / overlapping / out-of-bounds segments lives in
+    // the dedicated validator tests below.
     editor.set_words(vec![
         Word {
             text: "later".into(),
@@ -320,8 +324,18 @@ fn timing_contract_snapshot_flags_zero_length_segment() {
     ]);
 
     let snapshot = editor.timing_contract_snapshot();
-    assert!(!snapshot.keep_segments_valid);
-    assert!(snapshot.warning.is_some());
+    assert!(
+        snapshot.keep_segments_valid,
+        "unsorted input should still produce structurally-valid keep segments: {:?}",
+        snapshot.keep_segments
+    );
+    for seg in &snapshot.keep_segments {
+        assert!(
+            seg.end_us > seg.start_us,
+            "no zero-length segments expected: {:?}",
+            seg
+        );
+    }
 }
 
 /// Real transcripts have inter-word silence gaps (typically 20-200 ms between

@@ -347,138 +347,204 @@ pub const REMOVE_SILENCE_THRESHOLD_US: i64 = 750_000;
 /// Collapse target for "Remove silence" — hard cut (0 ms).
 pub const REMOVE_SILENCE_MAX_GAP_US: i64 = 0;
 
+/// Sentinel marker text for synthetic "silence" Words inserted by
+/// `trim_pauses`/`tighten_gaps`. Empty because these are not real
+/// words — they exist purely to mark a source-time region as deleted
+/// so [`crate::managers::editor::EditorState::get_keep_segments`]
+/// excludes it from the timeline. The frontend transcript view filters
+/// them out so they never render with strikethrough.
+pub const SILENCE_SENTINEL_TEXT: &str = "";
+
+/// True iff `word` is a synthetic silence sentinel (deleted with empty
+/// text). Real user-typed empty deletions are not produced anywhere in
+/// the codebase, so this predicate is safe to treat as authoritative.
+pub fn is_silence_sentinel(word: &Word) -> bool {
+    word.deleted && word.text.is_empty()
+}
+
+pub(crate) fn make_silence_sentinel(start_us: i64, end_us: i64) -> Word {
+    Word {
+        text: SILENCE_SENTINEL_TEXT.to_string(),
+        start_us,
+        end_us,
+        deleted: true,
+        silenced: false,
+        confidence: -1.0,
+        speaker_id: -1,
+    }
+}
+
 /// Count how many gaps `trim_pauses` would trim for the given thresholds,
 /// without mutating anything. Shares the gap-walk predicate with
 /// `trim_pauses` so callers that need a pre-flight (e.g. to skip
 /// push_undo_snapshot on no-op) cannot drift from the real behavior.
+///
+/// Gaps that already contain a **silence sentinel** (a previously
+/// inserted deleted-empty Word) are *skipped* — they have already been
+/// trimmed and re-trimming them would only stack redundant sentinels
+/// and break idempotence. Gaps that contain only **user-deleted words**
+/// (e.g. excised fillers) are NOT skipped: the dead air around the
+/// excised content is still trimmable silence from the user's
+/// perspective, and the user explicitly clicking "Remove silence"
+/// after "Remove fillers" expects to see it counted.
 pub fn count_trimmable_pauses(words: &[Word], pause_threshold_us: i64, max_gap_us: i64) -> usize {
     if words.len() < 2 {
         return 0;
     }
     let mut count = 0usize;
-    let mut prev_end: Option<i64> = None;
+    let mut prev_non_deleted_end: Option<i64> = None;
+    let mut sentinel_between = false;
     for word in words.iter() {
         if word.deleted {
+            if is_silence_sentinel(word) {
+                sentinel_between = true;
+            }
             continue;
         }
-        if let Some(pe) = prev_end {
-            let gap = word.start_us.saturating_sub(pe);
-            if gap >= pause_threshold_us && gap.saturating_sub(max_gap_us) > 0 {
-                count += 1;
+        if let Some(pe) = prev_non_deleted_end {
+            if !sentinel_between {
+                let gap = word.start_us.saturating_sub(pe);
+                if gap >= pause_threshold_us && gap.saturating_sub(max_gap_us) > 0 {
+                    count += 1;
+                }
             }
         }
-        prev_end = Some(word.end_us);
+        prev_non_deleted_end = Some(word.end_us);
+        sentinel_between = false;
     }
     count
 }
 
-/// Trim long pauses by reducing gaps to `max_gap_us`.
+/// Trim long pauses by inserting deleted "silence sentinel" words that
+/// cover the excess of every gap exceeding `pause_threshold_us`.
 ///
-/// Walks the word list and, for every gap between non-deleted words that
-/// exceeds `pause_threshold_us`, trims the excess beyond `max_gap_us` by
-/// shifting all subsequent word timestamps earlier. Deleted words between
-/// pauses are shifted along with everything else so their timing stays
-/// consistent.
+/// Real word timestamps are **never mutated** — `EditorState` words are
+/// always source-timeline microseconds, and the export/preview
+/// pipelines depend on that invariant. Each qualifying gap of length
+/// `g` between two consecutive non-deleted words gets a deleted
+/// sentinel inserted that covers `[prev.end_us + max_gap_us,
+/// next.start_us]`. `EditorState::get_keep_segments` already excludes
+/// deleted ranges, so the seam closes naturally with no source-time
+/// drift, no overlap, and no further work in downstream consumers.
 ///
-/// Returns the number of pauses trimmed.
-pub fn trim_pauses(words: &mut [Word], pause_threshold_us: i64, max_gap_us: i64) -> usize {
+/// Gaps that already contain a **silence sentinel** (a previously
+/// inserted deleted-empty Word) are skipped — re-trimming them would
+/// only add redundant sentinels and break idempotence. Gaps that
+/// contain only **user-deleted words** (e.g. excised fillers) are
+/// still trimmed: the surrounding source-time silence is what the
+/// user wants gone, and the new sentinel may overlap an existing
+/// user-deleted word in source-time without ill effect (overlapping
+/// deleted ranges collapse correctly inside `get_keep_segments`).
+///
+/// Returns the number of sentinels inserted.
+pub fn trim_pauses(
+    words: &mut Vec<Word>,
+    pause_threshold_us: i64,
+    max_gap_us: i64,
+) -> usize {
     if words.len() < 2 {
         return 0;
     }
 
-    // First pass: find gaps that exceed the threshold and compute excess.
-    // Each entry is (index_of_word_after_gap, excess_to_remove).
-    let mut gaps: Vec<(usize, i64)> = Vec::new();
+    // First pass: collect (insert-at-index, sentinel) tuples.
+    // We never mutate during iteration so the indices recorded here are
+    // valid against the original `words` snapshot.
+    let mut insertions: Vec<(usize, Word)> = Vec::new();
 
-    let mut prev_end: Option<i64> = None;
+    let mut prev_non_deleted_end: Option<i64> = None;
+    let mut sentinel_between = false;
+
     for (i, word) in words.iter().enumerate() {
         if word.deleted {
+            if is_silence_sentinel(word) {
+                sentinel_between = true;
+            }
             continue;
         }
-        if let Some(pe) = prev_end {
-            let gap = word.start_us - pe;
-            if gap >= pause_threshold_us {
-                let excess = gap - max_gap_us;
-                if excess > 0 {
-                    gaps.push((i, excess));
+        if let Some(pe) = prev_non_deleted_end {
+            if !sentinel_between {
+                let gap = word.start_us.saturating_sub(pe);
+                if gap >= pause_threshold_us {
+                    let excess = gap.saturating_sub(max_gap_us);
+                    if excess > 0 {
+                        let sentinel_start = pe.saturating_add(max_gap_us);
+                        // Defensive: clamp `sentinel_start` so the
+                        // sentinel never has end <= start. The earlier
+                        // checks guarantee this in practice but a stray
+                        // call with `max_gap_us > gap` would otherwise
+                        // produce a degenerate sentinel.
+                        let sentinel_start = sentinel_start.min(word.start_us);
+                        insertions.push((i, make_silence_sentinel(sentinel_start, word.start_us)));
+                    }
                 }
             }
         }
-        prev_end = Some(word.end_us);
+        prev_non_deleted_end = Some(word.end_us);
+        sentinel_between = false;
     }
 
-    if gaps.is_empty() {
+    let count = insertions.len();
+    if count == 0 {
         return 0;
     }
 
-    let count = gaps.len();
-
-    // Second pass: apply cumulative shift to all words at or after each gap.
-    let mut gap_idx = 0;
-    let mut cumulative_shift: i64 = 0;
-
-    for (i, word) in words.iter_mut().enumerate() {
-        while gap_idx < gaps.len() && gaps[gap_idx].0 <= i {
-            cumulative_shift += gaps[gap_idx].1;
-            gap_idx += 1;
-        }
-
-        if cumulative_shift > 0 {
-            word.start_us -= cumulative_shift;
-            word.end_us -= cumulative_shift;
-        }
+    // Apply in reverse-index order so each insertion does not shift the
+    // indices of insertions still to come.
+    for (idx, sentinel) in insertions.into_iter().rev() {
+        words.insert(idx, sentinel);
     }
-
     count
 }
 
 /// Default target gap duration after tightening (250ms).
 pub const DEFAULT_TIGHTEN_TARGET_US: i64 = 250_000;
 
-/// Tighten all inter-word gaps to a maximum target duration.
-/// Unlike trim_pauses (which only handles very long pauses), this
-/// shortens ALL gaps exceeding the target — creating a tighter pace.
-/// Returns the number of gaps shortened.
-pub fn tighten_gaps(words: &mut [Word], target_gap_us: i64) -> usize {
+/// Tighten all inter-word gaps exceeding `target_gap_us` by inserting
+/// deleted silence sentinels covering the excess.
+///
+/// Same source-time-preserving mechanism as [`trim_pauses`]: real word
+/// timestamps are never mutated. Differs from `trim_pauses` only in
+/// applying to *every* gap above `target_gap_us`, not just the very
+/// long ones (no separate threshold).
+///
+/// Returns the number of sentinels inserted.
+pub fn tighten_gaps(words: &mut Vec<Word>, target_gap_us: i64) -> usize {
     if words.len() < 2 || target_gap_us <= 0 {
         return 0;
     }
 
-    let mut gaps: Vec<(usize, i64)> = Vec::new();
-    let mut prev_end: Option<(usize, i64)> = None;
+    let mut insertions: Vec<(usize, Word)> = Vec::new();
+    let mut prev_non_deleted_end: Option<i64> = None;
+    let mut sentinel_between = false;
 
     for (i, word) in words.iter().enumerate() {
         if word.deleted {
+            if is_silence_sentinel(word) {
+                sentinel_between = true;
+            }
             continue;
         }
-        if let Some((_, pe)) = prev_end {
-            let gap = word.start_us - pe;
-            if gap > target_gap_us {
-                gaps.push((i, gap - target_gap_us));
+        if let Some(pe) = prev_non_deleted_end {
+            if !sentinel_between {
+                let gap = word.start_us.saturating_sub(pe);
+                if gap > target_gap_us {
+                    let sentinel_start = pe.saturating_add(target_gap_us);
+                    let sentinel_start = sentinel_start.min(word.start_us);
+                    insertions.push((i, make_silence_sentinel(sentinel_start, word.start_us)));
+                }
             }
         }
-        prev_end = Some((i, word.end_us));
+        prev_non_deleted_end = Some(word.end_us);
+        sentinel_between = false;
     }
 
-    if gaps.is_empty() {
+    let count = insertions.len();
+    if count == 0 {
         return 0;
     }
-
-    let count = gaps.len();
-    let mut gap_idx = 0;
-    let mut cumulative_shift: i64 = 0;
-
-    for (i, word) in words.iter_mut().enumerate() {
-        while gap_idx < gaps.len() && gaps[gap_idx].0 <= i {
-            cumulative_shift += gaps[gap_idx].1;
-            gap_idx += 1;
-        }
-        if cumulative_shift > 0 {
-            word.start_us -= cumulative_shift;
-            word.end_us -= cumulative_shift;
-        }
+    for (idx, sentinel) in insertions.into_iter().rev() {
+        words.insert(idx, sentinel);
     }
-
     count
 }
 
@@ -495,3 +561,11 @@ pub fn analyze(words: &[Word], config: &FillerConfig) -> AnalysisResult {
 #[cfg(test)]
 #[path = "filler_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "filler_cleanup_cascade_tests.rs"]
+mod cleanup_cascade_tests;
+
+#[cfg(test)]
+#[path = "filler_classify_tests.rs"]
+mod classify_tests;

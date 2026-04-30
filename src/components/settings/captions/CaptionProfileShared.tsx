@@ -205,62 +205,60 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
 
   return (
     <div
-      className="mb-4 w-full max-w-[50%] rounded-xl border border-mid-gray/20 bg-background p-4"
+      className="mb-4 w-full rounded-xl border border-mid-gray/20 bg-background p-4"
       data-testid="caption-preview-pane"
     >
-      <div className="mb-3 flex flex-wrap items-center justify-end gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-text/60">
-              {t("settings.captions.preview.orientation.label")}
-            </label>
-            <div className="min-w-[120px]">
-              <Select
-                value={orientation}
-                options={[
-                  {
-                    value: "horizontal",
-                    label: t(
-                      "settings.captions.preview.orientation.horizontal",
-                    ),
-                  },
-                  {
-                    value: "vertical",
-                    label: t("settings.captions.preview.orientation.vertical"),
-                  },
-                ]}
-                onChange={(v) => {
-                  if (v === "horizontal" || v === "vertical")
-                    onOrientationChange(v);
-                }}
-              />
-            </div>
+      <div className="mb-3 flex flex-nowrap items-center justify-center gap-3">
+        <div className="flex flex-shrink-0 items-center gap-2">
+          <label className="whitespace-nowrap text-xs text-text/60">
+            {t("settings.captions.preview.orientation.label")}
+          </label>
+          <div className="min-w-[120px]">
+            <Select
+              value={orientation}
+              options={[
+                {
+                  value: "horizontal",
+                  label: t(
+                    "settings.captions.preview.orientation.horizontal",
+                  ),
+                },
+                {
+                  value: "vertical",
+                  label: t("settings.captions.preview.orientation.vertical"),
+                },
+              ]}
+              onChange={(v) => {
+                if (v === "horizontal" || v === "vertical")
+                  onOrientationChange(v);
+              }}
+            />
           </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-text/60">
-              {t("settings.captions.preview.sampleLegend")}
-            </label>
-            <div className="min-w-[140px]">
-              <Select
-                value={selectedSampleKey}
-                options={[
-                  {
-                    value: "single",
-                    label: t("settings.captions.preview.sample.label.single"),
-                  },
-                  {
-                    value: "multiLine",
-                    label: t(
-                      "settings.captions.preview.sample.label.multiLine",
-                    ),
-                  },
-                ]}
-                onChange={(v) => {
-                  if (v === "single" || v === "multiLine")
-                    setSelectedSampleKey(v);
-                }}
-              />
-            </div>
+        </div>
+        <div className="flex flex-shrink-0 items-center gap-2">
+          <label className="whitespace-nowrap text-xs text-text/60">
+            {t("settings.captions.preview.sampleLegend")}
+          </label>
+          <div className="min-w-[140px]">
+            <Select
+              value={selectedSampleKey}
+              options={[
+                {
+                  value: "single",
+                  label: t("settings.captions.preview.sample.label.single"),
+                },
+                {
+                  value: "multiLine",
+                  label: t(
+                    "settings.captions.preview.sample.label.multiLine",
+                  ),
+                },
+              ]}
+              onChange={(v) => {
+                if (v === "single" || v === "multiLine")
+                  setSelectedSampleKey(v);
+              }}
+            />
           </div>
         </div>
       </div>

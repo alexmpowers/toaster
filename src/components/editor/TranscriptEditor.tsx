@@ -385,6 +385,16 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
       {/* Word spans */}
       <div className="flex flex-wrap gap-1 leading-relaxed">
         {words.map((word, index) => {
+          // Silence sentinels are deleted Words with empty text inserted
+          // by `remove_silence` / `tighten_gaps` to mark closed-over dead
+          // air. They have no user-facing identity — the backend already
+          // excludes their range from keep-segments — so they must not
+          // render as struck-through entries. Skipping the render also
+          // makes them unreachable by mouse selection (selectWord is
+          // only ever called from word click handlers below), so the
+          // original `index` keys for selection / highlight / find still
+          // resolve correctly without any remapping.
+          if (word.deleted && word.text === "") return null;
           const isSelected = selectedIndex === index;
           const isRangeSelected = isInSelectionRange(index);
           const isFindMatch = findMatchSet.has(index);

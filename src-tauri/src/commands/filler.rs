@@ -205,7 +205,7 @@ pub fn trim_pauses(
     let mut state = crate::lock_recovery::try_lock(store.0.lock()).map_err(|e| e.to_string())?;
     state.push_undo_snapshot();
 
-    let words = state.get_words_mut();
+    let words = state.get_words_vec_mut();
     let count = filler::trim_pauses(words, threshold, max_gap);
 
     if count > 0 {
@@ -226,7 +226,7 @@ pub fn tighten_gaps(
     let target = target_gap_us.unwrap_or(filler::DEFAULT_TIGHTEN_TARGET_US);
     let mut state = crate::lock_recovery::try_lock(store.0.lock()).map_err(|e| e.to_string())?;
     state.push_undo_snapshot();
-    let words = state.get_words_mut();
+    let words = state.get_words_vec_mut();
     let count = filler::tighten_gaps(words, target);
     if count > 0 {
         state.bump_revision();
@@ -234,45 +234,149 @@ pub fn tighten_gaps(
     Ok(count)
 }
 
-/// Remove silence: collapse inter-word gaps ≥ 750 ms to 0 ms.
+/// Remove silence: detect dead air directly from the source audio and
+/// insert silence sentinels covering each silent range.
 ///
-/// Word-gap based (no VAD / RMS) — reuses whisper's existing per-word
-/// timings. Delegates the actual shift to `filler::trim_pauses` so
-/// preview and export stay on the single source of truth (the same
-/// time-map shift the trim-pauses path already uses).
+/// Audio-truth (not word-gap): we walk the cached PCM buffer and emit a
+/// `(start_us, end_us)` for every region where the peak amplitude stays
+/// below `−45 dBFS` for at least `400 ms`. Each detected range is added
+/// to the word list as a deleted "silence sentinel" (empty text +
+/// `deleted=true`). Real word source-time is never mutated; downstream
+/// `EditorState::get_keep_segments` performs interval subtraction over
+/// the union of deleted ranges, so sentinels can overlap word ranges
+/// (which is necessary in practice — Parakeet pads first/last words
+/// with silence — see `commands/waveform/mod.rs` `PARAKEET_OUTER_TRIM_US`).
 ///
-/// Returns the number of gaps collapsed. When `0`, the call is a no-op
-/// (no undo snapshot, no revision bump) so the UI can surface a subtle
-/// "no dead-air found" notice without polluting the undo stack.
+/// Idempotent: re-running the command subtracts existing sentinel
+/// coverage from newly detected ranges, so a second invocation is a
+/// no-op once all silence has been excised.
+///
+/// Returns the number of sentinels inserted. When `0`, the call is a
+/// no-op (no undo snapshot, no revision bump) so the UI can surface a
+/// subtle "no dead-air found" notice without polluting the undo stack.
 #[tauri::command]
 #[specta::specta]
-pub fn remove_silence(store: State<EditorStore>) -> Result<usize, String> {
+pub fn remove_silence(
+    store: State<EditorStore>,
+    media_store: State<'_, crate::managers::media::MediaStore>,
+) -> Result<usize, String> {
+    use crate::audio_toolkit::{detect_silent_ranges, SilenceDetectConfig};
+
+    // Resolve the source media's cached PCM buffer. The first call decodes
+    // via ffmpeg; subsequent calls hit the audio cache on `MediaStore`.
+    let media_path = {
+        let media =
+            crate::lock_recovery::try_lock(media_store.0.lock()).map_err(|e| e.to_string())?;
+        match media.current() {
+            Some(m) => m.path.clone(),
+            None => {
+                log::info!("remove_silence: no media loaded; nothing to scan.");
+                return Ok(0);
+            }
+        }
+    };
+
+    let (samples, sample_rate) =
+        match crate::commands::disfluency::decode_media_audio_cached(&media_path, &media_store) {
+            Ok(pair) => pair,
+            Err(e) => {
+                log::warn!(
+                    "remove_silence: audio decode failed ({}); reporting no silence.",
+                    e
+                );
+                return Ok(0);
+            }
+        };
+
+    let cfg = SilenceDetectConfig::default();
+    let detected = detect_silent_ranges(&samples, sample_rate, &cfg);
+    if detected.is_empty() {
+        log::debug!("remove_silence: no silent ranges detected in audio.");
+        return Ok(0);
+    }
+
+    // Subtract the source-time coverage of any pre-existing silence
+    // sentinels so re-running is idempotent.
     let mut state = crate::lock_recovery::try_lock(store.0.lock()).map_err(|e| e.to_string())?;
+    let existing: Vec<(i64, i64)> = {
+        let mut ranges: Vec<(i64, i64)> = state
+            .get_words()
+            .iter()
+            .filter(|w| filler::is_silence_sentinel(w) && w.end_us > w.start_us)
+            .map(|w| (w.start_us, w.end_us))
+            .collect();
+        ranges.sort_by_key(|&(s, _)| s);
+        ranges
+    };
 
-    // Dry-run detection first so we can skip the undo snapshot on no-op
-    // runs (AC-001-f: no destructive edit recorded when nothing to do).
-    // Same lock is held through the mutating call below — no TOCTOU.
-    let prelim_count = filler::count_trimmable_pauses(
-        state.get_words(),
-        filler::REMOVE_SILENCE_THRESHOLD_US,
-        filler::REMOVE_SILENCE_MAX_GAP_US,
-    );
-
-    if prelim_count == 0 {
+    let mut new_ranges: Vec<(i64, i64)> = Vec::new();
+    for (s, e) in detected {
+        new_ranges.extend(subtract_existing_coverage(s, e, &existing));
+    }
+    if new_ranges.is_empty() {
+        log::debug!(
+            "remove_silence: every detected range is already covered by an \
+             existing silence sentinel; nothing to add."
+        );
         return Ok(0);
     }
 
     state.push_undo_snapshot();
-    let words = state.get_words_mut();
-    let count = filler::trim_pauses(
-        words,
-        filler::REMOVE_SILENCE_THRESHOLD_US,
-        filler::REMOVE_SILENCE_MAX_GAP_US,
-    );
-    if count > 0 {
-        state.bump_revision();
+    let words = state.get_words_vec_mut();
+    for (start_us, end_us) in &new_ranges {
+        // Binary-search insertion by start_us preserves the sorted-source-
+        // time invariant the keep-segment walker assumes.
+        let insert_idx = match words.binary_search_by_key(start_us, |w| w.start_us) {
+            Ok(idx) | Err(idx) => idx,
+        };
+        words.insert(insert_idx, filler::make_silence_sentinel(*start_us, *end_us));
     }
-    Ok(count)
+
+    state.bump_revision();
+    log::info!(
+        "remove_silence: inserted {} silence sentinel(s) from {} detected range(s).",
+        new_ranges.len(),
+        new_ranges.len()
+    );
+    Ok(new_ranges.len())
+}
+
+/// Subtract the union of `existing` from `[start, end)`. `existing` is
+/// expected to be sorted by start. Returns the residual sub-intervals in
+/// source-time order.
+///
+/// Mirrors the helper used inside `EditorState::get_keep_segments` but is
+/// inlined here so `remove_silence` doesn't have to expose internal
+/// state-machine plumbing.
+fn subtract_existing_coverage(
+    start: i64,
+    end: i64,
+    existing: &[(i64, i64)],
+) -> Vec<(i64, i64)> {
+    if end <= start {
+        return Vec::new();
+    }
+    let mut out: Vec<(i64, i64)> = Vec::new();
+    let mut cursor = start;
+    for &(es, ee) in existing {
+        if ee <= cursor {
+            continue;
+        }
+        if es >= end {
+            break;
+        }
+        if es > cursor {
+            out.push((cursor, es.min(end)));
+        }
+        cursor = cursor.max(ee);
+        if cursor >= end {
+            break;
+        }
+    }
+    if cursor < end {
+        out.push((cursor, end));
+    }
+    out
 }
 
 /// Combined iterative cleanup: delete fillers, then delete cascading
@@ -414,13 +518,20 @@ pub fn cleanup_all(
 
 #[cfg(test)]
 mod remove_silence_tests {
-    //! Unit tests for the Remove silence threshold/collapse pair.
-    //! Exercises `filler::count_trimmable_pauses` + `filler::trim_pauses`
-    //! at the exact constants `remove_silence` applies, so regressions
-    //! in either helper surface here before they reach the editor UI.
+    //! Helper-level tests for the legacy word-gap `trim_pauses` /
+    //! `count_trimmable_pauses` pair. The live `remove_silence` command
+    //! is now audio-truth (PCM peak detection) — see `commands::filler::
+    //! remove_silence` and the unit tests for `subtract_existing_coverage`
+    //! below — but `trim_pauses` is retained as a building block for
+    //! callers that don't have audio (offline tests, cleanup_all's
+    //! gap-only fallback) and as the canonical sentinel-insertion path.
+    //! These tests pin the helper contract: no real-word timestamp
+    //! mutation, sentinels cover the gap exactly, idempotent on second
+    //! call, dry-run count matches mutating count.
     use crate::managers::editor::Word;
     use crate::managers::filler::{
-        count_trimmable_pauses, trim_pauses, REMOVE_SILENCE_MAX_GAP_US, REMOVE_SILENCE_THRESHOLD_US,
+        count_trimmable_pauses, is_silence_sentinel, trim_pauses, REMOVE_SILENCE_MAX_GAP_US,
+        REMOVE_SILENCE_THRESHOLD_US,
     };
 
     fn word(text: &str, start_us: i64, end_us: i64) -> Word {
@@ -455,10 +566,27 @@ mod remove_silence_tests {
             vec![word("a", 0, 500_000), word("b", 1_250_000, 1_500_000)],
             // threshold boundary — 749 ms, below ⇒ no count
             vec![word("a", 0, 500_000), word("b", 1_249_000, 1_500_000)],
-            // deleted words skipped
+            // gap with a deleted filler word in the middle: the filler
+            // does NOT bridge — Remove silence after Remove fillers
+            // must still find this 1.4 s of dead air.
             vec![
                 word("a", 0, 500_000),
-                deleted_word("x", 600_000, 700_000),
+                deleted_word("um", 600_000, 700_000),
+                word("b", 2_000_000, 2_500_000),
+            ],
+            // gap already bridged by a silence sentinel: skipped, true
+            // idempotence.
+            vec![
+                word("a", 0, 500_000),
+                Word {
+                    text: String::new(),
+                    start_us: 500_000,
+                    end_us: 2_000_000,
+                    deleted: true,
+                    silenced: false,
+                    confidence: -1.0,
+                    speaker_id: -1,
+                },
                 word("b", 2_000_000, 2_500_000),
             ],
         ];
@@ -475,7 +603,7 @@ mod remove_silence_tests {
     }
 
     #[test]
-    fn collapses_one_second_gap_to_zero() {
+    fn collapses_one_second_gap_via_sentinel_insertion() {
         let mut words = vec![
             word("hello", 0, 500_000),
             word("world", 1_500_000, 2_000_000), // 1 s gap
@@ -486,9 +614,13 @@ mod remove_silence_tests {
             REMOVE_SILENCE_MAX_GAP_US,
         );
         assert_eq!(count, 1);
-        // gap was 1_000_000, target 0 ⇒ shift = 1_000_000
-        assert_eq!(words[1].start_us, 500_000);
-        assert_eq!(words[1].end_us, 1_000_000);
+        // "hello" and "world" must keep their original source-time.
+        assert_eq!(words.iter().find(|w| w.text == "hello").unwrap().end_us, 500_000);
+        assert_eq!(words.iter().find(|w| w.text == "world").unwrap().start_us, 1_500_000);
+        // The new entry is a silence sentinel covering the entire gap.
+        let sentinel = words.iter().find(|w| is_silence_sentinel(w)).unwrap();
+        assert_eq!(sentinel.start_us, 500_000);
+        assert_eq!(sentinel.end_us, 1_500_000);
     }
 
     #[test]
@@ -516,5 +648,99 @@ mod remove_silence_tests {
             REMOVE_SILENCE_MAX_GAP_US,
         );
         assert_eq!(dry, 0);
+    }
+
+    #[test]
+    fn preserves_real_word_source_time() {
+        // The bug we are fixing: previously `trim_pauses` shifted real
+        // word `start_us`/`end_us` in place, breaking the source-time
+        // contract that `EditorState::get_keep_segments` and
+        // `canonical_keep_segments_for_media` depend on. After the
+        // fix, real-word timestamps must be byte-identical pre/post.
+        let original = vec![
+            word("hello", 0, 500_000),
+            word("world", 1_500_000, 2_000_000),
+            word("there", 4_000_000, 4_500_000),
+        ];
+        let mut words = original.clone();
+        trim_pauses(
+            &mut words,
+            REMOVE_SILENCE_THRESHOLD_US,
+            REMOVE_SILENCE_MAX_GAP_US,
+        );
+        for original_word in &original {
+            let surviving = words
+                .iter()
+                .find(|w| w.text == original_word.text)
+                .unwrap_or_else(|| panic!("missing word {} after trim", original_word.text));
+            assert_eq!(
+                surviving.start_us, original_word.start_us,
+                "{} start_us drifted",
+                original_word.text
+            );
+            assert_eq!(
+                surviving.end_us, original_word.end_us,
+                "{} end_us drifted",
+                original_word.text
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod subtract_existing_coverage_tests {
+    //! Unit tests for the pure subtraction helper used to make the
+    //! audio-truth `remove_silence` command idempotent: a second
+    //! invocation must not insert a duplicate sentinel for any range
+    //! already covered by an existing one.
+    use super::subtract_existing_coverage;
+
+    #[test]
+    fn empty_existing_returns_full_range() {
+        let out = subtract_existing_coverage(100, 200, &[]);
+        assert_eq!(out, vec![(100, 200)]);
+    }
+
+    #[test]
+    fn fully_covered_range_returns_empty() {
+        let out = subtract_existing_coverage(100, 200, &[(50, 250)]);
+        assert!(out.is_empty(), "expected no residual, got {:?}", out);
+    }
+
+    #[test]
+    fn coverage_in_the_middle_splits_into_two() {
+        let out = subtract_existing_coverage(0, 1_000, &[(400, 600)]);
+        assert_eq!(out, vec![(0, 400), (600, 1_000)]);
+    }
+
+    #[test]
+    fn coverage_clipping_left_trims_head() {
+        let out = subtract_existing_coverage(0, 1_000, &[(0, 250)]);
+        assert_eq!(out, vec![(250, 1_000)]);
+    }
+
+    #[test]
+    fn coverage_clipping_right_trims_tail() {
+        let out = subtract_existing_coverage(0, 1_000, &[(750, 1_500)]);
+        assert_eq!(out, vec![(0, 750)]);
+    }
+
+    #[test]
+    fn multiple_existing_ranges_compose() {
+        // 0..1000 with existing coverage at [200,300] and [600,750].
+        let out = subtract_existing_coverage(0, 1_000, &[(200, 300), (600, 750)]);
+        assert_eq!(out, vec![(0, 200), (300, 600), (750, 1_000)]);
+    }
+
+    #[test]
+    fn empty_or_inverted_input_is_no_op() {
+        assert!(subtract_existing_coverage(500, 500, &[]).is_empty());
+        assert!(subtract_existing_coverage(500, 400, &[]).is_empty());
+    }
+
+    #[test]
+    fn existing_outside_input_range_does_not_affect() {
+        let out = subtract_existing_coverage(100, 200, &[(0, 50), (500, 600)]);
+        assert_eq!(out, vec![(100, 200)]);
     }
 }

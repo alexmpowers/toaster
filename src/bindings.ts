@@ -847,16 +847,26 @@ async tightenGaps(targetGapUs: number | null) : Promise<Result<number, string>> 
 }
 },
 /**
- * Remove silence: collapse inter-word gaps ≥ 750 ms to 0 ms.
+ * Remove silence: detect dead air directly from the source audio and
+ * insert silence sentinels covering each silent range.
  * 
- * Word-gap based (no VAD / RMS) — reuses whisper's existing per-word
- * timings. Delegates the actual shift to `filler::trim_pauses` so
- * preview and export stay on the single source of truth (the same
- * time-map shift the trim-pauses path already uses).
+ * Audio-truth (not word-gap): we walk the cached PCM buffer and emit a
+ * `(start_us, end_us)` for every region where the peak amplitude stays
+ * below `−45 dBFS` for at least `400 ms`. Each detected range is added
+ * to the word list as a deleted "silence sentinel" (empty text +
+ * `deleted=true`). Real word source-time is never mutated; downstream
+ * `EditorState::get_keep_segments` performs interval subtraction over
+ * the union of deleted ranges, so sentinels can overlap word ranges
+ * (which is necessary in practice — Parakeet pads first/last words
+ * with silence — see `commands/waveform/mod.rs` `PARAKEET_OUTER_TRIM_US`).
  * 
- * Returns the number of gaps collapsed. When `0`, the call is a no-op
- * (no undo snapshot, no revision bump) so the UI can surface a subtle
- * "no dead-air found" notice without polluting the undo stack.
+ * Idempotent: re-running the command subtracts existing sentinel
+ * coverage from newly detected ranges, so a second invocation is a
+ * no-op once all silence has been excised.
+ * 
+ * Returns the number of sentinels inserted. When `0`, the call is a
+ * no-op (no undo snapshot, no revision bump) so the UI can surface a
+ * subtle "no dead-air found" notice without polluting the undo stack.
  */
 async removeSilence() : Promise<Result<number, string>> {
     try {

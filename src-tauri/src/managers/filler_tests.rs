@@ -335,81 +335,140 @@ fn duplicates_multiple_pairs() {
 }
 
 // ── trim_pauses ─────────────────────────────────────────────────
+//
+// Contract (post-correctness-fix): `trim_pauses` inserts deleted
+// "silence sentinel" Words covering the excess of every gap above
+// `pause_threshold_us`. Real word source-time is **never** mutated —
+// `EditorState::get_keep_segments` already excludes deleted ranges,
+// so the seam closes correctly without breaking the source-time
+// invariant the export and waveform pipelines depend on.
+
+/// Predicate for a synthetic silence sentinel: deleted with empty text.
+/// Local to the test module — production code should call
+/// `filler::is_silence_sentinel`.
+fn is_sentinel(w: &Word) -> bool {
+    w.deleted && w.text.is_empty()
+}
 
 #[test]
-fn trim_reduces_2s_gap_to_300ms() {
+fn trim_inserts_sentinel_for_2s_gap_with_300ms_target() {
     let mut words = vec![
         word("hello", 0, 500_000),
         word("world", 2_500_000, 3_000_000), // 2s gap
     ];
     let count = trim_pauses(&mut words, DEFAULT_PAUSE_THRESHOLD_US, DEFAULT_MAX_GAP_US);
     assert_eq!(count, 1);
+    // Real word timestamps must be untouched.
     assert_eq!(words[0].start_us, 0);
     assert_eq!(words[0].end_us, 500_000);
-    // world.start = 500_000 + 300_000 = 800_000
-    assert_eq!(words[1].start_us, 800_000);
-    assert_eq!(words[1].end_us, 1_300_000);
+    // The newly inserted index-1 entry is the sentinel.
+    assert!(is_sentinel(&words[1]));
+    // Sentinel covers `[prev.end + max_gap, next.start]`.
+    assert_eq!(words[1].start_us, 500_000 + DEFAULT_MAX_GAP_US);
+    assert_eq!(words[1].end_us, 2_500_000);
+    // World is still at its original source-time.
+    assert_eq!(words[2].start_us, 2_500_000);
+    assert_eq!(words[2].end_us, 3_000_000);
 }
 
 #[test]
-fn trim_shifts_subsequent_words() {
+fn trim_preserves_source_time_for_subsequent_words() {
     let mut words = vec![
         word("hello", 0, 500_000),
         word("world", 2_500_000, 3_000_000), // 2s gap
         word("foo", 3_100_000, 3_500_000),
     ];
+    let original_world_start = words[1].start_us;
+    let original_foo_start = words[2].start_us;
+
     let count = trim_pauses(&mut words, DEFAULT_PAUSE_THRESHOLD_US, DEFAULT_MAX_GAP_US);
     assert_eq!(count, 1);
-    let shift = 2_000_000 - DEFAULT_MAX_GAP_US; // 1_700_000
-    assert_eq!(words[1].start_us, 2_500_000 - shift);
-    assert_eq!(words[2].start_us, 3_100_000 - shift);
-    assert_eq!(words[2].end_us, 3_500_000 - shift);
+
+    // Find the surviving real words by text — sentinel insertion may
+    // have shifted their array positions but never their timestamps.
+    let world = words.iter().find(|w| w.text == "world").unwrap();
+    let foo = words.iter().find(|w| w.text == "foo").unwrap();
+    assert_eq!(world.start_us, original_world_start);
+    assert_eq!(foo.start_us, original_foo_start);
 }
 
 #[test]
-fn trim_shifts_deleted_words_too() {
-    // Deleted word *after* the gap should also be shifted
+fn trim_finds_silence_after_a_filler_was_deleted_in_the_gap() {
+    // Regression for the false negative reported by the user: workflow
+    // is "Remove fillers" first, "Remove silence" second. Every long
+    // silence in real-world audio has a filler ("um", "uh") sitting in
+    // the middle of it, and after fillers are deleted the surrounding
+    // dead air is still trimmable silence. The bug: an earlier
+    // implementation skipped any gap that contained any deleted word
+    // (including user-deleted fillers), so Remove silence reported
+    // "0 pauses" after Remove fillers had run. Fixed by treating only
+    // **silence sentinels** (deleted-empty Words) as bridging.
     let mut words = vec![
         word("hello", 0, 500_000),
-        word("world", 2_500_000, 3_000_000), // 2s gap
-        deleted_word("removed", 3_100_000, 3_300_000),
-        word("foo", 3_400_000, 3_700_000),
-    ];
-    let count = trim_pauses(&mut words, DEFAULT_PAUSE_THRESHOLD_US, DEFAULT_MAX_GAP_US);
-    assert_eq!(count, 1);
-    let shift = 2_000_000 - DEFAULT_MAX_GAP_US;
-    assert_eq!(words[1].start_us, 2_500_000 - shift);
-    // Deleted word after the gap is also shifted
-    assert_eq!(words[2].start_us, 3_100_000 - shift);
-    assert_eq!(words[3].start_us, 3_400_000 - shift);
-}
-
-#[test]
-fn trim_does_not_shift_deleted_word_inside_gap() {
-    // Deleted word *within* the gap (between the two non-deleted words)
-    // sits before the gap's after-index so it is not shifted
-    let mut words = vec![
-        word("hello", 0, 500_000),
-        deleted_word("filler", 600_000, 700_000),
+        deleted_word("um", 600_000, 700_000),
         word("world", 2_500_000, 3_000_000),
     ];
     let count = trim_pauses(&mut words, DEFAULT_PAUSE_THRESHOLD_US, DEFAULT_MAX_GAP_US);
-    assert_eq!(count, 1);
-    assert_eq!(words[1].start_us, 600_000); // not shifted
-    let shift = 2_000_000 - DEFAULT_MAX_GAP_US;
-    assert_eq!(words[2].start_us, 2_500_000 - shift);
+    assert_eq!(
+        count, 1,
+        "deleted filler in the gap must NOT block silence trimming"
+    );
+    // Real word source-time still inviolate, including the user-deleted
+    // filler — its boundaries describe what audio to excise.
+    assert_eq!(words.iter().find(|w| w.text == "hello").unwrap().end_us, 500_000);
+    assert_eq!(words.iter().find(|w| w.text == "um").unwrap().start_us, 600_000);
+    assert_eq!(words.iter().find(|w| w.text == "um").unwrap().end_us, 700_000);
+    assert_eq!(words.iter().find(|w| w.text == "world").unwrap().start_us, 2_500_000);
+    // Exactly one sentinel, covering [hello.end + max_gap, world.start].
+    let sentinels: Vec<_> = words.iter().filter(|w| is_sentinel(w)).collect();
+    assert_eq!(sentinels.len(), 1);
+    assert_eq!(sentinels[0].start_us, 500_000 + DEFAULT_MAX_GAP_US);
+    assert_eq!(sentinels[0].end_us, 2_500_000);
+}
+
+#[test]
+fn trim_skips_gap_already_bridged_by_a_silence_sentinel() {
+    // True idempotence guard: the sentinel from a prior trim must
+    // bridge the gap so a second invocation is a no-op. The bridging
+    // marker is the empty-text + deleted predicate that
+    // `is_silence_sentinel` checks — a user-deleted real word does
+    // not count.
+    let mut words = vec![
+        word("hello", 0, 500_000),
+        // Pre-existing sentinel covering the bulk of the gap.
+        Word {
+            text: String::new(),
+            start_us: 500_000 + DEFAULT_MAX_GAP_US,
+            end_us: 2_500_000,
+            deleted: true,
+            silenced: false,
+            confidence: -1.0,
+            speaker_id: -1,
+        },
+        word("world", 2_500_000, 3_000_000),
+    ];
+    let snapshot = words.clone();
+    let count = trim_pauses(&mut words, DEFAULT_PAUSE_THRESHOLD_US, DEFAULT_MAX_GAP_US);
+    assert_eq!(count, 0);
+    assert_eq!(words.len(), snapshot.len());
+    for (a, b) in words.iter().zip(snapshot.iter()) {
+        assert_eq!(a.text, b.text);
+        assert_eq!(a.start_us, b.start_us);
+        assert_eq!(a.end_us, b.end_us);
+        assert_eq!(a.deleted, b.deleted);
+    }
 }
 
 #[test]
 fn trim_ignores_gap_below_threshold() {
     let mut words = vec![
         word("hello", 0, 500_000),
-        word("world", 900_000, 1_200_000), // 400ms gap
+        word("world", 900_000, 1_200_000), // 400ms gap, below 1.5s threshold
     ];
-    let original_start = words[1].start_us;
+    let original_len = words.len();
     let count = trim_pauses(&mut words, DEFAULT_PAUSE_THRESHOLD_US, DEFAULT_MAX_GAP_US);
     assert_eq!(count, 0);
-    assert_eq!(words[1].start_us, original_start);
+    assert_eq!(words.len(), original_len);
 }
 
 #[test]
@@ -428,7 +487,7 @@ fn trim_handles_empty_and_single() {
 }
 
 #[test]
-fn trim_multiple_pauses_accumulate() {
+fn trim_inserts_a_sentinel_for_every_long_gap() {
     let mut words = vec![
         word("a", 0, 500_000),
         word("b", 2_500_000, 3_000_000), // 2s gap
@@ -436,24 +495,49 @@ fn trim_multiple_pauses_accumulate() {
     ];
     let count = trim_pauses(&mut words, DEFAULT_PAUSE_THRESHOLD_US, DEFAULT_MAX_GAP_US);
     assert_eq!(count, 2);
-    let shift_each = 2_000_000 - DEFAULT_MAX_GAP_US; // 1_700_000
-    assert_eq!(words[1].start_us, 2_500_000 - shift_each);
-    assert_eq!(words[2].start_us, 5_000_000 - shift_each * 2);
+    let sentinels: Vec<&Word> = words.iter().filter(|w| is_sentinel(w)).collect();
+    assert_eq!(sentinels.len(), 2);
+    // Real words preserved their source-time.
+    assert_eq!(words.iter().find(|w| w.text == "b").unwrap().start_us, 2_500_000);
+    assert_eq!(words.iter().find(|w| w.text == "c").unwrap().start_us, 5_000_000);
+}
+
+#[test]
+fn trim_is_idempotent_on_repeated_invocation() {
+    let mut words = vec![
+        word("hello", 0, 500_000),
+        word("world", 2_500_000, 3_000_000),
+        word("there", 5_500_000, 6_000_000),
+    ];
+    let first = trim_pauses(&mut words, DEFAULT_PAUSE_THRESHOLD_US, DEFAULT_MAX_GAP_US);
+    assert!(first > 0);
+    let second = trim_pauses(&mut words, DEFAULT_PAUSE_THRESHOLD_US, DEFAULT_MAX_GAP_US);
+    assert_eq!(second, 0, "second trim must be a no-op on already-trimmed transcript");
+    let dry =
+        count_trimmable_pauses(&words, DEFAULT_PAUSE_THRESHOLD_US, DEFAULT_MAX_GAP_US);
+    assert_eq!(dry, 0);
 }
 
 // ── tighten_gaps ────────────────────────────────────────────────
 
 #[test]
-fn tighten_reduces_500ms_gap_to_250ms() {
+fn tighten_inserts_sentinel_for_500ms_gap_with_250ms_target() {
     let mut words = vec![
         word("hello", 0, 500_000),
         word("world", 1_000_000, 1_500_000), // 500ms gap
     ];
     let count = tighten_gaps(&mut words, DEFAULT_TIGHTEN_TARGET_US);
     assert_eq!(count, 1);
-    // gap was 500_000, target 250_000 → shift = 250_000
-    assert_eq!(words[1].start_us, 750_000);
-    assert_eq!(words[1].end_us, 1_250_000);
+    // Real word source-time unchanged.
+    assert_eq!(words[0].end_us, 500_000);
+    let world = words.iter().find(|w| w.text == "world").unwrap();
+    assert_eq!(world.start_us, 1_000_000);
+    assert_eq!(world.end_us, 1_500_000);
+    // Sentinel covers `[prev.end + target, next.start]` =
+    //                  [500_000 + 250_000, 1_000_000].
+    let sentinel = words.iter().find(|w| is_sentinel(w)).unwrap();
+    assert_eq!(sentinel.start_us, 750_000);
+    assert_eq!(sentinel.end_us, 1_000_000);
 }
 
 #[test]
@@ -462,14 +546,14 @@ fn tighten_ignores_gap_below_target() {
         word("hello", 0, 500_000),
         word("world", 700_000, 1_000_000), // 200ms gap, below 250ms target
     ];
-    let original_start = words[1].start_us;
+    let original_len = words.len();
     let count = tighten_gaps(&mut words, DEFAULT_TIGHTEN_TARGET_US);
     assert_eq!(count, 0);
-    assert_eq!(words[1].start_us, original_start);
+    assert_eq!(words.len(), original_len);
 }
 
 #[test]
-fn tighten_cumulative_shift() {
+fn tighten_inserts_independent_sentinels_for_each_gap() {
     let mut words = vec![
         word("a", 0, 500_000),
         word("b", 1_000_000, 1_500_000), // 500ms gap → excess 250ms
@@ -477,27 +561,47 @@ fn tighten_cumulative_shift() {
     ];
     let count = tighten_gaps(&mut words, DEFAULT_TIGHTEN_TARGET_US);
     assert_eq!(count, 2);
-    // b shifted by 250_000
-    assert_eq!(words[1].start_us, 750_000);
-    assert_eq!(words[1].end_us, 1_250_000);
-    // c shifted by 250_000 + 750_000 = 1_000_000
-    assert_eq!(words[2].start_us, 1_500_000);
-    assert_eq!(words[2].end_us, 2_000_000);
+    // Real words at their original source-time.
+    assert_eq!(words.iter().find(|w| w.text == "b").unwrap().start_us, 1_000_000);
+    assert_eq!(words.iter().find(|w| w.text == "c").unwrap().start_us, 2_500_000);
 }
 
 #[test]
-fn tighten_skips_deleted_words_for_gap_calc() {
+fn tighten_finds_gap_after_a_filler_was_deleted_in_the_gap() {
+    // Same regression as `trim_finds_silence_after_a_filler_was_deleted`
+    // but for the explicit-target tightener path. Deleted user words
+    // inside the gap (e.g. excised fillers) must NOT block tightening.
     let mut words = vec![
         word("hello", 0, 500_000),
-        deleted_word("um", 600_000, 700_000),
-        word("world", 1_000_000, 1_500_000), // gap from hello.end (500k) to world.start (1M) = 500ms
+        deleted_word("um", 550_000, 650_000),
+        word("world", 1_000_000, 1_500_000),
     ];
     let count = tighten_gaps(&mut words, DEFAULT_TIGHTEN_TARGET_US);
     assert_eq!(count, 1);
-    // excess = 500_000 - 250_000 = 250_000
-    // deleted word at index 1 is before gap index (2), not shifted
-    assert_eq!(words[1].start_us, 600_000);
-    assert_eq!(words[2].start_us, 750_000);
+    assert_eq!(words.iter().filter(|w| is_sentinel(w)).count(), 1);
+}
+
+#[test]
+fn tighten_skips_gap_already_bridged_by_a_silence_sentinel() {
+    // Idempotence guard: a pre-existing silence sentinel blocks the
+    // tightener from re-inserting another one over the same gap.
+    let mut words = vec![
+        word("hello", 0, 500_000),
+        Word {
+            text: String::new(),
+            start_us: 500_000 + DEFAULT_TIGHTEN_TARGET_US,
+            end_us: 1_000_000,
+            deleted: true,
+            silenced: false,
+            confidence: -1.0,
+            speaker_id: -1,
+        },
+        word("world", 1_000_000, 1_500_000),
+    ];
+    let snapshot_len = words.len();
+    let count = tighten_gaps(&mut words, DEFAULT_TIGHTEN_TARGET_US);
+    assert_eq!(count, 0);
+    assert_eq!(words.len(), snapshot_len);
 }
 
 #[test]
@@ -519,200 +623,3 @@ fn tighten_rejects_non_positive_target() {
     assert_eq!(tighten_gaps(&mut words, -100), 0);
 }
 
-// ── cleanup cascade end-to-end ────────────────────────────────────
-
-/// Full cleanup pipeline: detect fillers → delete → detect duplicates
-/// (iteratively) → delete, then verify remaining text and keep-segments
-/// contain no deleted-word regions.
-#[test]
-fn cleanup_cascade_produces_correct_keep_segments() {
-    use crate::managers::editor::EditorState;
-
-    // Transcript: "Yeah, so the um the the best best part about a lot
-    // of this is how it can really transform the way you sound. And um
-    // like the uh the the difference is gonna be noticeable kind of on
-    // first use."
-    let mut words = vec![
-        word("Yeah,", 0, 400_000),                  // 0
-        word("so", 500_000, 700_000),               // 1
-        word("the", 800_000, 1_000_000),            // 2
-        word("um", 1_100_000, 1_300_000),           // 3  ← filler
-        word("the", 1_400_000, 1_600_000),          // 4  ← dup
-        word("the", 1_700_000, 1_900_000),          // 5  ← dup
-        word("best", 2_000_000, 2_200_000),         // 6
-        word("best", 2_300_000, 2_500_000),         // 7  ← dup
-        word("part", 2_600_000, 2_800_000),         // 8
-        word("about", 2_900_000, 3_100_000),        // 9
-        word("a", 3_200_000, 3_300_000),            // 10
-        word("lot", 3_400_000, 3_600_000),          // 11
-        word("of", 3_700_000, 3_800_000),           // 12
-        word("this", 3_900_000, 4_100_000),         // 13
-        word("is", 4_200_000, 4_400_000),           // 14
-        word("how", 4_500_000, 4_700_000),          // 15
-        word("it", 4_800_000, 4_900_000),           // 16
-        word("can", 5_000_000, 5_200_000),          // 17
-        word("really", 5_300_000, 5_500_000),       // 18
-        word("transform", 5_600_000, 5_900_000),    // 19
-        word("the", 6_000_000, 6_200_000),          // 20
-        word("way", 6_300_000, 6_500_000),          // 21
-        word("you", 6_600_000, 6_800_000),          // 22
-        word("sound.", 6_900_000, 7_200_000),       // 23
-        word("And", 7_400_000, 7_600_000),          // 24
-        word("um", 7_700_000, 7_900_000),           // 25 ← filler
-        word("like", 8_000_000, 8_200_000),         // 26 ← filler
-        word("the", 8_300_000, 8_500_000),          // 27
-        word("uh", 8_600_000, 8_800_000),           // 28 ← filler
-        word("the", 8_900_000, 9_100_000),          // 29 ← dup
-        word("the", 9_200_000, 9_400_000),          // 30 ← dup
-        word("difference", 9_500_000, 9_900_000),   // 31
-        word("is", 10_000_000, 10_200_000),         // 32
-        word("gonna", 10_300_000, 10_500_000),      // 33
-        word("be", 10_600_000, 10_800_000),         // 34
-        word("noticeable", 10_900_000, 11_300_000), // 35
-        word("kind", 11_400_000, 11_600_000),       // 36 ← filler (kind of)
-        word("of", 11_700_000, 11_900_000),         // 37 ← filler (kind of)
-        word("on", 12_000_000, 12_200_000),         // 38
-        word("first", 12_300_000, 12_500_000),      // 39
-        word("use.", 12_600_000, 12_800_000),       // 40
-    ];
-
-    let config = default_config();
-
-    // Step 1: detect and delete fillers
-    let fillers = detect_fillers(&words, &config);
-    for &idx in &fillers {
-        words[idx].deleted = true;
-    }
-
-    // Step 2: iteratively detect and delete duplicates
-    loop {
-        let dups = detect_duplicates(&words);
-        if dups.is_empty() {
-            break;
-        }
-        for &idx in &dups {
-            words[idx].deleted = true;
-        }
-    }
-
-    // Verify remaining (non-deleted) text
-    let remaining: Vec<&str> = words
-        .iter()
-        .filter(|w| !w.deleted)
-        .map(|w| w.text.as_str())
-        .collect();
-
-    assert_eq!(
-        remaining,
-        vec![
-            "Yeah,",
-            "the",
-            "best",
-            "part",
-            "about",
-            "a",
-            "lot",
-            "of",
-            "this",
-            "is",
-            "how",
-            "it",
-            "can",
-            "really",
-            "transform",
-            "the",
-            "way",
-            "you",
-            "sound.",
-            "And",
-            "the",
-            "difference",
-            "is",
-            "gonna",
-            "be",
-            "noticeable",
-            "on",
-            "first",
-            "use.",
-        ]
-    );
-
-    // Verify keep-segments exclude deleted word regions
-    let mut editor = EditorState::new();
-    editor.set_words(words.clone());
-    // Replay deletions into the editor's words
-    for (i, w) in words.iter().enumerate() {
-        if w.deleted {
-            editor.get_words_mut()[i].deleted = true;
-        }
-    }
-    let segments = editor.get_keep_segments();
-
-    // Every segment must only span non-deleted word time ranges
-    let deleted_ranges: Vec<(i64, i64)> = words
-        .iter()
-        .filter(|w| w.deleted)
-        .map(|w| (w.start_us, w.end_us))
-        .collect();
-
-    for (seg_start, seg_end) in &segments {
-        for (del_start, del_end) in &deleted_ranges {
-            // A deleted word's range must not be fully contained in a keep-segment
-            let overlaps = del_start >= seg_start && del_end <= seg_end;
-            assert!(
-                !overlaps,
-                "keep-segment ({seg_start}–{seg_end}) contains deleted word ({del_start}–{del_end})"
-            );
-        }
-    }
-
-    // Sanity: we should have at least 2 segments (gap around deleted regions)
-    assert!(!segments.is_empty(), "expected non-empty keep-segments");
-}
-
-// ---------------------------- R-004 --------------------------------
-
-#[test]
-fn classify_gap_unknown_without_curve() {
-    assert_eq!(classify_gap(0, 1_000_000, &[]), GapClassification::Unknown);
-}
-
-#[test]
-fn classify_gap_true_silence_below_threshold() {
-    // 10 frames × 30ms = 300ms curve, all well below GAP_SILENCE_THRESHOLD.
-    let curve = vec![0.05f32; 10];
-    assert_eq!(
-        classify_gap(0, 300_000, &curve),
-        GapClassification::TrueSilence,
-    );
-}
-
-#[test]
-fn classify_gap_missed_speech_above_threshold() {
-    let curve = vec![0.9f32; 10];
-    assert_eq!(
-        classify_gap(0, 300_000, &curve),
-        GapClassification::MissedSpeech,
-    );
-}
-
-#[test]
-fn classify_gap_non_speech_acoustic_in_middle_band() {
-    let curve = vec![0.3f32; 10];
-    assert_eq!(
-        classify_gap(0, 300_000, &curve),
-        GapClassification::NonSpeechAcoustic,
-    );
-}
-
-#[test]
-fn classify_pauses_maps_one_to_one_with_empty_curve() {
-    let words = vec![word("a", 0, 200_000), word("b", 2_000_000, 2_200_000)];
-    let config = FillerConfig::default();
-    let pauses = detect_pauses(&words, &config);
-    let classified = classify_pauses(&pauses, &words, &[]);
-    assert_eq!(classified.len(), pauses.len());
-    for (_, _, class) in &classified {
-        assert_eq!(*class, GapClassification::Unknown);
-    }
-}

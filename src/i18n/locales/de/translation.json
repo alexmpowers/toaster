@@ -592,10 +592,10 @@
     },
     "removeSilence": {
       "button": "Remove silence",
-      "tooltip": "Collapse long pauses (≥ 750 ms) between words to a hard cut. Undoable.",
-      "empty": "No long pauses found.",
-      "success": "Removed silence from {{count}} pause",
-      "success_plural": "Removed silence from {{count}} pauses"
+      "tooltip": "Trim long stretches of silent dead air from the audio. Undoable.",
+      "empty": "No silent dead air found.",
+      "success": "Trimmed {{count}} silent stretch",
+      "success_plural": "Trimmed {{count}} silent stretches"
     }
   },
   "experiments": {

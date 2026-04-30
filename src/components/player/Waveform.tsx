@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { type Word } from "@/stores/editorStore";
+import { mergeRangesUs, subtractRangesUs } from "./Waveform.util";
 
 interface WaveformProps {
   audioUrl: string | null;
@@ -223,16 +224,29 @@ const Waveform: React.FC<WaveformProps> = ({
       ctx.fillRect(x, midY - barH / 2, barWidth, barH);
     }
 
-    // Draw edit overlays (deleted/silenced regions)
+    // Draw edit overlays (deleted/silenced regions). Merge overlapping
+    // ranges first so a sentinel that overlaps a real word does not
+    // stack two translucent layers into a darker stripe — a single
+    // solid swatch across the merged span instead.
     if (duration > 0 && words.length > 0) {
-      for (const word of words) {
-        if (!word.deleted && !word.silenced) continue;
-        const startX = (word.start_us / 1_000_000 / duration) * canvasWidth;
-        const endX = (word.end_us / 1_000_000 / duration) * canvasWidth;
-        const regionWidth = Math.max(1, endX - startX);
+      const deletedRanges = mergeRangesUs(words, (w) => w.deleted);
+      const silencedRanges = subtractRangesUs(
+        mergeRangesUs(words, (w) => w.silenced && !w.deleted),
+        deletedRanges,
+      );
 
-        ctx.fillStyle = word.deleted ? DELETED_OVERLAY : SILENCED_OVERLAY;
-        ctx.fillRect(startX, 0, regionWidth, canvasHeight);
+      ctx.fillStyle = SILENCED_OVERLAY;
+      for (const [startUs, endUs] of silencedRanges) {
+        const startX = (startUs / 1_000_000 / duration) * canvasWidth;
+        const endX = (endUs / 1_000_000 / duration) * canvasWidth;
+        ctx.fillRect(startX, 0, Math.max(1, endX - startX), canvasHeight);
+      }
+
+      ctx.fillStyle = DELETED_OVERLAY;
+      for (const [startUs, endUs] of deletedRanges) {
+        const startX = (startUs / 1_000_000 / duration) * canvasWidth;
+        const endX = (endUs / 1_000_000 / duration) * canvasWidth;
+        ctx.fillRect(startX, 0, Math.max(1, endX - startX), canvasHeight);
       }
 
       // Draw selected word highlight

@@ -54,6 +54,15 @@ impl EditorState {
         &mut self.words
     }
 
+    /// Return a mutable reference to the underlying `Vec<Word>` so callers
+    /// that need to insert/remove (e.g. silence-sentinel insertion in
+    /// `filler::trim_pauses`) can do so without copying out and back.
+    /// Use sparingly — most operations should mutate in-place via
+    /// [`Self::get_words_mut`] to keep snapshot/revision discipline tight.
+    pub(crate) fn get_words_vec_mut(&mut self) -> &mut Vec<Word> {
+        &mut self.words
+    }
+
     // ── snapshot helpers ──────────────────────────────────────────────
 
     /// Push a snapshot of the current words onto the undo stack,
@@ -215,6 +224,28 @@ impl EditorState {
     ///
     /// Splits segments at large inter-word silence gaps (> 300ms) so that
     /// dead air between phrases is naturally excluded from export/preview.
+    ///
+    /// **Algorithm:** interval subtraction.
+    ///
+    /// 1. Build `forbidden = merge(deleted_word.range for w in words)`.
+    /// 2. For each non-deleted word in source order, compute
+    ///    `kept = word.range \ forbidden`. This yields zero, one, or many
+    ///    sub-intervals per word — a single deleted range can split a word
+    ///    into a head + tail (e.g. an audio-truth silence sentinel that
+    ///    sits inside a Parakeet-padded word range).
+    /// 3. Stream the kept sub-intervals through segment-open / merge logic:
+    ///    natural inter-word gaps ≤ `MAX_INTRA_SEGMENT_GAP_US` extend the
+    ///    current segment; larger gaps split it; any seam created by a
+    ///    deleted range forces a split (and is later refused by the
+    ///    micro-merge pass — bridging it would put deleted audio back on
+    ///    the timeline).
+    ///
+    /// **Backward compatibility (no-overlap fast path):** when no deleted
+    /// range overlaps a non-deleted word, each non-deleted word produces
+    /// exactly one sub-interval covering its full range, and inter-sub
+    /// seams collapse to the same delete-vs-natural classification the
+    /// previous walking algorithm produced. The 451 lib tests that pinned
+    /// the old behavior remain numerically stable.
     pub fn get_keep_segments(&self) -> Vec<(i64, i64)> {
         /// Maximum gap between adjacent words before splitting into separate
         /// keep-segments. Gaps larger than this are treated as dead air and
@@ -224,69 +255,58 @@ impl EditorState {
         /// to fold it into a neighbour. Prevents ultra-short glitch clips.
         const MIN_KEEP_SEGMENT_US: i64 = 150_000; // 150ms minimum
 
+        let forbidden = merged_deleted_ranges(&self.words);
+        let subs = collect_kept_subintervals(&self.words, &forbidden);
+
         let mut segments: Vec<(i64, i64)> = Vec::new();
         // Parallel to `segments`: true iff the seam that opened this segment
-        // was created by a user delete (not by a natural silence gap). Used
-        // by the micro-merge pass to refuse to bridge delete-driven seams,
-        // which would otherwise put deleted audio back on the timeline.
+        // was created by a delete (silence sentinel or user delete) rather
+        // than a natural inter-word silence gap. Used by the micro-merge
+        // pass to refuse to bridge delete-driven seams.
         let mut delete_boundary_before: Vec<bool> = Vec::new();
 
         let mut seg_start: Option<i64> = None;
         let mut seg_end: i64 = 0;
-        // Running high-water mark of any deleted word's end_us seen so far.
-        // Used to clamp the next kept segment's start up, defending against
-        // forced-alignment outputs where a kept word's start_us precedes
-        // the end of an adjacent deleted word (overlapping boundaries).
-        let mut prev_deleted_end: i64 = i64::MIN;
-        // Flag carried forward until the next segment actually opens.
-        let mut next_segment_after_delete = false;
-        // Captured when the current segment opened, pushed alongside it.
         let mut current_opened_after_delete = false;
 
-        for word in &self.words {
-            if word.deleted {
-                if let Some(start) = seg_start.take() {
-                    // Clamp the closing edge down so it cannot extend past
-                    // the deleted word's start even when word boundaries
-                    // overlap in the alignment output.
-                    let bound = seg_end.min(word.start_us);
-                    if bound > start {
-                        segments.push((start, bound));
-                        delete_boundary_before.push(current_opened_after_delete);
+        for sub in &subs {
+            let opened_after_delete = matches!(sub.left_seam, SeamCause::Delete);
+
+            match seg_start {
+                None => {
+                    current_opened_after_delete = opened_after_delete;
+                    seg_start = Some(sub.start_us);
+                    seg_end = sub.end_us;
+                }
+                Some(s) => {
+                    let gap = sub.start_us - seg_end;
+                    let split_required =
+                        opened_after_delete || gap > MAX_INTRA_SEGMENT_GAP_US;
+                    if split_required {
+                        if seg_end > s {
+                            segments.push((s, seg_end));
+                            delete_boundary_before.push(current_opened_after_delete);
+                        }
+                        current_opened_after_delete = opened_after_delete;
+                        seg_start = Some(sub.start_us);
+                        seg_end = sub.end_us;
+                    } else {
+                        // Extend; preserve max in case adjacent sub ends earlier
+                        // than current seg_end (shouldn't happen for sorted
+                        // forbidden + sorted words, but defensive).
+                        if sub.end_us > seg_end {
+                            seg_end = sub.end_us;
+                        }
                     }
                 }
-                prev_deleted_end = prev_deleted_end.max(word.end_us);
-                next_segment_after_delete = true;
-            } else {
-                // Clamp the opening edge up so it cannot precede the end of
-                // any earlier deleted word (handles overlapping boundaries).
-                let word_start = word.start_us.max(prev_deleted_end);
-                if word.end_us <= word_start {
-                    // Entirely swallowed by a prior delete region; skip.
-                    continue;
-                }
-                if let Some(start) = seg_start {
-                    let gap = word_start - seg_end;
-                    if gap > MAX_INTRA_SEGMENT_GAP_US {
-                        // Large silence split — end current segment, start a new one.
-                        segments.push((start, seg_end));
-                        delete_boundary_before.push(current_opened_after_delete);
-                        // The seam that just opened is a silence split, not a delete.
-                        current_opened_after_delete = false;
-                        seg_start = Some(word_start);
-                    }
-                } else {
-                    current_opened_after_delete = next_segment_after_delete;
-                    seg_start = Some(word_start);
-                }
-                next_segment_after_delete = false;
-                seg_end = word.end_us;
             }
         }
 
-        if let Some(start) = seg_start {
-            segments.push((start, seg_end));
-            delete_boundary_before.push(current_opened_after_delete);
+        if let Some(s) = seg_start {
+            if seg_end > s {
+                segments.push((s, seg_end));
+                delete_boundary_before.push(current_opened_after_delete);
+            }
         }
 
         // Merge micro-segments (<150ms) with their nearest neighbor to avoid
@@ -529,3 +549,162 @@ impl EditorState {
 
 #[cfg(test)]
 mod tests;
+
+// ── interval helpers for `get_keep_segments` ─────────────────────────────
+
+/// Cause of the seam to the left of a kept sub-interval. Drives the
+/// micro-merge pass: delete-driven seams are never bridged, natural-gap
+/// seams may be.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SeamCause {
+    /// First sub overall — there is no left seam.
+    None,
+    /// Sub adjoins a deleted (or silence-sentinel) range on the left.
+    /// Bridging this seam would put deleted audio back on the timeline.
+    Delete,
+    /// Sub starts after a natural inter-word gap with no deleted content
+    /// in between.
+    NaturalGap,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct KeptSub {
+    start_us: i64,
+    end_us: i64,
+    left_seam: SeamCause,
+}
+
+/// Merge the source-time ranges of every deleted (or silence-sentinel)
+/// word into a sorted, non-overlapping list of forbidden intervals.
+///
+/// `Word::deleted == true` covers both user-deleted real words and the
+/// `is_silence_sentinel` rows inserted by `filler::trim_pauses`. Both
+/// must be excluded from the kept timeline.
+fn merged_deleted_ranges(words: &[types::Word]) -> Vec<(i64, i64)> {
+    let mut raw: Vec<(i64, i64)> = words
+        .iter()
+        .filter(|w| w.deleted && w.end_us > w.start_us)
+        .map(|w| (w.start_us, w.end_us))
+        .collect();
+
+    if raw.is_empty() {
+        return raw;
+    }
+
+    raw.sort_by_key(|&(start, _)| start);
+
+    let mut merged: Vec<(i64, i64)> = Vec::with_capacity(raw.len());
+    for (start, end) in raw {
+        match merged.last_mut() {
+            Some(last) if start <= last.1 => {
+                if end > last.1 {
+                    last.1 = end;
+                }
+            }
+            _ => merged.push((start, end)),
+        }
+    }
+    merged
+}
+
+/// For each non-deleted word in source order, compute the kept sub-intervals
+/// (`word.range \ forbidden`) and tag each with the cause of its left seam.
+///
+/// A single deleted range can split a non-deleted word into a head + tail
+/// (the audio-truth case: a silence sentinel inside a Parakeet-padded word).
+/// The head's `left_seam` reflects the inter-word gap that preceded the
+/// word; the tail's is always `SeamCause::Delete`.
+fn collect_kept_subintervals(
+    words: &[types::Word],
+    forbidden: &[(i64, i64)],
+) -> Vec<KeptSub> {
+    let mut subs: Vec<KeptSub> = Vec::new();
+    // Tracks the source-time end of the last sub we emitted, used to
+    // distinguish "natural gap" seams from "delete" seams when starting
+    // a new word's first sub.
+    let mut last_emit_end: Option<i64> = None;
+
+    for word in words {
+        if word.deleted || word.end_us <= word.start_us {
+            continue;
+        }
+
+        let word_subs = subtract_forbidden(word.start_us, word.end_us, forbidden);
+
+        for (idx, (sub_start, sub_end)) in word_subs.into_iter().enumerate() {
+            let left_seam = if subs.is_empty() && idx == 0 {
+                SeamCause::None
+            } else if idx > 0 {
+                // Splits within a single word are always carved out by a
+                // forbidden range.
+                SeamCause::Delete
+            } else {
+                // First sub of a non-first word. If a forbidden range sits
+                // anywhere in the gap between the previous emitted end and
+                // this sub's start, classify as Delete.
+                match last_emit_end {
+                    Some(prev_end) if forbidden_intersects(forbidden, prev_end, sub_start) => {
+                        SeamCause::Delete
+                    }
+                    _ => SeamCause::NaturalGap,
+                }
+            };
+
+            subs.push(KeptSub {
+                start_us: sub_start,
+                end_us: sub_end,
+                left_seam,
+            });
+            last_emit_end = Some(sub_end);
+        }
+    }
+
+    subs
+}
+
+/// Subtract `forbidden` from `[start, end)`, returning zero or more
+/// non-overlapping sub-intervals in source-time order. `forbidden` is
+/// assumed sorted and non-overlapping (as produced by
+/// `merged_deleted_ranges`).
+fn subtract_forbidden(
+    range_start: i64,
+    range_end: i64,
+    forbidden: &[(i64, i64)],
+) -> Vec<(i64, i64)> {
+    if range_end <= range_start {
+        return Vec::new();
+    }
+    let mut subs: Vec<(i64, i64)> = Vec::new();
+    let mut cursor = range_start;
+    for &(f_start, f_end) in forbidden {
+        if f_end <= cursor {
+            continue;
+        }
+        if f_start >= range_end {
+            break;
+        }
+        if f_start > cursor {
+            subs.push((cursor, f_start.min(range_end)));
+        }
+        cursor = cursor.max(f_end);
+        if cursor >= range_end {
+            break;
+        }
+    }
+    if cursor < range_end {
+        subs.push((cursor, range_end));
+    }
+    subs
+}
+
+/// True iff any forbidden range intersects the open interval
+/// `(prev_end, sub_start)`. Used to decide whether a seam between two
+/// non-overlapping sub-intervals was caused by a deleted region.
+fn forbidden_intersects(forbidden: &[(i64, i64)], prev_end: i64, sub_start: i64) -> bool {
+    if sub_start <= prev_end {
+        return false;
+    }
+    forbidden
+        .iter()
+        .any(|&(f_start, f_end)| f_end > prev_end && f_start < sub_start)
+}
