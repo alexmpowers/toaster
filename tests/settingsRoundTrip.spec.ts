@@ -149,12 +149,17 @@ test.describe("Settings round-trip", () => {
         };
       };
       // Initialize the store
-      const initScript = document.querySelector('script[type="text/initialize-store"]');
+      const initScript = document.querySelector(
+        'script[type="text/initialize-store"]',
+      );
       if (!initScript) {
         // Settings store is automatically initialized on app load via the Tauri mock
         // Just call updateSetting via the mock invoke
-        const mockInvoke = (window as unknown as any).__TAURI_INTERNALS__.invoke;
-        await mockInvoke("update_app_settings", { settings: { app_language: "de" } });
+        const mockInvoke = (window as unknown as any).__TAURI_INTERNALS__
+          .invoke;
+        await mockInvoke("update_app_settings", {
+          settings: { app_language: "de" },
+        });
       }
       const s = await w.__toasterTestApi.commands.getAppSettings();
       const data = s as { app_language: string };

@@ -52,7 +52,7 @@ const COMPUTE_SKIP_INIT_SCRIPT = `
 async function loadHelper(page: import("@playwright/test").Page) {
   await page.addInitScript(COMPUTE_SKIP_INIT_SCRIPT);
   await page.goto("/");
-  
+
   return async (
     currentTime: number,
     ranges: Range[],
@@ -64,9 +64,13 @@ async function loadHelper(page: import("@playwright/test").Page) {
         try {
           // Access the global if it was set, otherwise try to load
           if ((window as any).__computeNextDeletedSkip) {
-            return (window as any).__computeNextDeletedSkip(currentTime, ranges, playbackRate);
+            return (window as any).__computeNextDeletedSkip(
+              currentTime,
+              ranges,
+              playbackRate,
+            );
           }
-          
+
           // Fallback: define the function inline based on the actual implementation
           // This is a copy of computeNextDeletedSkip from useDeletedRangeSkip.ts
           const computeNextDeletedSkip = (
@@ -82,10 +86,11 @@ async function loadHelper(page: import("@playwright/test").Page) {
               if (!best || r.start < best.start) best = r;
             }
             if (!best) return null;
-            const delaySec = Math.max(0, best.start - currentTime) / playbackRate;
+            const delaySec =
+              Math.max(0, best.start - currentTime) / playbackRate;
             return { range: best, delayMs: delaySec * 1000 };
           };
-          
+
           return computeNextDeletedSkip(currentTime, ranges, playbackRate);
         } catch (e) {
           throw new Error(`Failed to compute: ${String(e)}`);

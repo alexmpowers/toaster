@@ -254,7 +254,9 @@ test.describe("Toaster App", () => {
     await expect(page.getByText("Source Code")).toBeVisible();
 
     // Acknowledgments section mentions Whisper (specifically the heading in acknowledgments section)
-    await expect(page.getByRole("heading", { name: /whisper/i }).first()).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: /whisper/i }).first(),
+    ).toBeVisible();
   });
 
   test("history page shows empty state message", async ({ page }) => {

@@ -74,7 +74,9 @@ test.describe("Export pipeline bindings contract", () => {
         null,
         null,
       );
-      return w.__invokeCalls.filter((c) => c.cmd === "export_transcript_to_file");
+      return w.__invokeCalls.filter(
+        (c) => c.cmd === "export_transcript_to_file",
+      );
     });
 
     expect(recorded).toHaveLength(1);

@@ -157,10 +157,10 @@ test.describe("Transcript edit flow", () => {
 
       // Debug: Log input
       console.log("Input words:", JSON.stringify(words));
-      
+
       await w.__toasterTestApi.commands.editorSetWords(words);
       const initial = await w.__toasterTestApi.commands.editorGetWords();
-      
+
       // Debug: Log after set
       console.log("After set, words:", JSON.stringify(initial));
 
@@ -174,10 +174,18 @@ test.describe("Transcript edit flow", () => {
       const afterRedo = await w.__toasterTestApi.commands.editorGetWords();
 
       return {
-        initial: activeText(initial as Array<{ text: string; deleted?: boolean }>),
-        afterDelete: activeText(afterDelete as Array<{ text: string; deleted?: boolean }>),
-        afterUndo: activeText(afterUndo as Array<{ text: string; deleted?: boolean }>),
-        afterRedo: activeText(afterRedo as Array<{ text: string; deleted?: boolean }>),
+        initial: activeText(
+          initial as Array<{ text: string; deleted?: boolean }>,
+        ),
+        afterDelete: activeText(
+          afterDelete as Array<{ text: string; deleted?: boolean }>,
+        ),
+        afterUndo: activeText(
+          afterUndo as Array<{ text: string; deleted?: boolean }>,
+        ),
+        afterRedo: activeText(
+          afterRedo as Array<{ text: string; deleted?: boolean }>,
+        ),
       };
     }, wordsToSet);
 
