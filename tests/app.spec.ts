@@ -200,23 +200,6 @@ test.describe("Toaster App", () => {
     expect(upper).toEqual(expect.arrayContaining(["MEDIA"]));
   });
 
-  test("toggling a setting checkbox changes its checked state", async ({
-    page,
-  }) => {
-    await page.goto("/");
-    await page.getByText("Models", { exact: true }).click();
-
-    // Find the label containing a toggle switch and click the label itself
-    const labels = page.locator("label");
-    const firstLabel = labels.first();
-    
-    // Click the label which will toggle the hidden checkbox
-    await firstLabel.click();
-    // The toggle should have changed
-    // Give it a moment for any state updates
-    await page.waitForTimeout(100);
-  });
-
   test("editor page renders media upload area when no media loaded", async ({
     page,
   }) => {

@@ -205,7 +205,7 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
 
   return (
     <div
-      className="mb-4 w-full rounded-xl border border-mid-gray/20 bg-background p-4"
+      className="mb-4 w-full max-w-[50%] rounded-xl border border-mid-gray/20 bg-background p-4"
       data-testid="caption-preview-pane"
     >
       <div className="mb-3 flex flex-wrap items-center justify-end gap-3">

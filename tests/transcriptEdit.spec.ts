@@ -67,8 +67,8 @@ const INIT_SCRIPT = `
       if (cmd === "editor_set_words") {
         _state.history.push(snapshot());
         _state.future = [];
-        _state.words = (args && args.words) || [];
-        return _state.words;
+        _state.words = ((args && args.words) || []).map(w => ({ ...w }));
+        return JSON.parse(JSON.stringify(_state.words));
       }
       if (cmd === "editor_delete_word") {
         _state.history.push(snapshot());
@@ -97,7 +97,7 @@ const INIT_SCRIPT = `
         return true;
       }
       if (cmd === "editor_get_projection") return projection();
-      if (cmd === "editor_get_words") return _state.words;
+      if (cmd === "editor_get_words") return JSON.parse(JSON.stringify(_state.words));
       if (cmd === "editor_get_keep_segments") return [];
       if (cmd === "plugin:event|listen") return 0;
       if (cmd === "plugin:event|unlisten") return;
@@ -155,8 +155,14 @@ test.describe("Transcript edit flow", () => {
           .map((w) => w.text)
           .join(" ");
 
+      // Debug: Log input
+      console.log("Input words:", JSON.stringify(words));
+      
       await w.__toasterTestApi.commands.editorSetWords(words);
       const initial = await w.__toasterTestApi.commands.editorGetWords();
+      
+      // Debug: Log after set
+      console.log("After set, words:", JSON.stringify(initial));
 
       await w.__toasterTestApi.commands.editorDeleteWord(1);
       const afterDelete = await w.__toasterTestApi.commands.editorGetWords();
@@ -175,6 +181,8 @@ test.describe("Transcript edit flow", () => {
       };
     }, wordsToSet);
 
+    // If the initial state shows "The brown fox" instead of all words,
+    // it means word[1] is being marked as deleted somewhere
     expect(result.initial).toBe("The quick brown fox");
     expect(result.afterDelete).toBe("The brown fox");
     expect(result.afterUndo).toBe("The quick brown fox");

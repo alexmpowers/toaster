@@ -1,0 +1,60 @@
+$ playwright test
+
+Running 39 tests using 12 workers
+
+
+[1A[2K[WebServer] [baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[1A[2K[1/39] [chromium] ΓÇ║ tests\app.spec.ts:93:3 ΓÇ║ Toaster App ΓÇ║ dev server responds with 200
+[1A[2K[2/39] [chromium] ΓÇ║ tests\app.spec.ts:98:3 ΓÇ║ Toaster App ΓÇ║ page has basic HTML structure
+[1A[2K[3/39] [chromium] ΓÇ║ tests\app.spec.ts:171:3 ΓÇ║ Toaster App ΓÇ║ light theme applies light background color
+[1A[2K[4/39] [chromium] ΓÇ║ tests\app.spec.ts:220:3 ΓÇ║ Toaster App ΓÇ║ editor page renders media upload area when no media loaded
+[1A[2K[5/39] [chromium] ΓÇ║ tests\app.spec.ts:105:3 ΓÇ║ Toaster App ΓÇ║ app loads and shows sidebar with logo and navigation
+[1A[2K[6/39] [chromium] ΓÇ║ tests\app.spec.ts:249:3 ΓÇ║ Toaster App ΓÇ║ models page renders header and empty state
+[1A[2K[7/39] [chromium] ΓÇ║ tests\app.spec.ts:139:3 ΓÇ║ Toaster App ΓÇ║ settings page renders at least one settings group
+[1A[2K[8/39] [chromium] ΓÇ║ tests\app.spec.ts:153:3 ΓÇ║ Toaster App ΓÇ║ dark theme applies dark background color
+[1A[2K[9/39] [chromium] ΓÇ║ tests\app.spec.ts:235:3 ΓÇ║ Toaster App ΓÇ║ editor page shows media section when no media loaded
+[1A[2K[10/39] [chromium] ΓÇ║ tests\app.spec.ts:120:3 ΓÇ║ Toaster App ΓÇ║ sidebar navigation switches content area
+[1A[2K[11/39] [chromium] ΓÇ║ tests\app.spec.ts:203:3 ΓÇ║ Toaster App ΓÇ║ toggling a setting checkbox changes its checked state
+[1A[2K[12/39] [chromium] ΓÇ║ tests\app.spec.ts:189:3 ΓÇ║ Toaster App ΓÇ║ settings page renders multiple groups with toggle switches
+[1A[2K[13/39] [chromium] ΓÇ║ tests\app.spec.ts:263:3 ΓÇ║ Toaster App ΓÇ║ about page renders version and acknowledgments
+[1A[2K[14/39] [chromium] ΓÇ║ tests\app.spec.ts:277:3 ΓÇ║ Toaster App ΓÇ║ history page shows empty state message
+[1A[2K[15/39] [chromium] ΓÇ║ tests\app.spec.ts:281:3 ΓÇ║ Toaster App ΓÇ║ sidebar highlights active navigation item
+[1A[2K[16/39] [chromium] ΓÇ║ tests\app.spec.ts:320:3 ΓÇ║ Toaster App ΓÇ║ responsive: sidebar and content render at narrow viewport
+[1A[2K[17/39] [chromium] ΓÇ║ tests\app.spec.ts:300:3 ΓÇ║ Toaster App ΓÇ║ sidebar persists highlight after navigating away and back
+[1A[2K[18/39] [chromium] ΓÇ║ tests\app.spec.ts:338:3 ΓÇ║ Toaster App ΓÇ║ responsive: app renders at large viewport
+[1A[2K[19/39] [chromium] ΓÇ║ tests\app.spec.ts:354:3 ΓÇ║ Toaster App ΓÇ║ error boundary renders fallback UI on component error
+[1A[2K[20/39] [chromium] ΓÇ║ tests\app.spec.ts:379:3 ΓÇ║ Toaster App ΓÇ║ all five nav items navigate without console errors
+[1A[2K[21/39] [chromium] ΓÇ║ tests\exportPipeline.spec.ts:52:3 ΓÇ║ Export pipeline bindings contract ΓÇ║ exportTranscriptToFile invokes export_transcript_to_file with expected args
+[1A[2K[22/39] [chromium] ΓÇ║ tests\exportPipeline.spec.ts:89:3 ΓÇ║ Export pipeline bindings contract ΓÇ║ exportTranscript (in-memory) forwards caption config
+[1A[2K[23/39] [chromium] ΓÇ║ tests\exportPipeline.spec.ts:122:8 ΓÇ║ Export pipeline bindings contract ΓÇ║ handleExportEditedMedia invokes export_edited_media with keep_segments
+[1A[2K[24/39] [chromium] ΓÇ║ tests\settingsRoundTrip.spec.ts:85:3 ΓÇ║ Settings round-trip ΓÇ║ app_language change persists across simulated reload
+[1A[2K[25/39] [chromium] ΓÇ║ tests\settingsRoundTrip.spec.ts:114:3 ΓÇ║ Settings round-trip ΓÇ║ update_app_settings mutator updates backend-visible state
+[1A[2K[26/39] [chromium] ΓÇ║ tests\settingsRoundTrip.spec.ts:138:3 ΓÇ║ Settings round-trip ΓÇ║ settingsStore.updateSetting flows through commands binding
+[1A[2K[27/39] [chromium] ΓÇ║ tests\settingsRoundTrip.spec.ts:170:8 ΓÇ║ Settings round-trip ΓÇ║ caption slider value persists across full browser reload
+[1A[2K[28/39] [chromium] ΓÇ║ tests\settingsUIAudit.spec.ts:40:5 ΓÇ║ Settings UI consistency audit ΓÇ║ audit @ desktop-1280x800
+[1A[2K[29/39] [chromium] ΓÇ║ tests\skipSchedule.spec.ts:100:3 ΓÇ║ computeNextDeletedSkip ΓÇ║ returns null when all ranges are behind currentTime
+[1A[2K[30/39] [chromium] ΓÇ║ tests\skipSchedule.spec.ts:115:3 ΓÇ║ computeNextDeletedSkip ΓÇ║ returns delay=0 when currentTime is inside a range
+[1A[2K[31/39] [chromium] ΓÇ║ tests\skipSchedule.spec.ts:125:3 ΓÇ║ computeNextDeletedSkip ΓÇ║ delay reflects distance to next range start at 1x rate
+[1A[2K[32/39] [chromium] ΓÇ║ tests\skipSchedule.spec.ts:134:3 ΓÇ║ computeNextDeletedSkip ΓÇ║ delay halves at 2x playbackRate
+[1A[2K[33/39] [chromium] ΓÇ║ tests\skipSchedule.spec.ts:141:3 ΓÇ║ computeNextDeletedSkip ΓÇ║ picks earliest-starting future range even if input is unsorted
+[1A[2K[34/39] [chromium] ΓÇ║ tests\skipSchedule.spec.ts:159:3 ΓÇ║ computeNextDeletedSkip ΓÇ║ returns null for non-positive playbackRate
+[1A[2K[35/39] [chromium] ΓÇ║ tests\skipSchedule.spec.ts:165:3 ΓÇ║ computeNextDeletedSkip ΓÇ║ back-to-back short deletions produce independent scheduled skips
+[1A[2K[36/39] [chromium] ΓÇ║ tests\transcriptEdit.spec.ts:127:3 ΓÇ║ Transcript edit flow ΓÇ║ set ΓåÆ delete ΓåÆ undo ΓåÆ redo cycles through backend store
+[1A[2K[37/39] [chromium] ΓÇ║ tests\transcriptEdit.spec.ts:184:3 ΓÇ║ Transcript edit flow ΓÇ║ editor_get_projection reports accurate active/deleted counts
+[1A[2K  1) [chromium] ΓÇ║ tests\transcriptEdit.spec.ts:127:3 ΓÇ║ Transcript edit flow ΓÇ║ set ΓåÆ delete ΓåÆ undo ΓåÆ redo cycles through backend store 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32m"The [7mquick [27mbrown fox"[39m
+    Received: [31m"The brown fox"[39m
+
+      176 |     }, wordsToSet);
+      177 |
+    > 178 |     expect(result.initial).toBe("The quick brown fox");
+          |                            ^
+      179 |     expect(result.afterDelete).toBe("The brown fox");
+      180 |     expect(result.afterUndo).toBe("The quick brown fox");
+      181 |     expect(result.afterRedo).toBe("The brown fox");
+        at C:\git\toaster\tests\transcriptEdit.spec.ts:178:28
+
+
