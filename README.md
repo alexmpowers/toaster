@@ -61,11 +61,16 @@ The entire workflow stays on your machine. Your media never leaves your computer
 
 Download the latest installer from the [Releases](https://github.com/alexmpowers/toaster/releases) page.
 
-| Platform | Format               |
-| -------- | -------------------- |
-| Windows  | `.msi` / `.exe`      |
-| macOS    | `.dmg`               |
-| Linux    | `.AppImage` / `.deb` |
+| Platform        | Architectures      | Format                          |
+| --------------- | ------------------ | ------------------------------- |
+| Windows         | x64, ARM64         | `.msi`                          |
+| Linux (Debian)  | x64, ARM64         | `.deb`                          |
+| Linux (RPM)     | x64, ARM64         | `.rpm`                          |
+| Linux (any)     | x64, ARM64         | `.AppImage`                     |
+
+> **Note:** Windows installers in v0.1.0 are unsigned — SmartScreen will show "Windows protected your PC" the first time. Click **More info → Run anyway** to install. Code signing is planned for a follow-up release.
+>
+> macOS builds are not currently published. Build from source if you need a macOS app — see [docs/build.md](docs/build.md).
 
 ### Build from source
 

@@ -65,12 +65,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: "macos-26" # for Arm based macs (M1 and above). Uses macOS 26 for Apple Intelligence SDK.
-            args: "--target aarch64-apple-darwin"
-            target: "aarch64-apple-darwin"
-          - platform: "macos-latest" # for Intel based macs.
-            args: "--target x86_64-apple-darwin"
-            target: "x86_64-apple-darwin"
+          # macOS targets are intentionally omitted from v0.1.0 — no Apple
+          # Developer certificate available. Re-add the macos-26 / macos-latest
+          # rows when APPLE_CERTIFICATE / APPLE_ID / APPLE_TEAM_ID secrets are
+          # supplied; build.yml already handles signing + notarization.
           - platform: "ubuntu-22.04" # Build .deb on 22.04
             args: "--bundles deb"
             target: "x86_64-unknown-linux-gnu"
