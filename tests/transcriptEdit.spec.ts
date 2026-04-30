@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { injectBindingsShim } from "./helpers/testBindingsShim";
 
 /**
  * Transcript edit flow: delete → undo → redo on the backend EditorStore.
@@ -111,6 +112,7 @@ const INIT_SCRIPT = `
 
 async function setup(page: Page) {
   await page.addInitScript(INIT_SCRIPT);
+  await injectBindingsShim(page);
   await page.goto("/");
 }
 
@@ -127,33 +129,51 @@ test.describe("Transcript edit flow", () => {
   }) => {
     await setup(page);
 
+    // Make a fresh copy of the fixture to avoid any mutation across test runs
+    const wordsToSet = [
+      { text: "The", start_us: 0, end_us: 200_000 },
+      { text: "quick", start_us: 200_000, end_us: 500_000 },
+      { text: "brown", start_us: 500_000, end_us: 800_000 },
+      { text: "fox", start_us: 800_000, end_us: 1_100_000 },
+    ];
+
     const result = await page.evaluate(async (words) => {
-      const { commands } = await import("@/bindings");
+      const w = window as unknown as {
+        __toasterTestApi: {
+          commands: {
+            editorSetWords: (words: unknown) => Promise<unknown>;
+            editorGetWords: () => Promise<unknown>;
+            editorDeleteWord: (index: number) => Promise<unknown>;
+            editorUndo: () => Promise<unknown>;
+            editorRedo: () => Promise<unknown>;
+          };
+        };
+      };
       const activeText = (ws: Array<{ text: string; deleted?: boolean }>) =>
         ws
           .filter((w) => !w.deleted)
           .map((w) => w.text)
           .join(" ");
 
-      await commands.editorSetWords(words as never);
-      const initial = await commands.editorGetWords();
+      await w.__toasterTestApi.commands.editorSetWords(words);
+      const initial = await w.__toasterTestApi.commands.editorGetWords();
 
-      await commands.editorDeleteWord(1);
-      const afterDelete = await commands.editorGetWords();
+      await w.__toasterTestApi.commands.editorDeleteWord(1);
+      const afterDelete = await w.__toasterTestApi.commands.editorGetWords();
 
-      await commands.editorUndo();
-      const afterUndo = await commands.editorGetWords();
+      await w.__toasterTestApi.commands.editorUndo();
+      const afterUndo = await w.__toasterTestApi.commands.editorGetWords();
 
-      await commands.editorRedo();
-      const afterRedo = await commands.editorGetWords();
+      await w.__toasterTestApi.commands.editorRedo();
+      const afterRedo = await w.__toasterTestApi.commands.editorGetWords();
 
       return {
-        initial: activeText(initial),
-        afterDelete: activeText(afterDelete),
-        afterUndo: activeText(afterUndo),
-        afterRedo: activeText(afterRedo),
+        initial: activeText(initial as Array<{ text: string; deleted?: boolean }>),
+        afterDelete: activeText(afterDelete as Array<{ text: string; deleted?: boolean }>),
+        afterUndo: activeText(afterUndo as Array<{ text: string; deleted?: boolean }>),
+        afterRedo: activeText(afterRedo as Array<{ text: string; deleted?: boolean }>),
       };
-    }, fixtureWords);
+    }, wordsToSet);
 
     expect(result.initial).toBe("The quick brown fox");
     expect(result.afterDelete).toBe("The brown fox");
@@ -167,11 +187,25 @@ test.describe("Transcript edit flow", () => {
     await setup(page);
 
     const counts = await page.evaluate(async (words) => {
-      const { commands } = await import("@/bindings");
-      await commands.editorSetWords(words as never);
-      await commands.editorDeleteWord(0);
-      await commands.editorDeleteWord(2);
-      const proj = await commands.editorGetProjection();
+      const w = window as unknown as {
+        __toasterTestApi: {
+          commands: {
+            editorSetWords: (words: unknown) => Promise<unknown>;
+            editorDeleteWord: (index: number) => Promise<unknown>;
+            editorGetProjection: () => Promise<{
+              timing_contract: {
+                active_words: number;
+                deleted_words: number;
+                total_words: number;
+              };
+            }>;
+          };
+        };
+      };
+      await w.__toasterTestApi.commands.editorSetWords(words);
+      await w.__toasterTestApi.commands.editorDeleteWord(0);
+      await w.__toasterTestApi.commands.editorDeleteWord(2);
+      const proj = await w.__toasterTestApi.commands.editorGetProjection();
       return {
         active: proj.timing_contract.active_words,
         deleted: proj.timing_contract.deleted_words,

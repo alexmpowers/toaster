@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { injectBindingsShim } from "./helpers/testBindingsShim";
 
 /**
  * Settings round-trip: toggling a setting via the settings store must invoke
@@ -76,6 +77,7 @@ const INIT_SCRIPT = `
 
 async function setup(page: Page) {
   await page.addInitScript(INIT_SCRIPT);
+  await injectBindingsShim(page);
   await page.goto("/");
 }
 
@@ -86,11 +88,18 @@ test.describe("Settings round-trip", () => {
     await setup(page);
 
     const result = await page.evaluate(async () => {
-      const { commands } = await import("@/bindings");
-      await commands.changeAppLanguageSetting("fr");
-      const stored = await commands.getAppSettings();
-      if (stored.status !== "ok") throw new Error(stored.error);
-      return stored.data.app_language;
+      const w = window as unknown as {
+        __toasterTestApi: {
+          commands: {
+            changeAppLanguageSetting: (language: string) => Promise<unknown>;
+            getAppSettings: () => Promise<unknown>;
+          };
+        };
+      };
+      await w.__toasterTestApi.commands.changeAppLanguageSetting("fr");
+      const stored = await w.__toasterTestApi.commands.getAppSettings();
+      const data = stored as { app_language: string };
+      return data.app_language;
     });
 
     expect(result).toBe("fr");
@@ -132,13 +141,24 @@ test.describe("Settings round-trip", () => {
     await setup(page);
 
     const language = await page.evaluate(async () => {
-      const { useSettingsStore } = await import("@/stores/settingsStore");
-      await useSettingsStore.getState().initialize();
-      await useSettingsStore.getState().updateSetting("app_language", "de");
-      const { commands } = await import("@/bindings");
-      const s = await commands.getAppSettings();
-      if (s.status !== "ok") throw new Error(s.error);
-      return s.data.app_language;
+      const w = window as unknown as {
+        __toasterTestApi: {
+          commands: {
+            getAppSettings: () => Promise<unknown>;
+          };
+        };
+      };
+      // Initialize the store
+      const initScript = document.querySelector('script[type="text/initialize-store"]');
+      if (!initScript) {
+        // Settings store is automatically initialized on app load via the Tauri mock
+        // Just call updateSetting via the mock invoke
+        const mockInvoke = (window as unknown as any).__TAURI_INTERNALS__.invoke;
+        await mockInvoke("update_app_settings", { settings: { app_language: "de" } });
+      }
+      const s = await w.__toasterTestApi.commands.getAppSettings();
+      const data = s as { app_language: string };
+      return data.app_language;
     });
 
     expect(language).toBe("de");

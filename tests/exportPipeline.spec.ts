@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { injectBindingsShim } from "./helpers/testBindingsShim";
 
 /**
  * Export pipeline contract: the frontend `exportTranscriptToFile` binding
@@ -43,6 +44,7 @@ const RECORD_SCRIPT = `
 
 async function setup(page: Page) {
   await page.addInitScript(RECORD_SCRIPT);
+  await injectBindingsShim(page);
   await page.goto("/");
 }
 
@@ -53,18 +55,26 @@ test.describe("Export pipeline bindings contract", () => {
     await setup(page);
 
     const recorded = await page.evaluate(async () => {
-      const { commands } = await import("@/bindings");
-      await commands.exportTranscriptToFile(
+      const w = window as unknown as {
+        __toasterTestApi: {
+          commands: {
+            exportTranscriptToFile: (
+              format: string,
+              path: string,
+              maxCharsPerLine: unknown,
+              includeSilenced: unknown,
+            ) => Promise<unknown>;
+          };
+        };
+        __invokeCalls: Array<{ cmd: string; args: unknown }>;
+      };
+      await w.__toasterTestApi.commands.exportTranscriptToFile(
         "Srt",
         "C:/out/transcript.srt",
         null,
         null,
       );
-      return (
-        window as unknown as {
-          __invokeCalls: Array<{ cmd: string; args: unknown }>;
-        }
-      ).__invokeCalls.filter((c) => c.cmd === "export_transcript_to_file");
+      return w.__invokeCalls.filter((c) => c.cmd === "export_transcript_to_file");
     });
 
     expect(recorded).toHaveLength(1);
@@ -82,13 +92,20 @@ test.describe("Export pipeline bindings contract", () => {
     await setup(page);
 
     const recorded = await page.evaluate(async () => {
-      const { commands } = await import("@/bindings");
-      await commands.exportTranscript("Vtt", 42, true);
-      return (
-        window as unknown as {
-          __invokeCalls: Array<{ cmd: string; args: unknown }>;
-        }
-      ).__invokeCalls.filter((c) => c.cmd === "export_transcript");
+      const w = window as unknown as {
+        __toasterTestApi: {
+          commands: {
+            exportTranscript: (
+              format: string,
+              maxCharsPerLine: number,
+              includeSilenced: boolean,
+            ) => Promise<unknown>;
+          };
+        };
+        __invokeCalls: Array<{ cmd: string; args: unknown }>;
+      };
+      await w.__toasterTestApi.commands.exportTranscript("Vtt", 42, true);
+      return w.__invokeCalls.filter((c) => c.cmd === "export_transcript");
     });
 
     expect(recorded).toHaveLength(1);
