@@ -24,9 +24,9 @@ describe("mergeRangesUs", () => {
   });
 
   it("collects a single matching word", () => {
-    expect(mergeRangesUs([w(0, 100, { deleted: true })], (x) => x.deleted)).toEqual([
-      [0, 100],
-    ]);
+    expect(
+      mergeRangesUs([w(0, 100, { deleted: true })], (x) => x.deleted),
+    ).toEqual([[0, 100]]);
   });
 
   it("merges two overlapping ranges into one swatch", () => {
@@ -38,7 +38,10 @@ describe("mergeRangesUs", () => {
   });
 
   it("merges adjacent (touching) ranges", () => {
-    const words = [w(0, 100, { deleted: true }), w(100, 200, { deleted: true })];
+    const words = [
+      w(0, 100, { deleted: true }),
+      w(100, 200, { deleted: true }),
+    ];
     expect(mergeRangesUs(words, (x) => x.deleted)).toEqual([[0, 200]]);
   });
 
@@ -69,7 +72,10 @@ describe("mergeRangesUs", () => {
   });
 
   it("absorbs a fully-contained range", () => {
-    const words = [w(0, 1000, { deleted: true }), w(100, 200, { deleted: true })];
+    const words = [
+      w(0, 1000, { deleted: true }),
+      w(100, 200, { deleted: true }),
+    ];
     expect(mergeRangesUs(words, (x) => x.deleted)).toEqual([[0, 1000]]);
   });
 

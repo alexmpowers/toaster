@@ -6,18 +6,18 @@
 
 ## Shipped artifacts
 
-| Platform        | Architecture | Format       | Status     |
-| --------------- | ------------ | ------------ | ---------- |
-| Linux (Debian)  | x64          | `.deb`       | ✅ shipped |
-| Linux (Debian)  | ARM64        | `.deb`       | ✅ shipped |
-| Linux (RPM)     | x64          | `.rpm`       | ✅ shipped |
-| Linux (RPM)     | ARM64        | `.rpm`       | ✅ shipped |
-| Linux (AppImage)| x64          | `.AppImage`  | ✅ shipped |
-| Linux (AppImage)| ARM64        | `.AppImage`  | ✅ shipped |
-| Windows         | x64          | `.msi`       | ✅ shipped (unsigned — SmartScreen warning) |
-| Windows         | ARM64        | `.msi`       | ✅ shipped (unsigned — SmartScreen warning) |
-| macOS ARM (M1+) | aarch64      | `.dmg`       | ⏸ deferred — needs Apple cert |
-| macOS Intel     | x86_64       | `.dmg`       | ⏸ deferred — needs Apple cert |
+| Platform         | Architecture | Format      | Status                                      |
+| ---------------- | ------------ | ----------- | ------------------------------------------- |
+| Linux (Debian)   | x64          | `.deb`      | ✅ shipped                                  |
+| Linux (Debian)   | ARM64        | `.deb`      | ✅ shipped                                  |
+| Linux (RPM)      | x64          | `.rpm`      | ✅ shipped                                  |
+| Linux (RPM)      | ARM64        | `.rpm`      | ✅ shipped                                  |
+| Linux (AppImage) | x64          | `.AppImage` | ✅ shipped                                  |
+| Linux (AppImage) | ARM64        | `.AppImage` | ✅ shipped                                  |
+| Windows          | x64          | `.msi`      | ✅ shipped (unsigned — SmartScreen warning) |
+| Windows          | ARM64        | `.msi`      | ✅ shipped (unsigned — SmartScreen warning) |
+| macOS ARM (M1+)  | aarch64      | `.dmg`      | ⏸ deferred — needs Apple cert              |
+| macOS Intel      | x86_64       | `.dmg`      | ⏸ deferred — needs Apple cert              |
 
 Auto-updater manifest: <https://github.com/alexmpowers/toaster/releases/latest/download/latest.json> (12 platform entries, minisign-verified).
 
@@ -81,4 +81,3 @@ In commit `2d8ad97`, removed both macOS rows (`macos-26`, `macos-latest`) from t
 - Windows code signing (Azure Trusted Signing or EV cert + signtool)
 - Stale `handy` references in `build.yml` macOS-only steps and `nix-check.yml` flake outputs
 - Export-parity eval baseline regeneration (issue #5)
-

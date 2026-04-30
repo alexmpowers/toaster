@@ -187,9 +187,7 @@ const EditorView: React.FC = () => {
                 const count = unwrapResult(result);
                 if (count > 0) {
                   await refreshFromBackend();
-                  toast.success(
-                    t("editor.cleanup.fillersOnly", { count }),
-                  );
+                  toast.success(t("editor.cleanup.fillersOnly", { count }));
                 }
                 clearHighlights();
               })

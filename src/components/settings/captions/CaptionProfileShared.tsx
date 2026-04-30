@@ -219,9 +219,7 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
               options={[
                 {
                   value: "horizontal",
-                  label: t(
-                    "settings.captions.preview.orientation.horizontal",
-                  ),
+                  label: t("settings.captions.preview.orientation.horizontal"),
                 },
                 {
                   value: "vertical",
@@ -249,9 +247,7 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
                 },
                 {
                   value: "multiLine",
-                  label: t(
-                    "settings.captions.preview.sample.label.multiLine",
-                  ),
+                  label: t("settings.captions.preview.sample.label.multiLine"),
                 },
               ]}
               onChange={(v) => {

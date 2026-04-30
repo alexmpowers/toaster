@@ -16,14 +16,25 @@
        * survives even if every framework module is broken. React.createRoot
        * replaces the children of #root on mount.
        */
-      html, body { margin: 0; padding: 0; height: 100%; }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
       body {
         background: #171717;
         color: #e5e5e5;
-        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        font-family:
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
         overflow: hidden;
       }
-      #root { height: 100%; }
+      #root {
+        height: 100%;
+      }
       .boot-splash {
         position: fixed;
         inset: 0;
@@ -45,7 +56,9 @@
         animation: boot-splash-spin 0.8s linear infinite;
       }
       @keyframes boot-splash-spin {
-        to { transform: rotate(360deg); }
+        to {
+          transform: rotate(360deg);
+        }
       }
       /*
        * Honor OS-level reduced-motion for vestibular-disorder users. The
@@ -54,7 +67,9 @@
        * code runs. The text label still tells them the app is loading.
        */
       @media (prefers-reduced-motion: reduce) {
-        .boot-splash__spinner { animation: none; }
+        .boot-splash__spinner {
+          animation: none;
+        }
       }
       /*
        * Boot-failure panel. Rendered by `renderBootFailure()` in
