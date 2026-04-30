@@ -1,6 +1,6 @@
 # Planned Release: v0.1.0
 
-> **Status:** Build in progress — All quality gates passed, release workflow triggered. Waiting for infrastructure secrets (signing certificates, macOS/Windows/Linux keys) to complete the build.
+> **Status:** Build in progress — All quality gates passed, release workflow re-triggered with Linux signing secrets configured. Platform-specific builds: Linux ✅ secrets ready, macOS ⏳ (requires Apple certs), Windows ⏳ (requires NSIS template fix or MSI-only workaround).
 
 ---
 
