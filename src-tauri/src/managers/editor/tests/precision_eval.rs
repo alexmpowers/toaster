@@ -590,7 +590,7 @@ fn precision_eval_audio_truth_remove_silence() {
         if i < 5 {
             silence_starts.push(cursor_us);
             let n = ((SAMPLE_RATE as i64 * silence_us) / 1_000_000) as usize;
-            samples.extend(std::iter::repeat(0.0).take(n));
+            samples.extend(std::iter::repeat_n(0.0, n));
             cursor_us += silence_us;
         }
     }
