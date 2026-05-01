@@ -5,7 +5,6 @@ export { Dropdown } from "./Dropdown";
 export { Input } from "./Input";
 export { PathDisplay } from "./PathDisplay";
 export { ResetButton } from "./ResetButton";
-export { Select } from "./Select";
 export { SettingContainer } from "./SettingContainer";
 export { SettingsGroup } from "./SettingsGroup";
 export { Slider } from "./Slider";
