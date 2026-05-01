@@ -324,6 +324,7 @@ function App() {
       className="h-screen flex flex-col select-none cursor-default"
     >
       <Toaster
+        position="bottom-right"
         theme="system"
         expand
         visibleToasts={5}
