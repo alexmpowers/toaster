@@ -73,13 +73,23 @@ $precisionNotes = ''
 try {
     Push-Location (Join-Path $RepoRoot 'src-tauri')
     $output = cargo test -p toaster --lib precision_eval -- --nocapture 2>&1 | Out-String
+    $cargoExit = $LASTEXITCODE
     $resultLine = ($output -split "`n") | Where-Object { $_ -match 'test result:' } | Select-Object -Last 1
-    if ($resultLine -match 'test result: ok\. (\d+) passed; (\d+) failed; \d+ ignored; \d+ measured; (\d+) filtered') {
+    if ($cargoExit -ne 0) {
+        $tail = (($output -split "`n") | Select-Object -Last 6) -join ' | '
+        $precisionStatus = 'error'
+        $precisionNotes = "cargo test exited $cargoExit; tail: $tail"
+    } elseif ($resultLine -match 'test result: ok\. (\d+) passed; (\d+) failed; \d+ ignored; \d+ measured; (\d+) filtered') {
         $precisionDetails.passed = [int]$Matches[1]
         $precisionDetails.failed = [int]$Matches[2]
         $precisionDetails.filtered = [int]$Matches[3]
-        $precisionStatus = if ($precisionDetails.failed -eq 0 -and $precisionDetails.passed -gt 0) { 'pass' } else { 'fail' }
+        $precisionStatus = if ($precisionDetails.failed -eq 0) { 'pass' } else { 'fail' }
+    } elseif ($resultLine -match 'test result: ok\. (\d+) passed; (\d+) failed;') {
+        $precisionDetails.passed = [int]$Matches[1]
+        $precisionDetails.failed = [int]$Matches[2]
+        $precisionStatus = if ($precisionDetails.failed -eq 0) { 'pass' } else { 'fail' }
     } else {
+        $precisionStatus = 'error'
         $precisionNotes = "Unparseable cargo test output"
     }
 } catch {

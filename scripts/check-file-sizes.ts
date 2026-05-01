@@ -15,6 +15,9 @@
  *   0 — no violations, and no stale allowlist entries
  *   1 — at least one file exceeds the cap without being allowlisted,
  *       OR an allowlisted file is now under the cap (stale entry).
+ *
+ * Optional flags:
+ *   --fix — remove stale entries from scripts/file-size-allowlist.txt.
  */
 import fs from "fs";
 import path from "path";
@@ -37,6 +40,7 @@ const EXCLUDE_FILES = new Set([
   path.join("src", "bindings.ts").replaceAll("\\", "/"),
 ]);
 const ALLOWLIST_PATH = path.join(__dirname, "file-size-allowlist.txt");
+const SHOULD_FIX = process.argv.includes("--fix");
 
 const colors = {
   reset: "\x1b[0m",
@@ -94,6 +98,36 @@ function loadAllowlist(): Set<string> {
   );
 }
 
+function removeStaleAllowlistEntries(staleEntries: string[]): number {
+  if (staleEntries.length === 0 || !fs.existsSync(ALLOWLIST_PATH)) return 0;
+
+  const stale = new Set(staleEntries.map(toPosix));
+  const original = fs.readFileSync(ALLOWLIST_PATH, "utf8");
+  const lines = original.split(/\r?\n/);
+  const kept: string[] = [];
+  let removed = 0;
+
+  for (const line of lines) {
+    const entry = line.replace(/#.*$/, "").trim();
+    if (entry.length === 0) {
+      kept.push(line);
+      continue;
+    }
+
+    if (stale.has(toPosix(entry))) {
+      removed++;
+      continue;
+    }
+
+    kept.push(line);
+  }
+
+  let next = kept.join("\n");
+  if (original.endsWith("\n") && !next.endsWith("\n")) next += "\n";
+  fs.writeFileSync(ALLOWLIST_PATH, next, "utf8");
+  return removed;
+}
+
 function main(): void {
   const files: string[] = [];
   for (const root of SEARCH_ROOTS) {
@@ -116,9 +150,19 @@ function main(): void {
     violations.push({ rel, lines });
   }
 
-  const staleAllowlist = [...allowlist].filter(
+  let staleAllowlist = [...allowlist].filter(
     (entry) => !allowlistHits.has(entry),
   );
+
+  if (SHOULD_FIX && staleAllowlist.length > 0) {
+    const removed = removeStaleAllowlistEntries(staleAllowlist);
+    if (removed > 0) {
+      console.log(
+        `${colors.cyan}Fixed ${removed} stale allowlist entr${removed === 1 ? "y" : "ies"}.${colors.reset}`,
+      );
+      staleAllowlist = [];
+    }
+  }
 
   violations.sort((a, b) => b.lines - a.lines);
 

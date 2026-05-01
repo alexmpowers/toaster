@@ -1,0 +1,10 @@
+# Optional key-usage ignore patterns for scripts/check-translations.ts.
+#
+# Keep this list short and justified. Prefer exact keys over wide prefixes.
+# Supported forms:
+#   exact.key.path
+#   prefix.*
+#
+# Examples:
+# common.*
+# editor.legacySection.*

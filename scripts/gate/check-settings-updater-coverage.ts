@@ -26,6 +26,9 @@
  * Invocation:
  *   bun scripts/gate/check-settings-updater-coverage.ts          # report
  *   bun scripts/gate/check-settings-updater-coverage.ts --strict # CI, exit 1
+ *   bun scripts/gate/check-settings-updater-coverage.ts --trace-missing
+ *                                                        # include extra
+ *                                                        # diagnostics
  *
  * Exit codes: 0 clean, 1 drift, 2 internal error.
  */
@@ -37,6 +40,7 @@ const ROOT = process.cwd();
 const SRC = join(ROOT, "src");
 const STORE = join(SRC, "stores", "settingsStore.ts");
 const STRICT = process.argv.includes("--strict");
+const TRACE_MISSING = process.argv.includes("--trace-missing");
 
 // Prefixes this gate cares about. See docs/design-system.md §8.
 const LIVE_PREVIEW_PREFIXES = [
@@ -109,12 +113,17 @@ async function parseUpdaterKeys(): Promise<Set<string>> {
   return keys;
 }
 
-async function findCallSites(): Promise<CallSite[]> {
+async function findCallSites(): Promise<{
+  hits: CallSite[];
+  filesScanned: number;
+}> {
   const hits: CallSite[] = [];
+  let filesScanned = 0;
   // Matches updateSetting("key", …)   and   updateSetting('key', …)
   const re = /\bupdateSetting\s*\(\s*["']([a-z_][a-z0-9_]*)["']/g;
   for await (const file of walk(SRC)) {
     if (file === STORE) continue; // the map itself references keys as identifiers
+    filesScanned++;
     const text = await readFile(file, "utf8");
     const lines = text.split("\n");
     lines.forEach((line, idx) => {
@@ -129,15 +138,16 @@ async function findCallSites(): Promise<CallSite[]> {
       }
     });
   }
-  return hits;
+  return { hits, filesScanned };
 }
 
 async function main() {
   try {
-    const [keys, sites] = await Promise.all([
+    const [keys, callSiteResult] = await Promise.all([
       parseUpdaterKeys(),
       findCallSites(),
     ]);
+    const sites = callSiteResult.hits;
     if (keys.size === 0) {
       console.error(
         "[settings-updater-coverage] parsed zero keys from settingUpdaters — parser bug?",
@@ -146,10 +156,12 @@ async function main() {
     }
 
     const missing = new Map<string, CallSite[]>();
+    const livePreviewReferenced = new Set<string>();
     for (const s of sites) {
       // Only enforce on the live-preview prefixes; everything else is
       // out of scope for this gate (see the scope note in the header).
       if (!LIVE_PREVIEW_PREFIXES.some((p) => s.key.startsWith(p))) continue;
+      livePreviewReferenced.add(s.key);
       if (keys.has(s.key)) continue;
       if (ALLOWLIST[s.key]) continue;
       const arr = missing.get(s.key) ?? [];
@@ -161,6 +173,11 @@ async function main() {
       console.log(
         `[settings-updater-coverage] OK — ${keys.size} updaters cover ${new Set(sites.map((s) => s.key)).size} distinct updateSetting() keys (${sites.length} call sites). Allowlisted: ${Object.keys(ALLOWLIST).length}.`,
       );
+      if (TRACE_MISSING) {
+        console.log(
+          `[settings-updater-coverage] TRACE — files scanned=${callSiteResult.filesScanned}, live-preview keys referenced=${livePreviewReferenced.size}, missing=0.`,
+        );
+      }
       process.exit(0);
     }
 
@@ -170,6 +187,24 @@ async function main() {
     for (const [key, callers] of missing.entries()) {
       console.error(`  ${key}`);
       for (const c of callers) console.error(`    ${c.file}:${c.line}`);
+    }
+    if (TRACE_MISSING) {
+      const updaterKeysSorted = [...keys].sort();
+      const referencedSorted = [...livePreviewReferenced].sort();
+      const coveredLivePreview = referencedSorted.filter((k) => keys.has(k));
+      const missingSorted = [...missing.keys()].sort();
+      console.error(
+        `\n[settings-updater-coverage] TRACE — files scanned=${callSiteResult.filesScanned}, live-preview keys referenced=${referencedSorted.length}, covered=${coveredLivePreview.length}, missing=${missingSorted.length}.`,
+      );
+      console.error(
+        `[settings-updater-coverage] TRACE missing keys: ${missingSorted.join(", ")}`,
+      );
+      console.error(
+        `[settings-updater-coverage] TRACE referenced live-preview keys: ${referencedSorted.join(", ")}`,
+      );
+      console.error(
+        `[settings-updater-coverage] TRACE updater keys (settingsStore): ${updaterKeysSorted.join(", ")}`,
+      );
     }
     console.error(
       "\nFix: add an entry to settingUpdaters in src/stores/settingsStore.ts that calls the appropriate backend command. See docs/design-system.md §8 (live-preview fan-out contract).",

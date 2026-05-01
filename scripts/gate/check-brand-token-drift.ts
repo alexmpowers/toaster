@@ -42,12 +42,9 @@ const ALLOWLIST = new Set<string>([
   // carved out below, but the dark-theme `:root` override and any
   // legacy comments also legitimately contain hex literals.
   "src/App.css",
-  // CaptionProfileShared / CaptionMockFrame / CaptionSettings embed
-  // colors in profile data structures that serialize to user settings
-  // (hex strings are the storage format). Different concern from
-  // UI drift — flag separately if ever.
-  "src/components/settings/captions/CaptionProfileShared.tsx",
-  "src/components/settings/captions/CaptionMockFrame.tsx",
+  // CaptionSettings embeds colors in profile data structures that
+  // serialize to user settings (hex strings are the storage format).
+  // Different concern from UI drift — flag separately if ever.
   "src/components/settings/captions/CaptionSettings.tsx",
   // TranscriptEditor carries a SPEAKER_COLORS palette of 8 distinct
   // hues for diarization. Intentional variety, not brand drift.

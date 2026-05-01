@@ -30,6 +30,7 @@ $repoRoot   = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $featureDir = Join-Path $repoRoot 'features' $Slug
 $stateFile  = Join-Path $featureDir 'STATE.md'
 $journalFile = Join-Path $featureDir 'journal.md'
+$featureScriptsDir = Join-Path (Join-Path $repoRoot 'scripts') 'feature'
 
 # ── Guard ────────────────────────────────────────────────────────────────
 if (-not (Test-Path $featureDir)) {
@@ -51,7 +52,11 @@ if ($currentState -ne 'defined') {
 # ── Coverage gate ────────────────────────────────────────────────────────
 Write-Host "Running coverage gate for '$Slug'..." -ForegroundColor Cyan
 
-$coverageScript = Join-Path $repoRoot 'scripts' 'check-feature-coverage.ps1'
+$coverageScript = Join-Path $featureScriptsDir 'check-feature-coverage.ps1'
+if (-not (Test-Path $coverageScript)) {
+    Write-Error "Coverage script not found: $coverageScript"
+    exit 2
+}
 & pwsh $coverageScript -Feature $Slug
 
 if ($LASTEXITCODE -ne 0) {
@@ -63,7 +68,11 @@ if ($LASTEXITCODE -ne 0) {
 $tasksFile = Join-Path $featureDir 'tasks.sql'
 if (Test-Path $tasksFile) {
     Write-Host "Running tasks.sql schema gate for '$Slug'..." -ForegroundColor Cyan
-    $tasksScript = Join-Path $repoRoot 'scripts' 'check-feature-tasks.ps1'
+    $tasksScript = Join-Path $featureScriptsDir 'check-feature-tasks.ps1'
+    if (-not (Test-Path $tasksScript)) {
+        Write-Error "tasks.sql schema script not found: $tasksScript"
+        exit 2
+    }
     & pwsh $tasksScript -Feature $Slug
     if ($LASTEXITCODE -ne 0) {
         Write-Error "tasks.sql schema gate failed (exit $LASTEXITCODE). STATE.md stays at 'defined'."
