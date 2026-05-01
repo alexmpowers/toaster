@@ -11,6 +11,23 @@ name: "CI"
 
 on:
   workflow_dispatch:
+    inputs:
+      run_export_parity:
+        description: "Run export-parity eval in eval harness (may fail until baseline is refreshed)"
+        required: false
+        default: "false"
+      strict_translation_key_usage:
+        description: "Fail CI on missing referenced translation keys (safe strict mode)"
+        required: false
+        default: "false"
+      strict_translation_unused_keys:
+        description: "When strict translation key usage is enabled, also fail on unreferenced keys (strict-all)"
+        required: false
+        default: "false"
+      trace_settings_updater_coverage:
+        description: "Include detailed trace output for settings-updater coverage audit"
+        required: false
+        default: "false"
   push:
     branches: [main]
     paths:
@@ -60,17 +77,54 @@ jobs:
       - name: Check translation consistency
         run: bun run check:translations
 
+      - name: Audit translation key usage (report-only)
+        run: |
+          if [ "${{ github.event.inputs.strict_translation_key_usage }}" = "true" ]; then
+            if [ "${{ github.event.inputs.strict_translation_unused_keys }}" = "true" ]; then
+              echo "Running strict-all translation key-usage audit"
+              bun run check:translations:key-usage:strict-all
+            else
+              echo "Running strict translation key-usage audit"
+              bun run check:translations:key-usage:strict
+            fi
+          else
+            bun run check:translations:key-usage
+          fi
+
       - name: Check file-size guardrail (monolith cap)
         run: bun run check:file-sizes
 
       - name: Check design-token drift (no hex literals outside @theme)
         run: bun run check:design-tokens
 
+      - name: Check backend-authority drift (strict)
+        run: bun run check:backend-authority:strict
+
       - name: Check button-variant drift (no raw <button> styling)
         run: bun run check:button-variants
 
+      - name: Check instruction drift across doc files
+        run: bun run check:instruction-drift
+
+      - name: Check handy-legacy usage (dead-code guard)
+        run: bun run check:handy-legacy
+
+      - name: Check adapter schema (transcription fixture invariants)
+        run: bun run check:adapter-schema
+
+      - name: Check feature state consistency
+        run: bun run check:feature-state
+
+      - name: Check doc reference reachability
+        run: bun run check:reachability
+
       - name: Check settings-updater coverage (live-preview fan-out)
-        run: bun run check:settings-updater-coverage
+        run: |
+          if [ "${{ github.event.inputs.trace_settings_updater_coverage }}" = "true" ]; then
+            bun run check:settings-updater-coverage:strict:trace
+          else
+            bun run check:settings-updater-coverage
+          fi
 
       - name: Run ESLint
         run: bun run lint
@@ -163,11 +217,26 @@ jobs:
         #   - precision:      src-tauri/tests/fixtures/
         #   - audio-boundary: src-tauri/tests/fixtures/boundary/ (requires scripts/eval/lib/AudioBoundary.psm1 — harness skips when absent)
         #   - export-parity:  eval/fixtures/toaster_example*.mp4 + tests/fixtures/edit-quality.baseline.json
+        # Baseline refresh helper:
+        #   bun run eval:refresh-edit-quality-baseline
         # ffmpeg is installed above for the export-parity eval.
-        # Export-parity baseline drifted post-repo-move (leading/trailing silence > 50ms tol);
-        # skipping until baseline is regenerated (tracked by followup).
+        # Export parity remains opt-in by workflow_dispatch input until
+        # the baseline refresh lands. Set run_export_parity=true when
+        # intentionally validating baseline refresh candidates.
         shell: pwsh
-        run: pwsh -NoProfile -File scripts/eval/run-eval-harness.ps1 -SkipExportParity
+        run: |
+          if ('${{ github.event.inputs.run_export_parity }}' -eq 'true') {
+            Write-Host 'Running eval harness with export parity enabled'
+            pwsh -NoProfile -File scripts/eval/run-eval-harness.ps1
+          } else {
+            Write-Host 'Running eval harness with export parity skipped (default)'
+            pwsh -NoProfile -File scripts/eval/run-eval-harness.ps1 -SkipExportParity
+          }
+
+      - name: Check export parity deltas (focused)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_export_parity == 'true'
+        shell: pwsh
+        run: pwsh -NoProfile -File scripts/eval/check-export-parity.ps1
 
       - name: Upload eval harness report
         if: always()
