@@ -1,9 +1,12 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useSettings } from "../../../hooks/useSettings";
 import type { CaptionProfile, CaptionProfileSet } from "@/bindings";
-import { CaptionPreviewPane } from "./CaptionProfileShared";
+import { CaptionPreviewPane, type SampleKey } from "./CaptionProfileShared";
 import { CaptionProfileForm } from "./CaptionProfileForm";
 import type { CaptionMockOrientation } from "./CaptionMockFrame";
+import { Dropdown } from "../../ui/Dropdown";
+import { SettingContainer } from "../../ui/SettingContainer";
 
 interface CaptionSettingsProps {
   descriptionMode?: "inline" | "tooltip";
@@ -44,6 +47,7 @@ const DEFAULT_MOBILE: CaptionProfile = {
  */
 export const CaptionSettings: React.FC<CaptionSettingsProps> = React.memo(
   ({ descriptionMode = "tooltip", grouped = false }) => {
+    const { t } = useTranslation();
     const { getSetting, updateSetting } = useSettings();
 
     const profileSet = (getSetting("caption_profiles") as
@@ -55,12 +59,11 @@ export const CaptionSettings: React.FC<CaptionSettingsProps> = React.memo(
 
     const [previewOrientation, setPreviewOrientation] =
       useState<CaptionMockOrientation>("horizontal");
+    const [selectedSampleKey, setSelectedSampleKey] =
+      useState<SampleKey>("single");
 
     const isVertical = previewOrientation === "vertical";
     const activeProfile = isVertical ? profileSet.mobile : profileSet.desktop;
-
-    // Round-8: `isVertical` still drives which profile we patch (desktop vs
-    // mobile). Helper kept for readability when handleChange reads it below.
 
     const handleChange = (patch: Partial<CaptionProfile>) => {
       const merged: CaptionProfile = { ...activeProfile, ...patch };
@@ -71,11 +74,6 @@ export const CaptionSettings: React.FC<CaptionSettingsProps> = React.memo(
       updateSetting("caption_profiles", next);
     };
 
-    // Round-8: intentionally do NOT thread `isUpdating("caption_profiles")`
-    // into the form. Caption-profile writes are idempotent and fire on
-    // every slider tick; pulsing the `disabled` prop true→false on each
-    // write was causing the font-family Select to visibly flash/flicker
-    // even when the user was only dragging a neighbouring slider.
     const disabled = false;
 
     return (
@@ -83,10 +81,54 @@ export const CaptionSettings: React.FC<CaptionSettingsProps> = React.memo(
         <CaptionPreviewPane
           profile={activeProfile}
           orientation={previewOrientation}
-          onOrientationChange={setPreviewOrientation}
+          selectedSampleKey={selectedSampleKey}
+        />
+
+        <SettingContainer
+          title={t("settings.captions.preview.orientation.label")}
+          description={t("settings.captions.preview.orientation.description")}
           descriptionMode={descriptionMode}
           grouped={grouped}
-        />
+        >
+          <Dropdown
+            selectedValue={previewOrientation}
+            options={[
+              {
+                value: "horizontal",
+                label: t("settings.captions.preview.orientation.horizontal"),
+              },
+              {
+                value: "vertical",
+                label: t("settings.captions.preview.orientation.vertical"),
+              },
+            ]}
+            onSelect={(v) =>
+              setPreviewOrientation(v as CaptionMockOrientation)
+            }
+          />
+        </SettingContainer>
+
+        <SettingContainer
+          title={t("settings.captions.preview.sampleLegend")}
+          description={t("settings.captions.preview.sampleDescription")}
+          descriptionMode={descriptionMode}
+          grouped={grouped}
+        >
+          <Dropdown
+            selectedValue={selectedSampleKey}
+            options={[
+              {
+                value: "single",
+                label: t("settings.captions.preview.sample.label.single"),
+              },
+              {
+                value: "multiLine",
+                label: t("settings.captions.preview.sample.label.multiLine"),
+              },
+            ]}
+            onSelect={(v) => setSelectedSampleKey(v as SampleKey)}
+          />
+        </SettingContainer>
 
         <CaptionProfileForm
           profile={activeProfile}

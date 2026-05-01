@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CaptionPill } from "../../player/CaptionOverlay";
-import { Dropdown } from "../../ui/Dropdown";
-import { SettingContainer } from "../../ui/SettingContainer";
 import type { CaptionFontFamily, CaptionProfile, Rgba } from "@/bindings";
 import {
   CaptionMockFrame,
@@ -148,7 +146,7 @@ export const SliderWithInput: React.FC<SliderWithInputProps> = ({
   );
 };
 
-type SampleKey = "single" | "multiLine";
+export type SampleKey = "single" | "multiLine";
 
 // Virtual frame the caption settings are calibrated against. Preview-only
 // state; MUST NOT be plumbed through any Tauri command (Slice A SSOT rule).
@@ -160,21 +158,15 @@ const VERTICAL_ASPECT = VIRTUAL_FRAME_SHORT / VIRTUAL_FRAME_LONG;
 interface CaptionPreviewPaneProps {
   profile: CaptionProfile;
   orientation: CaptionMockOrientation;
-  onOrientationChange: (next: CaptionMockOrientation) => void;
-  descriptionMode?: "inline" | "tooltip";
-  grouped?: boolean;
+  selectedSampleKey: SampleKey;
 }
 
 export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
   profile,
   orientation,
-  onOrientationChange,
-  descriptionMode = "tooltip",
-  grouped = false,
+  selectedSampleKey,
 }) => {
   const { t } = useTranslation();
-  const [selectedSampleKey, setSelectedSampleKey] =
-    useState<SampleKey>("single");
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
 
@@ -210,60 +202,16 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
 
   return (
     <div
-      className="mb-4 w-full rounded-xl border border-mid-gray/20 bg-background p-4"
+      className="mb-4 w-full"
       data-testid="caption-preview-pane"
     >
-      <div className="mb-3 space-y-1">
-        <SettingContainer
-          title={t("settings.captions.preview.orientation.label")}
-          description={t("settings.captions.preview.orientation.description")}
-          descriptionMode={descriptionMode}
-          grouped={grouped}
-        >
-          <Dropdown
-            selectedValue={orientation}
-            options={[
-              {
-                value: "horizontal",
-                label: t("settings.captions.preview.orientation.horizontal"),
-              },
-              {
-                value: "vertical",
-                label: t("settings.captions.preview.orientation.vertical"),
-              },
-            ]}
-            onSelect={(v) => onOrientationChange(v as CaptionMockOrientation)}
-          />
-        </SettingContainer>
-        <SettingContainer
-          title={t("settings.captions.preview.sampleLegend")}
-          description={t("settings.captions.preview.sampleDescription")}
-          descriptionMode={descriptionMode}
-          grouped={grouped}
-        >
-          <Dropdown
-            selectedValue={selectedSampleKey}
-            options={[
-              {
-                value: "single",
-                label: t("settings.captions.preview.sample.label.single"),
-              },
-              {
-                value: "multiLine",
-                label: t("settings.captions.preview.sample.label.multiLine"),
-              },
-            ]}
-            onSelect={(v) => setSelectedSampleKey(v as "single" | "multiLine")}
-          />
-        </SettingContainer>
-      </div>
       <div
         className="mx-auto w-full rounded-[20px] bg-black/85 p-2 shadow-inner"
         style={{ maxWidth: screenMaxWidth ?? "36rem" }}
       >
         <div
           ref={containerRef}
-          className="relative w-full overflow-hidden rounded-[12px] border border-mid-gray/20 bg-black/90"
+          className="relative w-full overflow-hidden rounded-[12px] bg-black/90"
           style={{
             aspectRatio: `${isVertical ? VERTICAL_ASPECT : HORIZONTAL_ASPECT}`,
           }}
