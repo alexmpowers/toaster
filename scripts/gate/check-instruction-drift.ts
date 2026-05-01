@@ -221,8 +221,16 @@ async function loadFacts(file: string): Promise<Fact[]> {
   let content: string;
   try {
     content = await readFile(absPath, "utf8");
-  } catch {
+  } catch (err) {
+    console.error(
+      `[instruction-drift] WARN: failed to read ${absPath}: ${(err as Error).message}`,
+    );
     return [];
+  }
+  if (!content.trim()) {
+    console.error(
+      `[instruction-drift] WARN: ${absPath} is empty (${content.length} chars)`,
+    );
   }
   const facts: Fact[] = [];
   for (const extractor of ALL_EXTRACTORS) {
