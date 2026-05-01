@@ -334,6 +334,10 @@ function App() {
               "bg-background border border-mid-gray/20 rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 text-sm",
             title: "font-medium",
             description: "text-mid-gray",
+            success: "border-l-4 border-l-green-500",
+            error: "border-l-4 border-l-red-500",
+            info: "border-l-4 border-l-logo-primary",
+            warning: "border-l-4 border-l-logo-primary",
           },
         }}
       />

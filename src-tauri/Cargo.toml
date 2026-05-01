@@ -1,6 +1,6 @@
 [package]
 name = "toaster"
-version = "0.1.4"
+version = "0.1.5"
 description = "Toaster — edit video by editing text"
 authors = ["alexmpowers"]
 edition = "2021"

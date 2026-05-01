@@ -6,7 +6,6 @@ export { Input } from "./Input";
 export { PathDisplay } from "./PathDisplay";
 export { ResetButton } from "./ResetButton";
 export { Select } from "./Select";
-export { SegmentedRadio } from "./SegmentedRadio";
 export { SettingContainer } from "./SettingContainer";
 export { SettingsGroup } from "./SettingsGroup";
 export { Slider } from "./Slider";

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CaptionPill } from "../../player/CaptionOverlay";
-import { SegmentedRadio } from "../../ui/SegmentedRadio";
+import { Dropdown } from "../../ui/Dropdown";
 import { SettingContainer } from "../../ui/SettingContainer";
 import type { CaptionFontFamily, CaptionProfile, Rgba } from "@/bindings";
 import {
@@ -220,9 +220,8 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
           descriptionMode={descriptionMode}
           grouped={grouped}
         >
-          <SegmentedRadio<CaptionMockOrientation>
-            value={orientation}
-            ariaLabel={t("settings.captions.preview.orientation.label")}
+          <Dropdown
+            selectedValue={orientation}
             options={[
               {
                 value: "horizontal",
@@ -233,7 +232,7 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
                 label: t("settings.captions.preview.orientation.vertical"),
               },
             ]}
-            onChange={(v) => onOrientationChange(v)}
+            onSelect={(v) => onOrientationChange(v as CaptionMockOrientation)}
           />
         </SettingContainer>
         <SettingContainer
@@ -242,9 +241,8 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
           descriptionMode={descriptionMode}
           grouped={grouped}
         >
-          <SegmentedRadio<"single" | "multiLine">
-            value={selectedSampleKey}
-            ariaLabel={t("settings.captions.preview.sampleLegend")}
+          <Dropdown
+            selectedValue={selectedSampleKey}
             options={[
               {
                 value: "single",
@@ -255,7 +253,7 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
                 label: t("settings.captions.preview.sample.label.multiLine"),
               },
             ]}
-            onChange={(v) => setSelectedSampleKey(v)}
+            onSelect={(v) => setSelectedSampleKey(v as "single" | "multiLine")}
           />
         </SettingContainer>
       </div>

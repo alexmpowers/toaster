@@ -575,8 +575,9 @@
     "exporting": "Exporting...",
     "addCaptions": "Add Captions",
     "cleanup": {
-      "button": "Remove fillers",
+      "button": "Remove Fillers",
       "empty": "Nothing to clean up.",
+      "failed": "Cleanup failed. Check the log for details.",
       "success": "Removed {{fillers}} fillers · {{duplicates}} duplicates · {{pauses}} pauses",
       "fillersOnly": "Removed {{count}} filler",
       "fillersOnly_plural": "Removed {{count}} fillers"
@@ -608,9 +609,10 @@
       "cancel": "Cancel"
     },
     "removeSilence": {
-      "button": "Remove silence",
+      "button": "Remove Silence",
       "tooltip": "Trim long stretches of silent dead air from the audio. Undoable.",
       "empty": "No silent dead air found.",
+      "failed": "Remove silence failed. Check the log for details.",
       "success": "Trimmed {{count}} silent stretch",
       "success_plural": "Trimmed {{count}} silent stretches"
     }

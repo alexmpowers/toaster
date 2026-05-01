@@ -8,6 +8,7 @@ pub mod export;
 pub mod filler;
 pub mod media;
 pub mod models;
+pub mod process_ext;
 pub mod project;
 pub mod transcribe_file;
 pub mod transcription;

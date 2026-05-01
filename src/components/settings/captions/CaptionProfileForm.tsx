@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { ColorPicker } from "../../ui/ColorPicker";
-import { SegmentedRadio } from "../../ui/SegmentedRadio";
+import { Dropdown } from "../../ui/Dropdown";
 import { SettingContainer } from "../../ui/SettingContainer";
 import type { CaptionFontFamily, CaptionProfile } from "@/bindings";
 import { SliderWithInput } from "./CaptionProfileShared";
@@ -135,9 +135,8 @@ export const CaptionProfileForm: React.FC<CaptionProfileFormProps> = ({
         descriptionMode={descriptionMode}
         grouped={grouped}
       >
-        <SegmentedRadio<CaptionFontFamily>
-          value={profile.font_family}
-          ariaLabel={t("settings.controls.captionSettings.fontFamily")}
+        <Dropdown
+          selectedValue={profile.font_family}
           options={[
             {
               value: "Inter",
@@ -152,7 +151,7 @@ export const CaptionProfileForm: React.FC<CaptionProfileFormProps> = ({
               label: t("settings.controls.captionSettings.fontSystemUi"),
             },
           ]}
-          onChange={(v) => onChange({ font_family: v })}
+          onSelect={(v) => onChange({ font_family: v as CaptionFontFamily })}
           disabled={disabled}
         />
       </SettingContainer>

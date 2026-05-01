@@ -71,6 +71,7 @@ fn escape_srt_path_for_ffmpeg(path: &str) -> String {
 }
 
 pub(crate) fn probe_video_dimensions(path: &str) -> Option<(u32, u32)> {
+    use crate::commands::process_ext::NoConsoleWindow;
     let output = std::process::Command::new("ffprobe")
         .args([
             "-v",
@@ -83,6 +84,7 @@ pub(crate) fn probe_video_dimensions(path: &str) -> Option<(u32, u32)> {
             "csv=s=x:p=0",
             path,
         ])
+        .no_console_window()
         .output()
         .ok()?;
     if !output.status.success() {

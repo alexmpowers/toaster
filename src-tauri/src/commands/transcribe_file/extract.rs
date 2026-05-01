@@ -6,6 +6,8 @@
 
 use log::info;
 
+use crate::commands::process_ext::NoConsoleWindow;
+
 /// FFmpeg audio extraction timeout (10 minutes).
 const EXTRACT_AUDIO_TIMEOUT_SECS: u64 = 600;
 
@@ -54,6 +56,7 @@ pub(super) fn extract_audio_to_wav_at_rate(
         ])
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
+        .no_console_window()
         .spawn()
         .map_err(|e| {
             format!(

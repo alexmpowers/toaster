@@ -13,6 +13,7 @@ use super::preview_cache::{
 };
 use super::*;
 use crate::commands::editor::EditorStore;
+use crate::commands::process_ext::NoConsoleWindow;
 use crate::managers::media::MediaStore;
 
 /// Generate waveform peaks from a WAV audio file.
@@ -320,7 +321,10 @@ pub async fn render_temp_preview_audio(
         let render_result = tokio::time::timeout(
             PREVIEW_RENDER_TIMEOUT,
             tokio::task::spawn_blocking(move || {
-                std::process::Command::new("ffmpeg").args(&args).output()
+                std::process::Command::new("ffmpeg")
+                    .args(&args)
+                    .no_console_window()
+                    .output()
             }),
         )
         .await;
@@ -515,7 +519,10 @@ pub async fn export_edited_media(
     let export_result = tokio::time::timeout(
         EXPORT_TIMEOUT,
         tokio::task::spawn_blocking(move || {
-            std::process::Command::new("ffmpeg").args(&args).output()
+            std::process::Command::new("ffmpeg")
+                .args(&args)
+                .no_console_window()
+                .output()
         }),
     )
     .await;
@@ -651,7 +658,10 @@ pub async fn loudness_preflight(
     let decode_result = tokio::time::timeout(
         PREVIEW_RENDER_TIMEOUT,
         tokio::task::spawn_blocking(move || {
-            std::process::Command::new("ffmpeg").args(&args).output()
+            std::process::Command::new("ffmpeg")
+                .args(&args)
+                .no_console_window()
+                .output()
         }),
     )
     .await;

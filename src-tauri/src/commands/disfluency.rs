@@ -15,6 +15,7 @@ use std::process::Command;
 use tauri::State;
 
 use crate::commands::editor::EditorStore;
+use crate::commands::process_ext::NoConsoleWindow;
 use crate::managers::disfluency;
 use crate::managers::editor::Word;
 use crate::managers::media::MediaStore;
@@ -67,6 +68,7 @@ pub(crate) fn decode_media_audio(path: &Path) -> Result<Vec<f32>, String> {
             "f32le",
             "pipe:1",
         ])
+        .no_console_window()
         .output()
         .map_err(|e| format!("ffmpeg audio decode failed to start: {e}"))?;
     if !output.status.success() {

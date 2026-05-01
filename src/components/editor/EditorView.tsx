@@ -188,11 +188,14 @@ const EditorView: React.FC = () => {
                 if (count > 0) {
                   await refreshFromBackend();
                   toast.success(t("editor.cleanup.fillersOnly", { count }));
+                } else {
+                  toast.info(t("editor.cleanup.empty"));
                 }
                 clearHighlights();
               })
               .catch((err) => {
                 console.error("Failed to delete fillers:", err);
+                toast.error(t("editor.cleanup.failed"));
                 clearHighlights();
               });
           } else {
@@ -421,7 +424,7 @@ const EditorView: React.FC = () => {
         result.duplicates_removed +
         result.pauses_trimmed;
       if (total === 0) {
-        toast(t("editor.cleanup.empty"));
+        toast.info(t("editor.cleanup.empty"));
       } else {
         await refreshFromBackend();
         toast.success(
@@ -434,6 +437,7 @@ const EditorView: React.FC = () => {
       }
     } catch (err) {
       console.error("Cleanup failed:", err);
+      toast.error(t("editor.cleanup.failed"));
     } finally {
       setIsCleaningUp(false);
     }
@@ -445,13 +449,14 @@ const EditorView: React.FC = () => {
     try {
       const count = unwrapResult(await commands.removeSilence());
       if (count === 0) {
-        toast(t("editor.removeSilence.empty"));
+        toast.info(t("editor.removeSilence.empty"));
       } else {
         await refreshFromBackend();
         toast.success(t("editor.removeSilence.success", { count }));
       }
     } catch (err) {
       console.error("Remove silence failed:", err);
+      toast.error(t("editor.removeSilence.failed"));
     } finally {
       setIsCleaningUp(false);
     }
