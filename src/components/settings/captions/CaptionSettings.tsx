@@ -102,9 +102,7 @@ export const CaptionSettings: React.FC<CaptionSettingsProps> = React.memo(
                 label: t("settings.captions.preview.orientation.vertical"),
               },
             ]}
-            onSelect={(v) =>
-              setPreviewOrientation(v as CaptionMockOrientation)
-            }
+            onSelect={(v) => setPreviewOrientation(v as CaptionMockOrientation)}
           />
         </SettingContainer>
 

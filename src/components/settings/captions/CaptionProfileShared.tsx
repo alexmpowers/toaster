@@ -201,10 +201,7 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
   const screenMaxWidth = isVertical ? "320px" : undefined;
 
   return (
-    <div
-      className="mb-4 w-full"
-      data-testid="caption-preview-pane"
-    >
+    <div className="mb-4 w-full" data-testid="caption-preview-pane">
       <div
         className="mx-auto w-full rounded-[20px] bg-black/85 p-2 shadow-inner"
         style={{ maxWidth: screenMaxWidth ?? "36rem" }}
