@@ -10,7 +10,7 @@ interface CachedPreviewMetadata {
   editVersion: string;
 }
 
-export type PreviewCacheMode = "building" | "ready" | "fallback";
+type PreviewCacheMode = "building" | "ready" | "fallback";
 
 interface PlaybackAudioContract {
   selected_output_device: string;

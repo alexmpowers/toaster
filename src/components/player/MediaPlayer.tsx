@@ -13,14 +13,10 @@ import { usePreviewCache } from "./usePreviewCache";
 import { useTimingContract } from "./useTimingContract";
 import {
   ONE_FRAME_EPSILON_FALLBACK,
-  computeNextDeletedSkip,
   useDeletedRangeSkip,
 } from "./useDeletedRangeSkip";
 import PlaybackControls from "./PlaybackControls";
 import CaptionOverlay from "./CaptionOverlay";
-
-// Re-export for backward compatibility with existing consumers (tests, etc.).
-export { ONE_FRAME_EPSILON_FALLBACK, computeNextDeletedSkip };
 
 interface MediaPlayerProps {
   className?: string;

@@ -23,7 +23,7 @@ export const ONE_FRAME_EPSILON_FALLBACK = 1 / 48000;
  * `deletedRanges` may be unsorted; the function picks the earliest-starting
  * range whose end is strictly after `currentTime`.
  */
-export function computeNextDeletedSkip(
+function computeNextDeletedSkip(
   currentTime: number,
   deletedRanges: ReadonlyArray<TimeSegment>,
   playbackRate: number,

@@ -15,15 +15,12 @@ type BooleanSettingKey = {
     : never;
 }[keyof AppSettings];
 
-export interface Experiment {
+interface Experiment {
   id: string;
   settingsKey: BooleanSettingKey;
   labelKey: string;
   descriptionKey: string;
   feedbackUrl: string;
 }
-
-export const EXPERIMENTS_FEEDBACK_URL =
-  "https://github.com/itsnotaboutthecell/toaster/issues/new?labels=experimental-feedback&template=experimental_feedback.md";
 
 export const experiments: readonly Experiment[] = [] as const;

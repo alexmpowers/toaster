@@ -1,4 +1,4 @@
-export interface Language {
+interface Language {
   value: string;
   label: string;
 }

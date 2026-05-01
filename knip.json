@@ -1,4 +1,10 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "ignoreBinaries": ["pwsh"]
+  "ignoreBinaries": ["pwsh"],
+  "entry": ["src/i18n/index.ts"],
+  "ignore": [
+    "src/bindings.ts",
+    "scripts/feature/generate-task-context.ts",
+    "tests/helpers/settingsUIAudit/**"
+  ]
 }

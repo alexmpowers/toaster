@@ -79,5 +79,3 @@ export const VadStatusPill: React.FC = React.memo(() => {
 });
 
 VadStatusPill.displayName = "VadStatusPill";
-
-export default VadStatusPill;

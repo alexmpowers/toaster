@@ -33,7 +33,7 @@ function findBlockAtTime(
   return null;
 }
 
-export function rgbaToCss(c: Rgba): string {
+function rgbaToCss(c: Rgba): string {
   return `rgba(${c.r},${c.g},${c.b},${(c.a / 255).toFixed(3)})`;
 }
 
@@ -44,7 +44,7 @@ export function rgbaToCss(c: Rgba): string {
  * pre-scale by whatever video-pixel-to-CSS-pixel ratio applies. See
  * `managers/captions/layout.rs` for the export-side authority.
  */
-export interface CaptionPillProps {
+interface CaptionPillProps {
   lines: string[];
   fontCss: string;
   fontSizePx: number;

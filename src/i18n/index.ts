@@ -86,7 +86,7 @@ i18n.use(initReactI18next).init({
 });
 
 // Sync language from app settings
-export const syncLanguageFromSettings = async () => {
+const syncLanguageFromSettings = async () => {
   try {
     const settings = await getCachedAppSettings();
     if (settings && settings.app_language) {
@@ -116,8 +116,5 @@ i18n.on("languageChanged", (lng) => {
   updateDocumentDirection(dir);
   updateDocumentLanguage(lng);
 });
-
-// Re-export RTL helpers consumed by App.tsx / overlay (single source of truth in rtl.ts)
-export { getLanguageDirection } from "@/lib/utils/rtl";
 
 export default i18n;

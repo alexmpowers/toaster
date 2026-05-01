@@ -10,13 +10,13 @@ import {
 // CSS font stacks must mirror src-tauri/src/managers/captions/fonts.rs
 // (the canonical font table). Adding a font here without adding it
 // there would re-introduce dual-path drift.
-export const FONT_CSS: Record<CaptionFontFamily, string> = {
+const FONT_CSS: Record<CaptionFontFamily, string> = {
   Inter: "Inter, system-ui, sans-serif",
   Roboto: "Roboto, system-ui, sans-serif",
   SystemUi: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
 };
 
-export function hexToRgba(hex: string): Rgba {
+function hexToRgba(hex: string): Rgba {
   const m = hex.match(/^#([0-9a-fA-F]{6})([0-9a-fA-F]{2})?$/);
   if (!m) return { r: 255, g: 255, b: 255, a: 255 };
   const r = parseInt(m[1].slice(0, 2), 16);

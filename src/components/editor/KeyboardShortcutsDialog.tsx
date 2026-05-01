@@ -16,12 +16,12 @@ import { Button } from "@/components/ui/Button";
  *
  * `labelKey` is an i18next key under `shortcuts.actions.*`.
  */
-export type ShortcutEntry = {
+type ShortcutEntry = {
   keys: string[][];
   labelKey: string;
 };
 
-export type ShortcutGroup = {
+type ShortcutGroup = {
   titleKey: string;
   items: ShortcutEntry[];
 };

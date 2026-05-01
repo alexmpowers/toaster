@@ -5,7 +5,7 @@ import { create } from "zustand";
  * labels (file name, type icon) and export defaults (mirrors the source
  * container unless the user overrides in Advanced settings).
  */
-export interface MediaInfo {
+interface MediaInfo {
   path: string;
   file_name: string;
   file_size: number;

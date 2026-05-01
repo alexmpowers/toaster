@@ -11,7 +11,7 @@ import type { SidebarSection } from "@/components/Sidebar";
  * `consumePendingModelsFilter` is single-read by design — the Models panel
  * calls it on mount so the filter is cleared after it has been applied.
  */
-export type ModelsFilter = ModelCategory | "all";
+type ModelsFilter = ModelCategory | "all";
 
 interface SettingsNavStore {
   currentSection: SidebarSection;
