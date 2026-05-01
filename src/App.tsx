@@ -332,7 +332,7 @@ function App() {
           unstyled: true,
           classNames: {
             toast:
-              "bg-background border border-mid-gray/20 rounded-lg shadow-lg px-3 py-2 flex items-center gap-3 text-sm",
+              "w-80 bg-background border border-mid-gray/20 rounded-lg shadow-lg px-3 py-2 flex items-center gap-3 text-sm",
             title: "font-medium",
             description: "text-mid-gray",
           },
