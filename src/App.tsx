@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { toast, Toaster } from "sonner";
 import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
@@ -323,21 +324,24 @@ function App() {
       dir={direction}
       className="h-screen flex flex-col select-none cursor-default"
     >
-      <Toaster
-        position="bottom-right"
-        theme="system"
-        expand
-        visibleToasts={5}
-        toastOptions={{
-          unstyled: true,
-          classNames: {
-            toast:
-              "bg-background border border-mid-gray/20 rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 text-sm",
-            title: "font-medium",
-            description: "text-mid-gray",
-          },
-        }}
-      />
+      {createPortal(
+        <Toaster
+          position="bottom-right"
+          theme="system"
+          expand
+          visibleToasts={5}
+          toastOptions={{
+            unstyled: true,
+            classNames: {
+              toast:
+                "bg-background border border-mid-gray/20 rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 text-sm",
+              title: "font-medium",
+              description: "text-mid-gray",
+            },
+          }}
+        />,
+        document.body,
+      )}
       {/* Main content area that takes remaining space */}
       <div className="flex-1 flex overflow-hidden">
         <ErrorBoundary>
