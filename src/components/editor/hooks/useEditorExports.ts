@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { save } from "@tauri-apps/plugin-dialog";
+import { toast } from "sonner";
 import {
   commands,
   type AllowedExportFormat,
@@ -87,10 +88,12 @@ export function useEditorExports({
         await commands.generateFfmpegEditScript(mediaInfo.path),
       );
       await navigator.clipboard.writeText(script);
+      toast.success(t("editor.ffmpegScriptCopied"));
     } catch (err) {
       console.error("FFmpeg script generation failed:", err);
+      toast.error(t("editor.ffmpegScriptFailed"));
     }
-  }, [mediaInfo]);
+  }, [mediaInfo, t]);
 
   const handleExportEditedMedia = useCallback(
     async (format: AudioExportFormat) => {

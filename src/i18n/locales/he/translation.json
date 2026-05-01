@@ -545,6 +545,8 @@
     "silencePauses": "Trim {{count}} pauses",
     "fillerResults": "{{fillers}} fillers · {{duplicates}} duplicates · {{pauses}} pauses",
     "ffmpegScript": "Copy FFmpeg edit command to clipboard",
+    "ffmpegScriptCopied": "FFmpeg script copied to clipboard",
+    "ffmpegScriptFailed": "Failed to generate FFmpeg script",
     "ffmpegShortLabel": "FFmpeg",
     "exportFormats": "Export Formats",
     "exportEditedMedia": "Export Edited Media",
