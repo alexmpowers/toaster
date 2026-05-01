@@ -192,9 +192,6 @@ jobs:
         run: cargo clippy --all-targets -- -D warnings
 
   rust-tests:
-    # Fail-fast: a clippy/format failure in rust-quality should stop the
-    # heavier compile + eval-harness here (saves ~5–8 min on red runs).
-    needs: rust-quality
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -207,7 +204,9 @@ jobs:
       - uses: swatinem/rust-cache@v2
         with:
           workspaces: "./src-tauri -> target"
-          # Reuse the target/ dir compiled by rust-quality on the same run.
+          # Reuse the target/ dir compiled by rust-quality across runs (the
+          # save happens on main only, so PR runs benefit from main's warm
+          # cache without parallel save races).
           shared-key: "ci-rust-linux"
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
