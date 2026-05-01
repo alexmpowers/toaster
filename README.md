@@ -83,6 +83,19 @@ cargo tauri dev
 
 On Windows, run `.\scripts\setup-env.ps1` first to configure the MSVC + LLVM build environment.
 
+### Troubleshooting
+
+**"localhost refused to connect" on launch (Windows)**
+
+If the installed app shows a `localhost refused to connect` page instead of the editor, you most likely have a leftover **debug build** of `toaster.exe` still running from a previous `cargo tauri dev` / `cargo tauri build --debug` session. Tauri's single-instance plugin forwards every Start-Menu launch to that stale window, which expects a Vite dev server at `http://localhost:1420` and shows the WebView2 connection error when it doesn't answer.
+
+```powershell
+Get-Process toaster | Stop-Process -Force
+Start-Process "C:\Program Files\Toaster\toaster.exe"
+```
+
+The released MSI from the Releases page bundles all frontend assets directly into `toaster.exe` and never contacts `localhost:1420`.
+
 ## Tech Stack
 
 | Layer         | Technology                                |
