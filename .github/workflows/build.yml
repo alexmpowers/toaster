@@ -66,7 +66,9 @@ jobs:
         with:
           repository: ${{ inputs.repository }}
           ref: ${{ inputs.ref }}
-          fetch-depth: 0
+          # fetch-depth: 1 (default) is sufficient — we read the version from
+          # tauri.conf.json, not from git tags. Full history was unused.
+          fetch-depth: 1
 
       - name: Get version from tauri.conf.json
         id: get-version
@@ -97,11 +99,30 @@ jobs:
           # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
           targets: ${{ contains(inputs.platform, 'macos') && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
+      # sccache wraps rustc + the C/C++ compilers used by ggml/whisper-cpp,
+      # storing object files in the GitHub Actions cache. This is additive to
+      # Swatinem/rust-cache: rust-cache restores `target/` between runs;
+      # sccache catches per-translation-unit hits when source changes
+      # invalidate target/ but most upstream sources are unchanged.
+      - name: Configure sccache
+        uses: mozilla-actions/sccache-action@v0.0.10
+      - name: Enable sccache wrappers
+        shell: bash
+        run: |
+          echo "SCCACHE_GHA_ENABLED=true" >> "$GITHUB_ENV"
+          echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+          echo "CMAKE_C_COMPILER_LAUNCHER=sccache" >> "$GITHUB_ENV"
+          echo "CMAKE_CXX_COMPILER_LAUNCHER=sccache" >> "$GITHUB_ENV"
+
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: "./src-tauri -> target"
           key: ${{ inputs.platform }}-${{ inputs.target }}
+          # PR runs restore from main's cache but don't overwrite it,
+          # preventing in-flight PRs from evicting the warm main cache
+          # under the 10 GB GHA cache quota.
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: install dependencies (ubuntu 24.04 x64)
         if: contains(inputs.platform, 'ubuntu-24.04') && !contains(inputs.platform, 'arm')

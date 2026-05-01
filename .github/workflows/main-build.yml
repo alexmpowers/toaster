@@ -7,6 +7,21 @@ name: "Main Branch Build"
 on:
   push:
     branches: [main]
+    # Only re-bundle on changes that affect the produced binaries / installers.
+    # Doc-only, locale-only, eval-only, and tooling-only commits skip the
+    # cross-platform Tauri build to save ~20 minutes per push.
+    paths:
+      - "src/**"
+      - "src-tauri/**"
+      - "package.json"
+      - "bun.lock"
+      - "tsconfig*.json"
+      - "vite.config.*"
+      - "tailwind.config.*"
+      - "index.html"
+      - ".github/workflows/main-build.yml"
+      - ".github/workflows/build.yml"
+      - ".github/actions/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
