@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Coverage gate for a feature planned by .github/agents/product-manager.md.
+    Coverage gate for a feature planned by the toaster-feature-pm skill.
 
 .DESCRIPTION
     Verifies that every AC-NNN-x in features/<slug>/PRD.md has a matching
@@ -95,14 +95,29 @@ function Test-Verifier {
             }
         }
         'agent' {
-            $p = Join-Path $agentsDir "$verifier.md"
-            if (-not (Test-Path $p)) {
-                $Errors.Add("${AcId}: agent '$verifier' not found at $p") | Out-Null
+            # Try both naming conventions: <name>.agent.md and <name>.md
+            $p1 = Join-Path $agentsDir "$verifier.agent.md"
+            $p2 = Join-Path $agentsDir "$verifier.md"
+            if (-not (Test-Path $p1) -and -not (Test-Path $p2)) {
+                $Errors.Add("${AcId}: agent '$verifier' not found at $p1 or $p2") | Out-Null
             }
         }
         'cargo-test' {
             if (-not $Entry.command -or $Entry.command -notmatch 'cargo\s+test') {
                 $Errors.Add("${AcId}: cargo-test entry must have a 'command' containing 'cargo test'") | Out-Null
+            }
+            # Validate that the test name appears in Rust source
+            if ($Entry.command -match 'cargo\s+test\s+(?:-p\s+\S+\s+)?(?:--lib\s+)?(\S+)') {
+                $testName = $Matches[1]
+                if ($testName -ne '--' -and $testName -notmatch '^-') {
+                    $srcTauri = Join-Path $repoRoot 'src-tauri\src'
+                    $found = Get-ChildItem -Path $srcTauri -Recurse -Filter '*.rs' |
+                        Select-String -Pattern "fn\s+$([regex]::Escape($testName))\b" -List |
+                        Select-Object -First 1
+                    if (-not $found) {
+                        $Errors.Add("${AcId}: cargo-test name '$testName' not found in any .rs file under src-tauri/src/") | Out-Null
+                    }
+                }
             }
         }
         'script' {

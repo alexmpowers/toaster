@@ -29,11 +29,11 @@ Under `features/<slug>/`:
 | `journal.md`            | Operational journal (gitignored except for the example)                                                 | no       |
 | `tasks/<id>/context.md` | Curated per-task briefing for fresh subagents (gitignored except for the example)                       | no       |
 
-The `feature-pm` skill + `product-manager` agent generate this bundle; see [`features/example-pm-dryrun/`](../features/example-pm-dryrun/) for a worked reference.
+The `toaster-feature-pm` skill (invoked by `mission-control` via the pipeline runner) generates this bundle; see [`features/example-pm-dryrun/`](../features/example-pm-dryrun/) for a worked reference.
 
 ## Coverage gate
 
-`scripts/feature/check-feature-coverage.ps1 -Feature <slug>` (or `-All` in CI) verifies every `AC-NNN-x` in `PRD.md` has a real verifier in `coverage.json`. `scripts/feature/check-feature-tasks.ps1 -Feature <slug>` validates the `tasks.sql` schema (column list, status literals, forbidden columns). Both gates run inside `scripts/feature/promote-feature.ps1` and must exit 0 before `STATE.md` advances from `defined` to `planned`. This is the machine-enforced incarnation of the rule called out in the `transcript-precision-eval` skill ("must be machine-enforced, not agent-enforced").
+`scripts/feature/check-feature-coverage.ps1 -Feature <slug>` (or `-All` in CI) verifies every `AC-NNN-x` in `PRD.md` has a real verifier in `coverage.json`. `scripts/feature/check-feature-tasks.ps1 -Feature <slug>` validates the `tasks.sql` schema (column list, status literals, forbidden columns). Both gates run inside `scripts/feature/promote-feature.ps1` and must exit 0 before `STATE.md` advances from `defined` to `planned`. This is the machine-enforced incarnation of the rule called out in the `toaster-eval` skill ("must be machine-enforced, not agent-enforced").
 
 ## Curated context per task
 
@@ -44,7 +44,7 @@ Each `tasks/<id>/context.md` is the only file the dispatched subagent should loa
 `superpowers:test-driven-development` requires a failing test before production code. Toaster's harness reality narrows this:
 
 - **Backend (`src-tauri/`):** full TDD applies — write a failing `#[test]` (or extend an eval fixture under `src-tauri/tests/fixtures/`) first. Verify with `cargo test`.
-- **Audio / timeline / export:** the real gate is the fixture-based eval harness (`transcript-precision-eval`, `audio-boundary-eval`). Extend fixtures first, run the relevant eval script, then implement.
+- **Audio / timeline / export:** the real gate is the fixture-based eval harness (`toaster-eval`). Extend fixtures first, run the relevant eval script, then implement.
 - **Frontend-only UI / styling:** no unit-test framework exists. `npm run lint`, `npm run build`, and a live-app check per `superpowers:verification-before-completion` are the gates. Playwright E2E for user-visible flow changes.
 
 ## Project-wide testing knowledge

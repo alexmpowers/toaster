@@ -19,10 +19,10 @@
 
     Why this exists
     ---------------
-    * transcript-precision-eval asserts internal invariants on a single
-      backend's word list.
-    * audio-boundary-eval asserts per-seam acoustic quality on a single
-      splice.
+    * toaster-eval asserts internal invariants on a single
+      backend's word list (precision scenario).
+    * toaster-eval asserts per-seam acoustic quality on a single
+      splice (boundary scenario).
     * This eval is the capstone: it compares each backend against an
       independent oracle and against every other backend, so that
       swapping backends cannot silently degrade word timing or
@@ -45,7 +45,7 @@
 
     Live-adapter wiring (running whisper/parakeet against the .wav from
     this script) is intentionally NOT done here — it belongs in the
-    eval-harness-runner agent which has access to the app. This runner
+    toaster-eval skill which has access to the app. This runner
     scores whatever the harness (or a developer) has cached.
 #>
 

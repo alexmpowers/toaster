@@ -11,7 +11,7 @@
     reviewing -> shipped) without requiring a GUI.
 
     State transitions are owned by the relevant skill/agent:
-      - product-manager: defined -> planned
+      - feature-pipeline.ps1: defined -> planned (via sign-off phase)
       - executing-plans: planned -> executing -> reviewing
       - finishing-a-development-branch: reviewing -> shipped
       - manual / archive policy: any -> archived

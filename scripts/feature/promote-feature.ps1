@@ -9,7 +9,7 @@
     timestamped "## Plan complete" entry to journal.md.
 
     This automates Phase 8 steps 5-6 of
-    .github/agents/product-manager.md.
+    the toaster-feature-pm skill (via feature-pipeline.ps1).
 
 .PARAMETER Slug
     Feature slug.  Resolves to features/<slug>/.

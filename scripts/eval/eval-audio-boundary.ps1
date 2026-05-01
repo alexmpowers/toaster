@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
     Audio-boundary eval harness (E1..E5). Invoked by the
-    `audio-boundary-eval` skill (.github/skills/audio-boundary-eval/SKILL.md).
+    `toaster-eval` skill (.github/skills/toaster-eval/SKILL.md).
 
 .DESCRIPTION
     Runs five sample-resolution gates against splice fixtures:
@@ -47,7 +47,7 @@ $FixturesRoot = Join-Path $RepoRoot 'src-tauri\tests\fixtures\boundary'
 
 Import-Module -Force (Join-Path $PSScriptRoot 'lib\AudioBoundary.psm1')
 
-# Gate thresholds — mirror .github/skills/audio-boundary-eval/SKILL.md.
+# Gate thresholds — mirror .github/skills/toaster-eval/SKILL.md.
 $Th = @{
     XcorrLeak      = 0.15
     SeamZ          = 4.0
@@ -216,7 +216,7 @@ function Invoke-E4-Wer {
     $status = if ($werRes.wer -le $Th.Wer) { 'pass' } else { 'fail' }
     $notes = "Hypothesis source: baked JSON ($(if($UseLeakyHypothesis){'leaky'}else{'clean'})). " +
              "STUB note: real re-transcribe through the whisper pipeline is deferred to " +
-             "eval-harness-runner; this gate exercises the WER algorithm against " +
+             "toaster-eval skill; this gate exercises the WER algorithm against " +
              "deterministic word lists, which is sufficient to catch seam-insertion regressions."
     return (New-Result 'E4_transcript_wer' $status @{
         wer         = [math]::Round($werRes.wer, 4)

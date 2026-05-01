@@ -11,7 +11,7 @@ per-backend boundary error vs the oracle and cross-backend parity.
 If no result file exists for a (backend, fixture) pair, the runner logs
 a `skip` with the reason. In `-StrictMode` skip promotes to fail.
 
-Regeneration: the eval-harness-runner agent or a developer with the
+Regeneration: the toaster-eval skill or a developer with the
 backend installed runs the app, transcribes the fixture, serializes the
 adapter output here. Do NOT hand-author these files — they must come
 from the real adapter path, otherwise the gate is not measuring the

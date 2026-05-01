@@ -20,15 +20,12 @@ evals are reproducible across machines and CI.
 
 Skills (`.github/skills/`):
 
-- `audio-boundary-eval/SKILL.md`
-- `transcript-precision-eval/SKILL.md`
-- `transcription-adapter-contract/SKILL.md`
+- `toaster-eval/SKILL.md`
+- `toaster-adapter-contract/SKILL.md`
 
-Agents (`.github/agents/`):
+Former agents (now consolidated into `toaster-eval`):
 
-- `cut-drift-fuzzer.md`
-- `eval-harness-runner.md`
-- `waveform-diff.md`
+- Cut-drift fuzzer, eval harness, waveform diff — all in `toaster-eval`
 
 Scripts (`scripts/`):
 

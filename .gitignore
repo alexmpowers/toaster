@@ -85,6 +85,7 @@ features/*/tasks/*/context.md
 .github/prompts/
 .github/registry/
 .github/templates/
+.github/_shared/
 .github/copilot-instructions.md
 
 # Other AI assistant working dirs (defensive — contributors may use any

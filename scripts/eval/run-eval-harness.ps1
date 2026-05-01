@@ -4,8 +4,8 @@
     order and emits a single JSON report at the path specified by -OutputJson.
 
 .DESCRIPTION
-    Wraps the three eval entry points referenced by the eval-harness-runner
-    agent (see .github/agents/eval-harness-runner.md):
+    Wraps the three eval entry points referenced by the toaster-eval
+    skill (see .github/skills/toaster-eval/SKILL.md):
 
       1. Rust precision eval        -> cargo test precision_eval
       2. Audio-boundary eval         -> scripts/eval/eval-audio-boundary.ps1
@@ -143,7 +143,37 @@ $evals += New-EvalEntry `
     -Details $boundaryDetails `
     -Notes $boundaryNotes
 
-# --- 3. Export parity ------------------------------------------------------
+# --- 3. Caption-parity eval -----------------------------------------------
+$sw = [System.Diagnostics.Stopwatch]::StartNew()
+$captionScript = Join-Path $RepoRoot 'scripts\eval\eval-caption-parity.ps1'
+$captionFixtures = Join-Path $RepoRoot 'eval\caption-parity\fixtures'
+$captionDetails = @{}
+if (-not (Test-Path $captionScript)) {
+    $captionStatus = 'skip'
+    $captionNotes = 'eval-caption-parity.ps1 not present'
+} elseif (-not (Test-Path $captionFixtures)) {
+    $captionStatus = 'skip'
+    $captionNotes = 'caption-parity fixtures not present at eval/caption-parity/fixtures/'
+} else {
+    try {
+        & pwsh -NoProfile -File $captionScript | Out-Null
+        $captionStatus = if ($LASTEXITCODE -eq 0) { 'pass' } else { 'fail' }
+        $captionNotes = ''
+    } catch {
+        $captionStatus = 'error'
+        $captionNotes = $_.Exception.Message
+    }
+}
+$sw.Stop()
+$evals += New-EvalEntry `
+    -Name 'caption_parity' `
+    -Command 'scripts/eval/eval-caption-parity.ps1' `
+    -Status $captionStatus `
+    -DurationS ($sw.Elapsed.TotalSeconds) `
+    -Details $captionDetails `
+    -Notes $captionNotes
+
+# --- 4. Export parity ------------------------------------------------------
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
 $exportScript = Join-Path $RepoRoot 'scripts\eval\eval-edit-quality.ps1'
 $baselinePath = Join-Path $RepoRoot 'tests\fixtures\edit-quality.baseline.json'
@@ -222,7 +252,12 @@ $report = [ordered]@{
 $report | ConvertTo-Json -Depth 10 | Set-Content -Path $OutputJson -Encoding UTF8
 Write-Host ("Eval harness report: {0}  (overall={1})" -f $OutputJson, $overall)
 $evals | ForEach-Object {
-    Write-Host ("  - {0,-14} {1,-5}  {2}" -f $_.name, $_.status, $_.notes)
+    $icon = switch ($_.status) { 'pass' {'✓'} 'fail' {'✗'} 'skip' {'⊘'} 'error' {'!'} default {'?'} }
+    Write-Host ("  {0} {1,-16} {2,-5}  {3}" -f $icon, $_.name, $_.status, $_.notes)
+}
+$skipCount = ($evals | Where-Object { $_.status -eq 'skip' }).Count
+if ($skipCount -gt 0) {
+    Write-Host "`n  NOTE: $skipCount eval(s) skipped — see notes above for reasons." -ForegroundColor Yellow
 }
 
 if ($overall -ne 'pass') { exit 1 }

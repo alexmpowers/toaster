@@ -1,6 +1,6 @@
 # Commands
 
-Authoritative structured data lives in [`.github/registry/commands.json`](../.github/registry/commands.json). This document renders the current contents for human reading.
+Authoritative structured data lives in [`.github/_shared/registry/commands.json`](../.github/_shared/registry/commands.json). This document renders the current contents for human reading.
 
 Query subsets via the reader CLI:
 

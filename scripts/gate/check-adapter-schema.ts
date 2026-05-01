@@ -3,7 +3,7 @@
  * Transcription adapter schema validator.
  *
  * Validates NormalizedTranscriptionResult fixture JSONs against the
- * canonical contract defined in transcription-adapter-contract/SKILL.md.
+ * canonical contract defined in toaster-adapter-contract/SKILL.md.
  *
  * Invariants checked:
  *   1. Monotonic non-overlap: words[i].end_us <= words[i+1].start_us
@@ -225,7 +225,7 @@ async function main(): Promise<number> {
     console.error(`  ${v.file} [${v.invariant}] ${v.detail}`);
   }
   console.error(
-    "\nSee .github/skills/transcription-adapter-contract/SKILL.md for invariant definitions.",
+    "\nSee .github/skills/toaster-adapter-contract/SKILL.md for invariant definitions.",
   );
 
   if (!STRICT) {

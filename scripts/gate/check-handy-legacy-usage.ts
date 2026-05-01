@@ -8,7 +8,7 @@
  * catalogued dead symbols and fails if any appear outside their original
  * declaration sites.
  *
- * The catalogue is derived from .github/skills/handy-legacy-pruning/SKILL.md.
+ * The catalogue is derived from .github/skills/toaster-hygiene/SKILL.md.
  *
  * Invocation:
  *   bun scripts/gate/check-handy-legacy-usage.ts          # report-only
@@ -24,7 +24,7 @@ const ROOT = process.cwd();
 const STRICT = process.argv.includes("--strict");
 
 // ---------------------------------------------------------------------------
-// Dead symbol catalogue — derived from handy-legacy-pruning/SKILL.md
+// Dead symbol catalogue — derived from toaster-hygiene/SKILL.md
 // ---------------------------------------------------------------------------
 
 /** Dead Rust symbols: commands, types, functions that only serve dictation */
@@ -289,7 +289,7 @@ async function main(): Promise<number> {
   }
 
   console.error(
-    "\nDead Handy-era symbols must not receive new code. See .github/skills/handy-legacy-pruning/SKILL.md.",
+    "\nDead Handy-era symbols must not receive new code. See .github/skills/toaster-hygiene/SKILL.md.",
   );
   console.error(
     "If the symbol is still live for editor use, add it to the allowlist with justification.",

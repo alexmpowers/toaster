@@ -2,7 +2,7 @@
 /**
  * agents-registry.ts
  *
- * Reader CLI over `.github/registry/*.json`. Lets an agent pull exactly
+ * Reader CLI over `.github/_shared/registry/*.json`. Lets an agent pull exactly
  * the section it needs without loading the full AGENTS.md narrative.
  *
  * Usage:
@@ -26,7 +26,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
-const REGISTRY_DIR = path.join(REPO_ROOT, ".github", "registry");
+const REGISTRY_DIR = path.join(REPO_ROOT, ".github", "_shared", "registry");
 
 const SECTIONS = [
   "rules",

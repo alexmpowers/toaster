@@ -22,7 +22,7 @@ toaster/
 ├── scripts/                   # PowerShell / TS tooling
 │   ├── setup-env.ps1          # MSVC + LLVM + Vulkan env (run first on Windows)
 │   ├── launch-toaster-monitored.ps1  # live-app verification runner
-│   ├── agents-registry.ts     # reader CLI over .github/registry/*.json
+│   ├── agents-registry.ts     # reader CLI over .github/_shared/registry/*.json
 │   ├── build-registry.ts      # auto-gen skills.json + agents.json from frontmatter
 │   ├── check-translations.ts  # i18n locale parity
 │   ├── check-file-sizes.ts    # file-size cap enforcement
@@ -65,8 +65,10 @@ toaster/
 ├── .nix/                      # bun2nix output (bun.nix, bun-lock-hash) — tracked
 ├── flake.nix / flake.lock     # root Nix flake (convention: stays at root)
 └── .github/
-    ├── registry/              # structured-data source of truth (rules, commands, testing, boundaries, hygiene, verification, skills, agents)
-    ├── templates/             # plan-active-work.md, retry-log-entry.md, ...
+    ├── _shared/               # shared agentic infrastructure
+    │   ├── hooks/             # session/tool hooks (hooks.json, posttool-reminders, etc.)
+    │   ├── registry/          # structured-data source of truth (rules, commands, testing, boundaries, hygiene, verification, skills, agents)
+    │   └── templates/         # plan-active-work.md, retry-log-entry.md, ...
     ├── skills/                # project skills — see `bun scripts/registry/reader.ts skills`
     ├── agents/                # custom agents — see `bun scripts/registry/reader.ts agents`
     ├── instructions/          # thin Copilot path-scoped pointers → nested AGENTS.md

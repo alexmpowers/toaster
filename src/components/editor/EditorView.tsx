@@ -11,7 +11,7 @@ import {
   Save,
   FolderOpen,
   X,
-  AudioLines,
+  Eraser,
   RotateCcw,
   Scissors,
   Keyboard,
@@ -680,7 +680,7 @@ const EditorView: React.FC = () => {
                 disabled={isCleaningUp || isTranscribing}
                 className="inline-flex items-center gap-1.5"
               >
-                <AudioLines size={14} />
+                <Eraser size={14} />
                 {t("editor.cleanup.button")}
               </Button>
               <Button

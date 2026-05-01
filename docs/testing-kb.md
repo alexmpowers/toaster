@@ -34,7 +34,7 @@ Append entries chronologically under the relevant section. Each entry:
 
 ## Audio / boundary fixtures
 
-(seeded from `.github/skills/audio-boundary-eval/SKILL.md` and
+(seeded from `.github/skills/toaster-eval/SKILL.md` and
 `scripts/eval/eval-audio-boundary.ps1`)
 
 - Boundary fixtures live under `src-tauri/tests/fixtures/boundary/` and are
@@ -47,7 +47,7 @@ Append entries chronologically under the relevant section. Each entry:
 ## Eval harness
 
 - `scripts/eval/run-eval-harness.ps1` runs the precision + boundary + parity
-  evals in order (see `.github/agents/eval-harness-runner.md`).
+  evals in order (see `.github/skills/toaster-eval/SKILL.md`).
 - Stops on first infrastructure failure (not eval failure).
 
 ## i18n
@@ -55,7 +55,7 @@ Append entries chronologically under the relevant section. Each entry:
 - 20 locale files under `src/i18n/locales/*/translation.json`.
 - `scripts/check-translations.ts` enforces parity. Adding/removing/renaming a
   key requires touching all locale files in the same PR
-  (see `.github/skills/i18n-pruning/SKILL.md`).
+  (see `.github/skills/toaster-hygiene/SKILL.md`).
 
 ## File-size enforcement
 

@@ -2,7 +2,7 @@
 /**
  * gate/check-registry.ts
  *
- * CI drift + schema gate for `.github/registry/*.json`.
+ * CI drift + schema gate for `.github/_shared/registry/*.json`.
  *
  * 1. Validates every registry JSON parses and declares `version: 1`.
  * 2. Validates that `skills.json` and `agents.json` are in sync with the
@@ -21,7 +21,7 @@ import { spawnSync } from "child_process";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
-const REGISTRY_DIR = path.join(REPO_ROOT, ".github", "registry");
+const REGISTRY_DIR = path.join(REPO_ROOT, ".github", "_shared", "registry");
 
 const REQUIRED = [
   "rules.json",

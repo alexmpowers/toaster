@@ -381,7 +381,7 @@
     },
     "advanced": {
       "title": "Advanced",
-      "description": "Configured-once controls like allow and discard word lists.",
+      "description": "Configured-once controls for word lists, performance, and caption styling.",
       "groups": {
         "words": {
           "title": "Words",

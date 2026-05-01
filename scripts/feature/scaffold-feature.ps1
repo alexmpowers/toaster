@@ -10,7 +10,7 @@
     Optionally creates a git worktree with branch feat/<slug> so work
     is isolated from the main tree.
 
-    Designed to automate Phase 1 of .github/agents/product-manager.md so
+    Designed to automate the scaffold phase of feature-pipeline.ps1 so
     the agent (or a human) does not have to create files by hand.
 
 .PARAMETER Slug
@@ -117,5 +117,8 @@ Write-Host "  coverage.json   -> map every AC to a verifier"
 Write-Host "  tasks.sql       -> task graph for execution"
 Write-Host "  tasks/          -> per-task context briefings"
 Write-Host "  journal.md      -> operational journal"
+Write-Host ""
+Write-Host "  Prefer using the pipeline runner instead of calling this script directly:" -ForegroundColor DarkGray
+Write-Host "    pwsh scripts/feature/feature-pipeline.ps1 start -Slug $Slug -Problem `"...`"" -ForegroundColor DarkGray
 Write-Host ""
 Write-Host "Next: edit REQUEST.md, then run the PM agent phases 2-8."

@@ -1,5 +1,5 @@
 {
-  "_comment": "Precision-eval golden fixture. Deliberately heterogeneous per-word durations sourced from a representative whisper-cpp transcription run. DO NOT regenerate without human verification — this is the anti-synthesis / keep-segment regression baseline referenced by `.github/skills/transcript-precision-eval/SKILL.md`.",
+  "_comment": "Precision-eval golden fixture. Deliberately heterogeneous per-word durations sourced from a representative whisper-cpp transcription run. DO NOT regenerate without human verification — this is the anti-synthesis / keep-segment regression baseline referenced by `.github/skills/toaster-eval/SKILL.md`.",
   "_audio_source": "synthetic; timings modeled after real whisper output for a ~6s English utterance",
   "words": [
     {

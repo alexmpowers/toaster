@@ -23,7 +23,7 @@
 //! Cross-backend seam / duration parity is tested in the PS1 runner
 //! (it requires comparing two backends at once with keep-segment math
 //! that the editor owns). Wiring a Rust-side equivalent to the
-//! editor keep-segment path is tracked for `eval-harness-runner`.
+//! editor keep-segment path is tracked for `toaster-eval-harness`.
 //!
 //! If a backend has no cached result for a fixture, the test logs a
 //! `skip` and passes — CI enforcement of "must have all backends" is

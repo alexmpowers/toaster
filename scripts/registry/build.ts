@@ -2,7 +2,7 @@
 /**
  * build-registry.ts
  *
- * Auto-generates `.github/registry/skills.json` and `.github/registry/agents.json`
+ * Auto-generates `.github/_shared/registry/skills.json` and `.github/_shared/registry/agents.json`
  * from the frontmatter of local `.github/skills/<name>/SKILL.md` and
  * `.github/agents/<name>.agent.md` files.
  *
@@ -23,7 +23,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 const SKILLS_DIR = path.join(REPO_ROOT, ".github", "skills");
 const AGENTS_DIR = path.join(REPO_ROOT, ".github", "agents");
-const REGISTRY_DIR = path.join(REPO_ROOT, ".github", "registry");
+const REGISTRY_DIR = path.join(REPO_ROOT, ".github", "_shared", "registry");
 
 type Frontmatter = { name?: string; description?: string };
 
