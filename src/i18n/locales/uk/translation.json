@@ -90,7 +90,8 @@
     },
     "errors": {
       "loadModels": "Не вдалося завантажити доступні моделі",
-      "downloadModel": "Не вдалося завантажити модель: {{error}}"
+      "downloadModel": "Не вдалося завантажити модель: {{error}}",
+      "selectModel": "Please select a model to continue."
     }
   },
   "modelSelector": {
@@ -313,18 +314,18 @@
         "textColorDescription": "The color of the caption text",
         "position": "Vertical Position",
         "positionDescription": "Where captions appear on screen — 0% is the top, 100% is the bottom",
-        "fontFamily": "Caption font",
+        "fontFamily": "Caption Font",
         "fontFamilyDescription": "Typeface used for burned-in captions. Inter and Roboto are bundled so the preview and export render identically on every machine.",
         "fontInter": "Inter (default)",
         "fontRoboto": "Roboto",
         "fontSystemUi": "System UI",
-        "cornerRadius": "Corner radius",
+        "cornerRadius": "Corner Radius",
         "cornerRadiusDescription": "How rounded the caption pill corners are. Set to 0 for a hard-edged rectangle.",
-        "paddingHorizontal": "Horizontal padding",
+        "paddingHorizontal": "Horizontal Padding",
         "paddingHorizontalDescription": "Extra space between the caption text and the left / right edges of the background pill.",
-        "paddingVertical": "Vertical padding",
+        "paddingVertical": "Vertical Padding",
         "paddingVerticalDescription": "Extra space between the caption text and the top / bottom edges of the background pill.",
-        "maxWidth": "Maximum width",
+        "maxWidth": "Maximum Width",
         "maxWidthDescription": "How wide the caption is allowed to grow before it wraps onto a second line, as a percentage of the video frame."
       },
       "vadRefineBoundaries": {
@@ -334,16 +335,18 @@
     },
     "captions": {
       "preview": {
-        "sampleLegend": "Sample text",
+        "sampleLegend": "Sample Text",
+        "sampleDescription": "Choose single-line or multi-line sample text for the caption preview.",
         "sample": {
           "single": "looking crispy",
           "multiLine": "looking crispy and readable\neven when the caption text\nwraps onto a third line",
           "label": {
-            "single": "single line",
-            "multiLine": "multi-line"
+            "single": "Single Line",
+            "multiLine": "Multi-Line"
           }
         },
         "orientation": {
+          "description": "Switch between horizontal and vertical frame to preview how captions appear in each aspect ratio.",
           "label": "Орієнтація попереднього перегляду",
           "horizontal": "Горизонтальна",
           "vertical": "Вертикальна"
@@ -358,7 +361,7 @@
       "title": "Export",
       "description": "Settings that apply when exporting your edited media.",
       "loudness": {
-        "title": "Loudness normalization",
+        "title": "Loudness Normalization",
         "description": "Match a target integrated loudness so exported videos sound consistent across players and platforms.",
         "options": {
           "off": {
@@ -401,13 +404,21 @@
           "description": "Opt-in features that may change or be removed. Gated by the master toggle below."
         },
         "vad": {
-          "title": "Voice activity detection",
+          "title": "Voice Activity Detection",
           "description": "Opt-in Silero VAD consumers: ASR pre-filter and splice-boundary refinement. Requires a one-time ~2 MB model download."
         }
       },
       "experimentalMaster": {
-        "title": "Enable experimental features",
+        "title": "Enable Experimental Features",
         "description": "Master switch for every experiment. When off, individual experiment flags read as disabled even if they were previously turned on. Turning this back on restores your prior selections."
+      }
+    },
+    "sound": {
+      "outputDevice": {
+        "title": "Output Device",
+        "description": "Choose which speakers or headphones Toaster uses for playback.",
+        "loading": "Loading output devices...",
+        "placeholder": "Select an output device"
       }
     }
   },

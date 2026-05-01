@@ -84,6 +84,8 @@ export const CaptionSettings: React.FC<CaptionSettingsProps> = React.memo(
           profile={activeProfile}
           orientation={previewOrientation}
           onOrientationChange={setPreviewOrientation}
+          descriptionMode={descriptionMode}
+          grouped={grouped}
         />
 
         <CaptionProfileForm

@@ -14,7 +14,7 @@ interface CaptionMockFrameProps {
   layout?: CaptionLayout;
 }
 
-const STROKE = "#EEEEEE";
+const STROKE = "var(--color-text-stroke)";
 const STROKE_OPACITY_FRAME = 0.55;
 const STROKE_OPACITY_CENTER = 0.28;
 const STROKE_OPACITY_ARROW = 0.45;

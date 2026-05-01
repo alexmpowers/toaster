@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { CaptionPill } from "../../player/CaptionOverlay";
 import { Select } from "../../ui/Select";
+import { SettingContainer } from "../../ui/SettingContainer";
 import type { CaptionFontFamily, CaptionProfile, Rgba } from "@/bindings";
 import {
   CaptionMockFrame,
@@ -103,7 +104,7 @@ export const SliderWithInput: React.FC<SliderWithInputProps> = ({
           onTouchEnd={handleDragEnd}
           className="w-full cursor-pointer outline-none appearance-none"
           style={{
-            background: `linear-gradient(to right, #E8A838 0%, #E8A838 ${pct}%, #d1d5db ${pct}%, #d1d5db 100%)`,
+            background: `linear-gradient(to right, var(--color-logo-primary) 0%, var(--color-logo-primary) ${pct}%, var(--color-background-ui) ${pct}%, var(--color-background-ui) 100%)`,
             cursor: "pointer",
             width: "100%",
             height: "6px",
@@ -160,12 +161,16 @@ interface CaptionPreviewPaneProps {
   profile: CaptionProfile;
   orientation: CaptionMockOrientation;
   onOrientationChange: (next: CaptionMockOrientation) => void;
+  descriptionMode?: "inline" | "tooltip";
+  grouped?: boolean;
 }
 
 export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
   profile,
   orientation,
   onOrientationChange,
+  descriptionMode = "tooltip",
+  grouped = false,
 }) => {
   const { t } = useTranslation();
   const [selectedSampleKey, setSelectedSampleKey] =
@@ -208,66 +213,64 @@ export const CaptionPreviewPane: React.FC<CaptionPreviewPaneProps> = ({
       className="mb-4 w-full rounded-xl border border-mid-gray/20 bg-background p-4"
       data-testid="caption-preview-pane"
     >
-      <div className="mb-3 flex flex-nowrap items-center justify-center gap-3">
-        <div className="flex flex-shrink-0 items-center gap-2">
-          <label className="whitespace-nowrap text-xs text-text/60">
-            {t("settings.captions.preview.orientation.label")}
-          </label>
-          <div className="min-w-[120px]">
-            <Select
-              value={orientation}
-              options={[
-                {
-                  value: "horizontal",
-                  label: t("settings.captions.preview.orientation.horizontal"),
-                },
-                {
-                  value: "vertical",
-                  label: t("settings.captions.preview.orientation.vertical"),
-                },
-              ]}
-              onChange={(v) => {
-                if (v === "horizontal" || v === "vertical")
-                  onOrientationChange(v);
-              }}
-            />
-          </div>
-        </div>
-        <div className="flex flex-shrink-0 items-center gap-2">
-          <label className="whitespace-nowrap text-xs text-text/60">
-            {t("settings.captions.preview.sampleLegend")}
-          </label>
-          <div className="min-w-[140px]">
-            <Select
-              value={selectedSampleKey}
-              options={[
-                {
-                  value: "single",
-                  label: t("settings.captions.preview.sample.label.single"),
-                },
-                {
-                  value: "multiLine",
-                  label: t("settings.captions.preview.sample.label.multiLine"),
-                },
-              ]}
-              onChange={(v) => {
-                if (v === "single" || v === "multiLine")
-                  setSelectedSampleKey(v);
-              }}
-            />
-          </div>
-        </div>
+      <div className="mb-3 space-y-1">
+        <SettingContainer
+          title={t("settings.captions.preview.orientation.label")}
+          description={t("settings.captions.preview.orientation.description")}
+          descriptionMode={descriptionMode}
+          grouped={grouped}
+        >
+          <Select
+            value={orientation}
+            options={[
+              {
+                value: "horizontal",
+                label: t("settings.captions.preview.orientation.horizontal"),
+              },
+              {
+                value: "vertical",
+                label: t("settings.captions.preview.orientation.vertical"),
+              },
+            ]}
+            onChange={(v) => {
+              if (v === "horizontal" || v === "vertical")
+                onOrientationChange(v);
+            }}
+          />
+        </SettingContainer>
+        <SettingContainer
+          title={t("settings.captions.preview.sampleLegend")}
+          description={t("settings.captions.preview.sampleDescription")}
+          descriptionMode={descriptionMode}
+          grouped={grouped}
+        >
+          <Select
+            value={selectedSampleKey}
+            options={[
+              {
+                value: "single",
+                label: t("settings.captions.preview.sample.label.single"),
+              },
+              {
+                value: "multiLine",
+                label: t("settings.captions.preview.sample.label.multiLine"),
+              },
+            ]}
+            onChange={(v) => {
+              if (v === "single" || v === "multiLine") setSelectedSampleKey(v);
+            }}
+          />
+        </SettingContainer>
       </div>
       <div
-        className="mx-auto w-full rounded-[20px] bg-[#000000]/85 p-2 shadow-inner"
+        className="mx-auto w-full rounded-[20px] bg-black/85 p-2 shadow-inner"
         style={{ maxWidth: screenMaxWidth ?? "36rem" }}
       >
         <div
           ref={containerRef}
-          className="relative w-full overflow-hidden rounded-[12px] border border-mid-gray/20"
+          className="relative w-full overflow-hidden rounded-[12px] border border-mid-gray/20 bg-black/90"
           style={{
             aspectRatio: `${isVertical ? VERTICAL_ASPECT : HORIZONTAL_ASPECT}`,
-            backgroundColor: "#1a1a1a",
           }}
         >
           <CaptionMockFrame orientation={orientation} />
