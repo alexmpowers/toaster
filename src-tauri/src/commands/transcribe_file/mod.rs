@@ -179,24 +179,29 @@ pub async fn transcribe_media_file(
             (w, Some(m))
         };
 
-    // Sanitize timestamps: clamp to audio duration, enforce monotonic
-    // non-overlapping progression, and ensure minimal non-zero durations.
+    // Post-alignment refinement: re-examine suspicious spans, then validate.
     sanitize_word_timestamps(&mut words, total_duration_us);
     realign_suspicious_spans(&mut words, &samples, align_meta.as_deref());
-    sanitize_word_timestamps(&mut words, total_duration_us);
 
-    // Strip any empty-text words that survived the pipeline (should not
-    // happen with current adapters, but guards against future regressions).
-    words.retain(|w| !w.text.trim().is_empty());
+    // Final validation through the single trust boundary.
+    // This replaces the previous pattern of:
+    //   sanitize_word_timestamps() → retain(!empty) → manual checks
+    // with one call that enforces all invariants.
+    let validated = crate::managers::editor::ValidatedWordSequence::sanitize(
+        words,
+        total_duration_us,
+    );
 
-    if words.is_empty() {
+    if validated.is_empty() {
         return Err("No words in transcription".to_string());
     }
+
+    let words = validated.into_inner();
 
     // Populate the editor
     let mut state =
         crate::lock_recovery::try_lock(editor_store.0.lock()).map_err(|e| e.to_string())?;
-    state.set_words(words.clone());
+    state.set_words(words);
 
     Ok(state.get_words().to_vec())
 }

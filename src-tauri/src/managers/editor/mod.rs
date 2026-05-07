@@ -4,7 +4,9 @@
 // operations and full undo/redo support (up to 64 snapshots).
 
 mod types;
+mod validated_words;
 pub use types::{TimingContractSnapshot, TimingSegment, Word};
+pub use validated_words::ValidatedWordSequence;
 
 const MAX_UNDO: usize = 64;
 const DEFAULT_QUANTIZATION_FPS_NUM: u32 = 30;

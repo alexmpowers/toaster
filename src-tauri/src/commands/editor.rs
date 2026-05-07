@@ -23,8 +23,13 @@ fn build_projection(state: &EditorState) -> EditorProjection {
 #[tauri::command]
 #[specta::specta]
 pub fn editor_set_words(store: State<EditorStore>, words: Vec<Word>) -> Vec<Word> {
+    // Sanitize incoming words from the frontend — closes the validation gap
+    // where raw Vec<Word> was accepted without any invariant checks.
+    let audio_duration_us = words.last().map(|w| w.end_us + 1_000_000).unwrap_or(0);
+    let validated =
+        crate::managers::editor::ValidatedWordSequence::sanitize(words, audio_duration_us);
     let mut state = crate::lock_recovery::recover_lock(store.0.lock());
-    state.set_words(words);
+    state.set_words(validated.into_inner());
     state.get_words().to_vec()
 }
 
