@@ -1,6 +1,8 @@
+use log::info;
 use tauri::State;
 
 use crate::commands::editor::EditorStore;
+use crate::managers::editor::Word;
 use crate::managers::media::MediaStore;
 use crate::managers::project::ToasterProject;
 use crate::settings::CaptionProfileSet;
@@ -63,10 +65,16 @@ pub fn load_project(
 ) -> Result<String, String> {
     let project = ToasterProject::load(std::path::Path::new(&path))?;
 
+    // Sanitize words from the saved project: strip empty-text entries and
+    // enforce monotonic non-overlapping timestamps. Legacy .toaster files
+    // may contain artifacts (empty words, overlapping timestamps) from
+    // older code paths or editing sessions.
+    let sanitized = sanitize_project_words(project.words);
+
     // Restore editor words
     let mut editor =
         crate::lock_recovery::try_lock(editor_store.0.lock()).map_err(|e| e.to_string())?;
-    editor.set_words(project.words);
+    editor.set_words(sanitized);
 
     // Restore caption profiles into the shared project store. v1.0.0
     // projects have no profiles → store `None`, which makes
@@ -88,4 +96,50 @@ pub fn load_project(
         .source_media
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_default())
+}
+
+/// Strip empty-text words and enforce monotonic non-overlapping timestamps.
+///
+/// Loaded .toaster files may contain artifacts from earlier code paths:
+/// - Empty-text words (`""`) that were not stripped during transcription
+/// - Overlapping timestamps from unsanitized segment boundaries
+/// - Zero-duration words from hallucination-loop clamping
+///
+/// This function cleans all of these in a single forward pass.
+fn sanitize_project_words(words: Vec<Word>) -> Vec<Word> {
+    let original_len = words.len();
+
+    let mut sanitized: Vec<Word> = Vec::with_capacity(words.len());
+    let mut cursor_us: i64 = 0;
+    const MIN_WORD_DURATION_US: i64 = 1_000; // 1 ms
+
+    for mut w in words {
+        // Drop empty-text words entirely
+        if w.text.trim().is_empty() {
+            continue;
+        }
+
+        // Enforce monotonic start
+        if w.start_us < cursor_us {
+            w.start_us = cursor_us;
+        }
+
+        // Enforce start <= end
+        if w.end_us <= w.start_us {
+            w.end_us = w.start_us + MIN_WORD_DURATION_US;
+        }
+
+        cursor_us = w.end_us;
+        sanitized.push(w);
+    }
+
+    let removed = original_len - sanitized.len();
+    if removed > 0 {
+        info!(
+            "sanitize_project_words: stripped {} empty/degenerate words from loaded project ({} → {})",
+            removed, original_len, sanitized.len()
+        );
+    }
+
+    sanitized
 }

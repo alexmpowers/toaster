@@ -529,8 +529,9 @@ const EditorView: React.FC = () => {
       // Don't auto-select during a manual word click — let the user's selection stick
       if (manualClickRef.current) return;
       const timeUs = time * 1_000_000;
+      // Half-open interval [start_us, end_us) matches backend convention.
       const idx = words.findIndex(
-        (w) => !w.deleted && timeUs >= w.start_us && timeUs <= w.end_us,
+        (w) => !w.deleted && timeUs >= w.start_us && timeUs < w.end_us,
       );
       if (idx >= 0) {
         useEditorStore.getState().selectWord(idx);

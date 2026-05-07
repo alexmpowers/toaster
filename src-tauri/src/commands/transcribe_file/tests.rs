@@ -293,3 +293,75 @@ fn beginning_short_word_deletion_boundary_lands_in_silence() {
     );
     assert_eq!(words[0].end_us, words[1].start_us);
 }
+
+#[test]
+fn clamp_overlapping_segments_handles_whisper_hallucination() {
+    use super::word_builder::clamp_overlapping_segments;
+
+    // Simulate Whisper hallucination: segment B starts before segment A ends
+    let segments = vec![
+        TranscriptionSegment {
+            start: 0.0,
+            end: 5.0,
+            text: "first segment text".to_string(),
+        },
+        TranscriptionSegment {
+            start: 3.0, // overlaps with first segment!
+            end: 8.0,
+            text: "overlapping hallucinated text".to_string(),
+        },
+        TranscriptionSegment {
+            start: 8.0,
+            end: 12.0,
+            text: "normal third segment".to_string(),
+        },
+    ];
+
+    let clamped = clamp_overlapping_segments(&segments);
+
+    assert_eq!(clamped.len(), 3, "all segments should be retained");
+    // Segment B's start should be clamped to segment A's end
+    assert!(
+        clamped[1].start >= clamped[0].end,
+        "segment B start ({}) must be >= segment A end ({})",
+        clamped[1].start,
+        clamped[0].end,
+    );
+    // Segment C should be unchanged
+    assert_eq!(clamped[2].start, 8.0);
+    assert_eq!(clamped[2].end, 12.0);
+}
+
+#[test]
+fn clamp_overlapping_segments_drops_fully_overlapped() {
+    use super::word_builder::clamp_overlapping_segments;
+
+    // Segment B is fully contained within segment A
+    let segments = vec![
+        TranscriptionSegment {
+            start: 0.0,
+            end: 10.0,
+            text: "long first segment".to_string(),
+        },
+        TranscriptionSegment {
+            start: 3.0,
+            end: 7.0,
+            text: "fully overlapped hallucination".to_string(),
+        },
+        TranscriptionSegment {
+            start: 10.0,
+            end: 15.0,
+            text: "after the overlap".to_string(),
+        },
+    ];
+
+    let clamped = clamp_overlapping_segments(&segments);
+
+    assert_eq!(
+        clamped.len(),
+        2,
+        "fully overlapped segment should be dropped"
+    );
+    assert_eq!(clamped[0].end, 10.0);
+    assert_eq!(clamped[1].start, 10.0);
+}

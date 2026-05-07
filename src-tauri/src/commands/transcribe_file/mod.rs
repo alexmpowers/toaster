@@ -185,6 +185,10 @@ pub async fn transcribe_media_file(
     realign_suspicious_spans(&mut words, &samples, align_meta.as_deref());
     sanitize_word_timestamps(&mut words, total_duration_us);
 
+    // Strip any empty-text words that survived the pipeline (should not
+    // happen with current adapters, but guards against future regressions).
+    words.retain(|w| !w.text.trim().is_empty());
+
     if words.is_empty() {
         return Err("No words in transcription".to_string());
     }

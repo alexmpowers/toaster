@@ -46,11 +46,17 @@ pub(super) fn build_words_from_segments(
         return (words, meta);
     }
 
+    // Clamp overlapping segments. Whisper hallucination loops can produce
+    // segments whose time ranges overlap, corrupting all downstream word
+    // timestamps. We clamp each segment's start to be >= the previous
+    // segment's end so the DP aligner sees a strictly monotonic timeline.
+    let clamped_segments = clamp_overlapping_segments(segments);
+
     // Build a flat list of (word, start_us, end_us) from segments first.
     // For each segment we prefer the DP forced aligner; if it declines we
     // fall through to the legacy char-proportional split.
     let mut segment_words: Vec<(String, i64, i64)> = Vec::new();
-    for seg in segments {
+    for seg in &clamped_segments {
         let seg_text = seg.text.trim();
         if seg_text.is_empty() {
             continue;
@@ -216,6 +222,78 @@ pub(super) fn build_words_from_segments(
     align_onset_boundaries(&mut words, samples);
 
     (words, meta)
+}
+
+/// Detect and clamp overlapping ASR segments.
+///
+/// Whisper's 30-second chunked processing can produce hallucination loops
+/// where consecutive segments overlap in time. When segments overlap, the
+/// DP forced aligner assigns words to audio regions that belong to the
+/// previous segment, corrupting word-level timestamps.
+///
+/// This function enforces strict monotonicity: each segment's start is
+/// clamped to `max(own_start, prev_end)`. Segments that become zero- or
+/// negative-duration after clamping (fully contained within a previous
+/// segment) are removed entirely — their text was hallucinated.
+pub(super) fn clamp_overlapping_segments(segments: &[TranscriptionSegment]) -> Vec<TranscriptionSegment> {
+    if segments.is_empty() {
+        return Vec::new();
+    }
+
+    let mut result: Vec<TranscriptionSegment> = Vec::with_capacity(segments.len());
+    let mut overlap_count = 0usize;
+    let mut dropped_count = 0usize;
+
+    for seg in segments {
+        let mut clamped = seg.clone();
+        if let Some(prev) = result.last() {
+            if clamped.start < prev.end {
+                overlap_count += 1;
+                clamped.start = prev.end;
+            }
+        }
+        // Drop segments that became zero/negative duration after clamping
+        if clamped.end <= clamped.start {
+            dropped_count += 1;
+            continue;
+        }
+        result.push(clamped);
+    }
+
+    // Log segment statistics for alignment debugging
+    if !result.is_empty() {
+        let durations: Vec<f64> = result.iter().map(|s| (s.end - s.start) as f64).collect();
+        let min_dur = durations.iter().cloned().fold(f64::INFINITY, f64::min);
+        let max_dur = durations.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+        let avg_dur: f64 = durations.iter().sum::<f64>() / durations.len() as f64;
+        let word_counts: Vec<usize> = result
+            .iter()
+            .map(|s| s.text.split_whitespace().count())
+            .collect();
+        let max_words = word_counts.iter().cloned().max().unwrap_or(0);
+
+        info!(
+            "build_words_from_segments: {} segments (min {:.2}s, max {:.2}s, avg {:.2}s), \
+             max words/segment={}, overlaps_clamped={}, segments_dropped={}",
+            result.len(),
+            min_dur,
+            max_dur,
+            avg_dur,
+            max_words,
+            overlap_count,
+            dropped_count,
+        );
+
+        if overlap_count > 0 {
+            warn!(
+                "build_words_from_segments: clamped {} overlapping segments \
+                 (possible hallucination loops); dropped {} fully-overlapped segments",
+                overlap_count, dropped_count,
+            );
+        }
+    }
+
+    result
 }
 
 /// Sanitize word timestamps to guarantee monotonic, non-overlapping,
