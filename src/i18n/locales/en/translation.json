@@ -617,6 +617,11 @@
       "failed": "Remove silence failed. Check the log for details.",
       "success": "Trimmed {{count}} silent stretch",
       "success_plural": "Trimmed {{count}} silent stretches"
+    },
+    "transcriptionQuality": {
+      "excellent": "Transcription complete — Excellent quality ({{model}})",
+      "good": "Transcription complete — Good quality ({{model}})",
+      "fair": "Transcription complete — Fair quality ({{model}}). Consider a larger model for better accuracy."
     }
   },
   "experiments": {

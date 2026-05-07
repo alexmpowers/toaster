@@ -34,9 +34,16 @@ function getSpeakerColor(speakerId: number): string {
   return SPEAKER_COLORS[speakerId % SPEAKER_COLORS.length];
 }
 
-/** Map confidence (0-1) to a visual style (currently disabled) */
-function getConfidenceStyle(_confidence: number): React.CSSProperties {
-  return {};
+/** Map confidence (0-1) to a visual style. Returns empty when confidence
+ *  is unknown (-1) or above the 0.7 threshold. */
+function getConfidenceStyle(confidence: number): React.CSSProperties {
+  if (confidence < 0 || confidence >= 0.7) return {};
+  return {
+    textDecorationLine: "underline",
+    textDecorationStyle: "dotted",
+    textDecorationColor: "var(--color-mid-gray)",
+    opacity: 0.75 + confidence * 0.25,
+  };
 }
 
 interface TranscriptEditorProps {
@@ -382,7 +389,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
         />
       )}
 
-      {/* Word spans */}
+      {/* Word spans with paragraph breaks */}
       <div className="flex flex-wrap gap-1 leading-relaxed">
         {words.map((word, index) => {
           // Silence sentinels are deleted Words with empty text inserted
@@ -395,6 +402,27 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
           // original `index` keys for selection / highlight / find still
           // resolve correctly without any remapping.
           if (word.deleted && word.text === "") return null;
+
+          // Paragraph break: insert a spacer after every 2-3 sentences.
+          // We detect sentence boundaries by checking if the PREVIOUS
+          // non-deleted word ends with sentence-ending punctuation.
+          let paragraphBreak = false;
+          if (index > 0) {
+            const prev = words[index - 1];
+            if (prev && !prev.deleted && /[.!?]["'»\u201D\u2019)]*$/.test(prev.text)) {
+              // Count how many sentence-ending words precede this one
+              // (scan backward to find the last paragraph break point).
+              let sentenceCount = 0;
+              for (let i = index - 1; i >= 0; i--) {
+                const w = words[i];
+                if (w.deleted) continue;
+                if (/[.!?]["'»\u201D\u2019)]*$/.test(w.text)) sentenceCount++;
+                if (sentenceCount >= 3) break;
+              }
+              paragraphBreak = sentenceCount >= 3;
+            }
+          }
+
           const isSelected = selectedIndex === index;
           const isRangeSelected = isInSelectionRange(index);
           const isFindMatch = findMatchSet.has(index);
@@ -421,6 +449,9 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
 
           return (
             <React.Fragment key={`word-${word.start_us}-${index}`}>
+              {paragraphBreak && !showSpeakerLabel && (
+                <div className="w-full h-3" aria-hidden="true" />
+              )}
               {showSpeakerLabel && (
                 <div className="w-full mt-2 mb-0.5 flex items-center gap-1.5">
                   <span

@@ -20,6 +20,7 @@ import { SettingsGroup } from "@/components/ui/SettingsGroup";
 import { Button } from "@/components/ui/Button";
 import { commands } from "@/bindings";
 import { useEditorStore } from "@/stores/editorStore";
+import { useModelStore } from "@/stores/modelStore";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import TranscriptEditor from "@/components/editor/TranscriptEditor";
@@ -286,6 +287,27 @@ const EditorView: React.FC = () => {
         await commands.transcribeMediaFile(mediaInfo.path),
       );
       await setWords(result);
+
+      // Show accuracy tier toast based on the active model's catalog score
+      const { currentModel, getModelInfo } = useModelStore.getState();
+      const model = getModelInfo(currentModel);
+      if (model && model.accuracy_score > 0) {
+        const score = model.accuracy_score;
+        const tierKey =
+          score > 0.8
+            ? "excellent"
+            : score >= 0.65
+              ? "good"
+              : "fair";
+        const tierMessage = t(`editor.transcriptionQuality.${tierKey}`, {
+          model: model.name,
+        });
+        if (tierKey === "fair") {
+          toast.warning(tierMessage);
+        } else {
+          toast.success(tierMessage);
+        }
+      }
     } catch (err) {
       const errStr = String(err);
       if (errStr.includes("Model is not loaded")) {
@@ -309,7 +331,7 @@ const EditorView: React.FC = () => {
     } finally {
       setIsTranscribing(false);
     }
-  }, [mediaInfo, setWords]);
+  }, [mediaInfo, setWords, t]);
 
   const handleImportMedia = useCallback(async () => {
     try {
