@@ -116,6 +116,88 @@ fn frame_to_us(
 /// exactly `[seg_start_us, seg_end_us]` without gaps or overlaps.
 pub type AlignedWords = Vec<(i64, i64)>;
 
+/// Minimum trailing silence duration (µs) before we trim the last word.
+/// Shorter silences are treated as natural inter-phoneme pauses and left
+/// attached to the word.
+const MIN_TRAILING_SILENCE_US: i64 = 200_000; // 200 ms
+
+/// RMS energy threshold below which a frame is considered silent, expressed
+/// as a fraction of the segment's peak energy. This is intentionally lenient
+/// — we only trim obvious silence, not quiet speech.
+const SILENCE_FRACTION: f32 = 0.05;
+
+/// Detect where speech ends relative to the segment's end, and trim the
+/// last word so it doesn't absorb a trailing pause.
+///
+/// Returns the trimmed `end_us` for the last word (≤ `seg_end_us`).
+/// If no significant trailing silence is found, returns `seg_end_us`
+/// unchanged.
+///
+/// The function scans backward from the segment's end, looking for the
+/// last frame that exceeds the silence threshold. It then places the
+/// trimmed boundary a small buffer (1 frame = 10 ms) after that frame
+/// to avoid clipping the phoneme tail.
+pub fn trim_trailing_silence(
+    samples: &[f32],
+    seg_start_us: i64,
+    seg_end_us: i64,
+    sample_rate_hz: f64,
+) -> i64 {
+    if seg_end_us <= seg_start_us {
+        return seg_end_us;
+    }
+
+    let start_sample = timing::us_to_sample_clamped(seg_start_us, sample_rate_hz, samples.len());
+    let end_sample_raw = timing::us_to_sample_clamped(seg_end_us, sample_rate_hz, samples.len());
+    let end_sample = if end_sample_raw + 1 >= samples.len() {
+        samples.len()
+    } else {
+        end_sample_raw
+    };
+    if end_sample <= start_sample {
+        return seg_end_us;
+    }
+
+    let slice = &samples[start_sample..end_sample];
+    let frames = EnergyFrames::compute(slice, sample_rate_hz);
+    if frames.frames.is_empty() {
+        return seg_end_us;
+    }
+
+    // Peak energy in this segment's frames.
+    let peak = frames.frames.iter().copied().fold(0.0f32, f32::max);
+    if peak <= 1e-9 {
+        // Entire segment is silent — don't trim (leave as-is; the DP already
+        // produced char-proportional boundaries for this degenerate case).
+        return seg_end_us;
+    }
+    let threshold = peak * SILENCE_FRACTION;
+
+    // Scan backward from last frame to find the last frame above threshold.
+    let last_speech_frame = frames
+        .frames
+        .iter()
+        .rposition(|&e| e > threshold);
+
+    let last_speech_frame = match last_speech_frame {
+        Some(f) => f,
+        None => return seg_end_us, // all frames below threshold — don't trim
+    };
+
+    // Place the trim boundary 1 frame after the last speech frame to avoid
+    // clipping the final phoneme's decay.
+    let trim_frame = last_speech_frame + 1;
+    let trim_us = frame_to_us(trim_frame, frames.hop_samples, sample_rate_hz, seg_start_us);
+
+    // Only trim if the trailing silence exceeds the minimum threshold.
+    let trailing_silence_us = seg_end_us - trim_us;
+    if trailing_silence_us >= MIN_TRAILING_SILENCE_US {
+        trim_us
+    } else {
+        seg_end_us
+    }
+}
+
 /// Deviation penalty weight for the DP objective. Cost at boundary frame `b`
 /// for expected frame `e_i` over `F` total frames is
 /// `energy_norm[b] + LAMBDA_DEV * ((b - e_i) / F)^2`.
@@ -451,5 +533,76 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn trim_trailing_silence_detects_long_pause() {
+        // Build a segment: 300 ms of speech followed by 500 ms of silence.
+        // trim_trailing_silence should detect the pause and return a trimmed
+        // end_us that is significantly earlier than the segment's end.
+        let sr = 16_000.0;
+        let speech_samples = (sr * 0.3) as usize; // 300 ms
+        let silence_samples = (sr * 0.5) as usize; // 500 ms
+        let total = speech_samples + silence_samples;
+        let mut samples = vec![0.0f32; total];
+        // 300 Hz tone in the speech portion
+        for (k, s) in samples.iter_mut().take(speech_samples).enumerate() {
+            let t = k as f64 / sr;
+            *s = 0.5 * (2.0 * std::f64::consts::PI * 300.0 * t).sin() as f32;
+        }
+
+        let seg_start_us = 0_i64;
+        let seg_end_us = (total as f64 / sr * 1_000_000.0) as i64; // 800_000 µs
+
+        let trimmed = trim_trailing_silence(&samples, seg_start_us, seg_end_us, sr);
+
+        // Trimmed end should be near 300 ms (speech end) + a small buffer,
+        // well before the 800 ms segment end.
+        assert!(
+            trimmed < seg_end_us,
+            "Expected trailing silence trim but got full segment: trimmed={trimmed}, seg_end={seg_end_us}"
+        );
+        // Should be roughly around 300-320 ms (speech + 1 frame buffer)
+        assert!(
+            trimmed <= 350_000,
+            "Trim point {trimmed} µs is too far from speech end (~300 ms)"
+        );
+        assert!(
+            trimmed >= 290_000,
+            "Trim point {trimmed} µs clipped into the speech region"
+        );
+    }
+
+    #[test]
+    fn trim_trailing_silence_preserves_short_pause() {
+        // Build a segment: 300 ms of speech followed by 100 ms of silence.
+        // The 100 ms pause is below the MIN_TRAILING_SILENCE_US threshold
+        // (200 ms), so it should NOT be trimmed.
+        let sr = 16_000.0;
+        let speech_samples = (sr * 0.3) as usize;
+        let silence_samples = (sr * 0.1) as usize; // 100 ms — below threshold
+        let total = speech_samples + silence_samples;
+        let mut samples = vec![0.0f32; total];
+        for (k, s) in samples.iter_mut().take(speech_samples).enumerate() {
+            let t = k as f64 / sr;
+            *s = 0.5 * (2.0 * std::f64::consts::PI * 300.0 * t).sin() as f32;
+        }
+
+        let seg_start_us = 0_i64;
+        let seg_end_us = (total as f64 / sr * 1_000_000.0) as i64;
+
+        let trimmed = trim_trailing_silence(&samples, seg_start_us, seg_end_us, sr);
+        assert_eq!(
+            trimmed, seg_end_us,
+            "Short trailing silence should not be trimmed"
+        );
+    }
+
+    #[test]
+    fn trim_trailing_silence_handles_all_silent() {
+        // Entirely silent segment — should not trim (returns seg_end_us).
+        let samples = vec![0.0f32; 16_000]; // 1 second of silence
+        let trimmed = trim_trailing_silence(&samples, 0, 1_000_000, 16_000.0);
+        assert_eq!(trimmed, 1_000_000, "All-silent segment should not be trimmed");
     }
 }

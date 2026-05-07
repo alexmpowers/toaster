@@ -74,13 +74,28 @@ pub(super) fn build_words_from_segments(
         }
 
         // Primary path: DP forced alignment against frame-level RMS.
-        if let Some(aligned) = crate::audio_toolkit::forced_alignment::align_words_in_segment(
+        if let Some(mut aligned) = crate::audio_toolkit::forced_alignment::align_words_in_segment(
             &seg_words,
             seg_start_us,
             seg_end_us,
             samples,
             SAMPLE_RATE_HZ,
         ) {
+            // Trim trailing silence from the last word. The DP aligner pins
+            // the last word's end to `seg_end_us`, which often includes a
+            // long trailing pause reported by the ASR engine. Detecting and
+            // trimming this silence prevents "for." from spanning 6+ seconds.
+            if let Some(last) = aligned.last_mut() {
+                let trimmed_end = crate::audio_toolkit::forced_alignment::trim_trailing_silence(
+                    samples,
+                    last.0,   // last word's start
+                    last.1,   // last word's end (== seg_end_us)
+                    SAMPLE_RATE_HZ,
+                );
+                if trimmed_end > last.0 {
+                    last.1 = trimmed_end;
+                }
+            }
             for (sw, (ws, we)) in seg_words.iter().zip(aligned) {
                 segment_words.push(((*sw).to_string(), ws, we));
             }
@@ -104,11 +119,24 @@ pub(super) fn build_words_from_segments(
             let word_duration_us = round_f64_to_i64(seg_duration_us as f64 * char_fraction);
 
             let word_start = cursor_us;
-            let word_end = if j == seg_words.len() - 1 {
-                seg_end_us // last word gets the remainder to avoid gaps
+            let mut word_end = if j == seg_words.len() - 1 {
+                // Last word: trim trailing silence instead of absorbing the
+                // entire segment remainder.
+                let trimmed = crate::audio_toolkit::forced_alignment::trim_trailing_silence(
+                    samples,
+                    cursor_us,
+                    seg_end_us,
+                    SAMPLE_RATE_HZ,
+                );
+                if trimmed > cursor_us { trimmed } else { seg_end_us }
             } else {
                 cursor_us + word_duration_us
             };
+
+            // Safety: ensure positive duration
+            if word_end <= word_start {
+                word_end = word_start + 1;
+            }
 
             segment_words.push((sw.to_string(), word_start, word_end));
             cursor_us = word_end;
