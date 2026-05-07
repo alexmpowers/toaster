@@ -278,8 +278,10 @@ fn adapters_accept_empty_text_and_empty_segments() {
 }
 
 #[test]
-fn dedup_removes_repeated_phrases() {
-    // Simulate "Microsoft keeps investing in Microsoft keeps investing in them"
+fn adapter_preserves_repeated_phrases() {
+    // The transcript must faithfully reproduce what was spoken — even if it
+    // looks like a hallucination. Dedup belongs in the cleanup flow, not here.
+    // Input: "Microsoft keeps investing in Microsoft keeps investing in them"
     let raw = tr(vec![
         seg(0.0, 0.2, "Microsoft"),
         seg(0.2, 0.4, "keeps"),
@@ -294,16 +296,16 @@ fn dedup_removes_repeated_phrases() {
     let audio = AudioInfo::from_samples(32_000, 16_000, 1);
     let out = ParakeetAdapter.adapt(raw, audio).expect("adapt ok");
     let texts: Vec<_> = out.words.iter().map(|w| w.text.as_str()).collect();
-    // First "Microsoft keeps investing in" removed, second kept + "them"
+    // ALL words preserved — no dedup at transcription time
     assert_eq!(
         texts,
-        vec!["Microsoft", "keeps", "investing", "in", "them"]
+        vec!["Microsoft", "keeps", "investing", "in", "Microsoft", "keeps", "investing", "in", "them"]
     );
 }
 
 #[test]
-fn dedup_preserves_short_repeats() {
-    // "very very important" — two-word repeat is intentional speech
+fn adapter_preserves_short_repeats() {
+    // "very very important" — preserved as-is
     let raw = tr(vec![
         seg(0.0, 0.2, "very"),
         seg(0.2, 0.4, "very"),
@@ -316,8 +318,8 @@ fn dedup_preserves_short_repeats() {
 }
 
 #[test]
-fn dedup_handles_long_hallucination() {
-    // "A B C D E A B C D E F" — 5-word repeat, second keeps continuation
+fn adapter_preserves_long_repeats() {
+    // "A B C D E A B C D E F" — all preserved faithfully
     let raw = tr(vec![
         seg(0.0, 0.1, "A"),
         seg(0.1, 0.2, "B"),
@@ -334,5 +336,28 @@ fn dedup_handles_long_hallucination() {
     let audio = AudioInfo::from_samples(32_000, 16_000, 1);
     let out = ParakeetAdapter.adapt(raw, audio).expect("adapt ok");
     let texts: Vec<_> = out.words.iter().map(|w| w.text.as_str()).collect();
-    assert_eq!(texts, vec!["A", "B", "C", "D", "E", "F"]);
+    assert_eq!(texts, vec!["A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "F"]);
+}
+
+/// Unit test for dedup_repeated_phrases function itself (used by cleanup flow).
+#[test]
+fn dedup_function_removes_repeated_phrases() {
+    use crate::managers::transcription::adapter_normalize::dedup_repeated_phrases;
+
+    let words: Vec<CanonicalWord> = ["Microsoft", "keeps", "investing", "in", "Microsoft", "keeps", "investing", "in", "them"]
+        .iter()
+        .enumerate()
+        .map(|(i, &t)| CanonicalWord {
+            text: t.to_string(),
+            start_us: (i as i64) * 200_000,
+            end_us: (i as i64 + 1) * 200_000,
+            confidence: -1.0,
+            speaker_id: -1,
+            is_non_speech: false,
+        })
+        .collect();
+
+    let result = dedup_repeated_phrases(words);
+    let texts: Vec<_> = result.iter().map(|w| w.text.as_str()).collect();
+    assert_eq!(texts, vec!["Microsoft", "keeps", "investing", "in", "them"]);
 }

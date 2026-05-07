@@ -117,7 +117,11 @@ fn split_segment_by_chars(seg_text: &str, start_us: i64, end_us: i64) -> Vec<(St
 /// Only exact case-insensitive word matches count. Single-word and two-word
 /// repeats are intentionally kept — they're common in natural speech
 /// ("very very", "no no no").
-fn dedup_repeated_phrases(words: Vec<CanonicalWord>) -> Vec<CanonicalWord> {
+///
+/// NOT called during transcription (transcript must be faithful to audio).
+/// Available for the user-initiated "Clean Up" / filler-removal flow.
+#[allow(dead_code)]
+pub(crate) fn dedup_repeated_phrases(words: Vec<CanonicalWord>) -> Vec<CanonicalWord> {
     if words.len() < 6 {
         return words;
     }
@@ -184,14 +188,13 @@ fn dedup_repeated_phrases(words: Vec<CanonicalWord>) -> Vec<CanonicalWord> {
 /// Strip non-speech segments and enforce the canonical invariants (monotonic,
 /// non-overlapping, non-zero-duration). Words flagged `is_non_speech` are
 /// removed here so they never appear in the returned result.
+///
+/// No content-altering transforms (dedup, stutter collapse) happen here —
+/// the transcription pipeline's job is to faithfully reproduce what was
+/// spoken. Content cleanup belongs in the user-initiated "Clean Up" flow.
 fn finalize_words(mut words: Vec<CanonicalWord>, audio_info: AudioInfo) -> Vec<CanonicalWord> {
     // Strip non-speech tokens. We never emit them.
     words.retain(|w| !w.is_non_speech);
-
-    // Remove hallucinated phrase repetitions (e.g., "Microsoft keeps
-    // investing in Microsoft keeps investing in them" → keep the second
-    // occurrence which typically continues the sentence).
-    words = dedup_repeated_phrases(words);
 
     if words.is_empty() {
         return words;

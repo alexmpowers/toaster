@@ -1,11 +1,14 @@
 //! Transcription job lifecycle: the `transcribe` entry point that drives a
 //! single audio buffer through the loaded ASR engine, normalizes the result
-//! through the adapter layer, and applies post-processing (custom words,
-//! filler/whitespace filtering).
+//! through the adapter layer, and applies custom word correction.
+//!
+//! No content-altering transforms (stutter collapse, phrase dedup) happen
+//! here — the transcript must faithfully represent what was spoken. Content
+//! cleanup belongs in the user-initiated "Clean Up" flow.
 //!
 //! Extracted from `mod.rs` to keep that file under the 800-line cap.
 
-use crate::audio_toolkit::{apply_custom_words, filter_transcription_output};
+use crate::audio_toolkit::apply_custom_words;
 use crate::managers::model::EngineType;
 use crate::settings::get_settings;
 use anyhow::Result;
@@ -212,11 +215,6 @@ impl TranscriptionManager {
             result.text.clone()
         };
 
-        // Filter out stutter artifacts / excess whitespace. Filler words are
-        // kept — the editor's Clean Up feature is responsible for removing
-        // them on user confirmation.
-        let filtered_text = filter_transcription_output(&corrected_text);
-
         let et = std::time::Instant::now();
         let translation_note = if settings.translate_to_english {
             " (translated)"
@@ -229,19 +227,20 @@ impl TranscriptionManager {
             translation_note
         );
 
-        if filtered_text.is_empty() {
+        if corrected_text.is_empty() {
             info!("Transcription result is empty");
         } else {
-            info!("Transcription result: {}", filtered_text);
+            info!("Transcription result: {}", corrected_text);
         }
 
         self.maybe_unload_immediately("transcription");
 
-        // Normalize through the adapter, then overwrite the text blob with
-        // the post-filtered version. `raw_for_adapt` keeps the engine-reported
-        // segment timings intact for downstream `build_words_from_segments`.
+        // Normalize through the adapter. The text passed here is the
+        // engine's output (optionally custom-word-corrected for accuracy)
+        // but NOT stutter-collapsed or otherwise content-altered — the
+        // transcript must faithfully represent what was spoken.
         let raw_for_adapt = transcribe_rs::TranscriptionResult {
-            text: filtered_text,
+            text: corrected_text,
             segments: result.segments,
         };
         let audio_info = adapter::AudioInfo::from_samples(
