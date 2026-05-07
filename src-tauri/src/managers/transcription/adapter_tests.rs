@@ -361,3 +361,110 @@ fn dedup_function_removes_repeated_phrases() {
     let texts: Vec<_> = result.iter().map(|w| w.text.as_str()).collect();
     assert_eq!(texts, vec!["Microsoft", "keeps", "investing", "in", "them"]);
 }
+
+// ── engine-flexibility: positive tests for undertested adapters ────────
+
+#[test]
+fn gigaam_adapter_adapts_word_level_segments() {
+    let raw = tr(vec![
+        seg(0.10, 0.30, "привет"),
+        seg(0.35, 0.55, "мир"),
+        seg(0.60, 0.90, "тест"),
+    ]);
+    let audio = AudioInfo::from_samples(16_000 * 2, 16_000, 1);
+    let out = GigaAmAdapter.adapt(raw, audio).expect("adapt ok");
+    assert!(out.word_timestamps_authoritative, "word-level segments should be authoritative");
+    assert_eq!(out.words.len(), 3);
+    assert_eq!(out.words[0].text, "привет");
+    assert_eq!(out.words[0].start_us, 100_000);
+}
+
+#[test]
+fn gigaam_adapter_adapts_phrase_level_segments() {
+    let raw = tr(vec![
+        seg(0.0, 1.5, "привет мир это тест"),
+        seg(1.5, 2.5, "другое предложение здесь"),
+    ]);
+    let audio = AudioInfo::from_samples(16_000 * 3, 16_000, 1);
+    let out = GigaAmAdapter.adapt(raw, audio).expect("adapt ok");
+    assert!(!out.word_timestamps_authoritative, "phrase-level segments are NOT authoritative");
+    assert!(out.words.len() >= 4, "phrase segments should split into words");
+}
+
+#[test]
+fn canary_adapter_adapts_word_level_segments() {
+    let raw = tr(vec![
+        seg(0.05, 0.25, "hello"),
+        seg(0.30, 0.50, "world"),
+        seg(0.55, 0.80, "test"),
+    ]);
+    let audio = AudioInfo::from_samples(16_000 * 2, 16_000, 1);
+    let out = CanaryAdapter.adapt(raw, audio).expect("adapt ok");
+    assert!(out.word_timestamps_authoritative);
+    assert_eq!(out.words.len(), 3);
+    assert_eq!(out.words[1].text, "world");
+}
+
+#[test]
+fn canary_adapter_adapts_phrase_level_segments() {
+    let raw = tr(vec![
+        seg(0.0, 2.0, "this is a longer sentence from canary"),
+        seg(2.0, 4.0, "with multiple segments here"),
+    ]);
+    let audio = AudioInfo::from_samples(16_000 * 5, 16_000, 1);
+    let out = CanaryAdapter.adapt(raw, audio).expect("adapt ok");
+    assert!(!out.word_timestamps_authoritative);
+    assert!(out.words.len() >= 6);
+}
+
+#[test]
+fn cohere_adapter_adapts_word_level_segments() {
+    let raw = tr(vec![
+        seg(0.10, 0.35, "bonjour"),
+        seg(0.40, 0.65, "le"),
+        seg(0.70, 1.00, "monde"),
+    ]);
+    let audio = AudioInfo::from_samples(16_000 * 2, 16_000, 1);
+    let out = CohereAdapter.adapt(raw, audio).expect("adapt ok");
+    assert!(out.word_timestamps_authoritative);
+    assert_eq!(out.words.len(), 3);
+    assert_eq!(out.words[2].text, "monde");
+}
+
+#[test]
+fn cohere_adapter_adapts_phrase_level_segments() {
+    let raw = tr(vec![
+        seg(0.0, 1.8, "un long segment avec plusieurs mots"),
+        seg(2.0, 3.5, "et un autre segment ici"),
+    ]);
+    let audio = AudioInfo::from_samples(16_000 * 4, 16_000, 1);
+    let out = CohereAdapter.adapt(raw, audio).expect("adapt ok");
+    assert!(!out.word_timestamps_authoritative);
+    assert!(out.words.len() >= 6);
+}
+
+#[test]
+fn moonshine_adapter_adapts_word_level_segments() {
+    let raw = tr(vec![
+        seg(0.05, 0.20, "quick"),
+        seg(0.25, 0.45, "brown"),
+        seg(0.50, 0.70, "fox"),
+    ]);
+    let audio = AudioInfo::from_samples(16_000 * 2, 16_000, 1);
+    let out = MoonshineAdapter.adapt(raw, audio).expect("adapt ok");
+    assert!(out.word_timestamps_authoritative);
+    assert_eq!(out.words.len(), 3);
+}
+
+#[test]
+fn sensevoice_adapter_adapts_word_level_segments() {
+    let raw = tr(vec![
+        seg(0.10, 0.30, "你好"),
+        seg(0.35, 0.55, "世界"),
+        seg(0.60, 0.85, "测试"),
+    ]);
+    let audio = AudioInfo::from_samples(16_000 * 2, 16_000, 1);
+    let out = SenseVoiceAdapter.adapt(raw, audio).expect("adapt ok");
+    assert!(out.word_timestamps_authoritative);
+    assert_eq!(out.words.len(), 3);
+}

@@ -58,14 +58,12 @@
 
 use crate::managers::model::EngineType;
 use anyhow::{anyhow, Result};
-use log::warn;
 use transcribe_rs::{TranscriptionResult, TranscriptionSegment};
 
 #[cfg(test)]
 use super::adapter_normalize::is_non_speech_token;
 use super::adapter_normalize::{
-    make_normalized, segments_are_word_level, words_from_segments_native,
-    words_from_segments_proportional,
+    adapt_with_auto_detection, make_normalized, words_from_segments_proportional,
 };
 
 /// Fallback input sample rate when an adapter doesn't declare one — matches
@@ -241,7 +239,7 @@ pub trait TranscriptionModelAdapter: Send + Sync {
 
 /// Helper: extract a segment slice from a `TranscriptionResult`, whose
 /// `segments` field is `Option<Vec<_>>` (some engines return `None`).
-fn segments_of(raw: &TranscriptionResult) -> &[TranscriptionSegment] {
+pub(super) fn segments_of(raw: &TranscriptionResult) -> &[TranscriptionSegment] {
     raw.segments.as_deref().unwrap_or(&[])
 }
 
@@ -348,24 +346,12 @@ impl TranscriptionModelAdapter for ParakeetAdapter {
         audio_info: AudioInfo,
     ) -> Result<NormalizedTranscriptionResult> {
         require_segments("Parakeet", &raw)?;
-        let segs = segments_of(&raw);
-        let word_level = segments_are_word_level(segs);
-        let words = if word_level {
-            words_from_segments_native(segs, audio_info)
-        } else {
-            warn!(
-                "ParakeetAdapter: {} segments did not look word-level, falling back to char-split",
-                segs.len()
-            );
-            words_from_segments_proportional(segs, audio_info)
-        };
-        make_normalized(raw, words, word_level)
+        adapt_with_auto_detection("Parakeet", raw, audio_info)
     }
 }
 
-/// TODO(audit): native word-timing support not yet verified. Currently
-/// routes through the char-proportional split path. Applies to plain
-/// Moonshine and Moonshine streaming.
+/// Moonshine and Moonshine-streaming adapter. Routes through auto-detection
+/// to pick up native word-level times if the engine produces them.
 pub struct MoonshineAdapter;
 
 impl TranscriptionModelAdapter for MoonshineAdapter {
@@ -383,12 +369,12 @@ impl TranscriptionModelAdapter for MoonshineAdapter {
         audio_info: AudioInfo,
     ) -> Result<NormalizedTranscriptionResult> {
         require_segments("Moonshine", &raw)?;
-        let words = words_from_segments_proportional(segments_of(&raw), audio_info);
-        make_normalized(raw, words, false)
+        adapt_with_auto_detection("Moonshine", raw, audio_info)
     }
 }
 
-/// TODO(audit): native word-timing support not yet verified.
+/// SenseVoice adapter. Routes through auto-detection for word-level
+/// timestamp discovery.
 pub struct SenseVoiceAdapter;
 
 impl TranscriptionModelAdapter for SenseVoiceAdapter {
@@ -411,12 +397,12 @@ impl TranscriptionModelAdapter for SenseVoiceAdapter {
         audio_info: AudioInfo,
     ) -> Result<NormalizedTranscriptionResult> {
         require_segments("SenseVoice", &raw)?;
-        let words = words_from_segments_proportional(segments_of(&raw), audio_info);
-        make_normalized(raw, words, false)
+        adapt_with_auto_detection("SenseVoice", raw, audio_info)
     }
 }
 
-/// TODO(audit): native word-timing support not yet verified.
+/// GigaAM adapter. Routes through auto-detection for word-level
+/// timestamp discovery.
 pub struct GigaAmAdapter;
 
 impl TranscriptionModelAdapter for GigaAmAdapter {
@@ -434,12 +420,12 @@ impl TranscriptionModelAdapter for GigaAmAdapter {
         audio_info: AudioInfo,
     ) -> Result<NormalizedTranscriptionResult> {
         require_segments("GigaAM", &raw)?;
-        let words = words_from_segments_proportional(segments_of(&raw), audio_info);
-        make_normalized(raw, words, false)
+        adapt_with_auto_detection("GigaAM", raw, audio_info)
     }
 }
 
-/// TODO(audit): native word-timing support not yet verified.
+/// Canary adapter. Routes through auto-detection for word-level
+/// timestamp discovery.
 pub struct CanaryAdapter;
 
 impl TranscriptionModelAdapter for CanaryAdapter {
@@ -461,12 +447,12 @@ impl TranscriptionModelAdapter for CanaryAdapter {
         audio_info: AudioInfo,
     ) -> Result<NormalizedTranscriptionResult> {
         require_segments("Canary", &raw)?;
-        let words = words_from_segments_proportional(segments_of(&raw), audio_info);
-        make_normalized(raw, words, false)
+        adapt_with_auto_detection("Canary", raw, audio_info)
     }
 }
 
-/// TODO(audit): native word-timing support not yet verified.
+/// Cohere adapter. Routes through auto-detection for word-level
+/// timestamp discovery.
 pub struct CohereAdapter;
 
 impl TranscriptionModelAdapter for CohereAdapter {
@@ -488,8 +474,7 @@ impl TranscriptionModelAdapter for CohereAdapter {
         audio_info: AudioInfo,
     ) -> Result<NormalizedTranscriptionResult> {
         require_segments("Cohere", &raw)?;
-        let words = words_from_segments_proportional(segments_of(&raw), audio_info);
-        make_normalized(raw, words, false)
+        adapt_with_auto_detection("Cohere", raw, audio_info)
     }
 }
 
@@ -532,14 +517,7 @@ impl TranscriptionModelAdapter for MockAdapter {
         // scaffolding, explicitly labelled as such, and lives above this
         // adapter. Here we enforce the same contract as production.
         require_segments("Mock", &raw)?;
-        let segs = segments_of(&raw);
-        let word_level = segments_are_word_level(segs);
-        let words = if word_level {
-            words_from_segments_native(segs, audio_info)
-        } else {
-            words_from_segments_proportional(segs, audio_info)
-        };
-        make_normalized(raw, words, word_level)
+        adapt_with_auto_detection("Mock", raw, audio_info)
     }
 }
 

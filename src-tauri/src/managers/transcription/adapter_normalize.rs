@@ -290,9 +290,18 @@ pub(super) fn words_from_segments_native(
     finalize_words(words, audio_info)
 }
 
-/// Heuristic used by `ParakeetAdapter` to decide between native per-word times
-/// and the char-split fallback: if >=80% of segments contain exactly one
-/// whitespace-separated token, treat segments as word-level.
+/// Heuristic used to decide between native per-word times and the char-split
+/// fallback: if ≥80 % of segments contain exactly one whitespace-separated
+/// token, treat segments as word-level.
+///
+/// **Rationale for 80 %:** ASR engines emitting `TimestampGranularity::Word`
+/// occasionally produce a multi-word segment for compound terms or misaligned
+/// output. Requiring 100 % would discard good native times due to a handful
+/// of outliers; 80 % tolerates up to 20 % multi-word segments while still
+/// being a strong signal that the engine intended word-level granularity.
+/// At the boundary (e.g. 79 %), the proportional-split fallback runs and DP
+/// forced alignment downstream still produces usable timestamps — just not
+/// as authoritative.
 pub(super) fn segments_are_word_level(segments: &[TranscriptionSegment]) -> bool {
     if segments.is_empty() {
         return false;
@@ -322,4 +331,51 @@ pub(super) fn make_normalized(
     };
     result.validate()?;
     Ok(result)
+}
+
+/// Shared adaptation path for engines that may or may not produce word-level
+/// segments. Auto-detects the segment granularity via
+/// [`segments_are_word_level`] and picks the appropriate conversion:
+///
+/// - **Word-level:** preserves native per-word times (`authoritative: true`).
+/// - **Phrase-level:** char-proportional split into the segment span
+///   (`authoritative: false`); DP forced alignment downstream refines the
+///   result before it reaches the editor.
+///
+/// Every production adapter except Whisper delegates to this function.
+/// Whisper is excluded because its segments carry authoritative segment-level
+/// times, but its per-word breakdown is always char-proportional — routing
+/// through DP forced alignment produces strictly better timestamps than
+/// declaring the proportional seeds authoritative.
+pub(super) fn adapt_with_auto_detection(
+    engine_name: &str,
+    raw: TranscriptionResult,
+    audio_info: AudioInfo,
+) -> Result<NormalizedTranscriptionResult> {
+    use super::adapter::segments_of;
+    use log::info;
+
+    let segs = segments_of(&raw);
+    let word_level = segments_are_word_level(segs);
+
+    if word_level {
+        info!(
+            "{}: detected word-level segments ({} segs), using native timestamps (authoritative)",
+            engine_name,
+            segs.len()
+        );
+    } else {
+        info!(
+            "{}: segments are phrase-level ({} segs), using char-proportional split",
+            engine_name,
+            segs.len()
+        );
+    }
+
+    let words = if word_level {
+        words_from_segments_native(segs, audio_info)
+    } else {
+        words_from_segments_proportional(segs, audio_info)
+    };
+    make_normalized(raw, words, word_level)
 }
