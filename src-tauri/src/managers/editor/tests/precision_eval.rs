@@ -419,18 +419,30 @@ fn precision_eval_remove_silence_preserves_source_time_and_seams() {
     );
     assert_eq!(second, 0, "remove_silence not idempotent");
 
-    // (7) Keep-segments before and after trim are *identical* — long
-    //     gaps already exceeded MAX_INTRA_SEGMENT_GAP_US (200 ms) and
-    //     were therefore excluded from the audio timeline before the
-    //     trim ran. The pre-fix bug (in-place start_us/end_us shift)
-    //     made the segment **boundaries** drift even though their
-    //     count was unchanged; this stronger equality assertion
-    //     pins both the count *and* the source-time values.
+    // (7) Baseline keep-segments (before trim) should span the full word
+    //     range because the adaptive gap threshold treats these inter-word
+    //     gaps as natural pauses in conversational speech. After trim,
+    //     sentinels explicitly carve out the long gaps, producing more
+    //     segments. The key invariant is that real-word source timestamps
+    //     are never mutated (assertion 1) and the post-trim segments align
+    //     with the sentinel boundaries (assertion 3).
+    //
+    //     Before the adaptive threshold change, this assertion checked
+    //     `post_trim == baseline` because the hardcoded 200 ms threshold
+    //     already split at these gaps, making trim_pauses a no-op for
+    //     segmentation. Now the threshold adapts to the word-gap
+    //     distribution, so natural pauses are preserved until the user
+    //     explicitly invokes "Remove silence".
     assert_eq!(
-        editor.get_keep_segments(),
-        baseline_keep,
-        "remove_silence corrupted segment boundaries — \
-         source-time fields were mutated by `trim_pauses`"
+        baseline_keep.len(),
+        1,
+        "before trim, adaptive gap threshold should keep all words in one \
+         segment (long gaps are natural pauses)"
+    );
+    assert_eq!(
+        editor.get_keep_segments().len(),
+        3,
+        "after trim, sentinels should split into 3 segments"
     );
 }
 

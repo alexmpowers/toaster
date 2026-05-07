@@ -222,8 +222,12 @@ impl EditorState {
 
     /// Return contiguous non-deleted time regions as `(start_us, end_us)` pairs.
     ///
-    /// Splits segments at large inter-word silence gaps (> 300ms) so that
-    /// dead air between phrases is naturally excluded from export/preview.
+    /// Splits segments at large inter-word silence gaps so that dead air
+    /// between phrases is naturally excluded from export/preview. The gap
+    /// threshold is **adaptive**: computed from the word-gap distribution
+    /// via `adaptive_gap_threshold()` (median + 2 × MAD, clamped to
+    /// 200 ms–2 s). This prevents presentation-style content from being
+    /// fragmented at every natural pause.
     ///
     /// **Algorithm:** interval subtraction.
     ///
@@ -234,7 +238,7 @@ impl EditorState {
     ///    into a head + tail (e.g. an audio-truth silence sentinel that
     ///    sits inside a Parakeet-padded word range).
     /// 3. Stream the kept sub-intervals through segment-open / merge logic:
-    ///    natural inter-word gaps ≤ `MAX_INTRA_SEGMENT_GAP_US` extend the
+    ///    natural inter-word gaps ≤ the adaptive threshold extend the
     ///    current segment; larger gaps split it; any seam created by a
     ///    deleted range forces a split (and is later refused by the
     ///    micro-merge pass — bridging it would put deleted audio back on
@@ -247,13 +251,11 @@ impl EditorState {
     /// previous walking algorithm produced. The 451 lib tests that pinned
     /// the old behavior remain numerically stable.
     pub fn get_keep_segments(&self) -> Vec<(i64, i64)> {
-        /// Maximum gap between adjacent words before splitting into separate
-        /// keep-segments. Gaps larger than this are treated as dead air and
-        /// excluded from the output.
-        const MAX_INTRA_SEGMENT_GAP_US: i64 = 200_000; // 200ms
         /// Minimum kept-segment duration before the micro-merge pass tries
         /// to fold it into a neighbour. Prevents ultra-short glitch clips.
         const MIN_KEEP_SEGMENT_US: i64 = 150_000; // 150ms minimum
+
+        let max_gap = adaptive_gap_threshold(&self.words);
 
         let forbidden = merged_deleted_ranges(&self.words);
         let subs = collect_kept_subintervals(&self.words, &forbidden);
@@ -280,7 +282,7 @@ impl EditorState {
                 }
                 Some(s) => {
                     let gap = sub.start_us - seg_end;
-                    let split_required = opened_after_delete || gap > MAX_INTRA_SEGMENT_GAP_US;
+                    let split_required = opened_after_delete || gap > max_gap;
                     if split_required {
                         if seg_end > s {
                             segments.push((s, seg_end));
@@ -320,7 +322,7 @@ impl EditorState {
                 // `delete_boundary_before[i + 1]`).
                 if i + 1 < segments.len() && !delete_boundary_before[i + 1] {
                     let gap = segments[i + 1].0 - segments[i].1;
-                    if gap <= MAX_INTRA_SEGMENT_GAP_US {
+                    if gap <= max_gap {
                         segments[i] = (segments[i].0, segments[i + 1].1);
                         segments.remove(i + 1);
                         delete_boundary_before.remove(i + 1);
@@ -331,7 +333,7 @@ impl EditorState {
                 // `delete_boundary_before[i]`).
                 if i > 0 && !delete_boundary_before[i] {
                     let gap = segments[i].0 - segments[i - 1].1;
-                    if gap <= MAX_INTRA_SEGMENT_GAP_US {
+                    if gap <= max_gap {
                         segments[i - 1] = (segments[i - 1].0, segments[i].1);
                         segments.remove(i);
                         delete_boundary_before.remove(i);
@@ -550,6 +552,51 @@ impl EditorState {
 mod tests;
 
 // ── interval helpers for `get_keep_segments` ─────────────────────────────
+
+/// Compute an adaptive gap threshold from the distribution of natural
+/// inter-word gaps across all non-deleted words.
+///
+/// Strategy: median + 2 × MAD (median absolute deviation), clamped to
+/// `[MIN_GAP_FLOOR_US, MAX_GAP_CAP_US]`. MAD is more robust than
+/// standard deviation for skewed gap distributions (e.g. one long slide
+/// transition among many short intra-sentence gaps). Falls back to
+/// `DEFAULT_GAP_FALLBACK_US` when fewer than 3 gaps exist.
+///
+/// This replaces the former hardcoded 200 ms constant that fragmented
+/// presentation-style content at every natural pause.
+fn adaptive_gap_threshold(words: &[types::Word]) -> i64 {
+    const MIN_GAP_FLOOR_US: i64 = 200_000; // never merge tighter than 200 ms
+    const MAX_GAP_CAP_US: i64 = 2_000_000; // cap at 2 s to avoid swallowing real edits
+    const DEFAULT_GAP_FALLBACK_US: i64 = 200_000; // fallback for very few words
+
+    let kept: Vec<&types::Word> = words.iter().filter(|w| !w.deleted).collect();
+    if kept.len() < 2 {
+        return DEFAULT_GAP_FALLBACK_US;
+    }
+
+    let mut gaps: Vec<i64> = Vec::new();
+    for pair in kept.windows(2) {
+        let gap = pair[1].start_us - pair[0].end_us;
+        if gap > 0 {
+            gaps.push(gap);
+        }
+    }
+
+    if gaps.len() < 3 {
+        return DEFAULT_GAP_FALLBACK_US;
+    }
+
+    gaps.sort_unstable();
+    let median = gaps[gaps.len() / 2];
+
+    // MAD = median(|gap_i - median|)
+    let mut deviations: Vec<i64> = gaps.iter().map(|g| (g - median).abs()).collect();
+    deviations.sort_unstable();
+    let mad = deviations[deviations.len() / 2];
+
+    let threshold = median + 2 * mad;
+    threshold.clamp(MIN_GAP_FLOOR_US, MAX_GAP_CAP_US)
+}
 
 /// Cause of the seam to the left of a kept sub-interval. Drives the
 /// micro-merge pass: delete-driven seams are never bridged, natural-gap

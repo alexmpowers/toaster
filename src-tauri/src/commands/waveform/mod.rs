@@ -392,6 +392,14 @@ fn canonical_keep_segments_for_media_with_options(
 }
 
 fn map_edit_time_to_source_time_from_segments(edit_time_us: i64, segments: &[(i64, i64)]) -> i64 {
+    if segments.len() > 50 {
+        log::debug!(
+            "map_edit_time_to_source_time: {} segments — high segment count may \
+             indicate fragmented keep-segments (consider content-adaptive gap threshold)",
+            segments.len()
+        );
+    }
+
     let mut elapsed: i64 = 0;
 
     for (start, end) in segments {

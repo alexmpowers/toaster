@@ -12,4 +12,5 @@ mod basic;
 mod dual_track_regression;
 mod overlap;
 mod precision_eval;
+mod precision_eval_adaptive;
 mod seams;

@@ -32,7 +32,10 @@
 param(
     [string]$OutputJson = (Join-Path $PSScriptRoot '..\..\.eval-output\eval-harness-report.json'),
     [switch]$SkipAudioBoundary,
-    [switch]$SkipExportParity
+    [switch]$SkipExportParity,
+    [string]$FixtureOriginal = '',
+    [string]$FixtureEdited = '',
+    [string]$FixtureBaseline = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -176,7 +179,22 @@ $evals += New-EvalEntry `
 # --- 4. Export parity ------------------------------------------------------
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
 $exportScript = Join-Path $RepoRoot 'scripts\eval\eval-edit-quality.ps1'
-$baselinePath = Join-Path $RepoRoot 'tests\fixtures\edit-quality.baseline.json'
+
+# Resolve fixture paths: use parameters if provided, else fall back to defaults.
+$origPath = if ($FixtureOriginal) { $FixtureOriginal } else { Join-Path $RepoRoot 'eval\fixtures\toaster_example.mp4' }
+$editPath = if ($FixtureEdited) { $FixtureEdited } else { Join-Path $RepoRoot 'eval\fixtures\toaster_example-edited.mp4' }
+
+# Baseline: if provided use it, else derive from the original fixture stem.
+if ($FixtureBaseline) {
+    $baselinePath = $FixtureBaseline
+} elseif ($FixtureOriginal) {
+    # Per-video baseline: tests/fixtures/<stem>.baseline.json
+    $stem = [System.IO.Path]::GetFileNameWithoutExtension($FixtureOriginal)
+    $baselinePath = Join-Path $RepoRoot "tests\fixtures\$stem.baseline.json"
+} else {
+    $baselinePath = Join-Path $RepoRoot 'tests\fixtures\edit-quality.baseline.json'
+}
+
 $exportOut = Join-Path $outDir 'edit-quality.json'
 $exportDetails = @{}
 if ($SkipExportParity.IsPresent) {
@@ -185,14 +203,14 @@ if ($SkipExportParity.IsPresent) {
 } elseif (-not (Test-Path $exportScript)) {
     $exportStatus = 'skip'
     $exportNotes = 'eval-edit-quality.ps1 not present'
-} elseif (-not (Test-Path (Join-Path $RepoRoot 'eval\fixtures\toaster_example.mp4'))) {
+} elseif (-not (Test-Path $origPath)) {
     $exportStatus = 'skip'
-    $exportNotes = 'fixture eval/fixtures/toaster_example.mp4 missing'
+    $exportNotes = "fixture not found: $origPath"
 } else {
     try {
         & pwsh -NoProfile -File $exportScript `
-            -Original (Join-Path $RepoRoot 'eval\fixtures\toaster_example.mp4') `
-            -Edited   (Join-Path $RepoRoot 'eval\fixtures\toaster_example-edited.mp4') `
+            -Original $origPath `
+            -Edited   $editPath `
             -OutputJson $exportOut | Out-Null
         if ($LASTEXITCODE -ne 0) {
             $exportStatus = 'error'

@@ -125,46 +125,59 @@ pub async fn transcribe_media_file(
         })?;
     let text = normalized.text;
     let segments = normalized.segments;
+    let authoritative = normalized.word_timestamps_authoritative;
+    let adapter_words = normalized.words;
 
     if text.is_empty() {
         return Err("Transcription produced no text".to_string());
     }
 
-    // Build words with real timestamps from transcription segments.
-    // Primary: DP forced alignment inside each engine-reported segment
-    // (see `audio_toolkit::forced_alignment`). Interior boundaries are
-    // placed at the frames that minimize local RMS energy plus a quadratic
-    // deviation penalty from their char-proportional expected position,
-    // replacing the legacy char-proportional synthesis as the primary source
-    // of per-word timing for engines whose adapter reports
-    // `word_timestamps_authoritative = false` (todo
-    // `p1-authoritative-flag-actionable`).
-    //
-    // The adapter layer (`managers::transcription::adapter`) is the single
-    // contract enforcement point: every engine MUST produce at least
-    // segment-level timestamps. If an engine genuinely can't, the fix is
-    // forced alignment *in the adapter*, not equal-duration synthesis
-    // downstream. See todos `p1-adapter-trait` and
-    // `p3-abandon-even-dist-fallback`, and the "equal-duration timestamp
-    // synthesis" prohibition in AGENTS.md.
     let sample_rate = 16000.0_f64;
     let total_duration_us = crate::audio_toolkit::timing::sample_to_us(samples.len(), sample_rate);
 
-    let segs = segments.as_ref().ok_or_else(|| {
-        "Transcription engine produced no segment-level timestamps; adapter must always \
-         return at least segment-level timing. See p1-adapter-trait."
-            .to_string()
-    })?;
-    if segs.is_empty() {
-        return Err(
-            "Transcription engine returned an empty segment list; adapter must always \
-             return at least segment-level timing. See p1-adapter-trait."
-                .to_string(),
-        );
-    }
-
-    let (mut words, align_meta_vec) = build_words_from_segments(&text, segs, &samples);
-    let align_meta: Option<Vec<WordAlignmentMeta>> = Some(align_meta_vec);
+    // When the adapter already produced authoritative per-word timestamps
+    // (Parakeet word-level), use them directly. This avoids the fragile
+    // text-matching path in build_words_from_segments which fails when
+    // the filtered text diverges from segment text.
+    let (mut words, align_meta): (Vec<Word>, Option<Vec<WordAlignmentMeta>>) =
+        if authoritative && !adapter_words.is_empty() {
+            info!(
+                "Using {} authoritative adapter words (skipping build_words_from_segments)",
+                adapter_words.len()
+            );
+            let words: Vec<Word> = adapter_words
+                .into_iter()
+                .map(|cw| Word {
+                    text: cw.text,
+                    start_us: cw.start_us,
+                    end_us: cw.end_us,
+                    deleted: false,
+                    silenced: false,
+                    confidence: cw.confidence,
+                    speaker_id: cw.speaker_id,
+                })
+                .collect();
+            let meta = vec![WordAlignmentMeta { interpolated: false }; words.len()];
+            (words, Some(meta))
+        } else {
+            // Non-authoritative path: DP forced alignment from segment-level
+            // timestamps. Primary for Whisper and other engines whose adapter
+            // reports word_timestamps_authoritative = false.
+            let segs = segments.as_ref().ok_or_else(|| {
+                "Transcription engine produced no segment-level timestamps; adapter must always \
+                 return at least segment-level timing. See p1-adapter-trait."
+                    .to_string()
+            })?;
+            if segs.is_empty() {
+                return Err(
+                    "Transcription engine returned an empty segment list; adapter must always \
+                     return at least segment-level timing. See p1-adapter-trait."
+                        .to_string(),
+                );
+            }
+            let (w, m) = build_words_from_segments(&text, segs, &samples);
+            (w, Some(m))
+        };
 
     // Sanitize timestamps: clamp to audio duration, enforce monotonic
     // non-overlapping progression, and ensure minimal non-zero durations.

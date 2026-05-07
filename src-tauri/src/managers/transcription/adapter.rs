@@ -315,15 +315,13 @@ impl TranscriptionModelAdapter for WhisperAdapter {
     ) -> Result<NormalizedTranscriptionResult> {
         require_segments("Whisper", &raw)?;
         let words = words_from_segments_proportional(segments_of(&raw), audio_info);
-        // Whisper-backed transcription is authoritative by pipeline
-        // contract: `commands::transcribe_file::build_words_from_segments`
-        // runs DP forced alignment (see
-        // `audio_toolkit::forced_alignment::align_words_in_segment`) on
-        // every Whisper segment before words reach the editor. The
-        // char-proportional seed produced here is only used by tests and
-        // by the degenerate-segment fallback inside that function.
-        // Todo: `p1-authoritative-flag-actionable`.
-        make_normalized(raw, words, true)
+        // Whisper segments carry authoritative segment-level times but NOT
+        // per-word times. The adapter produces a char-proportional seed;
+        // `commands::transcribe_file::build_words_from_segments` refines it
+        // via DP forced alignment before words reach the editor.
+        // `word_timestamps_authoritative = false` tells that downstream
+        // step to run its refinement pass.
+        make_normalized(raw, words, false)
     }
 }
 

@@ -108,12 +108,90 @@ fn split_segment_by_chars(seg_text: &str, start_us: i64, end_us: i64) -> Vec<(St
     out
 }
 
+/// Remove consecutive repeated phrases from the word list. ASR models
+/// (especially on long audio with pauses) sometimes hallucinate by repeating
+/// a phrase verbatim. We detect runs of N consecutive words (N ≥ 3) that
+/// match the immediately preceding N words and remove the earlier copy,
+/// keeping the later one (which often continues the sentence naturally).
+///
+/// Only exact case-insensitive word matches count. Single-word and two-word
+/// repeats are intentionally kept — they're common in natural speech
+/// ("very very", "no no no").
+fn dedup_repeated_phrases(words: Vec<CanonicalWord>) -> Vec<CanonicalWord> {
+    if words.len() < 6 {
+        return words;
+    }
+
+    // Find spans to remove. Each entry is (start_idx, length) of the FIRST
+    // (earlier) occurrence to remove.
+    let mut remove_spans: Vec<(usize, usize)> = Vec::new();
+    let texts_lower: Vec<String> = words.iter().map(|w| w.text.to_lowercase()).collect();
+    let n = texts_lower.len();
+
+    let mut i = 0;
+    while i < n {
+        // Try phrase lengths from large to small to find the longest repeat.
+        let max_phrase = (n - i) / 2; // can't have a phrase longer than half the remaining
+        let mut found_len = 0;
+        for phrase_len in (3..=max_phrase.min(30)).rev() {
+            if i + 2 * phrase_len > n {
+                continue;
+            }
+            let first = &texts_lower[i..i + phrase_len];
+            let second = &texts_lower[i + phrase_len..i + 2 * phrase_len];
+            if first == second {
+                found_len = phrase_len;
+                break;
+            }
+        }
+        if found_len >= 3 {
+            remove_spans.push((i, found_len));
+            i += found_len; // skip past the removed span to the kept copy
+        } else {
+            i += 1;
+        }
+    }
+
+    if remove_spans.is_empty() {
+        return words;
+    }
+
+    // Build a removal set
+    let mut remove_set = vec![false; n];
+    for (start, len) in &remove_spans {
+        for item in remove_set.iter_mut().skip(*start).take(*len) {
+            *item = true;
+        }
+    }
+
+    let removed_count: usize = remove_set.iter().filter(|&&r| r).count();
+    if removed_count > 0 {
+        debug!(
+            "dedup_repeated_phrases: removed {} words across {} repeated phrase(s)",
+            removed_count,
+            remove_spans.len()
+        );
+    }
+
+    words
+        .into_iter()
+        .enumerate()
+        .filter(|(idx, _)| !remove_set[*idx])
+        .map(|(_, w)| w)
+        .collect()
+}
+
 /// Strip non-speech segments and enforce the canonical invariants (monotonic,
 /// non-overlapping, non-zero-duration). Words flagged `is_non_speech` are
 /// removed here so they never appear in the returned result.
 fn finalize_words(mut words: Vec<CanonicalWord>, audio_info: AudioInfo) -> Vec<CanonicalWord> {
     // Strip non-speech tokens. We never emit them.
     words.retain(|w| !w.is_non_speech);
+
+    // Remove hallucinated phrase repetitions (e.g., "Microsoft keeps
+    // investing in Microsoft keeps investing in them" → keep the second
+    // occurrence which typically continues the sentence).
+    words = dedup_repeated_phrases(words);
 
     if words.is_empty() {
         return words;

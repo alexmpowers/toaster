@@ -94,8 +94,9 @@ fn whisper_adapter_strips_hallucination_patterns() {
     let out = WhisperAdapter.adapt(raw, audio).expect("adapt ok");
     let texts: Vec<_> = out.words.iter().map(|w| w.text.as_str()).collect();
     assert_eq!(texts, vec!["hello", "world", "goodbye"]);
-    // Authoritative by pipeline contract — see WhisperAdapter::adapt.
-    assert!(out.word_timestamps_authoritative);
+    // Whisper words are char-proportional seeds — NOT authoritative until
+    // DP forced alignment runs in build_words_from_segments.
+    assert!(!out.word_timestamps_authoritative);
     for w in &out.words {
         assert!(!w.is_non_speech);
         assert!(w.start_us < w.end_us);
@@ -274,4 +275,64 @@ fn adapters_accept_empty_text_and_empty_segments() {
         .adapt(silent, audio)
         .expect("silence is not a contract violation");
     assert!(out.words.is_empty());
+}
+
+#[test]
+fn dedup_removes_repeated_phrases() {
+    // Simulate "Microsoft keeps investing in Microsoft keeps investing in them"
+    let raw = tr(vec![
+        seg(0.0, 0.2, "Microsoft"),
+        seg(0.2, 0.4, "keeps"),
+        seg(0.4, 0.6, "investing"),
+        seg(0.6, 0.8, "in"),
+        seg(0.8, 1.0, "Microsoft"),
+        seg(1.0, 1.2, "keeps"),
+        seg(1.2, 1.4, "investing"),
+        seg(1.4, 1.6, "in"),
+        seg(1.6, 1.8, "them"),
+    ]);
+    let audio = AudioInfo::from_samples(32_000, 16_000, 1);
+    let out = ParakeetAdapter.adapt(raw, audio).expect("adapt ok");
+    let texts: Vec<_> = out.words.iter().map(|w| w.text.as_str()).collect();
+    // First "Microsoft keeps investing in" removed, second kept + "them"
+    assert_eq!(
+        texts,
+        vec!["Microsoft", "keeps", "investing", "in", "them"]
+    );
+}
+
+#[test]
+fn dedup_preserves_short_repeats() {
+    // "very very important" — two-word repeat is intentional speech
+    let raw = tr(vec![
+        seg(0.0, 0.2, "very"),
+        seg(0.2, 0.4, "very"),
+        seg(0.4, 0.6, "important"),
+    ]);
+    let audio = AudioInfo::from_samples(16_000, 16_000, 1);
+    let out = ParakeetAdapter.adapt(raw, audio).expect("adapt ok");
+    let texts: Vec<_> = out.words.iter().map(|w| w.text.as_str()).collect();
+    assert_eq!(texts, vec!["very", "very", "important"]);
+}
+
+#[test]
+fn dedup_handles_long_hallucination() {
+    // "A B C D E A B C D E F" — 5-word repeat, second keeps continuation
+    let raw = tr(vec![
+        seg(0.0, 0.1, "A"),
+        seg(0.1, 0.2, "B"),
+        seg(0.2, 0.3, "C"),
+        seg(0.3, 0.4, "D"),
+        seg(0.4, 0.5, "E"),
+        seg(0.5, 0.6, "A"),
+        seg(0.6, 0.7, "B"),
+        seg(0.7, 0.8, "C"),
+        seg(0.8, 0.9, "D"),
+        seg(0.9, 1.0, "E"),
+        seg(1.0, 1.1, "F"),
+    ]);
+    let audio = AudioInfo::from_samples(32_000, 16_000, 1);
+    let out = ParakeetAdapter.adapt(raw, audio).expect("adapt ok");
+    let texts: Vec<_> = out.words.iter().map(|w| w.text.as_str()).collect();
+    assert_eq!(texts, vec!["A", "B", "C", "D", "E", "F"]);
 }
