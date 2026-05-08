@@ -1,0 +1,218 @@
+{
+  "id": "toaster_example_parakeet_v3",
+  "source_project": "../../fixtures/toaster_example.mp4.toaster",
+  "engine": "parakeet-tdt-0.6b-v3",
+  "labeled_by": "auto-seeded-from-transcription",
+  "labeled_at": "2026-05-08T05:20:12Z",
+  "words": [
+    {
+      "text": "Yeah,",
+      "oracle_start_us": 390000,
+      "oracle_end_us": 952312
+    },
+    {
+      "text": "so",
+      "oracle_start_us": 952312,
+      "oracle_end_us": 1329375
+    },
+    {
+      "text": "the",
+      "oracle_start_us": 1329375,
+      "oracle_end_us": 2103500
+    },
+    {
+      "text": "um",
+      "oracle_start_us": 2103500,
+      "oracle_end_us": 4152500
+    },
+    {
+      "text": "the",
+      "oracle_start_us": 4152500,
+      "oracle_end_us": 6035000
+    },
+    {
+      "text": "the",
+      "oracle_start_us": 6035000,
+      "oracle_end_us": 6355000
+    },
+    {
+      "text": "best",
+      "oracle_start_us": 6355000,
+      "oracle_end_us": 7832500
+    },
+    {
+      "text": "best",
+      "oracle_start_us": 7832500,
+      "oracle_end_us": 8342875
+    },
+    {
+      "text": "part",
+      "oracle_start_us": 8342875,
+      "oracle_end_us": 8677438
+    },
+    {
+      "text": "about",
+      "oracle_start_us": 8677438,
+      "oracle_end_us": 9489500
+    },
+    {
+      "text": "a",
+      "oracle_start_us": 9489500,
+      "oracle_end_us": 9590000
+    },
+    {
+      "text": "lot",
+      "oracle_start_us": 9590000,
+      "oracle_end_us": 9756625
+    },
+    {
+      "text": "of",
+      "oracle_start_us": 9756625,
+      "oracle_end_us": 10022188
+    },
+    {
+      "text": "this",
+      "oracle_start_us": 10022188,
+      "oracle_end_us": 10499625
+    },
+    {
+      "text": "is",
+      "oracle_start_us": 10499625,
+      "oracle_end_us": 10862500
+    },
+    {
+      "text": "how",
+      "oracle_start_us": 10862500,
+      "oracle_end_us": 10880250
+    },
+    {
+      "text": "it",
+      "oracle_start_us": 10880250,
+      "oracle_end_us": 11270000
+    },
+    {
+      "text": "can",
+      "oracle_start_us": 11270000,
+      "oracle_end_us": 11330938
+    },
+    {
+      "text": "really",
+      "oracle_start_us": 11330938,
+      "oracle_end_us": 11773688
+    },
+    {
+      "text": "transform",
+      "oracle_start_us": 11773688,
+      "oracle_end_us": 12220188
+    },
+    {
+      "text": "the",
+      "oracle_start_us": 12220188,
+      "oracle_end_us": 12670062
+    },
+    {
+      "text": "way",
+      "oracle_start_us": 12670062,
+      "oracle_end_us": 12892500
+    },
+    {
+      "text": "you",
+      "oracle_start_us": 12892500,
+      "oracle_end_us": 13022312
+    },
+    {
+      "text": "sound.",
+      "oracle_start_us": 13022312,
+      "oracle_end_us": 14232500
+    },
+    {
+      "text": "And",
+      "oracle_start_us": 14232500,
+      "oracle_end_us": 14939312
+    },
+    {
+      "text": "um",
+      "oracle_start_us": 14939312,
+      "oracle_end_us": 16322312
+    },
+    {
+      "text": "like",
+      "oracle_start_us": 16322312,
+      "oracle_end_us": 17180000
+    },
+    {
+      "text": "the",
+      "oracle_start_us": 17180000,
+      "oracle_end_us": 17280000
+    },
+    {
+      "text": "uh",
+      "oracle_start_us": 17280000,
+      "oracle_end_us": 17590000
+    },
+    {
+      "text": "the",
+      "oracle_start_us": 17590000,
+      "oracle_end_us": 17591000
+    },
+    {
+      "text": "the",
+      "oracle_start_us": 17591000,
+      "oracle_end_us": 17669562
+    },
+    {
+      "text": "difference",
+      "oracle_start_us": 17669562,
+      "oracle_end_us": 18190125
+    },
+    {
+      "text": "is",
+      "oracle_start_us": 18190125,
+      "oracle_end_us": 18419188
+    },
+    {
+      "text": "gonna",
+      "oracle_start_us": 18419188,
+      "oracle_end_us": 18629999
+    },
+    {
+      "text": "be",
+      "oracle_start_us": 18629999,
+      "oracle_end_us": 18706375
+    },
+    {
+      "text": "noticeable",
+      "oracle_start_us": 18706375,
+      "oracle_end_us": 19492500
+    },
+    {
+      "text": "kind",
+      "oracle_start_us": 19492500,
+      "oracle_end_us": 19510000
+    },
+    {
+      "text": "of",
+      "oracle_start_us": 19510000,
+      "oracle_end_us": 19827188
+    },
+    {
+      "text": "on",
+      "oracle_start_us": 19827188,
+      "oracle_end_us": 20097625
+    },
+    {
+      "text": "first",
+      "oracle_start_us": 20097625,
+      "oracle_end_us": 20578250
+    },
+    {
+      "text": "use.",
+      "oracle_start_us": 20578250,
+      "oracle_end_us": 21079998
+    }
+  ],
+  "tolerances": {
+    "median_error_us": 100000,
+    "p95_error_us": 500000
+  }
+}

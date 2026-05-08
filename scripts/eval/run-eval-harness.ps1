@@ -4,12 +4,14 @@
     order and emits a single JSON report at the path specified by -OutputJson.
 
 .DESCRIPTION
-    Wraps the three eval entry points referenced by the toaster-eval
+    Wraps the five eval entry points referenced by the toaster-eval
     skill (see .github/skills/toaster-eval/SKILL.md):
 
       1. Rust precision eval        -> cargo test precision_eval
       2. Audio-boundary eval         -> scripts/eval/eval-audio-boundary.ps1
-      3. Export parity eval          -> scripts/eval/eval-edit-quality.ps1
+      3. Caption-parity eval         -> scripts/eval/eval-caption-parity.ps1
+      4. Transcription accuracy eval -> scripts/eval/eval-transcription-accuracy.ps1
+      5. Export parity eval          -> scripts/eval/eval-edit-quality.ps1
 
     Evals that require running app state or fixtures that are not yet
     available are reported as status="skip" with a reason, NOT silently
@@ -176,7 +178,43 @@ $evals += New-EvalEntry `
     -Details $captionDetails `
     -Notes $captionNotes
 
-# --- 4. Export parity ------------------------------------------------------
+# --- 4. Transcription accuracy eval ----------------------------------------
+$sw = [System.Diagnostics.Stopwatch]::StartNew()
+$transcAccScript = Join-Path $RepoRoot 'scripts\eval\eval-transcription-accuracy.ps1'
+$transcAccFixtures = Join-Path $RepoRoot 'eval\transcription-accuracy\fixtures'
+$transcAccOut = Join-Path $outDir 'transcription-accuracy.json'
+$transcAccDetails = @{}
+if (-not (Test-Path $transcAccScript)) {
+    $transcAccStatus = 'skip'
+    $transcAccNotes = 'eval-transcription-accuracy.ps1 not present'
+} elseif (-not (Test-Path $transcAccFixtures) -or ((Get-ChildItem $transcAccFixtures -Filter '*.json' -ErrorAction SilentlyContinue).Count -eq 0)) {
+    $transcAccStatus = 'skip'
+    $transcAccNotes = 'no oracle fixtures in eval/transcription-accuracy/fixtures/'
+} else {
+    try {
+        & pwsh -NoProfile -File $transcAccScript -OutputJson $transcAccOut | Out-Null
+        $transcAccStatus = if ($LASTEXITCODE -eq 0) { 'pass' } else { 'fail' }
+        $transcAccNotes = ''
+        if (Test-Path $transcAccOut) {
+            $transcAccReport = Get-Content $transcAccOut -Raw | ConvertFrom-Json
+            $transcAccDetails.fixture_count = $transcAccReport.fixture_count
+            $transcAccDetails.overall = $transcAccReport.overall
+        }
+    } catch {
+        $transcAccStatus = 'error'
+        $transcAccNotes = $_.Exception.Message
+    }
+}
+$sw.Stop()
+$evals += New-EvalEntry `
+    -Name 'transcription_accuracy' `
+    -Command 'scripts/eval/eval-transcription-accuracy.ps1' `
+    -Status $transcAccStatus `
+    -DurationS ($sw.Elapsed.TotalSeconds) `
+    -Details $transcAccDetails `
+    -Notes $transcAccNotes
+
+# --- 5. Export parity ------------------------------------------------------
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
 $exportScript = Join-Path $RepoRoot 'scripts\eval\eval-edit-quality.ps1'
 

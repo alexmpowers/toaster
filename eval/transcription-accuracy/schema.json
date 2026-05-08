@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Transcription Accuracy Oracle Fixture",
+  "description": "Ground-truth word timestamps for evaluating ASR pipeline accuracy. Oracle timestamps are hand-labeled from audio; actual timestamps come from a .toaster project file.",
+  "type": "object",
+  "required": ["id", "source_project", "words", "tolerances"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique fixture identifier (e.g., 'toaster_example_parakeet_v3')"
+    },
+    "source_project": {
+      "type": "string",
+      "description": "Relative path to the .toaster project file containing actual transcription results"
+    },
+    "engine": {
+      "type": "string",
+      "description": "Engine/model ID used for the transcription (e.g., 'parakeet-tdt-0.6b-v3')"
+    },
+    "labeled_by": {
+      "type": "string",
+      "description": "Who labeled the oracle timestamps (for provenance)"
+    },
+    "labeled_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the oracle timestamps were labeled"
+    },
+    "words": {
+      "type": "array",
+      "description": "Ground-truth word timestamps. Order must match the .toaster project word order.",
+      "items": {
+        "type": "object",
+        "required": ["text", "oracle_start_us", "oracle_end_us"],
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Word text (must match .toaster project word text)"
+          },
+          "oracle_start_us": {
+            "type": "integer",
+            "description": "Ground-truth speech onset in microseconds"
+          },
+          "oracle_end_us": {
+            "type": "integer",
+            "description": "Ground-truth speech offset in microseconds"
+          }
+        }
+      }
+    },
+    "tolerances": {
+      "type": "object",
+      "description": "Pass/fail thresholds for timestamp accuracy",
+      "required": ["median_error_us", "p95_error_us"],
+      "properties": {
+        "median_error_us": {
+          "type": "integer",
+          "description": "Maximum acceptable median absolute error in microseconds (default: 100000 = 100ms)"
+        },
+        "p95_error_us": {
+          "type": "integer",
+          "description": "Maximum acceptable 95th percentile error in microseconds (default: 500000 = 500ms)"
+        }
+      }
+    }
+  }
+}
