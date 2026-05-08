@@ -19,6 +19,13 @@ use crate::managers::editor::Word;
 /// position. The segment endpoints themselves come from the ASR engine and
 /// are treated as authoritative.
 ///
+/// When `vad` is `Some`, per-frame speech probabilities are computed for
+/// each segment and fed into the DP cost function to penalize placing
+/// boundaries on speech frames. This improves boundary quality on content
+/// with background noise, whispered speech, or connected consonants where
+/// the energy signal alone is ambiguous. When `None`, energy-only mode is
+/// used (the original behavior).
+///
 /// **Fallback to char-proportional split.** When the aligner declines a
 /// segment (returns `None`) — e.g. the slice is too short to produce enough
 /// energy frames, or no valid interior search window exists — we fall back
@@ -33,6 +40,7 @@ pub(super) fn build_words_from_segments(
     full_text: &str,
     segments: &[TranscriptionSegment],
     samples: &[f32],
+    mut vad: Option<&mut crate::audio_toolkit::vad::SileroVad>,
 ) -> (Vec<Word>, Vec<WordAlignmentMeta>) {
     let mut words = Vec::new();
     let mut meta = Vec::new();
@@ -74,12 +82,39 @@ pub(super) fn build_words_from_segments(
         }
 
         // Primary path: DP forced alignment against frame-level RMS.
+        // When a VAD is available, compute per-frame speech probabilities for
+        // this segment's audio and pass them to the DP cost function. This
+        // penalizes placing word boundaries on speech frames, improving
+        // alignment on content where energy alone is ambiguous.
+        let vad_probs = if let Some(ref mut vad_inst) = vad {
+            use crate::audio_toolkit::timing::us_to_sample_clamped;
+            let start_s = us_to_sample_clamped(seg_start_us, SAMPLE_RATE_HZ, samples.len());
+            let end_s_raw = us_to_sample_clamped(seg_end_us, SAMPLE_RATE_HZ, samples.len());
+            let end_s = if end_s_raw + 1 >= samples.len() { samples.len() } else { end_s_raw };
+            if end_s > start_s {
+                let slice = &samples[start_s..end_s];
+                let energy_frames = crate::audio_toolkit::forced_alignment::EnergyFrames::compute(
+                    slice,
+                    SAMPLE_RATE_HZ,
+                );
+                crate::audio_toolkit::forced_alignment::compute_vad_probs(
+                    vad_inst,
+                    slice,
+                    energy_frames.frames.len(),
+                )
+            } else {
+                None
+            }
+        } else {
+            None
+        };
         if let Some(mut aligned) = crate::audio_toolkit::forced_alignment::align_words_in_segment(
             &seg_words,
             seg_start_us,
             seg_end_us,
             samples,
             SAMPLE_RATE_HZ,
+            vad_probs.as_deref(),
         ) {
             // Trim trailing silence from the last word. The DP aligner pins
             // the last word's end to `seg_end_us`, which often includes a

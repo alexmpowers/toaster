@@ -175,7 +175,11 @@ pub async fn transcribe_media_file(
                         .to_string(),
                 );
             }
-            let (w, m) = build_words_from_segments(&text, segs, &samples);
+            // Try to create a VAD instance for boundary-quality improvement.
+            // Gracefully falls back to energy-only alignment when the model is
+            // unavailable (not downloaded, ORT init failure, etc.).
+            let mut vad_instance = try_open_vad(&app);
+            let (w, m) = build_words_from_segments(&text, segs, &samples, vad_instance.as_mut());
             (w, Some(m))
         };
 
@@ -204,6 +208,28 @@ pub async fn transcribe_media_file(
     state.set_words(words);
 
     Ok(state.get_words().to_vec())
+}
+
+/// Try to open a Silero VAD for boundary quality improvement during
+/// forced alignment. Returns `None` gracefully when the model isn't
+/// downloaded or ORT init fails — the aligner falls back to energy-only.
+fn try_open_vad(app: &AppHandle) -> Option<crate::audio_toolkit::vad::SileroVad> {
+    use crate::audio_toolkit::vad::prefilter::try_open_silero;
+
+    let model_manager = app
+        .try_state::<Arc<crate::managers::model::ModelManager>>()?;
+    let model_path = model_manager.get_model_path("silero-vad").ok()?;
+    match try_open_silero(&model_path) {
+        Ok(Some(vad)) => {
+            info!("VAD-aware alignment: Silero loaded successfully");
+            Some(vad)
+        }
+        Ok(None) => None,
+        Err(e) => {
+            log::warn!("VAD-aware alignment: Silero open failed ({e}); using energy-only");
+            None
+        }
+    }
 }
 
 #[cfg(test)]

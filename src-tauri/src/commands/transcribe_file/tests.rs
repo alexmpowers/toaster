@@ -68,7 +68,7 @@ fn proportional_split_gives_short_leading_word_adequate_duration() {
         text: " I said hello".to_string(),
     }];
     let samples = vec![0.3_f32; 24_000]; // 1.5 s at 16 kHz
-    let (words, _meta) = build_words_from_segments("I said hello", &segments, &samples);
+    let (words, _meta) = build_words_from_segments("I said hello", &segments, &samples, None);
     assert_eq!(words.len(), 3);
 
     // With MIN_WORD_CHAR_WEIGHT=1, "I" (1 char) out of
@@ -92,7 +92,7 @@ fn proportional_split_equal_words_stay_even() {
         text: " hello world".to_string(),
     }];
     let samples = vec![0.3_f32; 16_000];
-    let (words, _) = build_words_from_segments("hello world", &segments, &samples);
+    let (words, _) = build_words_from_segments("hello world", &segments, &samples, None);
     assert_eq!(words.len(), 2);
     let d0 = words[0].end_us - words[0].start_us;
     let d1 = words[1].end_us - words[1].start_us;
@@ -275,7 +275,7 @@ fn beginning_short_word_deletion_boundary_lands_in_silence() {
     }];
     let total_duration_us = 1_500_000;
 
-    let (mut words, align_meta) = build_words_from_segments("I said hello", &segments, &samples);
+    let (mut words, align_meta) = build_words_from_segments("I said hello", &segments, &samples, None);
     sanitize_word_timestamps(&mut words, total_duration_us);
     realign_suspicious_spans(&mut words, &samples, Some(&align_meta));
     sanitize_word_timestamps(&mut words, total_duration_us);

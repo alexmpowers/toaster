@@ -209,6 +209,17 @@ pub fn trim_trailing_silence(
 /// fluctuations).
 const LAMBDA_DEV: f32 = 0.35;
 
+/// VAD penalty weight. When speech probabilities are supplied, the cost at
+/// boundary frame `b` gains an additional `LAMBDA_VAD * p_speech[b]²` term
+/// that discourages placing word boundaries on frames the VAD classifies as
+/// speech. The effect: boundaries migrate toward non-speech pauses even when
+/// the energy-only signal is ambiguous (e.g. background music, whispered
+/// speech, or connected consonants where RMS is flat).
+///
+/// Set modestly so that clear energy dips still dominate when both signals
+/// agree. The VAD term only tips the balance in ambiguous-energy regions.
+const LAMBDA_VAD: f32 = 0.25;
+
 /// Minimum characters per word for weight computation. Prevents 1-letter
 /// words like "I"/"a" from collapsing to zero weight.
 const MIN_WORD_CHAR_WEIGHT: usize = 1;
@@ -226,12 +237,75 @@ const SEARCH_HALF_FACTOR: f32 = 0.6;
 /// Minimum half-width of the search window in frames (~100 ms at 10 ms hop).
 const MIN_SEARCH_HALF_FRAMES: usize = 10;
 
+/// Compute per-energy-frame VAD speech probabilities for a segment's audio.
+///
+/// Runs Silero VAD at its native 30ms frame rate, then upsamples the
+/// resulting probability curve to the 10ms energy-frame grid via
+/// nearest-neighbor lookup. Returns `None` if the VAD errors on any
+/// frame (caller falls back to energy-only alignment).
+///
+/// `slice` must be mono 16 kHz PCM — the same slice the energy framing
+/// uses. `energy_frame_count` is the number of frames `EnergyFrames::compute`
+/// produced for this slice (determines output length).
+pub fn compute_vad_probs(
+    vad: &mut crate::audio_toolkit::vad::SileroVad,
+    slice: &[f32],
+    energy_frame_count: usize,
+) -> Option<Vec<f32>> {
+    use crate::audio_toolkit::vad::SILERO_FRAME_SAMPLES_16K;
+
+    if energy_frame_count == 0 || slice.is_empty() {
+        return None;
+    }
+
+    // Run Silero at 30ms frames → collect raw probabilities.
+    let mut raw_probs: Vec<f32> = Vec::new();
+    let mut pos = 0usize;
+    // Reset the VAD's LSTM state so each segment starts fresh.
+    crate::audio_toolkit::vad::VoiceActivityDetector::reset(vad);
+
+    while pos + SILERO_FRAME_SAMPLES_16K <= slice.len() {
+        let frame = &slice[pos..pos + SILERO_FRAME_SAMPLES_16K];
+        match vad.compute(frame) {
+            Ok(p) => raw_probs.push(p),
+            Err(e) => {
+                log::warn!("VAD compute failed at offset {pos}: {e}");
+                return None;
+            }
+        }
+        pos += SILERO_FRAME_SAMPLES_16K;
+    }
+
+    if raw_probs.is_empty() {
+        return None;
+    }
+
+    // Upsample 30ms VAD probs → 10ms energy frames via nearest-neighbor.
+    // VAD frame k covers samples [k*480, (k+1)*480). Energy frame j covers
+    // samples starting at j*160. Map j → k via integer division.
+    let hop_energy = ((16_000.0_f64 * FRAME_HOP_SEC).round() as usize).max(1);
+    let mut out = Vec::with_capacity(energy_frame_count);
+    for j in 0..energy_frame_count {
+        let sample_center = j * hop_energy + hop_energy / 2;
+        let vad_idx = (sample_center / SILERO_FRAME_SAMPLES_16K).min(raw_probs.len() - 1);
+        out.push(raw_probs[vad_idx]);
+    }
+
+    Some(out)
+}
+
 /// Per-segment forced alignment.
 ///
 /// Given an engine-reported segment span `[seg_start_us, seg_end_us)` and the
 /// words within it, places the N-1 interior boundaries at the DP-optimal
 /// frames. The first word's start is pinned to `seg_start_us`; the last
 /// word's end is pinned to `seg_end_us`.
+///
+/// When `vad_probs` is `Some`, its length must match the energy frame count
+/// for the segment slice. Each entry is the speech probability in [0, 1]
+/// aligned to the corresponding energy frame. The DP cost gains a
+/// `LAMBDA_VAD * p_speech²` term that penalizes placing boundaries on
+/// speech frames. When `None`, the aligner falls back to energy-only mode.
 ///
 /// Returns `None` when the inputs are too degenerate to align (no words,
 /// non-positive duration, slice outside the sample buffer, or fewer frames
@@ -243,6 +317,7 @@ pub fn align_words_in_segment(
     seg_end_us: i64,
     samples: &[f32],
     sample_rate_hz: f64,
+    vad_probs: Option<&[f32]>,
 ) -> Option<AlignedWords> {
     if words.is_empty() || seg_end_us <= seg_start_us {
         return None;
@@ -279,6 +354,26 @@ pub fn align_words_in_segment(
     }
 
     let norm = frames.normalized();
+
+    // Validate and prepare VAD speech probabilities. When the caller
+    // provides per-frame speech probs, they must match the energy frame
+    // count — otherwise we silently drop the VAD signal rather than
+    // crashing. If the lengths mismatch (e.g. the caller estimated frame
+    // count incorrectly), energy-only mode is strictly safer than using
+    // mis-aligned probs.
+    let vad: Option<&[f32]> = vad_probs.and_then(|probs| {
+        if probs.len() == f {
+            Some(probs)
+        } else {
+            log::warn!(
+                "align_words_in_segment: VAD probs length {} != energy frame count {}, \
+                 falling back to energy-only",
+                probs.len(),
+                f,
+            );
+            None
+        }
+    });
 
     // Char-weight expected boundary positions in frames.
     let weights: Vec<usize> = words
@@ -328,10 +423,20 @@ pub fn align_words_in_segment(
     }
 
     // local_cost[i][k] = unary cost of placing boundary i+1 at candidates[i][k].
+    // Cost = energy_norm[b] + LAMBDA_DEV * dev² [+ LAMBDA_VAD * p_speech²]
+    // The VAD term penalizes placing boundaries on speech frames, pushing
+    // them toward silence/pause regions where the energy signal may be
+    // ambiguous (e.g. background music, breathy consonants).
     let local_cost = |i: usize, frame: usize| -> f32 {
         let e = expected_frame(i + 1) as f32;
         let dev = (frame as f32 - e) / f as f32;
-        norm[frame] + LAMBDA_DEV * dev * dev
+        let energy_cost = norm[frame] + LAMBDA_DEV * dev * dev;
+        if let Some(probs) = vad {
+            let p = probs[frame];
+            energy_cost + LAMBDA_VAD * p * p
+        } else {
+            energy_cost
+        }
     };
 
     // dp[i][k] = minimum total cost placing boundaries 1..=i+1 such that
@@ -477,7 +582,7 @@ mod tests {
         let seg_start_us = 0_i64;
         let seg_end_us = 1_300_000_i64;
         let words = ["alpha", "bravo", "charlie"];
-        let aligned = align_words_in_segment(&words, seg_start_us, seg_end_us, &samples, 16_000.0)
+        let aligned = align_words_in_segment(&words, seg_start_us, seg_end_us, &samples, 16_000.0, None)
             .expect("aligner must succeed on well-formed synthetic input");
         assert_eq!(aligned.len(), 3);
         assert_eq!(aligned[0].0, seg_start_us);
@@ -500,7 +605,7 @@ mod tests {
     #[test]
     fn aligner_single_word_returns_whole_span() {
         let samples = vec![0.0_f32; 16_000];
-        let out = align_words_in_segment(&["hello"], 100, 500_000, &samples, 16_000.0).unwrap();
+        let out = align_words_in_segment(&["hello"], 100, 500_000, &samples, 16_000.0, None).unwrap();
         assert_eq!(out, vec![(100, 500_000)]);
     }
 
@@ -509,7 +614,7 @@ mod tests {
         // 30 ms of audio but 4 words requested → insufficient frames.
         let samples = vec![0.0_f32; 480];
         let words = ["a", "b", "c", "d"];
-        assert!(align_words_in_segment(&words, 0, 30_000, &samples, 16_000.0).is_none());
+        assert!(align_words_in_segment(&words, 0, 30_000, &samples, 16_000.0, None).is_none());
     }
 
     #[test]
@@ -518,7 +623,7 @@ mod tests {
         let total_us = (samples.len() as f64 / 16_000.0 * 1_000_000.0) as i64;
         let words = ["one", "two", "three", "four", "five"];
         let out =
-            align_words_in_segment(&words, 0, total_us, &samples, 16_000.0).expect("must align");
+            align_words_in_segment(&words, 0, total_us, &samples, 16_000.0, None).expect("must align");
         assert_eq!(out.len(), 5);
         assert_eq!(out[0].0, 0);
         assert_eq!(out[4].1, total_us);
@@ -533,6 +638,70 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn aligner_with_vad_probs_prefers_non_speech_boundaries() {
+        // Three synthetic words with clear silence gaps (300ms tone + 200ms gap).
+        let (samples, _) = synth_words(0.3, 0.2, 3);
+        let seg_start_us = 0_i64;
+        let seg_end_us = 1_300_000_i64;
+        let words = ["alpha", "bravo", "charlie"];
+
+        // Compute energy frames to get the frame count, then build synthetic
+        // VAD probs: speech=1.0 during tone frames, speech=0.0 during gaps.
+        let frames = EnergyFrames::compute(&samples, 16_000.0);
+        let f = frames.frames.len();
+        let mut vad_probs = vec![0.0f32; f];
+        // Mark tone regions as speech. Each word = 300ms = ~48 frames at 10ms hop.
+        // Gap = 200ms = ~32 frames. Pattern: 48 speech, 32 silence, 48 speech, 32 silence, 48 speech.
+        let word_frames = 48usize;
+        let gap_frames = 32usize;
+        for word_idx in 0..3 {
+            let start = word_idx * (word_frames + gap_frames);
+            for j in start..start + word_frames {
+                if j < f {
+                    vad_probs[j] = 1.0;
+                }
+            }
+        }
+
+        let aligned = align_words_in_segment(
+            &words, seg_start_us, seg_end_us, &samples, 16_000.0,
+            Some(&vad_probs),
+        ).expect("aligner must succeed");
+        assert_eq!(aligned.len(), 3);
+
+        // Boundaries should land in the silence gaps, same as energy-only
+        // (VAD reinforces the energy signal here).
+        let b1 = aligned[0].1;
+        assert!(
+            (300_000..=500_000).contains(&b1),
+            "VAD-aware boundary 1 at {b1} µs not in gap [300_000, 500_000]"
+        );
+        let b2 = aligned[1].1;
+        assert!(
+            (800_000..=1_000_000).contains(&b2),
+            "VAD-aware boundary 2 at {b2} µs not in gap [800_000, 1_000_000]"
+        );
+    }
+
+    #[test]
+    fn aligner_with_mismatched_vad_probs_falls_back() {
+        // If VAD probs have wrong length, the aligner should still succeed
+        // by falling back to energy-only mode.
+        let (samples, _) = synth_words(0.3, 0.2, 3);
+        let seg_start_us = 0_i64;
+        let seg_end_us = 1_300_000_i64;
+        let words = ["alpha", "bravo", "charlie"];
+
+        // Wrong length: just 5 probs instead of matching frame count.
+        let bad_probs = vec![0.5f32; 5];
+        let aligned = align_words_in_segment(
+            &words, seg_start_us, seg_end_us, &samples, 16_000.0,
+            Some(&bad_probs),
+        ).expect("aligner must fall back to energy-only");
+        assert_eq!(aligned.len(), 3);
     }
 
     #[test]

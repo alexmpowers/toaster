@@ -95,6 +95,7 @@ fn forced_aligner_matches_oracle_within_30ms_p95() {
         fx.seg_end_us,
         &samples,
         fx.sample_rate_hz as f64,
+        None,
     )
     .expect("aligner must produce a result for this segment");
 
