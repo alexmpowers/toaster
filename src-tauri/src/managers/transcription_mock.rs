@@ -478,6 +478,7 @@ mod tests {
         };
         let raw = TranscriptionResult {
             text: String::new(),
+            dtw_token_coverage: None,
             segments: Some(segments),
         };
         let audio = AudioInfo {

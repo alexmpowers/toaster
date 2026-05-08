@@ -461,6 +461,7 @@ fn e2e_whisper_adapter_to_aligner_roundtrip() {
     // Realistic Whisper output: 2 segments, ~3s total
     let raw = TranscriptionResult {
         text: "The quick brown fox jumps over the lazy dog".to_string(),
+        dtw_token_coverage: None,
         segments: Some(vec![
             TranscriptionSegment {
                 start: 0.0,

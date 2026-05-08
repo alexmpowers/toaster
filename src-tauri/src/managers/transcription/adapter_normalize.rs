@@ -412,13 +412,38 @@ pub(super) fn adapt_with_auto_detection(
     audio_info: AudioInfo,
 ) -> Result<NormalizedTranscriptionResult> {
     use super::adapter::segments_of;
-    use log::info;
+    use log::{info, warn};
 
     // Sanitize segments before word extraction: clamp overlaps, drop
     // hallucinated segments, strip non-speech. This gives downstream DP
     // forced alignment a clean, monotonic timeline.
     let clean_segs = sanitize_segments(segments_of(&raw));
-    let word_level = segments_are_word_level(&clean_segs);
+    let mut word_level = segments_are_word_level(&clean_segs);
+
+    // If DTW coverage is below threshold, many tokens fell back to
+    // segment-level boundaries. Demote to non-authoritative so the DP
+    // forced aligner can correct the inaccurate timestamps.
+    const DTW_MIN_COVERAGE: f32 = 0.8;
+    if word_level {
+        if let Some(coverage) = raw.dtw_token_coverage {
+            if coverage < DTW_MIN_COVERAGE {
+                warn!(
+                    "{}: DTW token coverage too low ({:.1}% < {:.0}%), \
+                     demoting to non-authoritative (DP alignment will refine)",
+                    engine_name,
+                    coverage * 100.0,
+                    DTW_MIN_COVERAGE * 100.0,
+                );
+                word_level = false;
+            } else {
+                info!(
+                    "{}: DTW token coverage {:.1}% — timestamps trusted",
+                    engine_name,
+                    coverage * 100.0,
+                );
+            }
+        }
+    }
 
     if word_level {
         info!(

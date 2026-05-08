@@ -27,6 +27,7 @@ fn wrap(words: Vec<CanonicalWord>) -> NormalizedTranscriptionResult {
 fn tr(segments: Vec<TranscriptionSegment>) -> TranscriptionResult {
     TranscriptionResult {
         text: String::new(),
+        dtw_token_coverage: None,
         segments: Some(segments),
     }
 }
@@ -215,6 +216,7 @@ fn audio_info_from_samples_computes_duration() {
 fn raw_text_no_segments(text: &str) -> TranscriptionResult {
     TranscriptionResult {
         text: text.to_string(),
+        dtw_token_coverage: None,
         segments: None,
     }
 }
@@ -222,6 +224,7 @@ fn raw_text_no_segments(text: &str) -> TranscriptionResult {
 fn raw_text_empty_segments(text: &str) -> TranscriptionResult {
     TranscriptionResult {
         text: text.to_string(),
+        dtw_token_coverage: None,
         segments: Some(Vec::new()),
     }
 }
@@ -271,6 +274,7 @@ fn adapters_accept_empty_text_and_empty_segments() {
     let audio = AudioInfo::from_samples(32_000, 16_000, 1);
     let silent = TranscriptionResult {
         text: String::new(),
+        dtw_token_coverage: None,
         segments: None,
     };
     let out = WhisperAdapter

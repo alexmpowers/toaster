@@ -242,6 +242,7 @@ impl TranscriptionManager {
         // transcript must faithfully represent what was spoken.
         let raw_for_adapt = transcribe_rs::TranscriptionResult {
             text: corrected_text,
+            dtw_token_coverage: None,
             segments: result.segments,
         };
         let audio_info = adapter::AudioInfo::from_samples(
