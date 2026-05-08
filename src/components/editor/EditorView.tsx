@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { ask, open, save } from "@tauri-apps/plugin-dialog";
@@ -31,6 +31,7 @@ import ExportMenu from "@/components/editor/ExportMenu";
 import KeyboardShortcutsDialog from "@/components/editor/KeyboardShortcutsDialog";
 import { unwrapResult } from "@/components/editor/EditorView.util";
 import { useEditorExports } from "@/components/editor/hooks/useEditorExports";
+import { useEditorKeyboard } from "@/components/editor/hooks/useEditorKeyboard";
 
 /**
  * Top-level editor page. Owns the three-pane layout (import controls on top,
@@ -59,12 +60,6 @@ const EditorView: React.FC = () => {
   const {
     words,
     setWords,
-    deleteWord,
-    silenceWord,
-    splitWord,
-    undo,
-    redo,
-    deleteRange,
     selectWord,
     setSelectionRange,
     clearHighlights,
@@ -73,12 +68,6 @@ const EditorView: React.FC = () => {
     useShallow((s) => ({
       words: s.words,
       setWords: s.setWords,
-      deleteWord: s.deleteWord,
-      silenceWord: s.silenceWord,
-      splitWord: s.splitWord,
-      undo: s.undo,
-      redo: s.redo,
-      deleteRange: s.deleteRange,
       selectWord: s.selectWord,
       setSelectionRange: s.setSelectionRange,
       clearHighlights: s.clearHighlights,
@@ -117,6 +106,8 @@ const EditorView: React.FC = () => {
   } = useEditorExports({ mediaInfo, burnCaptions });
   // Suppress auto-select briefly after a manual word click so it doesn't get overridden
   const manualClickRef = React.useRef(false);
+  // Ref for auto-scrolling to the active word during playback
+  const activeWordRef = useRef<HTMLSpanElement | null>(null);
 
   // Auto-save: save project every 30 seconds when words exist and a save path is known
   useEffect(() => {
@@ -131,152 +122,8 @@ const EditorView: React.FC = () => {
     return () => clearInterval(timer);
   }, [lastSavedPath, words]);
 
-  // Global keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't capture when typing in input/textarea
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-
-      const { setPlaying, isPlaying } = usePlayerStore.getState();
-      const {
-        selectedIndex: selIdx,
-        selectionRange: selRange,
-        highlightedIndices: hlIndices,
-        highlightType: hlType,
-      } = useEditorStore.getState();
-
-      // Help overlay: "?" (Shift+/) or F1, plus Escape-to-close is owned by the dialog.
-      if ((e.key === "?" || e.key === "F1") && !e.ctrlKey && !e.metaKey) {
-        e.preventDefault();
-        setShortcutsOpen((v) => !v);
-        return;
-      }
-
-      if (e.key === " " && !e.ctrlKey && !e.metaKey) {
-        e.preventDefault();
-        setPlaying(!isPlaying);
-      } else if (e.key === "k" && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
-        // J/K/L transport — standard video-editor muscle memory. K toggles play
-        // like Space; J/L jog by 10 s and force-pause so the user lands on a
-        // precise frame. We pause on jog to keep behaviour predictable — users
-        // can press K / Space to resume.
-        e.preventDefault();
-        setPlaying(!isPlaying);
-      } else if (e.key === "j" && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
-        e.preventDefault();
-        const store = usePlayerStore.getState();
-        store.setPlaying(false);
-        store.seekTo(Math.max(0, store.currentTime - 10));
-      } else if (e.key === "l" && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
-        e.preventDefault();
-        const store = usePlayerStore.getState();
-        store.setPlaying(false);
-        store.seekTo(Math.min(store.duration, store.currentTime + 10));
-      } else if (
-        (e.key === "Delete" || e.key === "Backspace") &&
-        !e.ctrlKey &&
-        !e.metaKey
-      ) {
-        e.preventDefault();
-        if (hlIndices.length > 0) {
-          // Bulk-delete highlighted words (fillers or pause-adjacent)
-          if (hlType === "filler") {
-            commands
-              .deleteFillers()
-              .then(async (result) => {
-                const count = unwrapResult(result);
-                if (count > 0) {
-                  await refreshFromBackend();
-                  toast.success(t("editor.cleanup.fillersOnly", { count }));
-                } else {
-                  toast.info(t("editor.cleanup.empty"));
-                }
-                clearHighlights();
-              })
-              .catch((err) => {
-                console.error("Failed to delete fillers:", err);
-                toast.error(t("editor.cleanup.failed"));
-                clearHighlights();
-              });
-          } else {
-            (async () => {
-              for (const idx of hlIndices) {
-                await deleteWord(idx);
-              }
-              clearHighlights();
-            })();
-          }
-        } else if (selRange) {
-          deleteRange(selRange[0], selRange[1]);
-        } else if (selIdx !== null) {
-          deleteWord(selIdx);
-        }
-      } else if (e.key === "ArrowLeft" && !e.ctrlKey && !e.metaKey) {
-        e.preventDefault();
-        const store = usePlayerStore.getState();
-        usePlayerStore.getState().seekTo(Math.max(0, store.currentTime - 5));
-      } else if (e.key === "ArrowRight" && !e.ctrlKey && !e.metaKey) {
-        e.preventDefault();
-        const store = usePlayerStore.getState();
-        usePlayerStore
-          .getState()
-          .seekTo(Math.min(store.duration, store.currentTime + 5));
-      } else if (e.key === "d" && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        if (selRange) {
-          deleteRange(selRange[0], selRange[1]);
-        } else if (selIdx !== null) {
-          deleteWord(selIdx);
-        }
-      } else if (e.key === "m" && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        if (selIdx !== null) {
-          silenceWord(selIdx);
-        }
-      } else if (e.key === "S" && (e.ctrlKey || e.metaKey) && e.shiftKey) {
-        e.preventDefault();
-        if (selIdx !== null) {
-          const w = useEditorStore.getState().words[selIdx];
-          if (w && w.text.length > 1) {
-            splitWord(selIdx, Math.floor(w.text.length / 2));
-          }
-        }
-      } else if (e.key === "a" && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        const ws = useEditorStore.getState().words;
-        if (ws.length > 0) {
-          selectWord(0);
-          setSelectionRange([0, ws.length - 1]);
-        }
-      } else if (e.key === "Escape") {
-        selectWord(null);
-        setSelectionRange(null);
-        clearHighlights();
-      } else if (e.key === "z" && (e.ctrlKey || e.metaKey) && e.shiftKey) {
-        e.preventDefault();
-        redo();
-      } else if (e.key === "z" && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault();
-        undo();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    deleteWord,
-    deleteRange,
-    silenceWord,
-    splitWord,
-    undo,
-    redo,
-    selectWord,
-    setSelectionRange,
-    clearHighlights,
-    refreshFromBackend,
-    t,
-  ]);
+  // Global keyboard shortcuts (extracted to hook for file-size cap)
+  useEditorKeyboard(setShortcutsOpen);
 
   const handleTranscribe = useCallback(async () => {
     if (!mediaInfo) return;
@@ -529,12 +376,36 @@ const EditorView: React.FC = () => {
       // Don't auto-select during a manual word click — let the user's selection stick
       if (manualClickRef.current) return;
       const timeUs = time * 1_000_000;
-      // Half-open interval [start_us, end_us) matches backend convention.
-      const idx = words.findIndex(
-        (w) => !w.deleted && timeUs >= w.start_us && timeUs < w.end_us,
-      );
+      // Binary search: words are sorted by start_us. Find the last word
+      // whose start_us <= timeUs, then check if timeUs < end_us.
+      let lo = 0;
+      let hi = words.length - 1;
+      let idx = -1;
+      while (lo <= hi) {
+        const mid = (lo + hi) >>> 1;
+        if (words[mid].start_us <= timeUs) {
+          lo = mid + 1;
+        } else {
+          hi = mid - 1;
+        }
+      }
+      // hi is now the largest index with start_us <= timeUs
+      for (let i = hi; i >= Math.max(0, hi - 5); i--) {
+        const w = words[i];
+        if (!w.deleted && timeUs >= w.start_us && timeUs < w.end_us) {
+          idx = i;
+          break;
+        }
+      }
       if (idx >= 0) {
         useEditorStore.getState().selectWord(idx);
+        // Auto-scroll the active word into view during playback
+        if (activeWordRef.current) {
+          activeWordRef.current.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+          });
+        }
       }
     },
     [words],
@@ -729,7 +600,7 @@ const EditorView: React.FC = () => {
                 {isTranscribing ? t("editor.transcribing") : t("editor.reset")}
               </Button>
             </div>
-            <TranscriptEditor onWordClick={handleWordClick} />
+            <TranscriptEditor onWordClick={handleWordClick} activeWordRef={activeWordRef} />
           </div>
         </div>
       )}

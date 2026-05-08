@@ -46,16 +46,26 @@ function getConfidenceStyle(confidence: number): React.CSSProperties {
   };
 }
 
+/** Format microseconds as mm:ss.cc for timing tooltip */
+function formatTimeUs(us: number): string {
+  const totalSec = us / 1_000_000;
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  return `${min}:${sec.toFixed(2).padStart(5, "0")}`;
+}
+
 interface TranscriptEditorProps {
   showConfidence?: boolean;
   showSpeakers?: boolean;
   onWordClick?: (index: number) => void;
+  activeWordRef?: React.RefObject<HTMLSpanElement | null>;
 }
 
 const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   showConfidence = true,
   showSpeakers = true,
   onWordClick,
+  activeWordRef,
 }) => {
   const { t } = useTranslation();
   // useShallow is mandatory here: `useEditorStore()` with no selector
@@ -75,6 +85,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
     splitWord,
     deleteRange,
     restoreAll,
+    setWords,
     undo,
     redo,
     selectWord,
@@ -94,6 +105,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
       splitWord: s.splitWord,
       deleteRange: s.deleteRange,
       restoreAll: s.restoreAll,
+      setWords: s.setWords,
       undo: s.undo,
       redo: s.redo,
       selectWord: s.selectWord,
@@ -110,6 +122,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   const [showFind, setShowFind] = useState(false);
   const [findQuery, setFindQuery] = useState("");
   const [findMatchIndex, setFindMatchIndex] = useState(0);
+  const [replaceText, setReplaceText] = useState("");
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     visible: false,
     x: 0,
@@ -246,6 +259,32 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
     setShowFind(false);
   }, [findMatches, deleteWord]);
 
+  const handleReplaceOne = useCallback(async () => {
+    if (findMatches.length === 0 || !replaceText) return;
+    const matchIdx = findMatches[findMatchIndex];
+    const updated = words.map((w, i) =>
+      i === matchIdx ? { ...w, text: replaceText } : w,
+    );
+    await setWords(updated);
+    // Advance to the next match (matches will re-compute)
+    if (findMatches.length > 1) {
+      setFindMatchIndex((prev) =>
+        prev >= findMatches.length - 1 ? 0 : prev,
+      );
+    }
+  }, [findMatches, findMatchIndex, replaceText, words, setWords]);
+
+  const handleReplaceAll = useCallback(async () => {
+    if (findMatches.length === 0 || !replaceText) return;
+    const matchSet = new Set(findMatches);
+    const updated = words.map((w, i) =>
+      matchSet.has(i) ? { ...w, text: replaceText } : w,
+    );
+    await setWords(updated);
+    setFindQuery("");
+    setFindMatchIndex(0);
+  }, [findMatches, replaceText, words, setWords]);
+
   const handleContextMenu = useCallback(
     (index: number, e: React.MouseEvent) => {
       e.preventDefault();
@@ -371,20 +410,25 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
         </div>
       )}
 
-      {/* Find bar */}
+      {/* Find & Replace bar */}
       {showFind && (
         <FindReplaceBar
           findQuery={findQuery}
+          replaceText={replaceText}
           findMatchIndex={findMatchIndex}
           findMatchCount={findMatches.length}
           findInputRef={findInputRef}
           onQueryChange={setFindQuery}
+          onReplaceTextChange={setReplaceText}
           onMatchIndexReset={() => setFindMatchIndex(0)}
           onNavigate={navigateFind}
+          onReplaceOne={handleReplaceOne}
+          onReplaceAll={handleReplaceAll}
           onDeleteAll={handleDeleteAllMatches}
           onClose={() => {
             setShowFind(false);
             setFindQuery("");
+            setReplaceText("");
           }}
         />
       )}
@@ -403,23 +447,31 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
           // resolve correctly without any remapping.
           if (word.deleted && word.text === "") return null;
 
-          // Paragraph break: insert a spacer after every 2-3 sentences.
-          // We detect sentence boundaries by checking if the PREVIOUS
-          // non-deleted word ends with sentence-ending punctuation.
+          // Paragraph break: insert a spacer at natural boundaries.
+          // Strategy: break after sentence-ending punctuation when EITHER:
+          //   1. We've accumulated 3+ sentences since the last break, OR
+          //   2. There's a significant pause (>1.5s) after a sentence end
           let paragraphBreak = false;
           if (index > 0) {
             const prev = words[index - 1];
             if (prev && !prev.deleted && /[.!?]["'»\u201D\u2019)]*$/.test(prev.text)) {
-              // Count how many sentence-ending words precede this one
-              // (scan backward to find the last paragraph break point).
-              let sentenceCount = 0;
-              for (let i = index - 1; i >= 0; i--) {
-                const w = words[i];
-                if (w.deleted) continue;
-                if (/[.!?]["'»\u201D\u2019)]*$/.test(w.text)) sentenceCount++;
-                if (sentenceCount >= 3) break;
+              // Check for long pause between previous word's end and this word's start
+              const pauseUs = word.start_us - prev.end_us;
+              const longPause = pauseUs > 1_500_000; // 1.5 seconds
+
+              if (longPause) {
+                paragraphBreak = true;
+              } else {
+                // Count sentences since last paragraph break
+                let sentenceCount = 0;
+                for (let i = index - 1; i >= 0; i--) {
+                  const w = words[i];
+                  if (w.deleted) continue;
+                  if (/[.!?]["'»\u201D\u2019)]*$/.test(w.text)) sentenceCount++;
+                  if (sentenceCount >= 3) break;
+                }
+                paragraphBreak = sentenceCount >= 3;
               }
-              paragraphBreak = sentenceCount >= 3;
             }
           }
 
@@ -466,6 +518,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                 </div>
               )}
               <span
+                ref={isSelected && activeWordRef ? (el) => { (activeWordRef as React.MutableRefObject<HTMLSpanElement | null>).current = el; } : undefined}
                 role="button"
                 tabIndex={-1}
                 onMouseDown={(e) => handleWordMouseDown(index, e)}
@@ -480,9 +533,9 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                       ? t("editor.duplicateWord")
                       : isHighlighted && highlightType === "pause"
                         ? t("editor.pauseDetected")
-                        : showConfidence && word.confidence < 0.9
-                          ? `${t("editor.confidence")}: ${Math.round(word.confidence * 100)}%`
-                          : undefined
+                        : showConfidence && word.confidence > 0 && word.confidence < 0.9
+                          ? `${t("editor.confidence")}: ${Math.round(word.confidence * 100)}% | ${formatTimeUs(word.start_us)} – ${formatTimeUs(word.end_us)}`
+                          : `${formatTimeUs(word.start_us)} – ${formatTimeUs(word.end_us)}`
                 }
                 className={[
                   "cursor-pointer rounded px-1 py-0.5 transition-colors",
