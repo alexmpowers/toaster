@@ -1,10 +1,11 @@
-use tauri::State;
+use tauri::{Manager, State};
 
 use crate::commands::editor::EditorStore;
 use crate::managers::media::MediaStore;
 use crate::managers::project::ToasterProject;
+use crate::managers::transcription::TranscriptionManager;
 use crate::settings::CaptionProfileSet;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 /// Shared state holding the currently open project's caption profiles.
 /// `None` means "inherit app-level"; `Some(set)` means the project owns
@@ -48,6 +49,13 @@ pub fn save_project(
         settings.caption_profiles
     });
     project.settings.caption_profiles = Some(profiles);
+
+    // Stamp the transcription engine so the project file records which
+    // model produced the timestamps (aids post-hoc timing diagnosis).
+    let engine = app
+        .try_state::<Arc<TranscriptionManager>>()
+        .and_then(|tm| tm.get_current_model());
+    project.transcription_engine = engine;
 
     project.save(std::path::Path::new(&path))
 }

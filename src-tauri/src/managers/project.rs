@@ -9,12 +9,12 @@ use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
-/// Current on-disk project format version. Bumped to 1.1.0 for
-/// `caption-profiles-persistence` (Slice B), which adds the optional
-/// `settings.caption_profiles` field. v1.0.0 files still load cleanly
-/// via `#[serde(default)]` on the new field; the next save rewrites
-/// them as 1.1.0 with the crystallized profiles.
-pub const PROJECT_VERSION: &str = "1.1.0";
+/// Current on-disk project format version. Bumped to 1.2.0 for
+/// `word-onset-alignment`, which adds the optional
+/// `transcription_engine` field for post-hoc diagnosis of timing
+/// issues. v1.0.0 and v1.1.0 files still load cleanly via
+/// `#[serde(default)]`; the next save rewrites them as 1.2.0.
+pub const PROJECT_VERSION: &str = "1.2.0";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToasterProject {
@@ -28,6 +28,11 @@ pub struct ToasterProject {
     pub source_media: Option<PathBuf>,
     pub words: Vec<Word>,
     pub settings: ProjectSettings,
+    /// Engine identifier that produced the transcript (e.g. "whisper-large",
+    /// "parakeet-ctc-1.1b"). `None` for projects created before v1.2.0.
+    /// Enables post-hoc diagnosis of timing quality issues.
+    #[serde(default)]
+    pub transcription_engine: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -76,6 +81,7 @@ impl ToasterProject {
             source_media: None,
             words: Vec::new(),
             settings: ProjectSettings::default(),
+            transcription_engine: None,
         }
     }
 
@@ -283,7 +289,7 @@ mod tests {
     #[test]
     fn version_field_is_correct() {
         let project = ToasterProject::new("Version Check");
-        assert_eq!(project.version, "1.1.0");
+        assert_eq!(project.version, "1.2.0");
     }
 
     #[test]
@@ -314,10 +320,10 @@ mod tests {
     }
 
     #[test]
-    fn project_save_bumps_version_to_1_1_0_and_writes_profiles() {
-        // AC-003-b: after save, the on-disk file has version 1.1.0
+    fn project_save_bumps_version_to_1_2_0_and_writes_profiles() {
+        // AC-003-b: after save, the on-disk file has version 1.2.0
         // and carries a populated `caption_profiles` block.
-        let path = temp_project_path("v1_saves_1_1_0");
+        let path = temp_project_path("v1_saves_1_2_0");
         let mut project = ToasterProject::new("Upgraded");
         project.settings.caption_profiles = Some(CaptionProfileSet {
             desktop: crate::settings::default_desktop_profile(),
@@ -327,7 +333,7 @@ mod tests {
 
         let raw = fs::read_to_string(&path).expect("read-back");
         let parsed: serde_json::Value = serde_json::from_str(&raw).expect("valid json");
-        assert_eq!(parsed["version"], "1.1.0");
+        assert_eq!(parsed["version"], "1.2.0");
         assert!(parsed["settings"]["caption_profiles"].is_object());
         assert!(parsed["settings"]["caption_profiles"]["desktop"].is_object());
         assert!(parsed["settings"]["caption_profiles"]["mobile"].is_object());
@@ -364,7 +370,7 @@ mod tests {
     #[test]
     fn project_v1_0_0_fixture_migrates_on_save() {
         // AC-008-a: open the committed v1.0.0 fixture, save, verify
-        // the result is v1.1.0 with profiles populated.
+        // the result is v1.2.0 with profiles populated.
         let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("..")
             .join("features")
@@ -384,7 +390,7 @@ mod tests {
         project.save(&out).expect("save should succeed");
 
         let saved = ToasterProject::load(&out).expect("resaved load");
-        assert_eq!(saved.version, "1.1.0");
+        assert_eq!(saved.version, "1.2.0");
         assert!(saved.settings.caption_profiles.is_some());
 
         let _ = fs::remove_file(&out);
