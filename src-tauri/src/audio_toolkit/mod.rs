@@ -2,6 +2,7 @@ pub mod audio;
 pub mod constants;
 pub mod forced_alignment;
 pub mod silence;
+pub mod silence_trim;
 pub mod text;
 pub mod timing;
 pub mod utils;
@@ -12,5 +13,6 @@ pub use audio::{
     CpalDeviceInfo,
 };
 pub use silence::{detect_silent_ranges, SilenceDetectConfig};
+pub use silence_trim::{trim_leading_silence, trim_trailing_silence};
 pub use text::{apply_custom_words, filter_transcription_output};
 pub use utils::get_cpal_host;

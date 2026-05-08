@@ -116,12 +116,28 @@ pub(super) fn build_words_from_segments(
             SAMPLE_RATE_HZ,
             vad_probs.as_deref(),
         ) {
+            // Trim leading silence from the first word. The DP aligner pins
+            // boundary[0] to `seg_start_us`, which often includes pre-speech
+            // padding from the ASR engine (200-300 ms on Parakeet, variable
+            // on Whisper). Detecting and trimming this silence prevents words
+            // from highlighting before the speaker actually begins.
+            if let Some(first) = aligned.first_mut() {
+                let trimmed_start = crate::audio_toolkit::silence_trim::trim_leading_silence(
+                    samples,
+                    first.0,  // first word's start (== seg_start_us)
+                    first.1,  // first word's end
+                    SAMPLE_RATE_HZ,
+                );
+                if trimmed_start < first.1 {
+                    first.0 = trimmed_start;
+                }
+            }
             // Trim trailing silence from the last word. The DP aligner pins
             // the last word's end to `seg_end_us`, which often includes a
             // long trailing pause reported by the ASR engine. Detecting and
             // trimming this silence prevents "for." from spanning 6+ seconds.
             if let Some(last) = aligned.last_mut() {
-                let trimmed_end = crate::audio_toolkit::forced_alignment::trim_trailing_silence(
+                let trimmed_end = crate::audio_toolkit::silence_trim::trim_trailing_silence(
                     samples,
                     last.0,   // last word's start
                     last.1,   // last word's end (== seg_end_us)
@@ -153,11 +169,24 @@ pub(super) fn build_words_from_segments(
             let char_fraction = sw.len().max(MIN_WORD_CHAR_WEIGHT) as f64 / total_chars as f64;
             let word_duration_us = round_f64_to_i64(seg_duration_us as f64 * char_fraction);
 
-            let word_start = cursor_us;
+            let mut word_start = cursor_us;
+            // First word: trim leading silence (symmetric with last-word
+            // trailing trim below).
+            if j == 0 {
+                let trimmed = crate::audio_toolkit::silence_trim::trim_leading_silence(
+                    samples,
+                    cursor_us,
+                    seg_end_us,
+                    SAMPLE_RATE_HZ,
+                );
+                if trimmed < seg_end_us {
+                    word_start = trimmed;
+                }
+            }
             let mut word_end = if j == seg_words.len() - 1 {
                 // Last word: trim trailing silence instead of absorbing the
                 // entire segment remainder.
-                let trimmed = crate::audio_toolkit::forced_alignment::trim_trailing_silence(
+                let trimmed = crate::audio_toolkit::silence_trim::trim_trailing_silence(
                     samples,
                     cursor_us,
                     seg_end_us,

@@ -21,8 +21,9 @@ use std::fs;
 use std::path::PathBuf;
 
 use toaster_app_lib::audio_toolkit::forced_alignment::{
-    align_words_in_segment, trim_trailing_silence, EnergyFrames,
+    align_words_in_segment, EnergyFrames,
 };
+use toaster_app_lib::audio_toolkit::silence_trim::{trim_leading_silence, trim_trailing_silence};
 use toaster_app_lib::managers::editor::{ValidatedWordSequence, Word};
 use toaster_app_lib::managers::transcription::adapter::{
     AudioInfo, WhisperAdapter,
@@ -187,6 +188,13 @@ fn e2e_multi_segment_alignment_pipeline() {
             SR,
             None,
         ) {
+            // Trim leading silence (same as word_builder.rs)
+            if let Some(first) = aligned.first_mut() {
+                let trimmed = trim_leading_silence(&samples, first.0, first.1, SR);
+                if trimmed < first.1 {
+                    first.0 = trimmed;
+                }
+            }
             // Trim trailing silence (same as word_builder.rs)
             if let Some(last) = aligned.last_mut() {
                 let trimmed = trim_trailing_silence(&samples, last.0, last.1, SR);
@@ -595,6 +603,64 @@ fn e2e_trailing_silence_trimmed_in_pipeline() {
     eprintln!(
         "e2e trailing silence: word end = {} µs (segment end = {})",
         last_word_end, seg_end_us
+    );
+}
+
+/// Leading silence should be trimmed from the first word. Use a single word
+/// with 500ms of silence before the tone.
+#[test]
+fn e2e_leading_silence_trimmed_in_pipeline() {
+    let total_sec = 1.0;
+    let total_samples = (total_sec * SR) as usize;
+    let total_duration_us = seconds_to_us(total_sec);
+
+    // Speech starts at 500ms, ends at 800ms
+    let oracle = vec![
+        OracleWord { text: "hello".into(), tone_start_sec: 0.5, tone_end_sec: 0.8 },
+    ];
+    let samples = synth_audio_from_oracle(&oracle, total_samples);
+
+    let seg_start_us = 0_i64;
+    let seg_end_us = total_duration_us;
+    let words = ["hello"];
+
+    let mut aligned = align_words_in_segment(
+        &words, seg_start_us, seg_end_us, &samples, SR, None,
+    )
+    .expect("aligner must succeed");
+
+    // Apply leading silence trim (mirrors word_builder.rs production path)
+    if let Some(first) = aligned.first_mut() {
+        let trimmed = trim_leading_silence(&samples, first.0, first.1, SR);
+        if trimmed < first.1 {
+            first.0 = trimmed;
+        }
+    }
+
+    let word_vec: Vec<Word> = words
+        .iter()
+        .zip(aligned.iter())
+        .map(|(text, (start, end))| mkword(text, *start, *end))
+        .collect();
+
+    let validated = ValidatedWordSequence::sanitize(word_vec, total_duration_us);
+    let final_words = validated.into_inner();
+
+    assert_eq!(final_words.len(), 1);
+    assert_word_invariants(&final_words, total_duration_us);
+
+    // Speech starts at ~500ms. After trim, word start should be near 500ms,
+    // NOT at 0ms (the raw segment start).
+    let first_word_start = final_words.first().unwrap().start_us;
+    assert!(
+        first_word_start > 300_000,
+        "leading silence not trimmed: word starts at {} µs (expected > 300_000)",
+        first_word_start,
+    );
+
+    eprintln!(
+        "e2e leading silence: word start = {} µs (segment start = {})",
+        first_word_start, seg_start_us
     );
 }
 
