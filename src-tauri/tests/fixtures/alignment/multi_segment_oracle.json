@@ -1,0 +1,34 @@
+{
+  "_doc": "E2E pipeline fixture: 3 Whisper-style phrase segments with synthetic audio. Each segment contains 2-3 words of 250ms tone separated by 150ms silence. Segment boundaries include ~100ms trailing silence (realistic Whisper padding). Tests the full path: adapter segments → DP forced alignment → trailing silence trim → ValidatedWordSequence.",
+  "sample_rate_hz": 16000,
+  "segments": [
+    {
+      "start_sec": 0.0,
+      "end_sec": 1.4,
+      "text": "hello beautiful world"
+    },
+    {
+      "start_sec": 1.6,
+      "end_sec": 2.6,
+      "text": "this is great"
+    },
+    {
+      "start_sec": 2.8,
+      "end_sec": 3.6,
+      "text": "thank you"
+    }
+  ],
+  "oracle_words": [
+    { "text": "hello",     "tone_start_sec": 0.0,  "tone_end_sec": 0.25  },
+    { "text": "beautiful", "tone_start_sec": 0.40, "tone_end_sec": 0.65  },
+    { "text": "world",     "tone_start_sec": 0.80, "tone_end_sec": 1.05  },
+    { "text": "this",      "tone_start_sec": 1.60, "tone_end_sec": 1.85  },
+    { "text": "is",        "tone_start_sec": 2.00, "tone_end_sec": 2.15  },
+    { "text": "great",     "tone_start_sec": 2.30, "tone_end_sec": 2.55  },
+    { "text": "thank",     "tone_start_sec": 2.80, "tone_end_sec": 3.05  },
+    { "text": "you",       "tone_start_sec": 3.20, "tone_end_sec": 3.45  }
+  ],
+  "total_duration_sec": 3.6,
+  "max_boundary_error_us": 50000,
+  "_note": "Each segment has ~100-350ms trailing silence after the last word's tone ends, realistic of Whisper's segment padding. The aligner should trim trailing silence and place boundaries near tone-to-silence transitions."
+}
