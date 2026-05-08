@@ -146,7 +146,7 @@ pub async fn transcribe_media_file(
                 "Using {} authoritative adapter words (skipping build_words_from_segments)",
                 adapter_words.len()
             );
-            let words: Vec<Word> = adapter_words
+            let mut words: Vec<Word> = adapter_words
                 .into_iter()
                 .map(|cw| Word {
                     text: cw.text,
@@ -158,6 +158,33 @@ pub async fn transcribe_media_file(
                     speaker_id: cw.speaker_id,
                 })
                 .collect();
+
+            // Apply leading silence trim to authoritative words that start
+            // a new speech segment (first word, or after a gap > 200ms).
+            // Parakeet word-level timestamps include pre-speech padding in
+            // the first word of each utterance, causing early highlighting.
+            if has_pre_speech_padding && !words.is_empty() {
+                const GAP_THRESHOLD_US: i64 = 200_000;
+                for i in 0..words.len() {
+                    let is_segment_start = if i == 0 {
+                        true
+                    } else {
+                        words[i].start_us - words[i - 1].end_us > GAP_THRESHOLD_US
+                    };
+                    if is_segment_start {
+                        let trimmed = crate::audio_toolkit::silence_trim::trim_leading_silence_padded(
+                            &samples,
+                            words[i].start_us,
+                            words[i].end_us,
+                            sample_rate,
+                        );
+                        if trimmed < words[i].end_us {
+                            words[i].start_us = trimmed;
+                        }
+                    }
+                }
+            }
+
             let meta = vec![WordAlignmentMeta { interpolated: false }; words.len()];
             (words, Some(meta))
         } else {

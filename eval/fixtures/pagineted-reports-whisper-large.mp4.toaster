@@ -1,0 +1,7155 @@
+{
+  "version": "1.1.0",
+  "name": "pagineted-reports.mp4",
+  "created_at": "2026-05-07T21:54:11.945726200+00:00",
+  "modified_at": "2026-05-07T21:54:11.946014600+00:00",
+  "source_media": "C:\\git\\toaster\\eval\\fixtures\\pagineted-reports.mp4",
+  "words": [
+    {
+      "text": "Yo!",
+      "start_us": 0,
+      "end_us": 394938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Welcome",
+      "start_us": 394938,
+      "end_us": 942500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 942500,
+      "end_us": 990000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Guy",
+      "start_us": 990000,
+      "end_us": 1070000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "in",
+      "start_us": 1070000,
+      "end_us": 1137500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "a",
+      "start_us": 1137500,
+      "end_us": 1297188,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Cube,",
+      "start_us": 1297188,
+      "end_us": 1957438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 1957438,
+      "end_us": 1980312,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "in",
+      "start_us": 1980312,
+      "end_us": 2558000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "this",
+      "start_us": 2558000,
+      "end_us": 2852250,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "course,",
+      "start_us": 2852250,
+      "end_us": 3382500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "we're",
+      "start_us": 3382500,
+      "end_us": 3820000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "going",
+      "start_us": 3820000,
+      "end_us": 3900000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 3900000,
+      "end_us": 3986500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "talk",
+      "start_us": 3986500,
+      "end_us": 4442500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "about",
+      "start_us": 4442500,
+      "end_us": 4977438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "paginated",
+      "start_us": 4977438,
+      "end_us": 5735062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "reports,",
+      "start_us": 5735062,
+      "end_us": 6485500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "when",
+      "start_us": 6485500,
+      "end_us": 6540000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "they're",
+      "start_us": 6540000,
+      "end_us": 7407562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 7407562,
+      "end_us": 7642312,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "right",
+      "start_us": 7642312,
+      "end_us": 7721000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "tool,",
+      "start_us": 7721000,
+      "end_us": 8382687,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "which",
+      "start_us": 8382687,
+      "end_us": 9082438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "authoring",
+      "start_us": 9082438,
+      "end_us": 9235000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "experience",
+      "start_us": 9235000,
+      "end_us": 9983250,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "you",
+      "start_us": 9983250,
+      "end_us": 10692438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "should",
+      "start_us": 10692438,
+      "end_us": 11190000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "use,",
+      "start_us": 11190000,
+      "end_us": 11242000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 11242000,
+      "end_us": 11740000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "how",
+      "start_us": 11740000,
+      "end_us": 11792438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 11792438,
+      "end_us": 11822000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "build",
+      "start_us": 11822000,
+      "end_us": 12547500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "them",
+      "start_us": 12547500,
+      "end_us": 12982500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "right",
+      "start_us": 12982500,
+      "end_us": 12997562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "away.",
+      "start_us": 12997562,
+      "end_us": 13654938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Now,",
+      "start_us": 13654938,
+      "end_us": 13678500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "before",
+      "start_us": 13678500,
+      "end_us": 14440000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "we",
+      "start_us": 14440000,
+      "end_us": 14491438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "jump",
+      "start_us": 14491438,
+      "end_us": 14962938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "in,",
+      "start_us": 14962938,
+      "end_us": 15417500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "think",
+      "start_us": 15417500,
+      "end_us": 16023125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "about",
+      "start_us": 16023125,
+      "end_us": 16045000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "that",
+      "start_us": 16045000,
+      "end_us": 16673625,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "email",
+      "start_us": 16673625,
+      "end_us": 16880000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "that",
+      "start_us": 16880000,
+      "end_us": 17393312,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "hits",
+      "start_us": 17393312,
+      "end_us": 17531938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "your",
+      "start_us": 17531938,
+      "end_us": 17848062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "inbox",
+      "start_us": 17848062,
+      "end_us": 18540000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "at",
+      "start_us": 18540000,
+      "end_us": 18570000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "4",
+      "start_us": 18570000,
+      "end_us": 18614500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "p.m.",
+      "start_us": 18614500,
+      "end_us": 19269875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "in",
+      "start_us": 19269875,
+      "end_us": 19322750,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 19322750,
+      "end_us": 19333000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "afternoon.",
+      "start_us": 19333000,
+      "end_us": 20132625,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "You're",
+      "start_us": 20132625,
+      "end_us": 21012500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "about",
+      "start_us": 21012500,
+      "end_us": 21320000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 21320000,
+      "end_us": 21377500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "leave",
+      "start_us": 21377500,
+      "end_us": 21839625,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "work,",
+      "start_us": 21839625,
+      "end_us": 22410000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 22410000,
+      "end_us": 22478375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "someone",
+      "start_us": 22478375,
+      "end_us": 23235062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "says,",
+      "start_us": 23235062,
+      "end_us": 23727500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "I",
+      "start_us": 23727500,
+      "end_us": 23960000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "need",
+      "start_us": 23960000,
+      "end_us": 24014562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "this",
+      "start_us": 24014562,
+      "end_us": 24635000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "printed,",
+      "start_us": 24635000,
+      "end_us": 25488062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "export",
+      "start_us": 25488062,
+      "end_us": 25531500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "it",
+      "start_us": 25531500,
+      "end_us": 25809938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 25809938,
+      "end_us": 26045500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "PDF,",
+      "start_us": 26045500,
+      "end_us": 26207438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 26207438,
+      "end_us": 26860000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "every,",
+      "start_us": 26860000,
+      "end_us": 26955938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 26955938,
+      "end_us": 27510438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "then,",
+      "start_us": 27510438,
+      "end_us": 28040000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 28040000,
+      "end_us": 28081500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "then.",
+      "start_us": 28081500,
+      "end_us": 28868000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "I",
+      "start_us": 28868000,
+      "end_us": 29747500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "need",
+      "start_us": 29747500,
+      "end_us": 30200001,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "this",
+      "start_us": 30200001,
+      "end_us": 30246750,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "printed,",
+      "start_us": 30246750,
+      "end_us": 31373812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "export",
+      "start_us": 31373812,
+      "end_us": 31417688,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "it",
+      "start_us": 31417688,
+      "end_us": 31765000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 31765000,
+      "end_us": 32082500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "PDF,",
+      "start_us": 32082500,
+      "end_us": 32620001,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 32620001,
+      "end_us": 32705000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "in",
+      "start_us": 32705000,
+      "end_us": 32720937,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "everybody's",
+      "start_us": 32720937,
+      "end_us": 33970500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "inbox",
+      "start_us": 33970500,
+      "end_us": 34130001,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "by",
+      "start_us": 34130001,
+      "end_us": 34167000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "6",
+      "start_us": 34167000,
+      "end_us": 34535250,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "a.m.",
+      "start_us": 34535250,
+      "end_us": 34755000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "tomorrow.",
+      "start_us": 34755000,
+      "end_us": 35869375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "That",
+      "start_us": 35869375,
+      "end_us": 36106688,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "request,",
+      "start_us": 36106688,
+      "end_us": 36782375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "that",
+      "start_us": 36782375,
+      "end_us": 37212500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "request",
+      "start_us": 37212500,
+      "end_us": 37242500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "right",
+      "start_us": 37242500,
+      "end_us": 37900000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "there,",
+      "start_us": 37900000,
+      "end_us": 38537688,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "is",
+      "start_us": 38537688,
+      "end_us": 38867438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 38867438,
+      "end_us": 39153500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "moment",
+      "start_us": 39153500,
+      "end_us": 39320062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "paginated",
+      "start_us": 39320062,
+      "end_us": 40532500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "reports",
+      "start_us": 40532500,
+      "end_us": 40707500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "become",
+      "start_us": 40707500,
+      "end_us": 41202000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "real,",
+      "start_us": 41202000,
+      "end_us": 42037375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "because",
+      "start_us": 42037375,
+      "end_us": 42280001,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "in",
+      "start_us": 42280001,
+      "end_us": 42352250,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "a",
+      "start_us": 42352250,
+      "end_us": 42880001,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "world",
+      "start_us": 42880001,
+      "end_us": 42939500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "full",
+      "start_us": 42939500,
+      "end_us": 43402500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "of",
+      "start_us": 43402500,
+      "end_us": 43425000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "interactive",
+      "start_us": 43425000,
+      "end_us": 44647875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "dashboards,",
+      "start_us": 44647875,
+      "end_us": 45530001,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "you",
+      "start_us": 45530001,
+      "end_us": 45995438,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "know,",
+      "start_us": 45995438,
+      "end_us": 46013000,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "click,",
+      "start_us": 46013000,
+      "end_us": 46499938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "drag,",
+      "start_us": 46499938,
+      "end_us": 47390001,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "drop,",
+      "start_us": 47390001,
+      "end_us": 47473000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "that",
+      "start_us": 47473000,
+      "end_us": 48016000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "one",
+      "start_us": 48016000,
+      "end_us": 48039875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "email",
+      "start_us": 48039875,
+      "end_us": 48732562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "makes",
+      "start_us": 48732562,
+      "end_us": 49152500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "you",
+      "start_us": 49152500,
+      "end_us": 49480001,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "stop",
+      "start_us": 49480001,
+      "end_us": 49561500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 49561500,
+      "end_us": 50200062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "wonder,",
+      "start_us": 50200062,
+      "end_us": 50275188,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "do",
+      "start_us": 50275188,
+      "end_us": 50335125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "I",
+      "start_us": 50335125,
+      "end_us": 50575812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "really",
+      "start_us": 50575812,
+      "end_us": 51295375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "need",
+      "start_us": 51295375,
+      "end_us": 51435000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "this",
+      "start_us": 51435000,
+      "end_us": 52075000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "format?",
+      "start_us": 52075000,
+      "end_us": 52800000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "The",
+      "start_us": 52800000,
+      "end_us": 53155000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "answer",
+      "start_us": 53155000,
+      "end_us": 53609938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "",
+      "start_us": 53220000,
+      "end_us": 53640000,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "is,",
+      "start_us": 53609938,
+      "end_us": 54359938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "sometimes,",
+      "start_us": 54359938,
+      "end_us": 56317500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "absolutely",
+      "start_us": 56317500,
+      "end_us": 57255000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "yes.",
+      "start_us": 57255000,
+      "end_us": 58607000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "In",
+      "start_us": 58607000,
+      "end_us": 59524938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "this",
+      "start_us": 59524938,
+      "end_us": 59972500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "course,",
+      "start_us": 59972500,
+      "end_us": 60367500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "you'll",
+      "start_us": 60367500,
+      "end_us": 60780002,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "know",
+      "start_us": 60780002,
+      "end_us": 60822062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "exactly",
+      "start_us": 60822062,
+      "end_us": 61682500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "when,",
+      "start_us": 61682500,
+      "end_us": 61716000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 61716000,
+      "end_us": 61750002,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "you'll",
+      "start_us": 61750002,
+      "end_us": 62282750,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "know",
+      "start_us": 62282750,
+      "end_us": 62708000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "which",
+      "start_us": 62708000,
+      "end_us": 62720002,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "tool",
+      "start_us": 62720002,
+      "end_us": 63335500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "is",
+      "start_us": 63335500,
+      "end_us": 63397500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "right",
+      "start_us": 63397500,
+      "end_us": 63717375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "for",
+      "start_us": 63717375,
+      "end_us": 63780438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 63780438,
+      "end_us": 64285375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "job.",
+      "start_us": 64285375,
+      "end_us": 64675062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "The",
+      "start_us": 64675062,
+      "end_us": 64782562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "6",
+      "start_us": 64782562,
+      "end_us": 65080000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "a.m.",
+      "start_us": 65080000,
+      "end_us": 65121000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "PDF",
+      "start_us": 65121000,
+      "end_us": 65885000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "deadline",
+      "start_us": 65885000,
+      "end_us": 66817688,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "is",
+      "start_us": 66817688,
+      "end_us": 67564375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "actually,",
+      "start_us": 67564375,
+      "end_us": 68880003,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "or",
+      "start_us": 68880003,
+      "end_us": 68927500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "exactly,",
+      "start_us": 68927500,
+      "end_us": 69720062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 69720062,
+      "end_us": 71006562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "job",
+      "start_us": 71006562,
+      "end_us": 71082438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "paginated",
+      "start_us": 71082438,
+      "end_us": 71690438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "",
+      "start_us": 71190000,
+      "end_us": 71730000,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "reports",
+      "start_us": 71690438,
+      "end_us": 73149938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "were",
+      "start_us": 73149938,
+      "end_us": 73715062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "built",
+      "start_us": 73715062,
+      "end_us": 74350188,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "for.",
+      "start_us": 74350188,
+      "end_us": 75059998,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "A",
+      "start_us": 75059998,
+      "end_us": 75157125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "paginated",
+      "start_us": 75157125,
+      "end_us": 76097438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "report",
+      "start_us": 76097438,
+      "end_us": 76499998,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "is",
+      "start_us": 76499998,
+      "end_us": 76529998,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "a",
+      "start_us": 76529998,
+      "end_us": 76565500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "document",
+      "start_us": 76565500,
+      "end_us": 77097562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "designed",
+      "start_us": 77097562,
+      "end_us": 78013000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 78013000,
+      "end_us": 78089998,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "be",
+      "start_us": 78089998,
+      "end_us": 78495125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "printed",
+      "start_us": 78495125,
+      "end_us": 78647438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "or",
+      "start_us": 78647438,
+      "end_us": 78897438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "exported",
+      "start_us": 78897438,
+      "end_us": 79464875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "with",
+      "start_us": 79464875,
+      "end_us": 79858500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "a",
+      "start_us": 79858500,
+      "end_us": 79911000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "pixel-perfect",
+      "start_us": 79911000,
+      "end_us": 81085062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "layout.",
+      "start_us": 81085062,
+      "end_us": 81677500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Think",
+      "start_us": 81677500,
+      "end_us": 81689998,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "invoices,",
+      "start_us": 81689998,
+      "end_us": 82717500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "think",
+      "start_us": 82717500,
+      "end_us": 82982500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "regulatory",
+      "start_us": 82982500,
+      "end_us": 83409875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "filings,",
+      "start_us": 83409875,
+      "end_us": 84010000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "think",
+      "start_us": 84010000,
+      "end_us": 84695000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "operational",
+      "start_us": 84695000,
+      "end_us": 85394812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "reports",
+      "start_us": 85394812,
+      "end_us": 86019998,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "that",
+      "start_us": 86019998,
+      "end_us": 86049998,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "span",
+      "start_us": 86049998,
+      "end_us": 86091500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "hundreds",
+      "start_us": 86091500,
+      "end_us": 86822375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 86822375,
+      "end_us": 87342500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "hundreds",
+      "start_us": 87342500,
+      "end_us": 87694000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "of",
+      "start_us": 87694000,
+      "end_us": 87759998,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "rows.",
+      "start_us": 87759998,
+      "end_us": 88045000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "The",
+      "start_us": 88045000,
+      "end_us": 89499998,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "point",
+      "start_us": 89499998,
+      "end_us": 89546000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "is",
+      "start_us": 89546000,
+      "end_us": 89727562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "precise",
+      "start_us": 89727562,
+      "end_us": 90240000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "control",
+      "start_us": 90240000,
+      "end_us": 90969998,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "over",
+      "start_us": 90969998,
+      "end_us": 91309875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 91309875,
+      "end_us": 91567438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "output.",
+      "start_us": 91567438,
+      "end_us": 91975000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "When",
+      "start_us": 91975000,
+      "end_us": 92015500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "it",
+      "start_us": 92015500,
+      "end_us": 92231750,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "prints,",
+      "start_us": 92231750,
+      "end_us": 92879999,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "it",
+      "start_us": 92879999,
+      "end_us": 92906500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "looks",
+      "start_us": 92906500,
+      "end_us": 93517500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "exactly",
+      "start_us": 93517500,
+      "end_us": 94139938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "like",
+      "start_us": 94139938,
+      "end_us": 94379999,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 94379999,
+      "end_us": 94434375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "way",
+      "start_us": 94434375,
+      "end_us": 94967375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "you",
+      "start_us": 94967375,
+      "end_us": 94998500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "designed",
+      "start_us": 94998500,
+      "end_us": 95616500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "it.",
+      "start_us": 95616500,
+      "end_us": 95720001,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Page",
+      "start_us": 95720001,
+      "end_us": 96069938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "breaks",
+      "start_us": 96069938,
+      "end_us": 96457375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "where",
+      "start_us": 96457375,
+      "end_us": 97200001,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "you",
+      "start_us": 97200001,
+      "end_us": 97255500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "want",
+      "start_us": 97255500,
+      "end_us": 97942312,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "them,",
+      "start_us": 97942312,
+      "end_us": 98636500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "headers",
+      "start_us": 98636500,
+      "end_us": 98677312,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "that",
+      "start_us": 98677312,
+      "end_us": 99374875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "repeat",
+      "start_us": 99374875,
+      "end_us": 99920001,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "on",
+      "start_us": 99920001,
+      "end_us": 99978000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "every",
+      "start_us": 99978000,
+      "end_us": 100327500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "page,",
+      "start_us": 100327500,
+      "end_us": 101155688,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "footers",
+      "start_us": 101155688,
+      "end_us": 101760000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "with",
+      "start_us": 101760000,
+      "end_us": 102093938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "running",
+      "start_us": 102093938,
+      "end_us": 102884938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "totals",
+      "start_us": 102884938,
+      "end_us": 103215000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 103215000,
+      "end_us": 103812625,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "page",
+      "start_us": 103812625,
+      "end_us": 104259938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "numbers,",
+      "start_us": 104259938,
+      "end_us": 104634062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "that",
+      "start_us": 104634062,
+      "end_us": 104786625,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "kind",
+      "start_us": 104786625,
+      "end_us": 105333438,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "of",
+      "start_us": 105333438,
+      "end_us": 105967688,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "output",
+      "start_us": 105967688,
+      "end_us": 106001500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "control",
+      "start_us": 106001500,
+      "end_us": 106790000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "is",
+      "start_us": 106790000,
+      "end_us": 107355500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "something",
+      "start_us": 107355500,
+      "end_us": 107777500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "interactive",
+      "start_us": 107777500,
+      "end_us": 109080500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "dashboards,",
+      "start_us": 109080500,
+      "end_us": 110094812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "they",
+      "start_us": 110094812,
+      "end_us": 110600000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "just,",
+      "start_us": 110600000,
+      "end_us": 111329500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "they",
+      "start_us": 111329500,
+      "end_us": 111350001,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "just",
+      "start_us": 111350001,
+      "end_us": 111782562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "aren't",
+      "start_us": 111782562,
+      "end_us": 111964938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "built",
+      "start_us": 111964938,
+      "end_us": 112919938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "for.",
+      "start_us": 112919938,
+      "end_us": 113022500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "So",
+      "start_us": 113022500,
+      "end_us": 113122500,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "when",
+      "start_us": 113122500,
+      "end_us": 114290500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "you",
+      "start_us": 114290500,
+      "end_us": 114301812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "do",
+      "start_us": 114301812,
+      "end_us": 114722500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "actually",
+      "start_us": 114722500,
+      "end_us": 115340062,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "reach",
+      "start_us": 115340062,
+      "end_us": 116458500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "",
+      "start_us": 116430000,
+      "end_us": 117000000,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "for",
+      "start_us": 116458500,
+      "end_us": 116570004,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "these,",
+      "start_us": 116570004,
+      "end_us": 116957500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "wait,",
+      "start_us": 116957500,
+      "end_us": 117934938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "",
+      "start_us": 117870000,
+      "end_us": 118440000,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "okay.",
+      "start_us": 117934938,
+      "end_us": 118541125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Here's",
+      "start_us": 118541125,
+      "end_us": 118944938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "some",
+      "start_us": 118944938,
+      "end_us": 119210003,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "use",
+      "start_us": 119210003,
+      "end_us": 119234375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "cases.",
+      "start_us": 119234375,
+      "end_us": 119372750,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "So,",
+      "start_us": 119372750,
+      "end_us": 119652438,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "so",
+      "start_us": 119652438,
+      "end_us": 120040002,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "just",
+      "start_us": 120040002,
+      "end_us": 120069500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 120069500,
+      "end_us": 120080000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "let",
+      "start_us": 120080000,
+      "end_us": 120327500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "you",
+      "start_us": 120327500,
+      "end_us": 120690000,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "know,",
+      "start_us": 120690000,
+      "end_us": 120992000,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "when",
+      "start_us": 120992000,
+      "end_us": 121340002,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "you",
+      "start_us": 121340002,
+      "end_us": 121380000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "actually",
+      "start_us": 121380000,
+      "end_us": 122035000,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "would",
+      "start_us": 122035000,
+      "end_us": 122261812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "reach",
+      "start_us": 122261812,
+      "end_us": 122540000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "for",
+      "start_us": 122540000,
+      "end_us": 122653000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "these",
+      "start_us": 122653000,
+      "end_us": 123180002,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "or",
+      "start_us": 123180002,
+      "end_us": 123222500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "use",
+      "start_us": 123222500,
+      "end_us": 123723000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "these,",
+      "start_us": 123723000,
+      "end_us": 123810000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "invoices",
+      "start_us": 123810000,
+      "end_us": 124185000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 124185000,
+      "end_us": 124432500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "statements,",
+      "start_us": 124432500,
+      "end_us": 125280125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "every",
+      "start_us": 125280125,
+      "end_us": 125293000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "customer",
+      "start_us": 125293000,
+      "end_us": 126099562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "gets",
+      "start_us": 126099562,
+      "end_us": 126290002,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "their",
+      "start_us": 126290002,
+      "end_us": 126332812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "own,",
+      "start_us": 126332812,
+      "end_us": 126740002,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "it's",
+      "start_us": 126740002,
+      "end_us": 126761688,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "formatted",
+      "start_us": 126761688,
+      "end_us": 127547875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "exactly",
+      "start_us": 127547875,
+      "end_us": 127852438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 127852438,
+      "end_us": 128017750,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "same",
+      "start_us": 128017750,
+      "end_us": 128600875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "way.",
+      "start_us": 128600875,
+      "end_us": 128662500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Regulatory",
+      "start_us": 128662500,
+      "end_us": 129707562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 129707562,
+      "end_us": 129935188,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "compliance",
+      "start_us": 129935188,
+      "end_us": 130444938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "reports,",
+      "start_us": 130444938,
+      "end_us": 131322500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "auditors",
+      "start_us": 131322500,
+      "end_us": 131590062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "want",
+      "start_us": 131590062,
+      "end_us": 132409999,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "paper",
+      "start_us": 132409999,
+      "end_us": 132482000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "trails,",
+      "start_us": 132482000,
+      "end_us": 133054000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "not",
+      "start_us": 133054000,
+      "end_us": 133089562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "that's",
+      "start_us": 133089562,
+      "end_us": 133772812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "what",
+      "start_us": 133772812,
+      "end_us": 134442562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "links",
+      "start_us": 134442562,
+      "end_us": 134687500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "operational",
+      "start_us": 134687500,
+      "end_us": 135407625,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "detail,",
+      "start_us": 135407625,
+      "end_us": 136299999,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "a",
+      "start_us": 136299999,
+      "end_us": 136335500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "500",
+      "start_us": 136335500,
+      "end_us": 136409999,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "row",
+      "start_us": 136409999,
+      "end_us": 136439999,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "transaction",
+      "start_us": 136439999,
+      "end_us": 137453812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "log",
+      "start_us": 137453812,
+      "end_us": 137572562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "that",
+      "start_us": 137572562,
+      "end_us": 137926062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "needs",
+      "start_us": 137926062,
+      "end_us": 138469999,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 138469999,
+      "end_us": 138518750,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "land",
+      "start_us": 138518750,
+      "end_us": 139007125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "in",
+      "start_us": 139007125,
+      "end_us": 139540062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "accountings",
+      "start_us": 139540062,
+      "end_us": 139895125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "inbox",
+      "start_us": 139895125,
+      "end_us": 140419999,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "by",
+      "start_us": 140419999,
+      "end_us": 140470500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "morning,",
+      "start_us": 140470500,
+      "end_us": 141145062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "or",
+      "start_us": 141145062,
+      "end_us": 141782125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "you",
+      "start_us": 141782125,
+      "end_us": 141864500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "want",
+      "start_us": 141864500,
+      "end_us": 141899999,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "some",
+      "start_us": 141899999,
+      "end_us": 142574938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "scheduled",
+      "start_us": 142574938,
+      "end_us": 143259875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "distribution",
+      "start_us": 143259875,
+      "end_us": 144270000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "like",
+      "start_us": 144270000,
+      "end_us": 144489812,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "PDFs,",
+      "start_us": 144489812,
+      "end_us": 144992500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "email",
+      "start_us": 144992500,
+      "end_us": 145264938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "that",
+      "start_us": 145264938,
+      "end_us": 145729999,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "6",
+      "start_us": 145729999,
+      "end_us": 145836562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "a.m.",
+      "start_us": 145836562,
+      "end_us": 145855062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 145855062,
+      "end_us": 146009999,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "a",
+      "start_us": 146009999,
+      "end_us": 146053000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "distribution",
+      "start_us": 146053000,
+      "end_us": 147574938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "list.",
+      "start_us": 147574938,
+      "end_us": 147920125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Every.",
+      "start_us": 147920125,
+      "end_us": 148532625,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Single",
+      "start_us": 148532625,
+      "end_us": 148737562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "day,",
+      "start_us": 148737562,
+      "end_us": 149222875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "basically",
+      "start_us": 149222875,
+      "end_us": 149782250,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "print",
+      "start_us": 149782250,
+      "end_us": 150231812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "ready",
+      "start_us": 150231812,
+      "end_us": 150477625,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "documents",
+      "start_us": 150477625,
+      "end_us": 151026125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "when",
+      "start_us": 151026125,
+      "end_us": 151282438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "someone",
+      "start_us": 151282438,
+      "end_us": 151472312,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "literally",
+      "start_us": 151472312,
+      "end_us": 152560000,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "print",
+      "start_us": 152560000,
+      "end_us": 152642625,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "it",
+      "start_us": 152642625,
+      "end_us": 152700000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "out",
+      "start_us": 152700000,
+      "end_us": 153210000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 153210000,
+      "end_us": 153300000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "puts",
+      "start_us": 153300000,
+      "end_us": 153351125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "it",
+      "start_us": 153351125,
+      "end_us": 153460000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "in",
+      "start_us": 153460000,
+      "end_us": 153481500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "a",
+      "start_us": 153481500,
+      "end_us": 153915188,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "binder.",
+      "start_us": 153915188,
+      "end_us": 154370000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "If",
+      "start_us": 154370000,
+      "end_us": 154564500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "any",
+      "start_us": 154564500,
+      "end_us": 154649996,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "of",
+      "start_us": 154649996,
+      "end_us": 154681000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "that",
+      "start_us": 154681000,
+      "end_us": 155532312,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "sounds",
+      "start_us": 155532312,
+      "end_us": 156260938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "like",
+      "start_us": 156260938,
+      "end_us": 157128875,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "your",
+      "start_us": 157128875,
+      "end_us": 157254750,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "world,",
+      "start_us": 157254750,
+      "end_us": 158103125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "paginated",
+      "start_us": 158103125,
+      "end_us": 158985000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "reports",
+      "start_us": 158985000,
+      "end_us": 159622500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "are",
+      "start_us": 159622500,
+      "end_us": 160059250,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "going",
+      "start_us": 160059250,
+      "end_us": 160443750,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 160443750,
+      "end_us": 160611000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "be",
+      "start_us": 160611000,
+      "end_us": 161079996,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "your",
+      "start_us": 161079996,
+      "end_us": 161197000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "best",
+      "start_us": 161197000,
+      "end_us": 161774438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "friend.",
+      "start_us": 161774438,
+      "end_us": 162675125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Now",
+      "start_us": 162675125,
+      "end_us": 162907500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "let's",
+      "start_us": 162907500,
+      "end_us": 162962188,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "talk",
+      "start_us": 162962188,
+      "end_us": 164069993,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "about",
+      "start_us": 164069993,
+      "end_us": 164119000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "interactive",
+      "start_us": 164119000,
+      "end_us": 165355062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "versus",
+      "start_us": 165355062,
+      "end_us": 165897500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "paginated",
+      "start_us": 165897500,
+      "end_us": 166889993,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "power",
+      "start_us": 166889993,
+      "end_us": 167957438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "BI",
+      "start_us": 167957438,
+      "end_us": 168091000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "there.",
+      "start_us": 168091000,
+      "end_us": 168472500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Those",
+      "start_us": 168472500,
+      "end_us": 168767562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "are",
+      "start_us": 168767562,
+      "end_us": 169194938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "interactive",
+      "start_us": 169194938,
+      "end_us": 169462500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "reports",
+      "start_us": 169462500,
+      "end_us": 169904938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 169904938,
+      "end_us": 170220000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "they're",
+      "start_us": 170220000,
+      "end_us": 170902438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "amazing",
+      "start_us": 170902438,
+      "end_us": 171199812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "for",
+      "start_us": 171199812,
+      "end_us": 171487500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "explore",
+      "start_us": 171487500,
+      "end_us": 171800062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "exploration",
+      "start_us": 171800062,
+      "end_us": 172445000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 172445000,
+      "end_us": 173040000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "discovery.",
+      "start_us": 173040000,
+      "end_us": 173535000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "You",
+      "start_us": 173535000,
+      "end_us": 173897500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "filter,",
+      "start_us": 173897500,
+      "end_us": 174294875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "you",
+      "start_us": 174294875,
+      "end_us": 174785000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "slice,",
+      "start_us": 174785000,
+      "end_us": 175240062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "you",
+      "start_us": 175240062,
+      "end_us": 175337500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "drill,",
+      "start_us": 175337500,
+      "end_us": 175910000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "you",
+      "start_us": 175910000,
+      "end_us": 176052438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "discover",
+      "start_us": 176052438,
+      "end_us": 176937500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "things.",
+      "start_us": 176937500,
+      "end_us": 177710000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Nobody.",
+      "start_us": 177710000,
+      "end_us": 178172438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "They",
+      "start_us": 178172438,
+      "end_us": 178845000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "expect",
+      "start_us": 178845000,
+      "end_us": 179415562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "it,",
+      "start_us": 179415562,
+      "end_us": 179430500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "but",
+      "start_us": 179430500,
+      "end_us": 179782000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "try",
+      "start_us": 179782000,
+      "end_us": 179798000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "printing",
+      "start_us": 179798000,
+      "end_us": 180889997,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "one",
+      "start_us": 180889997,
+      "end_us": 180950062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "out.",
+      "start_us": 180950062,
+      "end_us": 181645188,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "It",
+      "start_us": 181645188,
+      "end_us": 181660500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "can",
+      "start_us": 181660500,
+      "end_us": 182240002,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "be",
+      "start_us": 182240002,
+      "end_us": 182270002,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "an",
+      "start_us": 182270002,
+      "end_us": 182346000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "absolute",
+      "start_us": 182346000,
+      "end_us": 183065438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "mess.",
+      "start_us": 183065438,
+      "end_us": 183760000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Sometimes",
+      "start_us": 183760000,
+      "end_us": 184707438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "paginated",
+      "start_us": 184707438,
+      "end_us": 185247688,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "reports",
+      "start_us": 185247688,
+      "end_us": 185879999,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "are",
+      "start_us": 185879999,
+      "end_us": 186097562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 186097562,
+      "end_us": 186114500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "opposite.",
+      "start_us": 186114500,
+      "end_us": 186732375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "They're",
+      "start_us": 186732375,
+      "end_us": 187434938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "optimized",
+      "start_us": 187434938,
+      "end_us": 188587438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "for",
+      "start_us": 188587438,
+      "end_us": 188645000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 188645000,
+      "end_us": 189099999,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "final",
+      "start_us": 189099999,
+      "end_us": 189133500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "paginated",
+      "start_us": 189133500,
+      "end_us": 190005000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "reports",
+      "start_us": 190005000,
+      "end_us": 191022562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "are",
+      "start_us": 191022562,
+      "end_us": 191379999,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 191379999,
+      "end_us": 191439375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "opposite.",
+      "start_us": 191439375,
+      "end_us": 192249938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "They're",
+      "start_us": 192249938,
+      "end_us": 192729938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "optimized",
+      "start_us": 192729938,
+      "end_us": 193399812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "for",
+      "start_us": 193399812,
+      "end_us": 193697562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 193697562,
+      "end_us": 194010005,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "final",
+      "start_us": 194010005,
+      "end_us": 194497438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "output,",
+      "start_us": 194497438,
+      "end_us": 194739000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "not",
+      "start_us": 194739000,
+      "end_us": 194750005,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "for",
+      "start_us": 194750005,
+      "end_us": 195050005,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "poking",
+      "start_us": 195050005,
+      "end_us": 195965000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "around",
+      "start_us": 195965000,
+      "end_us": 196060005,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "exploration",
+      "start_us": 196060005,
+      "end_us": 196691875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "versus",
+      "start_us": 196691875,
+      "end_us": 197547500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "delivery,",
+      "start_us": 197547500,
+      "end_us": 198120005,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "two",
+      "start_us": 198120005,
+      "end_us": 198162000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "different",
+      "start_us": 198162000,
+      "end_us": 198746812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "jobs,",
+      "start_us": 198746812,
+      "end_us": 199612625,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "two",
+      "start_us": 199612625,
+      "end_us": 199756938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "different",
+      "start_us": 199756938,
+      "end_us": 200126312,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "tools.",
+      "start_us": 200126312,
+      "end_us": 200665000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "And",
+      "start_us": 200665000,
+      "end_us": 200957438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "once",
+      "start_us": 200957438,
+      "end_us": 201374000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "you",
+      "start_us": 201374000,
+      "end_us": 201469997,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "see",
+      "start_us": 201469997,
+      "end_us": 201857438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "them",
+      "start_us": 201857438,
+      "end_us": 202319997,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "that",
+      "start_us": 202319997,
+      "end_us": 202590000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "way,",
+      "start_us": 202590000,
+      "end_us": 202889750,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "that",
+      "start_us": 202889750,
+      "end_us": 203359997,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "choice",
+      "start_us": 203359997,
+      "end_us": 203429812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "gets",
+      "start_us": 203429812,
+      "end_us": 204027438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "really,",
+      "start_us": 204027438,
+      "end_us": 204440000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "really,",
+      "start_us": 204440000,
+      "end_us": 205277688,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "really",
+      "start_us": 205277688,
+      "end_us": 205735000,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "simple.",
+      "start_us": 205735000,
+      "end_us": 206327500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "So,",
+      "start_us": 206327500,
+      "end_us": 206742250,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "um,",
+      "start_us": 206742250,
+      "end_us": 208344938,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "why",
+      "start_us": 208344938,
+      "end_us": 208370000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "are",
+      "start_us": 208370000,
+      "end_us": 208387500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "they",
+      "start_us": 208387500,
+      "end_us": 208860000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "still",
+      "start_us": 208860000,
+      "end_us": 209082500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "around?",
+      "start_us": 209082500,
+      "end_us": 209690625,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Well,",
+      "start_us": 209690625,
+      "end_us": 209792500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "some",
+      "start_us": 209792500,
+      "end_us": 210467562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "people",
+      "start_us": 210467562,
+      "end_us": 210638500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "hear",
+      "start_us": 210638500,
+      "end_us": 211044812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "paginated",
+      "start_us": 211044812,
+      "end_us": 211640062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "reports",
+      "start_us": 211640062,
+      "end_us": 212077438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 212077438,
+      "end_us": 212352250,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "they",
+      "start_us": 212352250,
+      "end_us": 212989993,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "think",
+      "start_us": 212989993,
+      "end_us": 213028500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "legacy",
+      "start_us": 213028500,
+      "end_us": 213515000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "old",
+      "start_us": 213515000,
+      "end_us": 214099993,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "school",
+      "start_us": 214099993,
+      "end_us": 214180500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "on",
+      "start_us": 214180500,
+      "end_us": 214499812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 214499812,
+      "end_us": 214929993,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "way",
+      "start_us": 214929993,
+      "end_us": 214964000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "out.",
+      "start_us": 214964000,
+      "end_us": 215292438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Nope,",
+      "start_us": 215292438,
+      "end_us": 216057500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "not",
+      "start_us": 216057500,
+      "end_us": 216371000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "even",
+      "start_us": 216371000,
+      "end_us": 216400007,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "close.",
+      "start_us": 216400007,
+      "end_us": 217422500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Microsoft",
+      "start_us": 217422500,
+      "end_us": 218254500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "keeps",
+      "start_us": 218254500,
+      "end_us": 218700000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "investing",
+      "start_us": 218700000,
+      "end_us": 219722250,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "in",
+      "start_us": 219722250,
+      "end_us": 220055625,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Microsoft",
+      "start_us": 220055625,
+      "end_us": 220542500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "keeps",
+      "start_us": 220542500,
+      "end_us": 220640007,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "investing",
+      "start_us": 220640007,
+      "end_us": 221657562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "in",
+      "start_us": 221657562,
+      "end_us": 221895000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "them.",
+      "start_us": 221895000,
+      "end_us": 222449938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "I'm",
+      "start_us": 222449938,
+      "end_us": 222993438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "a",
+      "start_us": 222993438,
+      "end_us": 223059998,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "sweat.",
+      "start_us": 223059998,
+      "end_us": 224244875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Microsoft",
+      "start_us": 224244875,
+      "end_us": 224977500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "keeps",
+      "start_us": 224977500,
+      "end_us": 226089875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "investing",
+      "start_us": 226089875,
+      "end_us": 226694812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "in",
+      "start_us": 226694812,
+      "end_us": 227612688,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "them.",
+      "start_us": 227612688,
+      "end_us": 227912188,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "They're",
+      "start_us": 227912188,
+      "end_us": 228162375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "in",
+      "start_us": 228162375,
+      "end_us": 228580000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "power",
+      "start_us": 228580000,
+      "end_us": 228628500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "BI,",
+      "start_us": 228628500,
+      "end_us": 228990438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "their",
+      "start_us": 228990438,
+      "end_us": 229728625,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "fabric,",
+      "start_us": 229728625,
+      "end_us": 229802500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 229802500,
+      "end_us": 230597812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "they're",
+      "start_us": 230597812,
+      "end_us": 230632500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "not",
+      "start_us": 230632500,
+      "end_us": 230867875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "slowing",
+      "start_us": 230867875,
+      "end_us": 231597312,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "down.",
+      "start_us": 231597312,
+      "end_us": 231890000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "That's",
+      "start_us": 231890000,
+      "end_us": 232337438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "because",
+      "start_us": 232337438,
+      "end_us": 232744812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "enterprises",
+      "start_us": 232744812,
+      "end_us": 234025000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "still",
+      "start_us": 234025000,
+      "end_us": 234497938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "need",
+      "start_us": 234497938,
+      "end_us": 234625500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "pixel",
+      "start_us": 234625500,
+      "end_us": 235232500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "perfect",
+      "start_us": 235232500,
+      "end_us": 235527500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "output",
+      "start_us": 235527500,
+      "end_us": 235990001,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "at",
+      "start_us": 235990001,
+      "end_us": 236047500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "scale,",
+      "start_us": 236047500,
+      "end_us": 236922438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "formatted",
+      "start_us": 236922438,
+      "end_us": 237779938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "print.",
+      "start_us": 237779938,
+      "end_us": 238042500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "They're",
+      "start_us": 238042500,
+      "end_us": 238632500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "ready",
+      "start_us": 238632500,
+      "end_us": 239210125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "scheduled",
+      "start_us": 239210125,
+      "end_us": 240028062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "documents",
+      "start_us": 240028062,
+      "end_us": 240089998,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "that",
+      "start_us": 240089998,
+      "end_us": 241055438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "need",
+      "start_us": 241055438,
+      "end_us": 241108000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "isn't",
+      "start_us": 241108000,
+      "end_us": 241205000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "going",
+      "start_us": 241205000,
+      "end_us": 242095250,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "anywhere.",
+      "start_us": 242095250,
+      "end_us": 242418500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "At",
+      "start_us": 242418500,
+      "end_us": 242437688,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "least",
+      "start_us": 242437688,
+      "end_us": 242804938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "right",
+      "start_us": 242804938,
+      "end_us": 243320005,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "now,",
+      "start_us": 243320005,
+      "end_us": 243999500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "if",
+      "start_us": 243999500,
+      "end_us": 244107500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "anything,",
+      "start_us": 244107500,
+      "end_us": 244520000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 244520000,
+      "end_us": 244955125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "amount",
+      "start_us": 244955125,
+      "end_us": 245354312,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "of",
+      "start_us": 245354312,
+      "end_us": 245542125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "data",
+      "start_us": 245542125,
+      "end_us": 246212188,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "we're",
+      "start_us": 246212188,
+      "end_us": 246296000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "all",
+      "start_us": 246296000,
+      "end_us": 246310005,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "generating",
+      "start_us": 246310005,
+      "end_us": 247032500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "now,",
+      "start_us": 247032500,
+      "end_us": 247957125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "wait,",
+      "start_us": 247957125,
+      "end_us": 248198000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "if",
+      "start_us": 248198000,
+      "end_us": 248420000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "anything,",
+      "start_us": 248420000,
+      "end_us": 249010375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "with",
+      "start_us": 249010375,
+      "end_us": 249223562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 249223562,
+      "end_us": 249327500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "amount",
+      "start_us": 249327500,
+      "end_us": 249898750,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "of",
+      "start_us": 249898750,
+      "end_us": 250220005,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "data",
+      "start_us": 250220005,
+      "end_us": 250300500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "we're",
+      "start_us": 250300500,
+      "end_us": 250955125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "all",
+      "start_us": 250955125,
+      "end_us": 251364938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "generating",
+      "start_us": 251364938,
+      "end_us": 251960005,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "right",
+      "start_us": 251960005,
+      "end_us": 252715000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "now,",
+      "start_us": 252715000,
+      "end_us": 252800005,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 252800005,
+      "end_us": 252852562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "demand",
+      "start_us": 252852562,
+      "end_us": 253375062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "for",
+      "start_us": 253375062,
+      "end_us": 253844875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "these",
+      "start_us": 253844875,
+      "end_us": 254444875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "reports,",
+      "start_us": 254444875,
+      "end_us": 254789812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "it's",
+      "start_us": 254789812,
+      "end_us": 254912500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "going",
+      "start_us": 254912500,
+      "end_us": 255630005,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "up,",
+      "start_us": 255630005,
+      "end_us": 255674438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "not",
+      "start_us": 255674438,
+      "end_us": 255770005,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "down.",
+      "start_us": 255770005,
+      "end_us": 256414938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "That's",
+      "start_us": 256414938,
+      "end_us": 256735375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "",
+      "start_us": 256620000,
+      "end_us": 257130000,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "why",
+      "start_us": 256735375,
+      "end_us": 257502500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "we're",
+      "start_us": 257502500,
+      "end_us": 258094438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "",
+      "start_us": 257880000,
+      "end_us": 258390000,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "going",
+      "start_us": 258094438,
+      "end_us": 258129985,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 258129985,
+      "end_us": 258649500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "",
+      "start_us": 258420000,
+      "end_us": 259260000,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "cover",
+      "start_us": 258649500,
+      "end_us": 258950000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "two",
+      "start_us": 258950000,
+      "end_us": 259120500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "ways",
+      "start_us": 259120500,
+      "end_us": 259684500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 259684500,
+      "end_us": 259782500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "build",
+      "start_us": 259782500,
+      "end_us": 260680000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "paginated",
+      "start_us": 260680000,
+      "end_us": 261689937,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "reports",
+      "start_us": 261689937,
+      "end_us": 262154500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "in",
+      "start_us": 262154500,
+      "end_us": 262739500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "this",
+      "start_us": 262739500,
+      "end_us": 262789812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "course.",
+      "start_us": 262789812,
+      "end_us": 263654875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "First,",
+      "start_us": 263654875,
+      "end_us": 264300015,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 264300015,
+      "end_us": 264367313,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "web",
+      "start_us": 264367313,
+      "end_us": 264405000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "experience,",
+      "start_us": 264405000,
+      "end_us": 265460500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "right",
+      "start_us": 265460500,
+      "end_us": 265480015,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "inside",
+      "start_us": 265480015,
+      "end_us": 266119813,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "power",
+      "start_us": 266119813,
+      "end_us": 266743000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "BI",
+      "start_us": 266743000,
+      "end_us": 266782750,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 266782750,
+      "end_us": 266932500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "fabric.",
+      "start_us": 266932500,
+      "end_us": 267420563,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "I'll",
+      "start_us": 267420563,
+      "end_us": 267431938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "show",
+      "start_us": 267431938,
+      "end_us": 267695000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "you.",
+      "start_us": 267695000,
+      "end_us": 267947562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "What",
+      "start_us": 267947562,
+      "end_us": 268527500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "it",
+      "start_us": 268527500,
+      "end_us": 268540009,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "can",
+      "start_us": 268540009,
+      "end_us": 269086750,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "do,",
+      "start_us": 269086750,
+      "end_us": 269210009,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 269210009,
+      "end_us": 269292000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "I'll",
+      "start_us": 269292000,
+      "end_us": 269750009,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "be",
+      "start_us": 269750009,
+      "end_us": 269769438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "straight",
+      "start_us": 269769438,
+      "end_us": 270247438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "with",
+      "start_us": 270247438,
+      "end_us": 270660009,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "you",
+      "start_us": 270660009,
+      "end_us": 270982438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "about",
+      "start_us": 270982438,
+      "end_us": 271596500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "air",
+      "start_us": 271596500,
+      "end_us": 271670750,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "falls",
+      "start_us": 271670750,
+      "end_us": 271957375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "short.",
+      "start_us": 271957375,
+      "end_us": 272578000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Then",
+      "start_us": 272578000,
+      "end_us": 272629987,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "probably",
+      "start_us": 272629987,
+      "end_us": 273646000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "our",
+      "start_us": 273646000,
+      "end_us": 273659987,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "report",
+      "start_us": 273659987,
+      "end_us": 274167625,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "builder,",
+      "start_us": 274167625,
+      "end_us": 274767562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 274767562,
+      "end_us": 274779375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "full",
+      "start_us": 274779375,
+      "end_us": 275513000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "desktop",
+      "start_us": 275513000,
+      "end_us": 275937375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "application.",
+      "start_us": 275937375,
+      "end_us": 276787625,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "That's",
+      "start_us": 276787625,
+      "end_us": 277167500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "where",
+      "start_us": 277167500,
+      "end_us": 277379688,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 277379688,
+      "end_us": 277650125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "serious",
+      "start_us": 277650125,
+      "end_us": 278497688,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "production",
+      "start_us": 278497688,
+      "end_us": 278837562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "work",
+      "start_us": 278837562,
+      "end_us": 279099875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "happens.",
+      "start_us": 279099875,
+      "end_us": 279900000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "We'll",
+      "start_us": 279900000,
+      "end_us": 280202625,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "also",
+      "start_us": 280202625,
+      "end_us": 280695062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "connect",
+      "start_us": 280695062,
+      "end_us": 281047438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 281047438,
+      "end_us": 281407250,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "dots",
+      "start_us": 281407250,
+      "end_us": 281710002,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "back",
+      "start_us": 281710002,
+      "end_us": 281810002,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 281810002,
+      "end_us": 281863500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "SSRS",
+      "start_us": 281863500,
+      "end_us": 282368125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "SQL",
+      "start_us": 282368125,
+      "end_us": 282680002,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "server",
+      "start_us": 282680002,
+      "end_us": 282779000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "reporting",
+      "start_us": 282779000,
+      "end_us": 283692500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "services.",
+      "start_us": 283692500,
+      "end_us": 284257500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "I",
+      "start_us": 284257500,
+      "end_us": 284448500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "think",
+      "start_us": 284448500,
+      "end_us": 284899988,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "it's",
+      "start_us": 284899988,
+      "end_us": 284949000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "called",
+      "start_us": 284949000,
+      "end_us": 285500125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "probably",
+      "start_us": 285500125,
+      "end_us": 286212438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "our",
+      "start_us": 286212438,
+      "end_us": 286490562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "report",
+      "start_us": 286490562,
+      "end_us": 286569988,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "server",
+      "start_us": 286569988,
+      "end_us": 287105000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "now",
+      "start_us": 287105000,
+      "end_us": 287439988,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "because",
+      "start_us": 287439988,
+      "end_us": 287939988,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "that",
+      "start_us": 287939988,
+      "end_us": 288045125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "heritage",
+      "start_us": 288045125,
+      "end_us": 288947500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "matters",
+      "start_us": 288947500,
+      "end_us": 289216688,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "more",
+      "start_us": 289216688,
+      "end_us": 289604312,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "than",
+      "start_us": 289604312,
+      "end_us": 289636938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "most",
+      "start_us": 289636938,
+      "end_us": 290395000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "people",
+      "start_us": 290395000,
+      "end_us": 290589988,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "realize",
+      "start_us": 290589988,
+      "end_us": 291005000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "by",
+      "start_us": 291005000,
+      "end_us": 291299988,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 291299988,
+      "end_us": 291355000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "end.",
+      "start_us": 291355000,
+      "end_us": 291735625,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "You'll",
+      "start_us": 291735625,
+      "end_us": 292185250,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "know",
+      "start_us": 292185250,
+      "end_us": 292750125,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "exactly",
+      "start_us": 292750125,
+      "end_us": 293062000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "which",
+      "start_us": 293062000,
+      "end_us": 293292500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "tool",
+      "start_us": 293292500,
+      "end_us": 293809988,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 293809988,
+      "end_us": 293854500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "reach",
+      "start_us": 293854500,
+      "end_us": 294277562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "for,",
+      "start_us": 294277562,
+      "end_us": 294656938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 294656938,
+      "end_us": 294669000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "you'll",
+      "start_us": 294669000,
+      "end_us": 295107500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "be",
+      "start_us": 295107500,
+      "end_us": 295381312,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "ready",
+      "start_us": 295381312,
+      "end_us": 295847312,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 295847312,
+      "end_us": 295874000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "build",
+      "start_us": 295874000,
+      "end_us": 296282438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "reports",
+      "start_us": 296282438,
+      "end_us": 296875562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "that",
+      "start_us": 296875562,
+      "end_us": 296912000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "deliver.",
+      "start_us": 296912000,
+      "end_us": 297514812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "So",
+      "start_us": 297514812,
+      "end_us": 298334000,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "in",
+      "start_us": 298334000,
+      "end_us": 298376938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "closing,",
+      "start_us": 298376938,
+      "end_us": 298795000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "a",
+      "start_us": 298795000,
+      "end_us": 298810005,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "pixel",
+      "start_us": 298810005,
+      "end_us": 299847250,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "perfect",
+      "start_us": 299847250,
+      "end_us": 300001438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "output,",
+      "start_us": 300001438,
+      "end_us": 300607438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "landing",
+      "start_us": 300607438,
+      "end_us": 301189000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "in",
+      "start_us": 301189000,
+      "end_us": 301470062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "someone's",
+      "start_us": 301470062,
+      "end_us": 302209938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "hands",
+      "start_us": 302209938,
+      "end_us": 302687625,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "exactly",
+      "start_us": 302687625,
+      "end_us": 303067438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 303067438,
+      "end_us": 303480005,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "way",
+      "start_us": 303480005,
+      "end_us": 303519500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "they",
+      "start_us": 303519500,
+      "end_us": 303954938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "want",
+      "start_us": 303954938,
+      "end_us": 304570005,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "it",
+      "start_us": 304570005,
+      "end_us": 304633875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "designed.",
+      "start_us": 304633875,
+      "end_us": 305332750,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "No",
+      "start_us": 305332750,
+      "end_us": 305723188,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "other",
+      "start_us": 305723188,
+      "end_us": 306144875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "report",
+      "start_us": 306144875,
+      "end_us": 306392500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "type",
+      "start_us": 306392500,
+      "end_us": 306760000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "does",
+      "start_us": 306760000,
+      "end_us": 307032500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "this",
+      "start_us": 307032500,
+      "end_us": 307569938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "dashboards,",
+      "start_us": 307569938,
+      "end_us": 307870000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "explore",
+      "start_us": 307870000,
+      "end_us": 308678062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "paginated",
+      "start_us": 308678062,
+      "end_us": 309337375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "reports,",
+      "start_us": 309337375,
+      "end_us": 310027500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "deliver",
+      "start_us": 310027500,
+      "end_us": 310414875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "different",
+      "start_us": 310414875,
+      "end_us": 311179996,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "tools,",
+      "start_us": 311179996,
+      "end_us": 311231500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "different",
+      "start_us": 311231500,
+      "end_us": 312279996,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "jobs",
+      "start_us": 312279996,
+      "end_us": 312339996,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "if",
+      "start_us": 312339996,
+      "end_us": 312420000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "it",
+      "start_us": 312420000,
+      "end_us": 312499996,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "needs",
+      "start_us": 312499996,
+      "end_us": 313079750,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 313079750,
+      "end_us": 313542812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "print,",
+      "start_us": 313542812,
+      "end_us": 313562562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "export",
+      "start_us": 313562562,
+      "end_us": 314076000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 314076000,
+      "end_us": 314089996,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "land",
+      "start_us": 314089996,
+      "end_us": 314600000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "in",
+      "start_us": 314600000,
+      "end_us": 315027312,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 315027312,
+      "end_us": 315360812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "inbox.",
+      "start_us": 315360812,
+      "end_us": 315430000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "Paginated",
+      "start_us": 315430000,
+      "end_us": 316190312,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "report",
+      "start_us": 316190312,
+      "end_us": 316950013,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "is",
+      "start_us": 316950013,
+      "end_us": 316974188,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "right",
+      "start_us": 316974188,
+      "end_us": 317694875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "every",
+      "start_us": 317694875,
+      "end_us": 318167375,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "time.",
+      "start_us": 318167375,
+      "end_us": 318380005,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "The",
+      "start_us": 318380005,
+      "end_us": 318456062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "fastest",
+      "start_us": 318456062,
+      "end_us": 319180005,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "way",
+      "start_us": 319180005,
+      "end_us": 319211750,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 319211750,
+      "end_us": 319540000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "prove",
+      "start_us": 319540000,
+      "end_us": 319564812,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "paginated",
+      "start_us": 319564812,
+      "end_us": 320209688,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "reports",
+      "start_us": 320209688,
+      "end_us": 321040005,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "work",
+      "start_us": 321040005,
+      "end_us": 321118062,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "is",
+      "start_us": 321118062,
+      "end_us": 321133500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 321133500,
+      "end_us": 321230005,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "build",
+      "start_us": 321230005,
+      "end_us": 321991000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "one",
+      "start_us": 321991000,
+      "end_us": 322040312,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "without",
+      "start_us": 322040312,
+      "end_us": 322275625,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "installing",
+      "start_us": 322275625,
+      "end_us": 323115000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "anything,",
+      "start_us": 323115000,
+      "end_us": 323742562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "and",
+      "start_us": 323742562,
+      "end_us": 323753000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "that's",
+      "start_us": 323753000,
+      "end_us": 324222500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "possible",
+      "start_us": 324222500,
+      "end_us": 324873438,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "right",
+      "start_us": 324873438,
+      "end_us": 325338000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "now.",
+      "start_us": 325338000,
+      "end_us": 325617938,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "It's",
+      "start_us": 325617938,
+      "end_us": 325637562,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "time",
+      "start_us": 325637562,
+      "end_us": 326102500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "to",
+      "start_us": 326102500,
+      "end_us": 326234500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "go",
+      "start_us": 326234500,
+      "end_us": 326247000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "prove",
+      "start_us": 326247000,
+      "end_us": 326876500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "it.",
+      "start_us": 326876500,
+      "end_us": 326980011,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "We'll",
+      "start_us": 326980011,
+      "end_us": 327359875,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "see",
+      "start_us": 327359875,
+      "end_us": 327370011,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "you.",
+      "start_us": 327370011,
+      "end_us": 327797500,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "In.",
+      "start_us": 327797500,
+      "end_us": 327859985,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "the",
+      "start_us": 327859985,
+      "end_us": 328039985,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "next",
+      "start_us": 328039985,
+      "end_us": 328065000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "module.",
+      "start_us": 328065000,
+      "end_us": 328500000,
+      "deleted": false,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    },
+    {
+      "text": "",
+      "start_us": 328650000,
+      "end_us": 329670000,
+      "deleted": true,
+      "silenced": false,
+      "confidence": -1.0,
+      "speaker_id": -1
+    }
+  ],
+  "settings": {
+    "filler_words": [
+      "um",
+      "uh",
+      "like",
+      "you know",
+      "so",
+      "actually"
+    ],
+    "pause_threshold_us": 1000000,
+    "export_format": "srt",
+    "caption_profiles": {
+      "desktop": {
+        "font_size": 40,
+        "bg_color": "#ff0000BF",
+        "text_color": "#FFFFFF",
+        "position": 92,
+        "font_family": "Inter",
+        "radius_px": 4,
+        "padding_x_px": 12,
+        "padding_y_px": 4,
+        "max_width_percent": 90
+      },
+      "mobile": {
+        "font_size": 53,
+        "bg_color": "#ff0000BF",
+        "text_color": "#FFFFFF",
+        "position": 89,
+        "font_family": "Roboto",
+        "radius_px": 4,
+        "padding_x_px": 12,
+        "padding_y_px": 4,
+        "max_width_percent": 90
+      }
+    }
+  }
+}
