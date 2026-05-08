@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 import { commands } from "@/bindings";
 import { useEditorStore } from "@/stores/editorStore";
 import { usePlayerStore } from "@/stores/playerStore";
@@ -26,18 +27,20 @@ export function useEditorKeyboard(
     setSelectionRange,
     clearHighlights,
     refreshFromBackend,
-  } = useEditorStore((s) => ({
-    deleteWord: s.deleteWord,
-    deleteRange: s.deleteRange,
-    silenceWord: s.silenceWord,
-    splitWord: s.splitWord,
-    undo: s.undo,
-    redo: s.redo,
-    selectWord: s.selectWord,
-    setSelectionRange: s.setSelectionRange,
-    clearHighlights: s.clearHighlights,
-    refreshFromBackend: s.refreshFromBackend,
-  }));
+  } = useEditorStore(
+    useShallow((s) => ({
+      deleteWord: s.deleteWord,
+      deleteRange: s.deleteRange,
+      silenceWord: s.silenceWord,
+      splitWord: s.splitWord,
+      undo: s.undo,
+      redo: s.redo,
+      selectWord: s.selectWord,
+      setSelectionRange: s.setSelectionRange,
+      clearHighlights: s.clearHighlights,
+      refreshFromBackend: s.refreshFromBackend,
+    })),
+  );
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

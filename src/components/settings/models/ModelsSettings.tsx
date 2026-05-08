@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ask } from "@tauri-apps/plugin-dialog";
+import { useShallow } from "zustand/react/shallow";
 import type { ModelCardStatus } from "@/components/onboarding";
 import { ModelCard } from "@/components/onboarding";
 import { useModelStore } from "@/stores/modelStore";
@@ -29,7 +30,22 @@ export const ModelsSettings: React.FC = () => {
     cancelDownload,
     selectModel,
     deleteModel,
-  } = useModelStore();
+  } = useModelStore(
+    useShallow((s) => ({
+      models: s.models,
+      currentModel: s.currentModel,
+      downloadingModels: s.downloadingModels,
+      downloadProgress: s.downloadProgress,
+      downloadStats: s.downloadStats,
+      verifyingModels: s.verifyingModels,
+      extractingModels: s.extractingModels,
+      loading: s.loading,
+      downloadModel: s.downloadModel,
+      cancelDownload: s.cancelDownload,
+      selectModel: s.selectModel,
+      deleteModel: s.deleteModel,
+    })),
+  );
 
   const getModelStatus = (modelId: string): ModelCardStatus => {
     if (modelId in extractingModels) {

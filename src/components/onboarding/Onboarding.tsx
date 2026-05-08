@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 import { commands, type ModelInfo } from "@/bindings";
 import type { ModelCardStatus } from "./ModelCard";
 import ModelCard from "./ModelCard";
@@ -23,7 +24,18 @@ const Onboarding: React.FC<OnboardingProps> = ({ onModelSelected }) => {
     extractingModels,
     downloadProgress: modelDownloadProgress,
     downloadStats,
-  } = useModelStore();
+  } = useModelStore(
+    useShallow((s) => ({
+      models: s.models,
+      downloadModel: s.downloadModel,
+      selectModel: s.selectModel,
+      downloadingModels: s.downloadingModels,
+      verifyingModels: s.verifyingModels,
+      extractingModels: s.extractingModels,
+      downloadProgress: s.downloadProgress,
+      downloadStats: s.downloadStats,
+    })),
+  );
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   // Guard: prevent re-calling selectModel while a selection is already in flight.
   const selectingRef = useRef(false);

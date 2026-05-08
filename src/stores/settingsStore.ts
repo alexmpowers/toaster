@@ -40,6 +40,7 @@ interface SettingsStore {
   isUpdating: Record<string, boolean>;
   audioDevices: AudioDevice[];
   outputDevices: AudioDevice[];
+  initialized: boolean;
 
   // Actions
   initialize: () => Promise<void>;
@@ -165,6 +166,7 @@ export const useSettingsStore = create<SettingsStore>()(
     isUpdating: {},
     audioDevices: [],
     outputDevices: [],
+    initialized: false,
 
     // Internal setters
     setSettings: (settings) => set({ settings }),
@@ -324,6 +326,9 @@ export const useSettingsStore = create<SettingsStore>()(
 
     // Initialize everything
     initialize: async () => {
+      if (get().initialized) return;
+      set({ initialized: true });
+
       const { refreshSettings, loadDefaultSettings } = get();
 
       // Note: Audio devices are NOT refreshed here. The frontend (App.tsx)

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useSettingsStore } from "../stores/settingsStore";
 import type { AppSettings as Settings, AudioDevice } from "@/bindings";
 
@@ -41,12 +41,10 @@ export const useSettings = (): UseSettingsReturn => {
   const getSetting = useSettingsStore((s) => s.getSetting);
   const initialize = useSettingsStore((s) => s.initialize);
 
-  // Initialize once on first mount. Ref guard prevents StrictMode
-  // double-mount from firing two concurrent initialize() calls.
-  const initRef = useRef(false);
+  // Initialize once on first mount. The store's own `initialized` flag
+  // prevents duplicate calls across components and StrictMode double-mount.
   useEffect(() => {
-    if (isLoading && !initRef.current) {
-      initRef.current = true;
+    if (isLoading) {
       initialize();
     }
   }, [isLoading, initialize]);

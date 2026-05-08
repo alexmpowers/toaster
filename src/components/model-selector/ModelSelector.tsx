@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { listen } from "@tauri-apps/api/event";
+import { useShallow } from "zustand/react/shallow";
 import { commands } from "@/bindings";
 import { getTranslatedModelName } from "../../lib/utils/modelTranslation";
 import { useModelStore } from "../../stores/modelStore";
@@ -34,7 +35,17 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onError }) => {
     verifyingModels,
     extractingModels,
     selectModel,
-  } = useModelStore();
+  } = useModelStore(
+    useShallow((s) => ({
+      models: s.models,
+      currentModel: s.currentModel,
+      downloadProgress: s.downloadProgress,
+      downloadStats: s.downloadStats,
+      verifyingModels: s.verifyingModels,
+      extractingModels: s.extractingModels,
+      selectModel: s.selectModel,
+    })),
+  );
 
   const [modelStatus, setModelStatus] = useState<ModelStatus>("unloaded");
   const [modelError, setModelError] = useState<string | null>(null);

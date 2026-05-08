@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useShallow } from "zustand/react/shallow";
 import { usePlayerStore } from "@/stores/playerStore";
 import { useEditorStore } from "@/stores/editorStore";
 import {
@@ -47,7 +48,24 @@ const MediaPlayer: React.FC<MediaPlayerProps> = ({
     setDuration,
     setVolume,
     setPlaybackRate,
-  } = usePlayerStore();
+  } = usePlayerStore(
+    useShallow((s) => ({
+      mediaUrl: s.mediaUrl,
+      mediaType: s.mediaType,
+      isPlaying: s.isPlaying,
+      currentTime: s.currentTime,
+      duration: s.duration,
+      volume: s.volume,
+      playbackRate: s.playbackRate,
+      seekVersion: s.seekVersion,
+      seekTarget: s.seekTarget,
+      setPlaying: s.setPlaying,
+      setCurrentTime: s.setCurrentTime,
+      setDuration: s.setDuration,
+      setVolume: s.setVolume,
+      setPlaybackRate: s.setPlaybackRate,
+    })),
+  );
 
   const words = useEditorStore((s) => s.words);
   const timingContract = useEditorStore((s) => s.timingContract);
