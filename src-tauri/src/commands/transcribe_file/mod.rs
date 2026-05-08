@@ -126,6 +126,7 @@ pub async fn transcribe_media_file(
     let text = normalized.text;
     let segments = normalized.segments;
     let authoritative = normalized.word_timestamps_authoritative;
+    let has_pre_speech_padding = normalized.has_pre_speech_padding;
     let adapter_words = normalized.words;
 
     if text.is_empty() {
@@ -179,7 +180,7 @@ pub async fn transcribe_media_file(
             // Gracefully falls back to energy-only alignment when the model is
             // unavailable (not downloaded, ORT init failure, etc.).
             let mut vad_instance = try_open_vad(&app);
-            let (w, m) = build_words_from_segments(&text, segs, &samples, vad_instance.as_mut());
+            let (w, m) = build_words_from_segments(&text, segs, &samples, vad_instance.as_mut(), has_pre_speech_padding);
             (w, Some(m))
         };
 

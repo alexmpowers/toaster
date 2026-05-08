@@ -13,6 +13,6 @@ pub use audio::{
     CpalDeviceInfo,
 };
 pub use silence::{detect_silent_ranges, SilenceDetectConfig};
-pub use silence_trim::{trim_leading_silence, trim_trailing_silence};
+pub use silence_trim::{trim_leading_silence, trim_leading_silence_padded, trim_trailing_silence};
 pub use text::{apply_custom_words, filter_transcription_output};
 pub use utils::get_cpal_host;

@@ -44,6 +44,7 @@ impl TranscriptionManager {
                 segments: None,
                 language: "und".to_string(),
                 word_timestamps_authoritative: false,
+                has_pre_speech_padding: false,
             });
         }
 
@@ -248,10 +249,13 @@ impl TranscriptionManager {
             adapter.capabilities().native_input_sample_rate_hz,
             1,
         );
-        let normalized = adapter.adapt(raw_for_adapt, audio_info)?;
+        let mut normalized = adapter.adapt(raw_for_adapt, audio_info)?;
+        // Stamp the pre-speech-padding flag from the adapter so the word-
+        // builder can apply model-aware leading-silence trim downstream.
+        normalized.has_pre_speech_padding = adapter.capabilities().has_pre_speech_padding;
         info!(
-            "Transcription normalized: language={} word_timestamps_authoritative={}",
-            normalized.language, normalized.word_timestamps_authoritative
+            "Transcription normalized: language={} word_timestamps_authoritative={} has_pre_speech_padding={}",
+            normalized.language, normalized.word_timestamps_authoritative, normalized.has_pre_speech_padding
         );
         // TEMP-BLEED-DEBUG: dump word timings for splice-bleed investigation.
         // Remove once bleed-phase1-timings is complete.

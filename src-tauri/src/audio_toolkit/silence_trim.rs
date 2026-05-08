@@ -110,6 +110,34 @@ pub fn trim_leading_silence(
     seg_end_us: i64,
     sample_rate_hz: f64,
 ) -> i64 {
+    trim_leading_silence_inner(samples, seg_start_us, seg_end_us, sample_rate_hz, SILENCE_FRACTION, MIN_SILENCE_US)
+}
+
+/// Model-aware variant: when the engine is known to inject pre-speech
+/// padding (e.g. Parakeet), uses a lower threshold and shorter minimum
+/// silence window for more aggressive trim.
+pub fn trim_leading_silence_padded(
+    samples: &[f32],
+    seg_start_us: i64,
+    seg_end_us: i64,
+    sample_rate_hz: f64,
+) -> i64 {
+    // More aggressive: 3% of peak (vs 5%) and 100ms min (vs 200ms).
+    // Parakeet consistently adds 200-300ms of padding, so we want to catch
+    // even shorter silence windows that the default would skip.
+    const PADDED_SILENCE_FRACTION: f32 = 0.03;
+    const PADDED_MIN_SILENCE_US: i64 = 100_000;
+    trim_leading_silence_inner(samples, seg_start_us, seg_end_us, sample_rate_hz, PADDED_SILENCE_FRACTION, PADDED_MIN_SILENCE_US)
+}
+
+fn trim_leading_silence_inner(
+    samples: &[f32],
+    seg_start_us: i64,
+    seg_end_us: i64,
+    sample_rate_hz: f64,
+    silence_fraction: f32,
+    min_silence_us: i64,
+) -> i64 {
     let (start, end) = match sample_range(samples, seg_start_us, seg_end_us, sample_rate_hz) {
         Some(r) => r,
         None => return seg_start_us,
@@ -125,7 +153,7 @@ pub fn trim_leading_silence(
     if peak <= 1e-9 {
         return seg_start_us;
     }
-    let threshold = peak * SILENCE_FRACTION;
+    let threshold = peak * silence_fraction;
 
     let first_speech_frame = match frames.frames.iter().position(|&e| e > threshold) {
         Some(f) => f,
@@ -140,7 +168,7 @@ pub fn trim_leading_silence(
     let trim_frame = first_speech_frame.saturating_sub(1);
     let trim_us = frame_to_us(trim_frame, frames.hop_samples, sample_rate_hz, seg_start_us);
 
-    if trim_us - seg_start_us >= MIN_SILENCE_US {
+    if trim_us - seg_start_us >= min_silence_us {
         trim_us
     } else {
         seg_start_us
@@ -241,5 +269,34 @@ mod tests {
         let samples = vec![0.0f32; 16_000];
         let trimmed = trim_leading_silence(&samples, 0, 1_000_000, 16_000.0);
         assert_eq!(trimmed, 0, "All-silent should not be trimmed");
+    }
+
+    // ── padded leading trim ───────────────────────────────────────────
+
+    #[test]
+    fn padded_trims_shorter_silence_than_default() {
+        // 150ms silence + 300ms speech. Default (200ms min) won't trim;
+        // padded (100ms min) should.
+        let sr = 16_000.0;
+        let silence_samples = (sr * 0.15) as usize;
+        let speech_samples = (sr * 0.3) as usize;
+        let total = silence_samples + speech_samples;
+        let mut samples = vec![0.0f32; total];
+        for i in silence_samples..total {
+            let t = i as f64 / sr;
+            samples[i] = 0.5 * (2.0 * std::f64::consts::PI * 300.0 * t).sin() as f32;
+        }
+
+        let seg_end_us = (total as f64 / sr * 1_000_000.0) as i64;
+
+        let default_trimmed = trim_leading_silence(&samples, 0, seg_end_us, sr);
+        assert_eq!(default_trimmed, 0, "Default should NOT trim 150ms silence");
+
+        let padded_trimmed = trim_leading_silence_padded(&samples, 0, seg_end_us, sr);
+        assert!(padded_trimmed > 0, "Padded should trim 150ms silence");
+        assert!(
+            padded_trimmed >= 100_000,
+            "Padded trim {padded_trimmed} µs too early"
+        );
     }
 }

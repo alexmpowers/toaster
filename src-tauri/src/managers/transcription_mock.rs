@@ -44,6 +44,7 @@ pub mod adapter {
         pub segments: Option<Vec<TranscriptionSegment>>,
         pub language: String,
         pub word_timestamps_authoritative: bool,
+        pub has_pre_speech_padding: bool,
     }
 
     impl NormalizedTranscriptionResult {
@@ -171,6 +172,7 @@ pub mod adapter {
                 segments: segments_for_result,
                 language: "und".to_string(),
                 word_timestamps_authoritative: word_level,
+                has_pre_speech_padding: false,
             })
         }
     }
@@ -320,6 +322,7 @@ impl TranscriptionManager {
             segments,
             language: "und".to_string(),
             word_timestamps_authoritative: false,
+            has_pre_speech_padding: false,
         })
     }
 }

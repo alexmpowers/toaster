@@ -386,6 +386,7 @@ pub(super) fn make_normalized(
         segments: raw.segments,
         language: "und".to_string(),
         word_timestamps_authoritative,
+        has_pre_speech_padding: false,
     };
     result.validate()?;
     Ok(result)

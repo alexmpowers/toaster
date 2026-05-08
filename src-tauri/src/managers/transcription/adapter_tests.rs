@@ -20,6 +20,7 @@ fn wrap(words: Vec<CanonicalWord>) -> NormalizedTranscriptionResult {
         segments: None,
         language: "und".to_string(),
         word_timestamps_authoritative: true,
+        has_pre_speech_padding: false,
     }
 }
 

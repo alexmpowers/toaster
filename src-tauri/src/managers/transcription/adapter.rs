@@ -126,6 +126,11 @@ pub struct NormalizedTranscriptionResult {
     /// `false` means neither applies: downstream code will receive the
     /// adapter's char-proportional seed unchanged and is free to refine.
     pub word_timestamps_authoritative: bool,
+    /// `true` when the engine is known to inject pre-speech padding into its
+    /// segment boundaries (Parakeet). The word-builder uses this to apply a
+    /// more aggressive leading-silence trim, compensating for the 200-300 ms
+    /// of silence that the engine reports before speech onset.
+    pub has_pre_speech_padding: bool,
 }
 
 impl NormalizedTranscriptionResult {

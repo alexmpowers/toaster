@@ -35,12 +35,10 @@ const FIRST_BOUNDARY_FADE_US: i64 = 2_000;
 /// trim was amputating the first/last kept word on those engines. Callers
 /// that know they're in Parakeet territory pass PARAKEET_OUTER_TRIM_US; all
 /// others pass 0. See todo p0-waveform-boundary-policy.
-//
-// Forward-looking infrastructure from todo p0-waveform-boundary-policy. No
-// caller passes this constant yet because the engine type isn't plumbed
-// through EditorState; it will be consumed once the adapter trait lands.
-// TODO(p1-adapter-trait): wire engine_type through EditorState and pass this
-// constant from the Parakeet-aware site.
+///
+/// NOTE: Word-onset leading silence is now handled model-aware by
+/// `audio_toolkit::silence_trim::trim_leading_silence_padded`. This
+/// constant remains for the waveform outer-edge keep-segment trim path.
 #[allow(dead_code)]
 const PARAKEET_OUTER_TRIM_US: i64 = 300_000;
 /// FFmpeg preview render timeout (10 minutes).

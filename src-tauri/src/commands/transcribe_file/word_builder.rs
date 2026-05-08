@@ -41,6 +41,7 @@ pub(super) fn build_words_from_segments(
     segments: &[TranscriptionSegment],
     samples: &[f32],
     mut vad: Option<&mut crate::audio_toolkit::vad::SileroVad>,
+    has_pre_speech_padding: bool,
 ) -> (Vec<Word>, Vec<WordAlignmentMeta>) {
     let mut words = Vec::new();
     let mut meta = Vec::new();
@@ -119,15 +120,23 @@ pub(super) fn build_words_from_segments(
             // Trim leading silence from the first word. The DP aligner pins
             // boundary[0] to `seg_start_us`, which often includes pre-speech
             // padding from the ASR engine (200-300 ms on Parakeet, variable
-            // on Whisper). Detecting and trimming this silence prevents words
-            // from highlighting before the speaker actually begins.
+            // on Whisper). Use aggressive trim for engines with known padding.
             if let Some(first) = aligned.first_mut() {
-                let trimmed_start = crate::audio_toolkit::silence_trim::trim_leading_silence(
-                    samples,
-                    first.0,  // first word's start (== seg_start_us)
-                    first.1,  // first word's end
-                    SAMPLE_RATE_HZ,
-                );
+                let trimmed_start = if has_pre_speech_padding {
+                    crate::audio_toolkit::silence_trim::trim_leading_silence_padded(
+                        samples,
+                        first.0,
+                        first.1,
+                        SAMPLE_RATE_HZ,
+                    )
+                } else {
+                    crate::audio_toolkit::silence_trim::trim_leading_silence(
+                        samples,
+                        first.0,
+                        first.1,
+                        SAMPLE_RATE_HZ,
+                    )
+                };
                 if trimmed_start < first.1 {
                     first.0 = trimmed_start;
                 }
@@ -171,14 +180,23 @@ pub(super) fn build_words_from_segments(
 
             let mut word_start = cursor_us;
             // First word: trim leading silence (symmetric with last-word
-            // trailing trim below).
+            // trailing trim below). Use aggressive trim for padded engines.
             if j == 0 {
-                let trimmed = crate::audio_toolkit::silence_trim::trim_leading_silence(
-                    samples,
-                    cursor_us,
-                    seg_end_us,
-                    SAMPLE_RATE_HZ,
-                );
+                let trimmed = if has_pre_speech_padding {
+                    crate::audio_toolkit::silence_trim::trim_leading_silence_padded(
+                        samples,
+                        cursor_us,
+                        seg_end_us,
+                        SAMPLE_RATE_HZ,
+                    )
+                } else {
+                    crate::audio_toolkit::silence_trim::trim_leading_silence(
+                        samples,
+                        cursor_us,
+                        seg_end_us,
+                        SAMPLE_RATE_HZ,
+                    )
+                };
                 if trimmed < seg_end_us {
                     word_start = trimmed;
                 }
