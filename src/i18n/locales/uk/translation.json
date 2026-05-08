@@ -116,6 +116,11 @@
     "downloadSpeed": "{{speed}} MB/s",
     "cancel": "Скасувати",
     "cancelDownload": "Скасувати завантаження",
+    "recommended": "Recommended",
+    "wordLevelTimestamps": "Word-level timestamps",
+    "approximateTimestamps": "Approximate timestamps",
+    "wordLevelTooltip": "This model produces precise per-word timing, best for editing",
+    "approximateTooltip": "Word timing is estimated from phrase boundaries, editing precision may vary",
     "capabilities": {
       "languageSelection": "Підтримує кілька мов введення",
       "singleLanguage": "Підтримує лише цю мову",

@@ -12,6 +12,10 @@ interface ModelDropdownProps {
   onModelSelect: (modelId: string) => void;
 }
 
+function hasWordLevelTimestamps(model: ModelInfo): boolean {
+  return model.engine_type === "Parakeet";
+}
+
 const ModelDropdown: React.FC<ModelDropdownProps> = ({
   models,
   currentModelId,
@@ -49,21 +53,43 @@ const ModelDropdown: React.FC<ModelDropdownProps> = ({
               }`}
             >
               <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm text-text/80">
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm text-text/80 flex items-center gap-1.5">
                     {getTranslatedModelName(model, t)}
                     {model.is_custom && (
-                      <span className="ms-1.5 text-[10px] font-medium text-text/40 uppercase">
+                      <span className="text-[10px] font-medium text-text/40 uppercase">
                         {t("modelSelector.custom")}
+                      </span>
+                    )}
+                    {model.is_recommended && (
+                      <span className="text-[10px] font-medium text-logo-primary/80 uppercase">
+                        {t("modelSelector.recommended")}
                       </span>
                     )}
                   </div>
                   <div className="text-xs text-text/40 italic pe-4">
                     {getTranslatedModelDescription(model, t)}
                   </div>
+                  <div className="mt-0.5">
+                    {hasWordLevelTimestamps(model) ? (
+                      <span
+                        className="inline-flex items-center gap-0.5 text-[10px] font-medium text-green-600 dark:text-green-400"
+                        title={t("modelSelector.wordLevelTooltip")}
+                      >
+                        ⚡ {t("modelSelector.wordLevelTimestamps")}
+                      </span>
+                    ) : (
+                      <span
+                        className="inline-flex items-center gap-0.5 text-[10px] font-medium text-text/30"
+                        title={t("modelSelector.approximateTooltip")}
+                      >
+                        ⚠ {t("modelSelector.approximateTimestamps")}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {currentModelId === model.id && (
-                  <div className="text-xs text-logo-primary">
+                  <div className="text-xs text-logo-primary shrink-0">
                     {t("modelSelector.active")}
                   </div>
                 )}

@@ -116,6 +116,11 @@
     "downloadSpeed": "{{speed}} ميجابايت/ث",
     "cancel": "إلغاء",
     "cancelDownload": "إلغاء التنزيل",
+    "recommended": "Recommended",
+    "wordLevelTimestamps": "Word-level timestamps",
+    "approximateTimestamps": "Approximate timestamps",
+    "wordLevelTooltip": "This model produces precise per-word timing, best for editing",
+    "approximateTooltip": "Word timing is estimated from phrase boundaries, editing precision may vary",
     "capabilities": {
       "languageSelection": "يدعم اختيار اللغة",
       "singleLanguage": "يدعم هذه اللغة فقط",

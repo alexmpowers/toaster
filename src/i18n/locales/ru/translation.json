@@ -116,6 +116,11 @@
     "downloadSpeed": "{{speed}} МБ/с",
     "cancel": "Отмена",
     "cancelDownload": "Отменить загрузку",
+    "recommended": "Recommended",
+    "wordLevelTimestamps": "Word-level timestamps",
+    "approximateTimestamps": "Approximate timestamps",
+    "wordLevelTooltip": "This model produces precise per-word timing, best for editing",
+    "approximateTooltip": "Word timing is estimated from phrase boundaries, editing precision may vary",
     "capabilities": {
       "languageSelection": "Поддерживает несколько языков ввода",
       "singleLanguage": "Поддерживает только этот язык",

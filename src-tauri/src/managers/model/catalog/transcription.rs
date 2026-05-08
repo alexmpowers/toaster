@@ -26,37 +26,8 @@ pub(super) fn entries() -> Vec<ModelInfo> {
     .map(String::from)
     .collect();
 
-    // TODO this should be read from a JSON file or something..
-    available_models.insert(
-        "small".to_string(),
-        ModelInfo {
-            id: "small".to_string(),
-            name: "Whisper Small".to_string(),
-            description: "Fast and fairly accurate.".to_string(),
-            filename: "ggml-small.bin".to_string(),
-            url: Some("https://blob.handy.computer/ggml-small.bin".to_string()),
-            sha256: Some(
-                "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b".to_string(),
-            ),
-            size_mb: 465,
-            is_downloaded: false,
-            is_downloading: false,
-            partial_size: 0,
-            is_directory: false,
-            engine_type: EngineType::Whisper,
-            accuracy_score: 0.60,
-            speed_score: 0.85,
-            supports_translation: true,
-            is_recommended: false,
-            supported_languages: whisper_languages.clone(),
-            supports_language_selection: true,
-            is_custom: false,
-            category: ModelCategory::Transcription,
-            transcription_metadata: None,
-        },
-    );
+    // Whisper Small removed: 0.60 accuracy too low for editing workflows.
 
-    // Add downloadable models
     available_models.insert(
         "medium".to_string(),
         ModelInfo {
@@ -271,34 +242,7 @@ pub(super) fn entries() -> Vec<ModelInfo> {
         },
     );
 
-    available_models.insert(
-        "moonshine-tiny-streaming-en".to_string(),
-        ModelInfo {
-            id: "moonshine-tiny-streaming-en".to_string(),
-            name: "Moonshine V2 Tiny".to_string(),
-            description: "Ultra-fast, English only".to_string(),
-            filename: "moonshine-tiny-streaming-en".to_string(),
-            url: Some("https://blob.handy.computer/moonshine-tiny-streaming-en.tar.gz".to_string()),
-            sha256: Some(
-                "465addcfca9e86117415677dfdc98b21edc53537210333a3ecdb58509a80abaf".to_string(),
-            ),
-            size_mb: 31,
-            is_downloaded: false,
-            is_downloading: false,
-            partial_size: 0,
-            is_directory: true,
-            engine_type: EngineType::MoonshineStreaming,
-            accuracy_score: 0.55,
-            speed_score: 0.95,
-            supports_translation: false,
-            is_recommended: false,
-            supported_languages: vec!["en".to_string()],
-            supports_language_selection: false,
-            is_custom: false,
-            category: ModelCategory::Transcription,
-            transcription_metadata: None,
-        },
-    );
+    // Moonshine Tiny removed: 0.55 accuracy too low for editing workflows.
 
     available_models.insert(
         "moonshine-small-streaming-en".to_string(),
