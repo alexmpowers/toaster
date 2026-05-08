@@ -41,7 +41,6 @@ pub fn try_lock<T>(result: LockResult<MutexGuard<'_, T>>) -> anyhow::Result<Mute
 }
 
 /// Recover a poisoned `RwLock` read guard, logging a warning. Never panics.
-#[allow(dead_code)]
 pub fn recover_read<T>(result: LockResult<RwLockReadGuard<'_, T>>) -> RwLockReadGuard<'_, T> {
     match result {
         Ok(guard) => guard,
@@ -53,7 +52,6 @@ pub fn recover_read<T>(result: LockResult<RwLockReadGuard<'_, T>>) -> RwLockRead
 }
 
 /// Propagate a poisoned `RwLock` read as an `anyhow::Error`.
-#[allow(dead_code)]
 pub fn try_read<T>(
     result: LockResult<RwLockReadGuard<'_, T>>,
 ) -> anyhow::Result<RwLockReadGuard<'_, T>> {
@@ -61,7 +59,6 @@ pub fn try_read<T>(
 }
 
 /// Recover a poisoned `RwLock` write guard, logging a warning. Never panics.
-#[allow(dead_code)]
 pub fn recover_write<T>(result: LockResult<RwLockWriteGuard<'_, T>>) -> RwLockWriteGuard<'_, T> {
     match result {
         Ok(guard) => guard,
@@ -73,7 +70,6 @@ pub fn recover_write<T>(result: LockResult<RwLockWriteGuard<'_, T>>) -> RwLockWr
 }
 
 /// Propagate a poisoned `RwLock` write as an `anyhow::Error`.
-#[allow(dead_code)]
 pub fn try_write<T>(
     result: LockResult<RwLockWriteGuard<'_, T>>,
 ) -> anyhow::Result<RwLockWriteGuard<'_, T>> {

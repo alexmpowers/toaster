@@ -39,7 +39,6 @@ pub enum VadFrame<'a> {
 
 impl<'a> VadFrame<'a> {
     #[inline]
-    #[allow(dead_code)] // wired by R-002 / R-003 / R-004 consumers in Phase 2.
     pub fn is_speech(&self) -> bool {
         matches!(self, VadFrame::Speech(_))
     }
@@ -54,13 +53,9 @@ impl<'a> VadFrame<'a> {
 /// slice.
 pub trait VoiceActivityDetector: Send + Sync {
     fn push_frame<'a>(&'a mut self, frame: &'a [f32]) -> Result<VadFrame<'a>>;
-
-    #[allow(dead_code)] // used by SmoothedVad and by filler-gap classifier (R-004).
     fn is_voice(&mut self, frame: &[f32]) -> Result<bool> {
         Ok(self.push_frame(frame)?.is_speech())
     }
-
-    #[allow(dead_code)] // used when re-using a detector across analyses.
     fn reset(&mut self) {}
 }
 

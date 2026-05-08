@@ -244,7 +244,6 @@ pub const VAD_FRAME_MS: i64 = 30;
 /// curve is empty or does not cover the search window — ensures the
 /// disabled path is byte-identical to the energy-only path
 /// (AC-003-d guard).
-#[allow(dead_code)] // wired by splice manager once settings flag is read.
 pub fn snap_to_vad_valley(
     target_us: i64,
     samples: &[f32],
@@ -302,7 +301,6 @@ pub fn snap_to_vad_valley(
 /// biased by a precomputed VAD curve when one is supplied. If `vad_curve`
 /// is empty the function is byte-identical to
 /// [`snap_segments_energy_biased`] (AC-003-d).
-#[allow(dead_code)] // wired by splice preview/export once settings flag is read.
 pub fn snap_segments_vad_biased(
     segments: &[(i64, i64)],
     samples: &[f32],

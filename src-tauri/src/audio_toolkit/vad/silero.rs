@@ -34,7 +34,6 @@ pub const SILERO_FRAME_SAMPLES_16K: usize = 480;
 /// Default per-frame speech probability threshold used by R-002 /
 /// R-003 / R-004 consumers. Matches the BLUEPRINT `SPEECH_PROB_THRESHOLD`
 /// constant and the Silero community default of `0.5`.
-#[allow(dead_code)] // wired by Phase 2 consumers (prefilter, boundary, filler).
 pub const DEFAULT_SILERO_THRESHOLD: f32 = 0.5;
 
 /// Silero hidden-state dimensionality (v4). 2 layers × 1 batch × 64 hidden.
@@ -43,8 +42,6 @@ const STATE_LEN: usize = 2 * STATE_HIDDEN;
 
 /// Supported sample rates per Silero VAD spec.
 const SUPPORTED_SAMPLE_RATES: &[usize] = &[8_000, 16_000];
-
-#[allow(dead_code)] // wired by R-002 / R-003 / R-004 consumers in Phase 2.
 pub struct SileroVad {
     session: Session,
     /// LSTM hidden state, laid out as `[2, 1, 64]` row-major. Kept as
@@ -65,7 +62,6 @@ impl SileroVad {
     /// outside the supported set — callers must treat the error as a
     /// graceful-absence signal and fall back to the non-VAD path per
     /// BLUEPRINT.md AD-8.
-    #[allow(dead_code)] // constructor called by Phase 2 consumers.
     pub fn new<P: AsRef<Path>>(
         model_path: P,
         sample_rate_hz: usize,
@@ -109,7 +105,6 @@ impl SileroVad {
     /// for callers that want access to the probability curve (R-003
     /// boundary refinement, R-004 filler classifier); R-002 uses the
     /// `VadFrame` API via the trait impl below.
-    #[allow(dead_code)] // consumed by Phase 2 callers.
     pub fn compute(&mut self, samples: &[f32]) -> Result<f32> {
         if samples.is_empty() {
             return Err(anyhow!("empty frame"));

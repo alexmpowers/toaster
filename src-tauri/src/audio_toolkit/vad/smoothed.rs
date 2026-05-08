@@ -19,21 +19,16 @@ use std::collections::VecDeque;
 
 /// Pre-roll buffer size in 30 ms frames (= 120 ms). Matches the value
 /// Handy used and the number recorded in the PRD.
-#[allow(dead_code)] // consumed by Phase 2 callers (R-002 prefilter).
 pub const DEFAULT_PREFILL_FRAMES: usize = 4;
 
 /// Consecutive voice-frame count required to open a speech span
 /// (= 60 ms at 30 ms framing). Rejects one-off noise / keystrokes.
-#[allow(dead_code)]
 pub const DEFAULT_ONSET_FRAMES: usize = 2;
 
 /// Silent-frame grace window before closing a speech span
 /// (~= 200 ms at 30 ms framing ≈ 7 frames). Prevents chopping
 /// mid-word on brief pauses.
-#[allow(dead_code)]
 pub const DEFAULT_HANGOVER_FRAMES: usize = 7;
-
-#[allow(dead_code)] // wired by R-002 / R-003 / R-004 consumers in Phase 2.
 pub struct SmoothedVad {
     inner_vad: Box<dyn VoiceActivityDetector>,
     prefill_frames: usize,
@@ -49,7 +44,6 @@ pub struct SmoothedVad {
 }
 
 impl SmoothedVad {
-    #[allow(dead_code)] // constructor called by Phase 2 consumers.
     pub fn new(
         inner_vad: Box<dyn VoiceActivityDetector>,
         prefill_frames: usize,

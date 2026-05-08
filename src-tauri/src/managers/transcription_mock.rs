@@ -260,7 +260,7 @@ impl MockTranscription {
 
 #[derive(Clone)]
 pub struct TranscriptionManager {
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     app_handle: AppHandle,
     mock: Arc<Mutex<MockTranscription>>,
 }
@@ -275,7 +275,7 @@ impl TranscriptionManager {
 
     /// Test hook: swap the configured mock response. No-op outside tests; the
     /// production build uses the real `TranscriptionManager`.
-    #[allow(dead_code)]
+    #[expect(dead_code)]
     pub fn set_mock(&self, mock: MockTranscription) {
         *crate::lock_recovery::recover_lock(self.mock.lock()) = mock;
     }

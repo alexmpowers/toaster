@@ -39,7 +39,7 @@ const FIRST_BOUNDARY_FADE_US: i64 = 2_000;
 /// NOTE: Word-onset leading silence is now handled model-aware by
 /// `audio_toolkit::silence_trim::trim_leading_silence_padded`. This
 /// constant remains for the waveform outer-edge keep-segment trim path.
-#[allow(dead_code)]
+#[expect(dead_code)]
 const PARAKEET_OUTER_TRIM_US: i64 = 300_000;
 /// FFmpeg preview render timeout (10 minutes).
 const PREVIEW_RENDER_TIMEOUT: Duration = Duration::from_secs(600);
@@ -496,7 +496,7 @@ fn extend_single_segment_export_args(
 /// This helper is retained only for unit-test coverage of the legacy
 /// color-conversion math; consider deleting along with its tests in a
 /// dedicated cleanup bundle.
-#[allow(dead_code)]
+#[expect(dead_code)]
 fn build_caption_style(
     text_color: &str,
     bg_color: &str,

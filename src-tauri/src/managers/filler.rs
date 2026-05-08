@@ -50,7 +50,6 @@ pub const DEFAULT_PAUSE_THRESHOLD_US: i64 = 1_500_000; // 1.5 seconds
 /// feed it into heuristics for `auto_silence_pauses`, but legacy
 /// consumers that ignore the classification see no behaviour change.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code)] // consumed by Phase 2 editor metadata surface.
 pub enum GapClassification {
     /// Mean P(speech) stayed below 0.2 across the gap — genuine silence.
     TrueSilence,
@@ -69,14 +68,12 @@ pub enum GapClassification {
 /// Threshold used by [`classify_gap`] below which a gap is treated as
 /// [`GapClassification::TrueSilence`] (rather than
 /// [`GapClassification::NonSpeechAcoustic`]).
-#[allow(dead_code)]
 pub const GAP_SILENCE_THRESHOLD: f32 = 0.2;
 
 /// Threshold used by [`classify_gap`] above which a gap is treated as
 /// [`GapClassification::MissedSpeech`]. Matches the Silero default
 /// speech threshold so classifications are consistent with the
 /// prefilter pass.
-#[allow(dead_code)]
 pub const GAP_SPEECH_THRESHOLD: f32 = 0.5;
 
 /// Classify a single gap using a pre-computed VAD probability curve
@@ -84,7 +81,6 @@ pub const GAP_SPEECH_THRESHOLD: f32 = 0.5;
 /// [`crate::managers::splice::boundaries::VAD_FRAME_MS`]). Returns
 /// [`GapClassification::Unknown`] when `vad_curve` is empty or does not
 /// cover the gap interval — callers never error on missing data (AD-8).
-#[allow(dead_code)] // consumed by editor metadata path once wired.
 pub fn classify_gap(gap_start_us: i64, gap_end_us: i64, vad_curve: &[f32]) -> GapClassification {
     if vad_curve.is_empty() || gap_end_us <= gap_start_us {
         return GapClassification::Unknown;
@@ -115,7 +111,6 @@ pub fn classify_gap(gap_start_us: i64, gap_end_us: i64, vad_curve: &[f32]) -> Ga
 /// classification)` triples in the same order. Empty curve ⇒ every
 /// classification is [`GapClassification::Unknown`], so the function is
 /// safe to call unconditionally from Phase 2 editor code.
-#[allow(dead_code)] // consumed by editor metadata path once wired.
 pub fn classify_pauses(
     pauses: &[(usize, i64)],
     words: &[Word],
@@ -138,10 +133,8 @@ pub struct FillerConfig {
     /// Gap in microseconds that qualifies as a "long pause".
     pub pause_threshold_us: i64,
     /// If true, detected fillers are automatically marked deleted.
-    #[allow(dead_code)]
     pub auto_delete_fillers: bool,
     /// If true, detected pauses are automatically marked silenced.
-    #[allow(dead_code)]
     pub auto_silence_pauses: bool,
 }
 

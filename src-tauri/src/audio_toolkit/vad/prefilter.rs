@@ -51,7 +51,6 @@ pub struct SpeechWindow {
 }
 
 impl SpeechWindow {
-    #[allow(dead_code)] // consumed by transcription pipeline once wired.
     pub fn duration_us(&self) -> i64 {
         self.end_us - self.start_us
     }
@@ -63,7 +62,6 @@ impl SpeechWindow {
 /// manager constructs its editor `Word` from these fields after
 /// remapping.
 #[derive(Debug, Clone)]
-#[allow(dead_code)] // consumed once transcription manager wires the prefilter path.
 pub struct PrefilterWord {
     pub text: String,
     pub start_us: i64,
@@ -75,7 +73,6 @@ pub struct PrefilterWord {
 /// returns `Err` when the file exists but ORT refuses to load it — the
 /// caller can surface a `tracing::warn!` once and continue on the
 /// fall-back path.
-#[allow(dead_code)] // wired by transcription / boundary / filler consumers.
 pub fn try_open_silero(model_path: &Path) -> anyhow::Result<Option<SileroVad>> {
     if !model_path.exists() {
         return Ok(None);
@@ -100,7 +97,6 @@ pub fn try_open_silero(model_path: &Path) -> anyhow::Result<Option<SileroVad>> {
 /// panics; on an empty or sub-frame input it returns an empty vector.
 /// Per-frame VAD errors are treated as silence so a single bad frame
 /// does not abort the whole pass (graceful-degradation, AD-8).
-#[allow(dead_code)] // wired by managers::transcription prefilter consumer.
 pub fn prefilter_speech_windows<V: VoiceActivityDetector>(
     samples_16k: &[f32],
     vad: &mut V,
@@ -182,7 +178,6 @@ pub fn prefilter_speech_windows<V: VoiceActivityDetector>(
 /// (R-002 timestamp correctness invariant). Preserves microsecond
 /// precision — no rounding, no equal-duration synthesis (per
 /// `transcript-precision-eval`).
-#[allow(dead_code)] // wired by managers::transcription prefilter consumer.
 pub fn remap_words(words: &mut [PrefilterWord], window: SpeechWindow) {
     for w in words {
         w.start_us += window.start_us;

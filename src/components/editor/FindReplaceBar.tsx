@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Replace, Search, X } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 interface FindReplaceBarProps {
   findQuery: string;
@@ -92,18 +93,22 @@ const FindReplaceBar: React.FC<FindReplaceBarProps> = React.memo(
           />
           {findMatchCount > 0 && (
             <>
-              <button
+              <Button
+                variant="primary-soft"
+                size="sm"
                 onClick={onReplaceOne}
-                className="px-2 py-0.5 text-[11px] text-logo-primary bg-logo-primary/20 rounded hover:bg-logo-primary/40 transition-colors"
+                className="!py-0.5 !text-[11px] !text-logo-primary"
               >
                 {t("editor.replaceOne")}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary-soft"
+                size="sm"
                 onClick={onReplaceAll}
-                className="px-2 py-0.5 text-[11px] text-logo-primary bg-logo-primary/20 rounded hover:bg-logo-primary/40 transition-colors"
+                className="!py-0.5 !text-[11px] !text-logo-primary"
               >
                 {t("editor.replaceAll")}
-              </button>
+              </Button>
             </>
           )}
         </div>

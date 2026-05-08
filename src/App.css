@@ -12,6 +12,7 @@
   --color-logo-stroke: #3d2b1f;
   --color-text-stroke: #f6f6f6;
   --color-mid-gray: #808080;
+  --color-slider-track: rgba(128, 128, 128, 0.2); /* unfilled slider track */
   --color-accent: #e8a838; /* alias of --color-logo-primary; retained for legacy callers */
 }
 

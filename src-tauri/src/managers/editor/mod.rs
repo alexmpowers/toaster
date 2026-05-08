@@ -387,7 +387,6 @@ impl EditorState {
     /// semantic contract ("given an edited-timeline offset, return the
     /// source-timeline offset"); keeping it documents that contract at
     /// the type that owns the words/deletions.
-    #[allow(dead_code)]
     pub fn map_edit_time_to_source_time(&self, edit_time_us: i64) -> i64 {
         let segments = self.get_keep_segments();
         let mut elapsed: i64 = 0;

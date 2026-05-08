@@ -28,7 +28,6 @@ use crate::managers::splice::clarity::{self, SpectralClarity};
 
 /// Result of scoring a single word against the source audio.
 #[derive(Debug, Clone, Copy)]
-#[allow(dead_code)] // peak/rms/silence_ratio/clarity are kept for future diagnostics & logging
 pub struct WordClarity {
     /// Articulation score in [0.0, 1.0]. Higher = clearer.
     pub articulation: f32,

@@ -378,7 +378,7 @@ impl ModelManager {
 /// `target_dir` based on `ModelCategory` via `ModelManager::resolve_dir`.
 /// Extraction of tar.gz directory assets stays in `download_model` because
 /// it only applies to transcription entries.
-#[allow(dead_code)]
+#[expect(dead_code)]
 pub(crate) async fn fetch_and_verify(
     target_dir: &std::path::Path,
     filename: &str,

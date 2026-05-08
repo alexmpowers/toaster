@@ -22,7 +22,7 @@ impl FrameResampler {
 
         let resampler = (in_hz != out_hz).then(|| {
             FftFixedIn::<f32>::new(in_hz, out_hz, chunk_in, 1, 1)
-                .expect("Failed to create resampler")
+                .expect("resampler creation: invalid sample rate or chunk size")
         });
 
         Self {
@@ -51,7 +51,7 @@ impl FrameResampler {
                 if let Ok(out) = self
                     .resampler
                     .as_mut()
-                    .unwrap()
+                    .expect("guarded by is_none early return")
                     .process(&[&self.in_buf[..]], None)
                 {
                     // let duration = start.elapsed();

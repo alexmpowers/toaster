@@ -117,18 +117,20 @@ fn should_force_show_permissions_window(app: &AppHandle) -> bool {
     false
 }
 
-fn initialize_core_logic(app_handle: &AppHandle) {
+fn initialize_core_logic(app_handle: &AppHandle) -> anyhow::Result<()> {
     // Note: Enigo (keyboard/mouse simulation) is NOT initialized here.
     // The frontend is responsible for calling the `initialize_enigo` command
     // after onboarding completes. This avoids triggering permission dialogs
     // on macOS before the user is ready.
 
     // Initialize the managers
-    let model_manager =
-        Arc::new(ModelManager::new(app_handle).expect("Failed to initialize model manager"));
+    let model_manager = Arc::new(
+        ModelManager::new(app_handle)
+            .map_err(|e| anyhow::anyhow!("Failed to initialize model manager: {e}"))?,
+    );
     let transcription_manager = Arc::new(
         TranscriptionManager::new(app_handle, model_manager.clone())
-            .expect("Failed to initialize transcription manager"),
+            .map_err(|e| anyhow::anyhow!("Failed to initialize transcription manager: {e}"))?,
     );
 
     // Local LLM manager removed in R9 (post-processor purge).
@@ -155,6 +157,8 @@ fn initialize_core_logic(app_handle: &AppHandle) {
             let _ = app_handle.set_activation_policy(tauri::ActivationPolicy::Accessory);
         }
     }
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -421,7 +425,10 @@ pub fn run(cli_args: CliArgs) {
             FILE_LOG_LEVEL.store(file_log_level.to_level_filter() as u8, Ordering::Relaxed);
             let app_handle = app.handle().clone();
 
-            initialize_core_logic(&app_handle);
+            if let Err(e) = initialize_core_logic(&app_handle) {
+                log::error!("Fatal: failed to initialize core logic: {e:#}");
+                std::process::exit(1);
+            }
 
             // Pre-warm GPU/accelerator enumeration on a background thread.
             // The first call into transcribe_rs::whisper_cpp::gpu::list_gpu_devices

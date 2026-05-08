@@ -61,9 +61,10 @@ pub(super) fn is_non_speech_token(text: &str) -> bool {
     // Runs of 4+ identical punctuation (.... / ---- / ==== etc.) — common
     // Whisper hallucination on silence.
     if trimmed.chars().count() >= 4 {
-        let first = trimmed.chars().next().unwrap();
-        if !first.is_alphanumeric() && trimmed.chars().all(|c| c == first) {
-            return true;
+        if let Some(first) = trimmed.chars().next() {
+            if !first.is_alphanumeric() && trimmed.chars().all(|c| c == first) {
+                return true;
+            }
         }
     }
     false
@@ -147,7 +148,7 @@ fn split_segment_by_chars(seg_text: &str, start_us: i64, end_us: i64) -> Vec<(St
 ///
 /// NOT called during transcription (transcript must be faithful to audio).
 /// Available for the user-initiated "Clean Up" / filler-removal flow.
-#[allow(dead_code)]
+#[expect(dead_code)]
 pub(crate) fn dedup_repeated_phrases(words: Vec<CanonicalWord>) -> Vec<CanonicalWord> {
     if words.len() < 6 {
         return words;
