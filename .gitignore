@@ -61,6 +61,9 @@ build/
 # Eval run outputs (scripts/eval-*.ps1)
 eval/output/
 
+# Large eval fixture videos (keep locally, too big for GitHub)
+eval/fixtures/pagineted-reports.mp4
+
 # Feature PM (per-feature artifacts)
 # Track planning artifacts (REQUEST/PRD/BLUEPRINT/tasks.sql/coverage.json/STATE.md);
 # ignore large/regenerable per-task context bundles and operational journals.
