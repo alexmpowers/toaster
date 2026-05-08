@@ -36,6 +36,7 @@ pub(super) fn call_engine_chunk(
             let params = WhisperInferenceParams {
                 language: normalized_language.clone(),
                 translate: settings.translate_to_english,
+                word_timestamps: true,
                 initial_prompt: if settings.custom_words.is_empty() {
                     None
                 } else {

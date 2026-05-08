@@ -36,6 +36,7 @@ fn seg(start: f32, end: f32, text: &str) -> TranscriptionSegment {
         start,
         end,
         text: text.to_string(),
+        confidence: None,
     }
 }
 

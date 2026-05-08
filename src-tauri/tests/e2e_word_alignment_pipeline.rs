@@ -288,9 +288,9 @@ fn e2e_overlapping_segments_produce_valid_words() {
 
     // The overlapping segments — segment 2 starts before segment 1 ends
     let segments = vec![
-        TranscriptionSegment { start: 0.0, end: 2.0, text: "hello world".to_string() },
-        TranscriptionSegment { start: 1.5, end: 3.5, text: "world again today".to_string() },
-        TranscriptionSegment { start: 3.5, end: 5.0, text: "thank you".to_string() },
+        TranscriptionSegment { start: 0.0, end: 2.0, text: "hello world".to_string(), confidence: None },
+        TranscriptionSegment { start: 1.5, end: 3.5, text: "world again today".to_string(), confidence: None },
+        TranscriptionSegment { start: 3.5, end: 5.0, text: "thank you".to_string(), confidence: None },
     ];
 
     // Clamp overlaps (same logic as word_builder + adapter sanitize_segments)
@@ -466,11 +466,13 @@ fn e2e_whisper_adapter_to_aligner_roundtrip() {
                 start: 0.0,
                 end: 1.8,
                 text: " The quick brown fox jumps".to_string(),
+                confidence: None,
             },
             TranscriptionSegment {
                 start: 1.8,
                 end: 3.2,
                 text: " over the lazy dog".to_string(),
+                confidence: None,
             },
         ]),
     };

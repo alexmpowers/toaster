@@ -60,12 +60,9 @@ use crate::managers::model::EngineType;
 use anyhow::{anyhow, Result};
 use transcribe_rs::{TranscriptionResult, TranscriptionSegment};
 
+use super::adapter_normalize::adapt_with_auto_detection;
 #[cfg(test)]
-use super::adapter_normalize::is_non_speech_token;
-use super::adapter_normalize::{
-    adapt_with_auto_detection, make_normalized, sanitize_segments,
-    words_from_segments_proportional,
-};
+use super::adapter_normalize::{is_non_speech_token, sanitize_segments};
 
 /// Fallback input sample rate when an adapter doesn't declare one — matches
 /// what every current ASR engine in transcribe-rs actually accepts.
@@ -318,19 +315,13 @@ impl TranscriptionModelAdapter for WhisperAdapter {
         audio_info: AudioInfo,
     ) -> Result<NormalizedTranscriptionResult> {
         require_segments("Whisper", &raw)?;
-        // Sanitize segments upstream: clamp overlaps from Whisper's 30-second
-        // chunked processing, drop hallucinated duplicates, strip non-speech.
-        let clean_segs = sanitize_segments(segments_of(&raw));
-        let words = words_from_segments_proportional(&clean_segs, audio_info);
-        // Whisper segments carry authoritative segment-level times but NOT
-        // per-word times. The adapter produces a char-proportional seed;
-        // `commands::transcribe_file::build_words_from_segments` refines it
-        // via DP forced alignment before words reach the editor.
-        // `word_timestamps_authoritative = false` tells that downstream
-        // step to run its refinement pass.
-        let mut normalized_raw = raw;
-        normalized_raw.segments = Some(clean_segs);
-        make_normalized(normalized_raw, words, false)
+        // With DTW enabled, Whisper now emits one segment per word with native
+        // timestamps. Use the same auto-detection path as other engines so that
+        // word-level segments get the authoritative flag and bypass downstream
+        // DP forced alignment. When DTW is not active (phrase-level segments),
+        // the auto-detection path falls through to char-proportional split +
+        // DP alignment, matching the previous behavior.
+        adapt_with_auto_detection("Whisper", raw, audio_info)
     }
 }
 

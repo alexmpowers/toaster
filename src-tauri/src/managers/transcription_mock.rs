@@ -248,6 +248,7 @@ impl MockTranscription {
                 start: s.start,
                 end: s.end,
                 text: s.text,
+                confidence: None,
             })
             .collect();
         Ok(Self::Fixture {
@@ -352,6 +353,7 @@ fn synthesize_equal_duration_segments(
             start: per * i as f32,
             end: per * (i as f32 + 1.0),
             text: piece,
+            confidence: None,
         })
         .collect()
 }

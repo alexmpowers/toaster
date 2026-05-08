@@ -18,7 +18,7 @@ use transcribe_rs::{
         sense_voice::SenseVoiceModel,
         Quantization,
     },
-    whisper_cpp::WhisperEngine,
+    whisper_cpp::{DtwModelPreset, WhisperEngine, WhisperLoadParams},
 };
 
 mod accelerators;
@@ -314,11 +314,23 @@ impl TranscriptionManager {
 
         let loaded_engine = match model_info.engine_type {
             EngineType::Whisper => {
-                let engine = WhisperEngine::load(&model_path).map_err(|e| {
-                    let error_msg = format!("Failed to load whisper model {}: {}", model_id, e);
-                    emit_loading_failed(&error_msg);
-                    anyhow::anyhow!(error_msg)
-                })?;
+                let dtw_preset = dtw_preset_for_model(model_id, &model_info.filename);
+                info!(
+                    "Loading Whisper model '{}' with DTW preset {:?}",
+                    model_id, dtw_preset
+                );
+                let params = WhisperLoadParams {
+                    enable_dtw: true,
+                    dtw_model_preset: Some(dtw_preset),
+                    ..Default::default()
+                };
+                let engine =
+                    WhisperEngine::load_with_params(&model_path, params).map_err(|e| {
+                        let error_msg =
+                            format!("Failed to load whisper model {}: {}", model_id, e);
+                        emit_loading_failed(&error_msg);
+                        anyhow::anyhow!(error_msg)
+                    })?;
                 LoadedEngine::Whisper(engine)
             }
             EngineType::Parakeet => {
@@ -476,6 +488,43 @@ impl Drop for TranscriptionManager {
                 debug!("Idle watcher thread joined successfully");
             }
         }
+    }
+}
+
+/// Map a Whisper model ID / filename to the corresponding DTW alignment-head
+/// preset. The preset must match the model architecture for DTW to produce
+/// correct per-token timestamps.
+fn dtw_preset_for_model(model_id: &str, filename: &str) -> DtwModelPreset {
+    // Exact match on known catalog IDs
+    match model_id {
+        "small" => return DtwModelPreset::Small,
+        "medium" => return DtwModelPreset::Medium,
+        "turbo" => return DtwModelPreset::LargeV3Turbo,
+        "large" | "breeze-asr" => return DtwModelPreset::LargeV3,
+        _ => {}
+    }
+
+    // Heuristic for custom models based on filename
+    let name = filename.to_lowercase();
+    if name.contains("turbo") {
+        DtwModelPreset::LargeV3Turbo
+    } else if name.contains("large-v3") || name.contains("large_v3") {
+        DtwModelPreset::LargeV3
+    } else if name.contains("large-v2") || name.contains("large_v2") {
+        DtwModelPreset::LargeV2
+    } else if name.contains("large-v1") || name.contains("large_v1") || name.contains("large") {
+        DtwModelPreset::LargeV1
+    } else if name.contains("medium") {
+        DtwModelPreset::Medium
+    } else if name.contains("small") {
+        DtwModelPreset::Small
+    } else if name.contains("base") {
+        DtwModelPreset::Base
+    } else if name.contains("tiny") {
+        DtwModelPreset::Tiny
+    } else {
+        // Safe fallback — LargeV3Turbo is the most common default
+        DtwModelPreset::LargeV3Turbo
     }
 }
 

@@ -66,6 +66,7 @@ fn proportional_split_gives_short_leading_word_adequate_duration() {
         start: 0.0,
         end: 1.5,
         text: " I said hello".to_string(),
+        confidence: None,
     }];
     let samples = vec![0.3_f32; 24_000]; // 1.5 s at 16 kHz
     let (words, _meta) = build_words_from_segments("I said hello", &segments, &samples, None, false);
@@ -90,6 +91,7 @@ fn proportional_split_equal_words_stay_even() {
         start: 0.0,
         end: 1.0,
         text: " hello world".to_string(),
+        confidence: None,
     }];
     let samples = vec![0.3_f32; 16_000];
     let (words, _) = build_words_from_segments("hello world", &segments, &samples, None, false);
@@ -271,7 +273,9 @@ fn beginning_short_word_deletion_boundary_lands_in_silence() {
         start: 0.0,
         end: 1.5,
         text: " I said hello".to_string(),
+        confidence: None,
     }];
+
     let total_duration_us = 1_500_000;
 
     let (mut words, align_meta) = build_words_from_segments("I said hello", &segments, &samples, None, false);
@@ -303,16 +307,19 @@ fn clamp_overlapping_segments_handles_whisper_hallucination() {
             start: 0.0,
             end: 5.0,
             text: "first segment text".to_string(),
+            confidence: None,
         },
         TranscriptionSegment {
             start: 3.0, // overlaps with first segment!
             end: 8.0,
             text: "overlapping hallucinated text".to_string(),
+            confidence: None,
         },
         TranscriptionSegment {
             start: 8.0,
             end: 12.0,
             text: "normal third segment".to_string(),
+            confidence: None,
         },
     ];
 
@@ -341,16 +348,19 @@ fn clamp_overlapping_segments_drops_fully_overlapped() {
             start: 0.0,
             end: 10.0,
             text: "long first segment".to_string(),
+            confidence: None,
         },
         TranscriptionSegment {
             start: 3.0,
             end: 7.0,
             text: "fully overlapped hallucination".to_string(),
+            confidence: None,
         },
         TranscriptionSegment {
             start: 10.0,
             end: 15.0,
             text: "after the overlap".to_string(),
+            confidence: None,
         },
     ];
 

@@ -282,7 +282,7 @@ pub(super) fn words_from_segments_native(
             text: text.to_string(),
             start_us: seconds_to_us(seg.start),
             end_us: seconds_to_us(seg.end),
-            confidence: -1.0,
+            confidence: seg.confidence.unwrap_or(-1.0),
             speaker_id: -1,
             is_non_speech: false,
         });

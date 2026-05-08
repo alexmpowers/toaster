@@ -407,16 +407,19 @@ fn collect_deleted_phrases_uses_deleted_overlap_threshold() {
             start: 0.0,
             end: 1.0,
             text: "this is kept".to_string(),
+            confidence: None,
         },
         TranscriptionSegment {
             start: 1.0,
             end: 2.0,
             text: "remove this phrase now".to_string(),
+            confidence: None,
         },
         TranscriptionSegment {
             start: 2.0,
             end: 3.0,
             text: "also remove this line".to_string(),
+            confidence: None,
         },
     ];
     let deleted_ranges = vec![(950_000, 2_800_000)];
