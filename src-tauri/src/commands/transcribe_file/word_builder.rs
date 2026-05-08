@@ -169,21 +169,22 @@ pub(super) fn build_words_from_segments(
             continue;
         }
 
-        // Fallback path: char-proportional split. Fires when the aligner
+        // Fallback path: syllable-proportional split. Fires when the aligner
         // cannot run (segment too short, too few frames, or slice outside
-        // the sample buffer). Kept so degenerate segments still produce
-        // *some* ordered output; downstream refinement may fix the worst
-        // of it.
-        const MIN_WORD_CHAR_WEIGHT: usize = 1;
-        let total_chars: usize = seg_words
+        // the sample buffer). Uses syllable count as a better proxy for
+        // spoken duration than raw character count.
+        let weights: Vec<usize> = seg_words
             .iter()
-            .map(|w| w.len().max(MIN_WORD_CHAR_WEIGHT))
-            .sum();
+            .map(|w| {
+                crate::managers::transcription::adapter_normalize::estimate_syllables(w)
+            })
+            .collect();
+        let total_weight: usize = weights.iter().sum();
 
         let mut cursor_us = seg_start_us;
         for (j, sw) in seg_words.iter().enumerate() {
-            let char_fraction = sw.len().max(MIN_WORD_CHAR_WEIGHT) as f64 / total_chars as f64;
-            let word_duration_us = round_f64_to_i64(seg_duration_us as f64 * char_fraction);
+            let fraction = weights[j] as f64 / total_weight as f64;
+            let word_duration_us = round_f64_to_i64(seg_duration_us as f64 * fraction);
 
             let mut word_start = cursor_us;
             // First word: trim leading silence (symmetric with last-word

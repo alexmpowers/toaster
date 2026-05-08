@@ -81,22 +81,49 @@ fn seconds_to_us(s: f32) -> i64 {
 /// Cohere). See `build_words_from_segments` in `transcribe_file/mod.rs` for
 /// the richer downstream refinement pass — the adapter only produces the
 /// proportional baseline so the invariants hold.
+/// Rough syllable count for a word, used as a proxy for spoken duration.
+/// Syllable count correlates better with speech duration than character count:
+/// "strength" (8 chars, 1 syl) is ~200ms while "area" (4 chars, 3 syl) is ~500ms.
+pub(crate) fn estimate_syllables(word: &str) -> usize {
+    let w = word.to_ascii_lowercase();
+    let bytes = w.as_bytes();
+    if bytes.is_empty() {
+        return 1;
+    }
+    let is_vowel = |b: u8| matches!(b, b'a' | b'e' | b'i' | b'o' | b'u' | b'y');
+    let mut count = 0usize;
+    let mut prev_vowel = false;
+    for &b in bytes {
+        if is_vowel(b) {
+            if !prev_vowel {
+                count += 1;
+            }
+            prev_vowel = true;
+        } else {
+            prev_vowel = false;
+        }
+    }
+    // Subtract trailing silent 'e' (e.g., "time" = 1 syl, not 2)
+    if bytes.len() > 2 && bytes[bytes.len() - 1] == b'e' && !is_vowel(bytes[bytes.len() - 2]) {
+        count = count.saturating_sub(1);
+    }
+    count.max(1)
+}
+
 fn split_segment_by_chars(seg_text: &str, start_us: i64, end_us: i64) -> Vec<(String, i64, i64)> {
-    const MIN_WORD_CHAR_WEIGHT: usize = 1;
     let words: Vec<&str> = seg_text.split_whitespace().collect();
     if words.is_empty() || end_us <= start_us {
         return Vec::new();
     }
-    let total: usize = words
-        .iter()
-        .map(|w| w.len().max(MIN_WORD_CHAR_WEIGHT))
-        .sum();
+    // Use syllable count as weight — better proxy for spoken duration than char count.
+    let weights: Vec<usize> = words.iter().map(|w| estimate_syllables(w)).collect();
+    let total: usize = weights.iter().sum();
     let duration_us = end_us - start_us;
     let mut out = Vec::with_capacity(words.len());
     let mut cursor = start_us;
     for (i, w) in words.iter().enumerate() {
-        let share = (w.len().max(MIN_WORD_CHAR_WEIGHT) as f64 / total as f64 * duration_us as f64)
-            .round() as i64;
+        let share =
+            (weights[i] as f64 / total as f64 * duration_us as f64).round() as i64;
         let word_end = if i == words.len() - 1 {
             end_us
         } else {
@@ -470,4 +497,57 @@ pub(super) fn adapt_with_auto_detection(
     let mut normalized_raw = raw;
     normalized_raw.segments = Some(clean_segs);
     make_normalized(normalized_raw, words, word_level)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn syllable_counts() {
+        // 1-syllable
+        assert_eq!(estimate_syllables("strength"), 1);
+        assert_eq!(estimate_syllables("cat"), 1);
+        assert_eq!(estimate_syllables("the"), 1);
+        // 2-syllable
+        assert_eq!(estimate_syllables("area"), 2); // silent-e stripped, a-ea = 2
+        assert_eq!(estimate_syllables("hello"), 2);
+        assert_eq!(estimate_syllables("talking"), 2);
+        // 3-syllable
+        assert_eq!(estimate_syllables("beautiful"), 3);
+        assert_eq!(estimate_syllables("computer"), 3);
+        // Minimum 1 for empty/punctuation-only
+        assert_eq!(estimate_syllables(""), 1);
+        assert_eq!(estimate_syllables("..."), 1);
+    }
+
+    #[test]
+    fn syllable_split_vs_char_split() {
+        // "I" (1 syl) vs "beautiful" (3 syl) — syllable split should give
+        // "beautiful" roughly 3x the duration of "I", whereas char split
+        // would give it 9x (9 chars vs 1 char).
+        let result = split_segment_by_chars("I beautiful", 0, 4_000_000);
+        assert_eq!(result.len(), 2);
+        let i_dur = result[0].2 - result[0].1;
+        let beau_dur = result[1].2 - result[1].1;
+        // Syllable ratio: 1:3 → "I" gets 1M, "beautiful" gets 3M
+        assert_eq!(i_dur, 1_000_000);
+        assert_eq!(beau_dur, 3_000_000);
+    }
+
+    #[test]
+    fn split_covers_full_segment() {
+        let result = split_segment_by_chars(
+            "this is a longer sentence with many words",
+            100_000,
+            5_000_000,
+        );
+        assert!(!result.is_empty());
+        assert_eq!(result.first().unwrap().1, 100_000);
+        assert_eq!(result.last().unwrap().2, 5_000_000);
+        // No gaps or overlaps
+        for pair in result.windows(2) {
+            assert_eq!(pair[0].2, pair[1].1, "gap/overlap between words");
+        }
+    }
 }
