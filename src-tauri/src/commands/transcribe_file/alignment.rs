@@ -125,13 +125,17 @@ pub(super) fn boundary_has_interpolated_pattern(
         || (boundary_idx + 2 < words.len() && meta[boundary_idx + 2].interpolated)
 }
 
-/// **Safety net; primary timing comes from forced alignment.** After the
-/// DP aligner in [`crate::audio_toolkit::forced_alignment`] places interior
-/// boundaries inside each ASR segment, this pass runs as a narrow,
-/// confidence-gated re-align for boundaries that still look suspicious
-/// (low confidence, abrupt duration jump, boundary in a high-energy
-/// region, interpolated pattern). It uses short local windows only, so
-/// runtime is bounded and independent of global transcript length.
+/// **Non-authoritative only; skipped entirely for authoritative timestamps.**
+///
+/// After the DP aligner places interior boundaries inside each ASR segment,
+/// this pass runs as a narrow, confidence-gated re-align for boundaries
+/// that still look suspicious. DP-aligned non-interpolated boundaries are
+/// trusted and skipped. When confidence is unknown (all current engines),
+/// requires at least 2 independent heuristic signals or an interpolated
+/// pattern — a single heuristic alone is insufficient.
+///
+/// Called from `transcribe_media_file` only when `!authoritative`.
+/// Authoritative engines (Parakeet word-level) preserve native timestamps.
 pub(super) fn realign_suspicious_spans(
     words: &mut [Word],
     samples: &[f32],
@@ -155,6 +159,19 @@ pub(super) fn realign_suspicious_spans(
     for i in 0..words.len() - 1 {
         if adjusted >= MAX_REALIGN_BOUNDARIES {
             break;
+        }
+
+        // Skip boundaries where both adjacent words were DP-aligned and
+        // neither is interpolated. The DP forced aligner's global
+        // energy-deviation optimization already placed these boundaries
+        // at the best available position — overriding them with a local
+        // heuristic scan degrades accuracy.
+        if let Some(m) = meta {
+            let left_trusted = m[i].dp_aligned && !m[i].interpolated;
+            let right_trusted = m.get(i + 1).is_some_and(|r| r.dp_aligned && !r.interpolated);
+            if left_trusted && right_trusted {
+                continue;
+            }
         }
 
         let left_duration = (words[i].end_us - words[i].start_us).max(0);
@@ -185,8 +202,17 @@ pub(super) fn realign_suspicious_spans(
 
         // Boundary in high-energy region often indicates a cut in the middle of phonemes.
         let boundary_high_energy = boundary_energy > (min_energy * 1.35 + 1e-5);
-        let heuristic_suspicious =
-            very_short_word || abrupt_duration_jump || boundary_high_energy || interpolated_pattern;
+
+        // When confidence is known and low, any heuristic is enough to trigger.
+        // When confidence is unknown (sentinel -1.0 — all current engines),
+        // require stronger evidence: interpolated pattern always qualifies,
+        // otherwise need at least 2 independent heuristics. This prevents
+        // near-universal realignment that was overriding valid timestamps.
+        let heuristic_count = [very_short_word, abrupt_duration_jump, boundary_high_energy]
+            .iter()
+            .filter(|&&x| x)
+            .count();
+        let heuristic_suspicious = interpolated_pattern || heuristic_count >= 2;
         if !(low_confidence || (confidence_unknown && heuristic_suspicious)) {
             continue;
         }
@@ -223,23 +249,35 @@ pub(super) fn realign_suspicious_spans(
 //
 // `samples` must be 16 kHz mono f32 audio.
 
-/// **Safety net; primary timing comes from forced alignment.** Runs after
-/// the DP aligner as a pre-correction for legacy char-proportional
-/// boundaries that may still surface through the fallback path in
-/// `build_words_from_segments`: when one word in an adjacent pair is very
-/// short (<200 ms), scan ±200 ms around the boundary for the lowest-energy
-/// point and snap the boundary there.  This fixes the systematic late-bias
-/// that proportional distribution creates for short words like "a", "I",
-/// "new" next to longer neighbours.
+/// **Fallback-only safety net.** Runs after the DP aligner as a
+/// pre-correction for char-proportional boundaries that surface through
+/// the fallback path: when one word in an adjacent pair is very short
+/// (<200 ms), scan ±200 ms around the boundary for the lowest-energy
+/// point and snap the boundary there. Boundaries where both adjacent
+/// words were DP-aligned are skipped — the global optimizer already
+/// placed them optimally.
 ///
 /// `samples` must be 16 kHz mono f32 audio.
-pub(super) fn correct_short_word_boundaries(words: &mut [Word], samples: &[f32]) {
+pub(super) fn correct_short_word_boundaries(
+    words: &mut [Word],
+    samples: &[f32],
+    meta: Option<&[WordAlignmentMeta]>,
+) {
     const SAMPLE_RATE: f64 = 16000.0;
     const SHORT_THRESHOLD_US: i64 = 200_000; // 200ms
     const SEARCH_US: i64 = 200_000; // search ±200ms
     const RMS_WINDOW: usize = 48; // 3ms
 
     for i in 0..words.len().saturating_sub(1) {
+        // Skip boundaries where both adjacent words were DP-aligned.
+        // The DP aligner already placed this boundary at the energy-optimal
+        // position within the segment — re-scanning would contradict it.
+        if let Some(m) = meta {
+            if m[i].dp_aligned && m[i + 1].dp_aligned {
+                continue;
+            }
+        }
+
         let left_dur = words[i].end_us - words[i].start_us;
         let right_dur = words[i + 1].end_us - words[i + 1].start_us;
 
@@ -292,13 +330,17 @@ pub(super) fn correct_short_word_boundaries(words: &mut [Word], samples: &[f32])
     }
 }
 
-/// **Safety net; primary timing comes from forced alignment.** Runs after
-/// the DP aligner to nudge any boundary that still lands in a non-minimum
-/// energy region (can happen on long segments where the aligner converged
-/// on a local optimum, or on segments where the fallback char-proportional
-/// path fired). Two-stage: RMS scan to find the local energy minimum, then
-/// zero-crossing snap to avoid click-at-cut.
-pub(super) fn refine_word_boundaries(words: &mut [Word], samples: &[f32]) {
+/// **Fallback-only safety net.** Runs after the DP aligner to nudge
+/// boundaries that still land in non-minimum energy regions. Only fires
+/// on boundaries where at least one adjacent word came from the
+/// char-proportional fallback path. DP-aligned boundaries are trusted
+/// and skipped — the global energy-deviation optimization already
+/// placed them at the best available position.
+pub(super) fn refine_word_boundaries(
+    words: &mut [Word],
+    samples: &[f32],
+    meta: Option<&[WordAlignmentMeta]>,
+) {
     if words.len() < 2 || samples.is_empty() {
         return;
     }
@@ -313,6 +355,15 @@ pub(super) fn refine_word_boundaries(words: &mut [Word], samples: &[f32]) {
     // For each boundary between adjacent words, find the minimum energy point
     // then snap it to the nearest zero-crossing.
     for i in 0..words.len() - 1 {
+        // Skip boundaries where both adjacent words were DP-aligned.
+        // The DP aligner's global energy-deviation optimization already
+        // placed these at the best available position.
+        if let Some(m) = meta {
+            if m[i].dp_aligned && m[i + 1].dp_aligned {
+                continue;
+            }
+        }
+
         let boundary_us = words[i].end_us;
 
         // Use a wider search window when either adjacent word is short.

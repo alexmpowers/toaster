@@ -123,7 +123,7 @@ fn correct_short_word_boundaries_moves_boundary_to_energy_minimum() {
     for s in samples[2_400..2_800].iter_mut() {
         *s = 0.02; // silence at ~150-175ms
     }
-    correct_short_word_boundaries(&mut words, &samples);
+    correct_short_word_boundaries(&mut words, &samples, None);
     // Boundary between "new" and "release" should have moved toward 162ms
     assert!(
         words[0].end_us < 190_000,
@@ -157,8 +157,7 @@ fn refine_uses_wider_window_for_short_leading_word() {
     for s in samples[3_920..4_080].iter_mut() {
         *s = 0.0;
     }
-    refine_word_boundaries(&mut words, &samples);
-    // Boundary should have shifted toward ~250ms.
+    refine_word_boundaries(&mut words, &samples, None);
     assert!(
         words[0].end_us > 200_000,
         "short-word boundary should shift to ~250ms gap, got {} µs",

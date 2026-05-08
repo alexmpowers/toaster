@@ -236,7 +236,7 @@ fn refine_preserves_monotonicity() {
     for s in samples[7_680..7_760].iter_mut() {
         *s = 0.0;
     }
-    refine_word_boundaries(&mut words, &samples);
+    refine_word_boundaries(&mut words, &samples, None);
     assert_eq!(
         count_monotonicity_violations(&words),
         MAX_MONOTONICITY_VIOLATIONS,
@@ -259,7 +259,7 @@ fn refine_boundary_drift_within_budget() {
     for s in samples[7_100..7_300].iter_mut() {
         *s = 0.0;
     }
-    refine_word_boundaries(&mut words, &samples);
+    refine_word_boundaries(&mut words, &samples, None);
     let drift = (words[0].end_us - initial_boundary_us).abs();
     assert!(
         drift <= MAX_BOUNDARY_DRIFT_US,
@@ -287,7 +287,7 @@ fn refine_snaps_boundary_toward_silence_gap() {
     for s in samples[7_160..7_240].iter_mut() {
         *s = 0.0;
     }
-    refine_word_boundaries(&mut words, &samples);
+    refine_word_boundaries(&mut words, &samples, None);
     assert!(
         words[0].end_us < initial_boundary_us,
         "boundary must shift toward silence at ~450 ms, got {} µs",
@@ -318,7 +318,7 @@ fn refine_moves_boundary_for_coarticulated_short_words() {
     }
 
     let original_boundary = words[0].end_us;
-    refine_word_boundaries(&mut words, &samples);
+    refine_word_boundaries(&mut words, &samples, None);
 
     // The boundary should have moved (coarticulated short-word fallback)
     // and both words must remain valid duration
@@ -364,7 +364,7 @@ fn full_pipeline_preserves_monotonicity_on_corrupted_input() {
     let samples = vec![0.3_f32; n_samples];
 
     sanitize_word_timestamps(&mut words, total_duration_us);
-    refine_word_boundaries(&mut words, &samples);
+    refine_word_boundaries(&mut words, &samples, None);
     realign_suspicious_spans(&mut words, &samples, None);
     sanitize_word_timestamps(&mut words, total_duration_us);
 
@@ -395,7 +395,7 @@ fn full_pipeline_all_timestamps_within_total_duration() {
     let samples = vec![0.4_f32; n_samples];
 
     sanitize_word_timestamps(&mut words, total_duration_us);
-    refine_word_boundaries(&mut words, &samples);
+    refine_word_boundaries(&mut words, &samples, None);
     realign_suspicious_spans(&mut words, &samples, None);
     sanitize_word_timestamps(&mut words, total_duration_us);
 

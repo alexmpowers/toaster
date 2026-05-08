@@ -12,6 +12,11 @@ use crate::managers::editor::Word;
 
 /// Build word-level timestamps from transcription segments.
 ///
+/// **Only called for non-authoritative engines** (Whisper, Moonshine, etc.)
+/// whose adapters return `word_timestamps_authoritative = false`. Engines
+/// with native per-word timestamps (Parakeet word-level) bypass this
+/// entirely and flow through the authoritative path in `transcribe_media_file`.
+///
 /// Primary alignment is the DP-based forced aligner in
 /// [`crate::audio_toolkit::forced_alignment`]: for each ASR segment, the
 /// interior boundaries are placed at the frames that minimize the sum of
@@ -21,21 +26,17 @@ use crate::managers::editor::Word;
 ///
 /// When `vad` is `Some`, per-frame speech probabilities are computed for
 /// each segment and fed into the DP cost function to penalize placing
-/// boundaries on speech frames. This improves boundary quality on content
-/// with background noise, whispered speech, or connected consonants where
-/// the energy signal alone is ambiguous. When `None`, energy-only mode is
-/// used (the original behavior).
+/// boundaries on speech frames.
 ///
 /// **Fallback to char-proportional split.** When the aligner declines a
-/// segment (returns `None`) — e.g. the slice is too short to produce enough
-/// energy frames, or no valid interior search window exists — we fall back
-/// to the legacy character-proportional distribution. This keeps behavior
-/// defined for degenerate segments and for future engines whose adapter
-/// reports `word_timestamps_authoritative == false` but whose audio slice
-/// is too small to align. The downstream safety-net passes
-/// (`correct_short_word_boundaries`, `refine_word_boundaries`,
-/// `align_onset_boundaries`, and `realign_suspicious_spans` at the call
-/// site) run regardless and may refine both paths further.
+/// segment (returns `None`), we fall back to the legacy character-proportional
+/// distribution.
+///
+/// **Refinement gating.** The safety-net passes (`correct_short_word_boundaries`,
+/// `refine_word_boundaries`) only fire on boundaries where at least one
+/// adjacent word came from the fallback path. DP-aligned boundaries are
+/// trusted and skipped. `realign_suspicious_spans` at the call site is
+/// also gated on `!authoritative`.
 pub(super) fn build_words_from_segments(
     full_text: &str,
     segments: &[TranscriptionSegment],
@@ -65,6 +66,11 @@ pub(super) fn build_words_from_segments(
     // For each segment we prefer the DP forced aligner; if it declines we
     // fall through to the legacy char-proportional split.
     let mut segment_words: Vec<(String, i64, i64)> = Vec::new();
+    // Track whether each segment_word came from the DP aligner (true) or
+    // the char-proportional fallback (false). Downstream refinement passes
+    // skip DP-aligned boundaries — the global energy optimizer already
+    // placed them at the best available position.
+    let mut segment_dp_aligned: Vec<bool> = Vec::new();
     for seg in &clamped_segments {
         let seg_text = seg.text.trim();
         if seg_text.is_empty() {
@@ -158,6 +164,7 @@ pub(super) fn build_words_from_segments(
             }
             for (sw, (ws, we)) in seg_words.iter().zip(aligned) {
                 segment_words.push(((*sw).to_string(), ws, we));
+                segment_dp_aligned.push(true);
             }
             continue;
         }
@@ -221,6 +228,7 @@ pub(super) fn build_words_from_segments(
             }
 
             segment_words.push((sw.to_string(), word_start, word_end));
+            segment_dp_aligned.push(false);
             cursor_us = word_end;
         }
     }
@@ -264,6 +272,7 @@ pub(super) fn build_words_from_segments(
                 });
                 meta.push(WordAlignmentMeta {
                     interpolated: false,
+                    dp_aligned: segment_dp_aligned[k],
                 });
                 seg_idx = k + 1;
                 found = true;
@@ -296,7 +305,7 @@ pub(super) fn build_words_from_segments(
                 confidence: -1.0,
                 speaker_id: -1,
             });
-            meta.push(WordAlignmentMeta { interpolated: true });
+            meta.push(WordAlignmentMeta { interpolated: true, dp_aligned: false });
         }
     }
 
@@ -322,11 +331,14 @@ pub(super) fn build_words_from_segments(
         }
     }
 
-    // Pre-correction for short-word proportional boundaries
-    correct_short_word_boundaries(&mut words, samples);
+    // Pre-correction for short-word proportional boundaries.
+    // Pass metadata so DP-aligned boundaries are trusted and skipped.
+    correct_short_word_boundaries(&mut words, samples, Some(&meta));
 
-    // Refine word boundaries by snapping to silence points in the audio
-    refine_word_boundaries(&mut words, samples);
+    // Refine word boundaries by snapping to silence points in the audio.
+    // DP-aligned boundaries are skipped — the global optimizer already
+    // placed them at energy-optimal positions.
+    refine_word_boundaries(&mut words, samples, Some(&meta));
 
     // Align segment-leading word starts to true speech onset
     align_onset_boundaries(&mut words, samples);

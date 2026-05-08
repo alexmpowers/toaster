@@ -19,6 +19,11 @@ const BYTES_PER_SAMPLE: u64 = 4;
 #[derive(Debug, Clone, Copy, Default)]
 pub(super) struct WordAlignmentMeta {
     pub(super) interpolated: bool,
+    /// True when timestamps came from the DP forced aligner (energy-optimized
+    /// global placement). False for char-proportional fallback or interpolated
+    /// words. Downstream refinement passes should trust DP boundaries and
+    /// skip re-scanning them.
+    pub(super) dp_aligned: bool,
 }
 
 mod alignment;
@@ -185,7 +190,7 @@ pub async fn transcribe_media_file(
                 }
             }
 
-            let meta = vec![WordAlignmentMeta { interpolated: false }; words.len()];
+            let meta = vec![WordAlignmentMeta { interpolated: false, dp_aligned: false }; words.len()];
             (words, Some(meta))
         } else {
             // Non-authoritative path: DP forced alignment from segment-level
@@ -211,9 +216,23 @@ pub async fn transcribe_media_file(
             (w, Some(m))
         };
 
-    // Post-alignment refinement: re-examine suspicious spans, then validate.
+    // Structural correction: clamp, monotonicity, min-duration.
     sanitize_word_timestamps(&mut words, total_duration_us);
-    realign_suspicious_spans(&mut words, &samples, align_meta.as_deref());
+
+    // Acoustic re-alignment: only for non-authoritative timestamps.
+    // Authoritative engines (Parakeet word-level) already provide native
+    // per-word timing from the decoder — overriding those with heuristic
+    // energy scans degrades accuracy. Non-authoritative engines (Whisper
+    // segment-level → DP forced alignment) benefit from this pass on
+    // boundaries the aligner couldn't optimize (interpolated, fallback).
+    if !authoritative {
+        realign_suspicious_spans(&mut words, &samples, align_meta.as_deref());
+    } else {
+        info!(
+            "Skipping realign_suspicious_spans: {} authoritative word timestamps preserved",
+            words.len()
+        );
+    }
 
     // Final validation through the single trust boundary.
     // This replaces the previous pattern of:
