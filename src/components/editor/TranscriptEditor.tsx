@@ -123,6 +123,8 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   const [findQuery, setFindQuery] = useState("");
   const [findMatchIndex, setFindMatchIndex] = useState(0);
   const [replaceText, setReplaceText] = useState("");
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     visible: false,
     x: 0,
@@ -284,6 +286,34 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
     setFindQuery("");
     setFindMatchIndex(0);
   }, [findMatches, replaceText, words, setWords]);
+
+  const handleDoubleClick = useCallback(
+    (index: number) => {
+      const w = words[index];
+      if (!w || w.deleted) return;
+      setEditingIndex(index);
+      setEditText(w.text);
+    },
+    [words],
+  );
+
+  const commitInlineEdit = useCallback(async () => {
+    if (editingIndex === null) return;
+    const trimmed = editText.trim();
+    if (trimmed && trimmed !== words[editingIndex]?.text) {
+      const updated = words.map((w, i) =>
+        i === editingIndex ? { ...w, text: trimmed } : w,
+      );
+      await setWords(updated);
+    }
+    setEditingIndex(null);
+    setEditText("");
+  }, [editingIndex, editText, words, setWords]);
+
+  const cancelInlineEdit = useCallback(() => {
+    setEditingIndex(null);
+    setEditText("");
+  }, []);
 
   const handleContextMenu = useCallback(
     (index: number, e: React.MouseEvent) => {
@@ -524,6 +554,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                 onMouseDown={(e) => handleWordMouseDown(index, e)}
                 onMouseEnter={() => handleWordMouseEnter(index)}
                 onMouseUp={(e) => handleWordMouseUp(index, e)}
+                onDoubleClick={() => handleDoubleClick(index)}
                 onContextMenu={(e) => handleContextMenu(index, e)}
                 style={{ ...confidenceStyle, ...speakerBorderStyle }}
                 title={
@@ -577,7 +608,24 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                   .filter(Boolean)
                   .join(" ")}
               >
-                {word.text}
+                {editingIndex === index ? (
+                  <input
+                    type="text"
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    onBlur={commitInlineEdit}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") { e.preventDefault(); commitInlineEdit(); }
+                      if (e.key === "Escape") { e.preventDefault(); cancelInlineEdit(); }
+                      e.stopPropagation();
+                    }}
+                    autoFocus
+                    className="bg-transparent border-b border-logo-primary text-text text-sm outline-none min-w-[2ch] w-auto"
+                    style={{ width: `${Math.max(2, editText.length)}ch` }}
+                  />
+                ) : (
+                  word.text
+                )}
               </span>
             </React.Fragment>
           );
