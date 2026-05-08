@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { commands, type ModelInfo } from "@/bindings";
@@ -25,6 +25,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onModelSelected }) => {
     downloadStats,
   } = useModelStore();
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
+  // Guard: prevent re-calling selectModel while a selection is already in flight.
+  const selectingRef = useRef(false);
   // Backend-authored recommendation: pure scoring over the cached
   // hardware profile and the current catalog. Falls back to the legacy
   // `is_recommended` flag if the probe fails (AC-001-b fallback). We
@@ -59,6 +61,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onModelSelected }) => {
   // Watch for the selected model to finish downloading + verifying + extracting
   useEffect(() => {
     if (!selectedModelId) return;
+    if (selectingRef.current) return;
 
     const model = models.find((m) => m.id === selectedModelId);
     const stillDownloading = selectedModelId in downloadingModels;
@@ -72,6 +75,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onModelSelected }) => {
       !stillExtracting
     ) {
       // Model is ready — select it and transition
+      selectingRef.current = true;
       selectModel(selectedModelId)
         .then((success) => {
           if (success) {
@@ -85,6 +89,9 @@ const Onboarding: React.FC<OnboardingProps> = ({ onModelSelected }) => {
           console.error("Model selection failed:", error);
           toast.error(t("onboarding.errors.selectModel"));
           setSelectedModelId(null);
+        })
+        .finally(() => {
+          selectingRef.current = false;
         });
     }
   }, [
