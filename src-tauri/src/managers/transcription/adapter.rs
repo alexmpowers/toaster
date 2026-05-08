@@ -63,7 +63,8 @@ use transcribe_rs::{TranscriptionResult, TranscriptionSegment};
 #[cfg(test)]
 use super::adapter_normalize::is_non_speech_token;
 use super::adapter_normalize::{
-    adapt_with_auto_detection, make_normalized, words_from_segments_proportional,
+    adapt_with_auto_detection, make_normalized, sanitize_segments,
+    words_from_segments_proportional,
 };
 
 /// Fallback input sample rate when an adapter doesn't declare one — matches
@@ -312,14 +313,19 @@ impl TranscriptionModelAdapter for WhisperAdapter {
         audio_info: AudioInfo,
     ) -> Result<NormalizedTranscriptionResult> {
         require_segments("Whisper", &raw)?;
-        let words = words_from_segments_proportional(segments_of(&raw), audio_info);
+        // Sanitize segments upstream: clamp overlaps from Whisper's 30-second
+        // chunked processing, drop hallucinated duplicates, strip non-speech.
+        let clean_segs = sanitize_segments(segments_of(&raw));
+        let words = words_from_segments_proportional(&clean_segs, audio_info);
         // Whisper segments carry authoritative segment-level times but NOT
         // per-word times. The adapter produces a char-proportional seed;
         // `commands::transcribe_file::build_words_from_segments` refines it
         // via DP forced alignment before words reach the editor.
         // `word_timestamps_authoritative = false` tells that downstream
         // step to run its refinement pass.
-        make_normalized(raw, words, false)
+        let mut normalized_raw = raw;
+        normalized_raw.segments = Some(clean_segs);
+        make_normalized(normalized_raw, words, false)
     }
 }
 

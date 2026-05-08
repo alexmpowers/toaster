@@ -468,3 +468,70 @@ fn sensevoice_adapter_adapts_word_level_segments() {
     assert!(out.word_timestamps_authoritative);
     assert_eq!(out.words.len(), 3);
 }
+
+// ── sanitize_segments tests ─────────────────────────────────────────
+// `sanitize_segments` is imported via `use super::*` from adapter.rs
+
+#[test]
+fn sanitize_segments_clamps_overlapping() {
+    let segs = vec![
+        seg(0.0, 1.0, "hello"),
+        seg(0.8, 2.0, "world"),   // overlaps by 0.2s
+        seg(2.0, 3.0, "again"),
+    ];
+    let result = sanitize_segments(&segs);
+    assert_eq!(result.len(), 3);
+    // second segment start clamped to first's end
+    assert_eq!(result[1].start, 1.0);
+    assert_eq!(result[1].end, 2.0);
+    // third unchanged
+    assert_eq!(result[2].start, 2.0);
+}
+
+#[test]
+fn sanitize_segments_drops_fully_contained() {
+    let segs = vec![
+        seg(0.0, 3.0, "long segment"),
+        seg(1.0, 2.0, "contained"),  // fully inside, becomes zero after clamping
+        seg(3.0, 4.0, "after"),
+    ];
+    let result = sanitize_segments(&segs);
+    // "contained" seg starts at 0.0→clamped to 3.0, end=2.0 < 3.0 → dropped
+    assert_eq!(result.len(), 2);
+    assert_eq!(result[0].text, "long segment");
+    assert_eq!(result[1].text, "after");
+}
+
+#[test]
+fn sanitize_segments_strips_non_speech() {
+    let segs = vec![
+        seg(0.0, 1.0, "hello"),
+        seg(1.0, 2.0, "[Music]"),
+        seg(2.0, 3.0, ""),
+        seg(3.0, 4.0, "  "),
+        seg(4.0, 5.0, "world"),
+    ];
+    let result = sanitize_segments(&segs);
+    assert_eq!(result.len(), 2);
+    assert_eq!(result[0].text, "hello");
+    assert_eq!(result[1].text, "world");
+}
+
+#[test]
+fn sanitize_segments_preserves_clean_input() {
+    let segs = vec![
+        seg(0.0, 1.0, "one"),
+        seg(1.0, 2.0, "two"),
+        seg(2.5, 3.5, "three"),  // gap is fine
+    ];
+    let result = sanitize_segments(&segs);
+    assert_eq!(result.len(), 3);
+    assert_eq!(result[0].start, 0.0);
+    assert_eq!(result[2].start, 2.5);
+}
+
+#[test]
+fn sanitize_segments_empty_input() {
+    let result = sanitize_segments(&[]);
+    assert!(result.is_empty());
+}

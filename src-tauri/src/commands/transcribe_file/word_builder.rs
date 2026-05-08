@@ -252,17 +252,15 @@ pub(super) fn build_words_from_segments(
     (words, meta)
 }
 
-/// Detect and clamp overlapping ASR segments.
+/// Defensive overlap clamping for segments arriving at the word builder.
 ///
-/// Whisper's 30-second chunked processing can produce hallucination loops
-/// where consecutive segments overlap in time. When segments overlap, the
-/// DP forced aligner assigns words to audio regions that belong to the
-/// previous segment, corrupting word-level timestamps.
+/// The primary sanitization now happens upstream in the adapter layer
+/// (`adapter_normalize::sanitize_segments`). This function is a lightweight
+/// safety net that enforces monotonicity in case segments bypass the adapter
+/// (e.g. test fixtures) or a future adapter forgets to sanitize.
 ///
-/// This function enforces strict monotonicity: each segment's start is
-/// clamped to `max(own_start, prev_end)`. Segments that become zero- or
-/// negative-duration after clamping (fully contained within a previous
-/// segment) are removed entirely — their text was hallucinated.
+/// Unlike the upstream version, this does NOT strip non-speech segments
+/// (that's the adapter's job) — it only enforces time ordering.
 pub(super) fn clamp_overlapping_segments(segments: &[TranscriptionSegment]) -> Vec<TranscriptionSegment> {
     if segments.is_empty() {
         return Vec::new();
@@ -280,12 +278,19 @@ pub(super) fn clamp_overlapping_segments(segments: &[TranscriptionSegment]) -> V
                 clamped.start = prev.end;
             }
         }
-        // Drop segments that became zero/negative duration after clamping
         if clamped.end <= clamped.start {
             dropped_count += 1;
             continue;
         }
         result.push(clamped);
+    }
+
+    if overlap_count > 0 {
+        warn!(
+            "clamp_overlapping_segments (defensive): clamped {} overlaps, dropped {} \
+             (segments should have been sanitized upstream)",
+            overlap_count, dropped_count,
+        );
     }
 
     // Log segment statistics for alignment debugging
@@ -294,31 +299,17 @@ pub(super) fn clamp_overlapping_segments(segments: &[TranscriptionSegment]) -> V
         let min_dur = durations.iter().cloned().fold(f64::INFINITY, f64::min);
         let max_dur = durations.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
         let avg_dur: f64 = durations.iter().sum::<f64>() / durations.len() as f64;
-        let word_counts: Vec<usize> = result
+        let max_words = result
             .iter()
             .map(|s| s.text.split_whitespace().count())
-            .collect();
-        let max_words = word_counts.iter().cloned().max().unwrap_or(0);
+            .max()
+            .unwrap_or(0);
 
         info!(
             "build_words_from_segments: {} segments (min {:.2}s, max {:.2}s, avg {:.2}s), \
-             max words/segment={}, overlaps_clamped={}, segments_dropped={}",
-            result.len(),
-            min_dur,
-            max_dur,
-            avg_dur,
-            max_words,
-            overlap_count,
-            dropped_count,
+             max words/segment={}",
+            result.len(), min_dur, max_dur, avg_dur, max_words,
         );
-
-        if overlap_count > 0 {
-            warn!(
-                "build_words_from_segments: clamped {} overlapping segments \
-                 (possible hallucination loops); dropped {} fully-overlapped segments",
-                overlap_count, dropped_count,
-            );
-        }
     }
 
     result

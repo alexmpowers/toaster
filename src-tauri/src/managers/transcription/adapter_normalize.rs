@@ -313,6 +313,64 @@ pub(super) fn segments_are_word_level(segments: &[TranscriptionSegment]) -> bool
     (single as f64) / (segments.len() as f64) >= 0.8
 }
 
+/// Sanitize raw ASR segments: clamp overlaps, drop fully-contained
+/// hallucinated segments, and strip non-speech segments. This runs in the
+/// adapter layer so downstream consumers (DP forced alignment, word builder)
+/// receive clean, monotonic segments.
+///
+/// Returns the sanitized segment list (may be shorter than input).
+pub(super) fn sanitize_segments(segments: &[TranscriptionSegment]) -> Vec<TranscriptionSegment> {
+    if segments.is_empty() {
+        return Vec::new();
+    }
+
+    let mut result: Vec<TranscriptionSegment> = Vec::with_capacity(segments.len());
+    let mut overlap_count = 0usize;
+    let mut dropped_count = 0usize;
+    let mut nonspeech_count = 0usize;
+
+    for seg in segments {
+        // Strip non-speech segments early
+        let text = seg.text.trim();
+        if text.is_empty() || is_non_speech_token(text) {
+            nonspeech_count += 1;
+            continue;
+        }
+
+        let mut clamped = seg.clone();
+
+        // Clamp start to previous segment's end to enforce monotonicity
+        if let Some(prev) = result.last() {
+            if clamped.start < prev.end {
+                overlap_count += 1;
+                clamped.start = prev.end;
+            }
+        }
+
+        // Drop segments that became zero/negative duration after clamping
+        if clamped.end <= clamped.start {
+            dropped_count += 1;
+            continue;
+        }
+
+        result.push(clamped);
+    }
+
+    if overlap_count > 0 || dropped_count > 0 || nonspeech_count > 0 {
+        use log::info;
+        info!(
+            "sanitize_segments: {} segments → {} (overlaps_clamped={}, dropped={}, nonspeech={})",
+            segments.len(),
+            result.len(),
+            overlap_count,
+            dropped_count,
+            nonspeech_count,
+        );
+    }
+
+    result
+}
+
 /// Build + validate a `NormalizedTranscriptionResult` from the parts each
 /// adapter produces. Centralizing this removes 9 copies of the same struct
 /// literal + `validate()?` pattern and is the single place that carries
@@ -355,27 +413,35 @@ pub(super) fn adapt_with_auto_detection(
     use super::adapter::segments_of;
     use log::info;
 
-    let segs = segments_of(&raw);
-    let word_level = segments_are_word_level(segs);
+    // Sanitize segments before word extraction: clamp overlaps, drop
+    // hallucinated segments, strip non-speech. This gives downstream DP
+    // forced alignment a clean, monotonic timeline.
+    let clean_segs = sanitize_segments(segments_of(&raw));
+    let word_level = segments_are_word_level(&clean_segs);
 
     if word_level {
         info!(
             "{}: detected word-level segments ({} segs), using native timestamps (authoritative)",
             engine_name,
-            segs.len()
+            clean_segs.len()
         );
     } else {
         info!(
             "{}: segments are phrase-level ({} segs), using char-proportional split",
             engine_name,
-            segs.len()
+            clean_segs.len()
         );
     }
 
     let words = if word_level {
-        words_from_segments_native(segs, audio_info)
+        words_from_segments_native(&clean_segs, audio_info)
     } else {
-        words_from_segments_proportional(segs, audio_info)
+        words_from_segments_proportional(&clean_segs, audio_info)
     };
-    make_normalized(raw, words, word_level)
+
+    // Store the sanitized segments in the result so build_words_from_segments
+    // receives pre-cleaned data.
+    let mut normalized_raw = raw;
+    normalized_raw.segments = Some(clean_segs);
+    make_normalized(normalized_raw, words, word_level)
 }
