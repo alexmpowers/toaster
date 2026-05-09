@@ -145,76 +145,89 @@ pub async fn transcribe_media_file(
     // (Parakeet word-level), use them directly. This avoids the fragile
     // text-matching path in build_words_from_segments which fails when
     // the filtered text diverges from segment text.
-    let (mut words, align_meta): (Vec<Word>, Option<Vec<WordAlignmentMeta>>) =
-        if authoritative && !adapter_words.is_empty() {
-            info!(
-                "Using {} authoritative adapter words (skipping build_words_from_segments)",
-                adapter_words.len()
-            );
-            let mut words: Vec<Word> = adapter_words
-                .into_iter()
-                .map(|cw| Word {
-                    text: cw.text,
-                    start_us: cw.start_us,
-                    end_us: cw.end_us,
-                    deleted: false,
-                    silenced: false,
-                    confidence: cw.confidence,
-                    speaker_id: cw.speaker_id,
-                })
-                .collect();
+    let (mut words, align_meta): (Vec<Word>, Option<Vec<WordAlignmentMeta>>) = if authoritative
+        && !adapter_words.is_empty()
+    {
+        info!(
+            "Using {} authoritative adapter words (skipping build_words_from_segments)",
+            adapter_words.len()
+        );
+        let mut words: Vec<Word> = adapter_words
+            .into_iter()
+            .map(|cw| Word {
+                text: cw.text,
+                start_us: cw.start_us,
+                end_us: cw.end_us,
+                deleted: false,
+                silenced: false,
+                confidence: cw.confidence,
+                speaker_id: cw.speaker_id,
+            })
+            .collect();
 
-            // Apply leading silence trim to authoritative words that start
-            // a new speech segment (first word, or after a gap > 200ms).
-            // Parakeet word-level timestamps include pre-speech padding in
-            // the first word of each utterance, causing early highlighting.
-            if has_pre_speech_padding && !words.is_empty() {
-                const GAP_THRESHOLD_US: i64 = 200_000;
-                for i in 0..words.len() {
-                    let is_segment_start = if i == 0 {
-                        true
-                    } else {
-                        words[i].start_us - words[i - 1].end_us > GAP_THRESHOLD_US
-                    };
-                    if is_segment_start {
-                        let trimmed = crate::audio_toolkit::silence_trim::trim_leading_silence_padded(
-                            &samples,
-                            words[i].start_us,
-                            words[i].end_us,
-                            sample_rate,
-                        );
-                        if trimmed < words[i].end_us {
-                            words[i].start_us = trimmed;
-                        }
+        // Apply leading silence trim to authoritative words that start
+        // a new speech segment (first word, or after a gap > 200ms).
+        // Parakeet word-level timestamps include pre-speech padding in
+        // the first word of each utterance, causing early highlighting.
+        if has_pre_speech_padding && !words.is_empty() {
+            const GAP_THRESHOLD_US: i64 = 200_000;
+            for i in 0..words.len() {
+                let is_segment_start = if i == 0 {
+                    true
+                } else {
+                    words[i].start_us - words[i - 1].end_us > GAP_THRESHOLD_US
+                };
+                if is_segment_start {
+                    let trimmed = crate::audio_toolkit::silence_trim::trim_leading_silence_padded(
+                        &samples,
+                        words[i].start_us,
+                        words[i].end_us,
+                        sample_rate,
+                    );
+                    if trimmed < words[i].end_us {
+                        words[i].start_us = trimmed;
                     }
                 }
             }
+        }
 
-            let meta = vec![WordAlignmentMeta { interpolated: false, dp_aligned: false }; words.len()];
-            (words, Some(meta))
-        } else {
-            // Non-authoritative path: DP forced alignment from segment-level
-            // timestamps. Primary for Whisper and other engines whose adapter
-            // reports word_timestamps_authoritative = false.
-            let segs = segments.as_ref().ok_or_else(|| {
-                "Transcription engine produced no segment-level timestamps; adapter must always \
+        let meta = vec![
+            WordAlignmentMeta {
+                interpolated: false,
+                dp_aligned: false
+            };
+            words.len()
+        ];
+        (words, Some(meta))
+    } else {
+        // Non-authoritative path: DP forced alignment from segment-level
+        // timestamps. Primary for Whisper and other engines whose adapter
+        // reports word_timestamps_authoritative = false.
+        let segs = segments.as_ref().ok_or_else(|| {
+            "Transcription engine produced no segment-level timestamps; adapter must always \
                  return at least segment-level timing. See p1-adapter-trait."
-                    .to_string()
-            })?;
-            if segs.is_empty() {
-                return Err(
-                    "Transcription engine returned an empty segment list; adapter must always \
+                .to_string()
+        })?;
+        if segs.is_empty() {
+            return Err(
+                "Transcription engine returned an empty segment list; adapter must always \
                      return at least segment-level timing. See p1-adapter-trait."
-                        .to_string(),
-                );
-            }
-            // Try to create a VAD instance for boundary-quality improvement.
-            // Gracefully falls back to energy-only alignment when the model is
-            // unavailable (not downloaded, ORT init failure, etc.).
-            let mut vad_instance = try_open_vad(&app);
-            let (w, m) = build_words_from_segments(&text, segs, &samples, vad_instance.as_mut(), has_pre_speech_padding);
-            (w, Some(m))
-        };
+                    .to_string(),
+            );
+        }
+        // Try to create a VAD instance for boundary-quality improvement.
+        // Gracefully falls back to energy-only alignment when the model is
+        // unavailable (not downloaded, ORT init failure, etc.).
+        let mut vad_instance = try_open_vad(&app);
+        let (w, m) = build_words_from_segments(
+            &text,
+            segs,
+            &samples,
+            vad_instance.as_mut(),
+            has_pre_speech_padding,
+        );
+        (w, Some(m))
+    };
 
     // Structural correction: clamp, monotonicity, min-duration.
     sanitize_word_timestamps(&mut words, total_duration_us);
@@ -238,10 +251,8 @@ pub async fn transcribe_media_file(
     // This replaces the previous pattern of:
     //   sanitize_word_timestamps() → retain(!empty) → manual checks
     // with one call that enforces all invariants.
-    let validated = crate::managers::editor::ValidatedWordSequence::sanitize(
-        words,
-        total_duration_us,
-    );
+    let validated =
+        crate::managers::editor::ValidatedWordSequence::sanitize(words, total_duration_us);
 
     if validated.is_empty() {
         return Err("No words in transcription".to_string());
@@ -263,8 +274,7 @@ pub async fn transcribe_media_file(
 fn try_open_vad(app: &AppHandle) -> Option<crate::audio_toolkit::vad::SileroVad> {
     use crate::audio_toolkit::vad::prefilter::try_open_silero;
 
-    let model_manager = app
-        .try_state::<Arc<crate::managers::model::ModelManager>>()?;
+    let model_manager = app.try_state::<Arc<crate::managers::model::ModelManager>>()?;
     let model_path = model_manager.get_model_path("silero-vad").ok()?;
     match try_open_silero(&model_path) {
         Ok(Some(vad)) => {

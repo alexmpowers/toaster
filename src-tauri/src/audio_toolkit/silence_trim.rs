@@ -110,7 +110,14 @@ pub fn trim_leading_silence(
     seg_end_us: i64,
     sample_rate_hz: f64,
 ) -> i64 {
-    trim_leading_silence_inner(samples, seg_start_us, seg_end_us, sample_rate_hz, SILENCE_FRACTION, MIN_SILENCE_US)
+    trim_leading_silence_inner(
+        samples,
+        seg_start_us,
+        seg_end_us,
+        sample_rate_hz,
+        SILENCE_FRACTION,
+        MIN_SILENCE_US,
+    )
 }
 
 /// Model-aware variant: when the engine is known to inject pre-speech
@@ -127,7 +134,14 @@ pub fn trim_leading_silence_padded(
     // even shorter silence windows that the default would skip.
     const PADDED_SILENCE_FRACTION: f32 = 0.03;
     const PADDED_MIN_SILENCE_US: i64 = 100_000;
-    trim_leading_silence_inner(samples, seg_start_us, seg_end_us, sample_rate_hz, PADDED_SILENCE_FRACTION, PADDED_MIN_SILENCE_US)
+    trim_leading_silence_inner(
+        samples,
+        seg_start_us,
+        seg_end_us,
+        sample_rate_hz,
+        PADDED_SILENCE_FRACTION,
+        PADDED_MIN_SILENCE_US,
+    )
 }
 
 fn trim_leading_silence_inner(
@@ -197,8 +211,14 @@ mod tests {
         let trimmed = trim_trailing_silence(&samples, 0, seg_end_us, sr);
 
         assert!(trimmed < seg_end_us, "Expected trim but got full segment");
-        assert!(trimmed <= 350_000, "Trim point {trimmed} µs too far from 300 ms");
-        assert!(trimmed >= 290_000, "Trim point {trimmed} µs clipped into speech");
+        assert!(
+            trimmed <= 350_000,
+            "Trim point {trimmed} µs too far from 300 ms"
+        );
+        assert!(
+            trimmed >= 290_000,
+            "Trim point {trimmed} µs clipped into speech"
+        );
     }
 
     #[test]
@@ -215,7 +235,10 @@ mod tests {
 
         let seg_end_us = (total as f64 / sr * 1_000_000.0) as i64;
         let trimmed = trim_trailing_silence(&samples, 0, seg_end_us, sr);
-        assert_eq!(trimmed, seg_end_us, "Short trailing silence should not be trimmed");
+        assert_eq!(
+            trimmed, seg_end_us,
+            "Short trailing silence should not be trimmed"
+        );
     }
 
     #[test]
@@ -243,8 +266,14 @@ mod tests {
         let trimmed = trim_leading_silence(&samples, 0, seg_end_us, sr);
 
         assert!(trimmed > 0, "Expected leading trim but got original start");
-        assert!(trimmed >= 450_000, "Trim point {trimmed} µs too early — near 500 ms");
-        assert!(trimmed <= 520_000, "Trim point {trimmed} µs cut into speech");
+        assert!(
+            trimmed >= 450_000,
+            "Trim point {trimmed} µs too early — near 500 ms"
+        );
+        assert!(
+            trimmed <= 520_000,
+            "Trim point {trimmed} µs cut into speech"
+        );
     }
 
     #[test]

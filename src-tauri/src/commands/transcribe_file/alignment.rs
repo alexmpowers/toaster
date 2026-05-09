@@ -168,7 +168,9 @@ pub(super) fn realign_suspicious_spans(
         // heuristic scan degrades accuracy.
         if let Some(m) = meta {
             let left_trusted = m[i].dp_aligned && !m[i].interpolated;
-            let right_trusted = m.get(i + 1).is_some_and(|r| r.dp_aligned && !r.interpolated);
+            let right_trusted = m
+                .get(i + 1)
+                .is_some_and(|r| r.dp_aligned && !r.interpolated);
             if left_trusted && right_trusted {
                 continue;
             }

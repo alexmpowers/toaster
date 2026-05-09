@@ -31,13 +31,30 @@ pub enum TimingError {
     /// A word has empty or whitespace-only text.
     EmptyText { index: usize },
     /// A word has non-positive duration (start >= end).
-    NonPositiveDuration { index: usize, start_us: i64, end_us: i64 },
+    NonPositiveDuration {
+        index: usize,
+        start_us: i64,
+        end_us: i64,
+    },
     /// A word's timestamps fall outside [0, audio_duration_us].
-    OutOfBounds { index: usize, start_us: i64, end_us: i64, audio_duration_us: i64 },
+    OutOfBounds {
+        index: usize,
+        start_us: i64,
+        end_us: i64,
+        audio_duration_us: i64,
+    },
     /// Two adjacent words overlap: words[index-1].end_us > words[index].start_us.
-    Overlap { index: usize, prev_end_us: i64, this_start_us: i64 },
+    Overlap {
+        index: usize,
+        prev_end_us: i64,
+        this_start_us: i64,
+    },
     /// A word's duration is below the minimum threshold.
-    TooShort { index: usize, duration_us: i64, min_us: i64 },
+    TooShort {
+        index: usize,
+        duration_us: i64,
+        min_us: i64,
+    },
 }
 
 impl fmt::Display for TimingError {
@@ -46,17 +63,40 @@ impl fmt::Display for TimingError {
             Self::EmptyText { index } => {
                 write!(f, "word[{index}] has empty text")
             }
-            Self::NonPositiveDuration { index, start_us, end_us } => {
-                write!(f, "word[{index}] has non-positive duration: start={start_us}, end={end_us}")
+            Self::NonPositiveDuration {
+                index,
+                start_us,
+                end_us,
+            } => {
+                write!(
+                    f,
+                    "word[{index}] has non-positive duration: start={start_us}, end={end_us}"
+                )
             }
-            Self::OutOfBounds { index, start_us, end_us, audio_duration_us } => {
+            Self::OutOfBounds {
+                index,
+                start_us,
+                end_us,
+                audio_duration_us,
+            } => {
                 write!(f, "word[{index}] out of bounds: [{start_us}, {end_us}) vs audio [0, {audio_duration_us})")
             }
-            Self::Overlap { index, prev_end_us, this_start_us } => {
+            Self::Overlap {
+                index,
+                prev_end_us,
+                this_start_us,
+            } => {
                 write!(f, "word[{index}] overlaps predecessor: prev.end={prev_end_us} > this.start={this_start_us}")
             }
-            Self::TooShort { index, duration_us, min_us } => {
-                write!(f, "word[{index}] too short: {duration_us}µs < minimum {min_us}µs")
+            Self::TooShort {
+                index,
+                duration_us,
+                min_us,
+            } => {
+                write!(
+                    f,
+                    "word[{index}] too short: {duration_us}µs < minimum {min_us}µs"
+                )
             }
         }
     }
@@ -221,10 +261,7 @@ mod tests {
 
     #[test]
     fn valid_sequence_accepted() {
-        let words = vec![
-            word("hello", 0, 500_000),
-            word("world", 500_000, 1_000_000),
-        ];
+        let words = vec![word("hello", 0, 500_000), word("world", 500_000, 1_000_000)];
         let seq = ValidatedWordSequence::new(words, 1_000_000);
         assert!(seq.is_ok());
         assert_eq!(seq.unwrap().len(), 2);
@@ -265,8 +302,8 @@ mod tests {
     fn sanitize_strips_empty_text() {
         let words = vec![
             word("hello", 0, 500_000),
-            word("", 500_000, 600_000),        // empty — stripped
-            word("  ", 600_000, 700_000),       // whitespace — stripped
+            word("", 500_000, 600_000),   // empty — stripped
+            word("  ", 600_000, 700_000), // whitespace — stripped
             word("world", 700_000, 1_000_000),
         ];
         let seq = ValidatedWordSequence::sanitize(words, 1_000_000);

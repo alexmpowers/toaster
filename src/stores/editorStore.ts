@@ -35,18 +35,36 @@ export interface TimingContractSnapshot {
   warning: string | null;
 }
 
+export interface SpeakerInfo {
+  id: number;
+  name: string;
+  word_count: number;
+  total_duration_us: number;
+}
+
 interface EditorProjection {
   words: Word[];
   timing_contract: TimingContractSnapshot;
+  speaker_names: Record<string, string>;
+}
+
+function toSpeakerNameMap(speakers: SpeakerInfo[]): Record<string, string> {
+  return speakers.reduce<Record<string, string>>((accumulator, speaker) => {
+    if (speaker.name.trim().length > 0) {
+      accumulator[String(speaker.id)] = speaker.name;
+    }
+    return accumulator;
+  }, {});
 }
 
 interface EditorState {
   words: Word[];
   timingContract: TimingContractSnapshot | null;
+  speakerNames: Record<string, string>;
   selectedIndex: number | null;
   selectionRange: [number, number] | null;
   highlightedIndices: number[];
-  highlightType: "filler" | "pause" | "duplicate" | null;
+  highlightType: "filler" | "pause" | "duplicate" | "cleanup" | null;
   /**
    * Session-scoped per-project export intent. Not persisted to backend —
    * lives with this store's lifetime so switching to the Advanced settings
@@ -64,12 +82,14 @@ interface EditorState {
   undo: () => Promise<void>;
   redo: () => Promise<void>;
   refreshFromBackend: () => Promise<void>;
+  refreshSpeakerNames: () => Promise<void>;
+  setSpeakerNames: (speakerNames: Record<string, string>) => void;
   getKeepSegments: () => Promise<[number, number][]>;
   selectWord: (index: number | null) => void;
   setSelectionRange: (range: [number, number] | null) => void;
   setHighlightedIndices: (
     indices: number[],
-    type: "filler" | "pause" | "duplicate" | null,
+    type: "filler" | "pause" | "duplicate" | "cleanup" | null,
   ) => void;
   clearHighlights: () => void;
   setBurnCaptions: (next: boolean) => void;
@@ -81,6 +101,7 @@ const fetchProjection = async (): Promise<EditorProjection> =>
 export const useEditorStore = create<EditorState>()((set) => ({
   words: [],
   timingContract: null,
+  speakerNames: {},
   selectedIndex: null,
   selectionRange: null,
   highlightedIndices: [],
@@ -93,6 +114,7 @@ export const useEditorStore = create<EditorState>()((set) => ({
     set({
       words: projection.words,
       timingContract: projection.timing_contract,
+      speakerNames: projection.speaker_names,
       selectedIndex: null,
       selectionRange: null,
     });
@@ -104,6 +126,7 @@ export const useEditorStore = create<EditorState>()((set) => ({
     set({
       words: projection.words,
       timingContract: projection.timing_contract,
+      speakerNames: projection.speaker_names,
     });
   },
 
@@ -113,6 +136,7 @@ export const useEditorStore = create<EditorState>()((set) => ({
     set({
       words: projection.words,
       timingContract: projection.timing_contract,
+      speakerNames: projection.speaker_names,
     });
   },
 
@@ -122,6 +146,7 @@ export const useEditorStore = create<EditorState>()((set) => ({
     set({
       words: projection.words,
       timingContract: projection.timing_contract,
+      speakerNames: projection.speaker_names,
       selectedIndex: null,
       selectionRange: null,
     });
@@ -133,6 +158,7 @@ export const useEditorStore = create<EditorState>()((set) => ({
     set({
       words: projection.words,
       timingContract: projection.timing_contract,
+      speakerNames: projection.speaker_names,
     });
   },
 
@@ -142,6 +168,7 @@ export const useEditorStore = create<EditorState>()((set) => ({
     set({
       words: projection.words,
       timingContract: projection.timing_contract,
+      speakerNames: projection.speaker_names,
       selectedIndex: null,
     });
   },
@@ -152,6 +179,7 @@ export const useEditorStore = create<EditorState>()((set) => ({
     set({
       words: projection.words,
       timingContract: projection.timing_contract,
+      speakerNames: projection.speaker_names,
     });
   },
 
@@ -161,6 +189,7 @@ export const useEditorStore = create<EditorState>()((set) => ({
     set({
       words: projection.words,
       timingContract: projection.timing_contract,
+      speakerNames: projection.speaker_names,
     });
   },
 
@@ -170,6 +199,7 @@ export const useEditorStore = create<EditorState>()((set) => ({
     set({
       words: projection.words,
       timingContract: projection.timing_contract,
+      speakerNames: projection.speaker_names,
     });
   },
 
@@ -178,7 +208,17 @@ export const useEditorStore = create<EditorState>()((set) => ({
     set({
       words: projection.words,
       timingContract: projection.timing_contract,
+      speakerNames: projection.speaker_names,
     });
+  },
+
+  refreshSpeakerNames: async () => {
+    const speakers = await invoke<SpeakerInfo[]>("get_speakers");
+    set({ speakerNames: toSpeakerNameMap(speakers) });
+  },
+
+  setSpeakerNames: (speakerNames: Record<string, string>) => {
+    set({ speakerNames });
   },
 
   getKeepSegments: async () => {
@@ -195,7 +235,7 @@ export const useEditorStore = create<EditorState>()((set) => ({
 
   setHighlightedIndices: (
     indices: number[],
-    type: "filler" | "pause" | "duplicate" | null,
+    type: "filler" | "pause" | "duplicate" | "cleanup" | null,
   ) => {
     set({ highlightedIndices: indices, highlightType: type });
   },

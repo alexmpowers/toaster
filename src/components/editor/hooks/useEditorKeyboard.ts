@@ -86,6 +86,9 @@ export function useEditorKeyboard(
       ) {
         e.preventDefault();
         if (hlIndices.length > 0) {
+          if (hlType === "cleanup") {
+            return;
+          }
           if (hlType === "filler") {
             commands
               .deleteFillers()

@@ -8,6 +8,7 @@
 
 use tauri::{AppHandle, Emitter, Manager};
 
+use crate::commands::vocabulary::normalize_vocabulary_entries;
 use crate::settings::{self, CaptionFontFamily};
 
 /// Save accelerator settings, re-apply globals, and unload the model so it
@@ -83,7 +84,7 @@ pub fn change_update_checks_setting(app: AppHandle, enabled: bool) -> Result<(),
 #[specta::specta]
 pub fn update_custom_words(app: AppHandle, words: Vec<String>) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
-    settings.custom_words = words;
+    settings.custom_words = normalize_vocabulary_entries(words).map_err(|err| err.to_string())?;
     settings::write_settings(&app, settings);
     Ok(())
 }

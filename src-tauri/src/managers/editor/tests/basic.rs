@@ -275,6 +275,24 @@ fn timeline_revision_advances_on_successful_mutations_only() {
 }
 
 #[test]
+fn undo_restores_speaker_name_snapshots() {
+    let mut editor = EditorState::new();
+    editor.set_words(make_words());
+    editor.set_speaker_name(0, "Host".into());
+
+    editor.push_undo_snapshot();
+    editor.set_speaker_name(0, "Guest".into());
+    editor.bump_revision();
+
+    assert_eq!(
+        editor.get_speaker_name(0).map(String::as_str),
+        Some("Guest")
+    );
+    assert!(editor.undo());
+    assert_eq!(editor.get_speaker_name(0).map(String::as_str), Some("Host"));
+}
+
+#[test]
 fn timing_contract_snapshot_reports_expected_counts_and_duration() {
     let mut editor = EditorState::new();
     editor.set_words(make_words());

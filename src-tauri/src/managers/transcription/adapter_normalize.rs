@@ -123,8 +123,7 @@ fn split_segment_by_chars(seg_text: &str, start_us: i64, end_us: i64) -> Vec<(St
     let mut out = Vec::with_capacity(words.len());
     let mut cursor = start_us;
     for (i, w) in words.iter().enumerate() {
-        let share =
-            (weights[i] as f64 / total as f64 * duration_us as f64).round() as i64;
+        let share = (weights[i] as f64 / total as f64 * duration_us as f64).round() as i64;
         let word_end = if i == words.len() - 1 {
             end_us
         } else {

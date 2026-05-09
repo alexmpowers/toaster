@@ -2,21 +2,26 @@
 //
 // Manages a list of timestamped words with delete/restore/split/silence
 // operations and full undo/redo support (up to 64 snapshots).
-
+use std::collections::HashMap;
 mod types;
 mod validated_words;
 pub use types::{TimingContractSnapshot, TimingSegment, Word};
 pub use validated_words::ValidatedWordSequence;
-
 const MAX_UNDO: usize = 64;
 const DEFAULT_QUANTIZATION_FPS_NUM: u32 = 30;
 const DEFAULT_QUANTIZATION_FPS_DEN: u32 = 1;
+#[derive(Clone)]
+struct EditorSnapshot {
+    words: Vec<Word>,
+    speaker_names: HashMap<i32, String>,
+}
 
 /// Holds the current word list and undo/redo history.
 pub struct EditorState {
     words: Vec<Word>,
-    undo_stack: Vec<Vec<Word>>,
-    redo_stack: Vec<Vec<Word>>,
+    speaker_names: HashMap<i32, String>,
+    undo_stack: Vec<EditorSnapshot>,
+    redo_stack: Vec<EditorSnapshot>,
     timeline_revision: u64,
 }
 
@@ -31,16 +36,17 @@ impl EditorState {
     pub fn new() -> Self {
         Self {
             words: Vec::new(),
+            speaker_names: HashMap::new(),
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),
             timeline_revision: 0,
         }
     }
 
-    /// Replace all words (e.g. from a new transcription result).
-    /// Clears undo/redo history.
+    /// Replace all words (e.g. from a new transcription result), clearing history and speaker labels.
     pub fn set_words(&mut self, words: Vec<Word>) {
         self.words = words;
+        self.speaker_names.clear();
         self.undo_stack.clear();
         self.redo_stack.clear();
         self.bump_revision();
@@ -51,26 +57,63 @@ impl EditorState {
         &self.words
     }
 
+    /// Set a custom display name for a speaker.
+    pub fn set_speaker_name(&mut self, speaker_id: i32, name: String) {
+        self.speaker_names.insert(speaker_id, name);
+    }
+
+    /// Return the custom display name for a speaker, if present.
+    pub fn get_speaker_name(&self, speaker_id: i32) -> Option<&String> {
+        self.speaker_names.get(&speaker_id)
+    }
+
+    /// Return all custom speaker names.
+    pub fn get_speaker_names(&self) -> &HashMap<i32, String> {
+        &self.speaker_names
+    }
+
+    /// Replace all custom speaker names (used when loading a project).
+    pub fn set_speaker_names(&mut self, speaker_names: HashMap<i32, String>) {
+        self.speaker_names = speaker_names;
+    }
+
+    /// Remove a custom speaker name.
+    pub fn remove_speaker_name(&mut self, speaker_id: i32) -> Option<String> {
+        self.speaker_names.remove(&speaker_id)
+    }
+
+    /// Clear all custom speaker names.
+    pub fn clear_speaker_names(&mut self) {
+        self.speaker_names.clear();
+    }
+
     /// Return a mutable reference to the word list for bulk mutations.
     pub(crate) fn get_words_mut(&mut self) -> &mut [Word] {
         &mut self.words
     }
 
-    /// Return a mutable reference to the underlying `Vec<Word>` so callers
-    /// that need to insert/remove (e.g. silence-sentinel insertion in
-    /// `filler::trim_pauses`) can do so without copying out and back.
-    /// Use sparingly — most operations should mutate in-place via
-    /// [`Self::get_words_mut`] to keep snapshot/revision discipline tight.
+    /// Return a mutable reference to the underlying `Vec<Word>` for rare insert/remove operations.
+    /// Use sparingly — most operations should mutate in-place via [`Self::get_words_mut`].
     pub(crate) fn get_words_vec_mut(&mut self) -> &mut Vec<Word> {
         &mut self.words
     }
 
-    // ── snapshot helpers ──────────────────────────────────────────────
+    fn snapshot(&self) -> EditorSnapshot {
+        EditorSnapshot {
+            words: self.words.clone(),
+            speaker_names: self.speaker_names.clone(),
+        }
+    }
 
-    /// Push a snapshot of the current words onto the undo stack,
-    /// clear the redo stack, and enforce the 64-entry cap.
+    fn restore_snapshot(&mut self, snapshot: EditorSnapshot) {
+        self.words = snapshot.words;
+        self.speaker_names = snapshot.speaker_names;
+    }
+
+    // ── snapshot helpers ──────────────────────────────────────────────
+    /// Push a snapshot of the current editor data onto the undo stack, clear redo, and enforce the 64-entry cap.
     pub(crate) fn push_undo_snapshot(&mut self) {
-        self.undo_stack.push(self.words.clone());
+        self.undo_stack.push(self.snapshot());
         self.redo_stack.clear();
         if self.undo_stack.len() > MAX_UNDO {
             self.undo_stack.remove(0);
@@ -80,7 +123,6 @@ impl EditorState {
     pub(crate) fn bump_revision(&mut self) {
         self.timeline_revision = self.timeline_revision.saturating_add(1);
     }
-
     // ── mutation operations ──────────────────────────────────────────
 
     /// Mark a single word as deleted. Returns `false` if index is out of
@@ -199,8 +241,8 @@ impl EditorState {
     /// Undo the last mutation. Returns `false` if nothing to undo.
     pub fn undo(&mut self) -> bool {
         if let Some(snapshot) = self.undo_stack.pop() {
-            self.redo_stack.push(self.words.clone());
-            self.words = snapshot;
+            self.redo_stack.push(self.snapshot());
+            self.restore_snapshot(snapshot);
             self.bump_revision();
             true
         } else {
@@ -211,8 +253,8 @@ impl EditorState {
     /// Redo the last undone mutation. Returns `false` if nothing to redo.
     pub fn redo(&mut self) -> bool {
         if let Some(snapshot) = self.redo_stack.pop() {
-            self.undo_stack.push(self.words.clone());
-            self.words = snapshot;
+            self.undo_stack.push(self.snapshot());
+            self.restore_snapshot(snapshot);
             self.bump_revision();
             true
         } else {

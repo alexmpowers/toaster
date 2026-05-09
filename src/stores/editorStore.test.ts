@@ -24,6 +24,7 @@ function makeWord(overrides: Partial<Word> = {}): Word {
 function makeProjection(words: Word[] = []) {
   return {
     words,
+    speaker_names: {},
     timing_contract: {
       timeline_revision: 1,
       total_words: words.length,
@@ -48,6 +49,7 @@ beforeEach(() => {
   useEditorStore.setState({
     words: [],
     timingContract: null,
+    speakerNames: {},
     selectedIndex: null,
     selectionRange: null,
     highlightedIndices: [],
@@ -285,6 +287,20 @@ describe("editorStore", () => {
 
       expect(mockInvoke).toHaveBeenCalledWith("editor_get_keep_segments");
       expect(result).toEqual(segments);
+    });
+  });
+
+  describe("refreshSpeakerNames", () => {
+    it("loads speaker info and stores custom names by speaker id", async () => {
+      mockInvoke.mockResolvedValueOnce([
+        { id: 0, name: "Host", word_count: 10, total_duration_us: 2_000_000 },
+        { id: 1, name: "", word_count: 8, total_duration_us: 1_500_000 },
+      ]);
+
+      await useEditorStore.getState().refreshSpeakerNames();
+
+      expect(mockInvoke).toHaveBeenCalledWith("get_speakers");
+      expect(useEditorStore.getState().speakerNames).toEqual({ 0: "Host" });
     });
   });
 });

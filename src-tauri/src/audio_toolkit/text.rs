@@ -31,7 +31,7 @@ fn build_ngram(words: &[&str]) -> String {
 ///
 /// # Returns
 /// The best matching custom word and its score, if any match was found
-fn find_best_match<'a>(
+pub(crate) fn find_best_match<'a>(
     candidate: &str,
     custom_words: &'a [String],
     custom_words_nospace: &[String],
@@ -194,7 +194,8 @@ fn extract_punctuation(word: &str) -> (&str, &str) {
     (prefix, suffix)
 }
 
-static MULTI_SPACE_PATTERN: Lazy<Regex> = Lazy::new(|| Regex::new(r"\s{2,}").expect("valid regex constant"));
+static MULTI_SPACE_PATTERN: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"\s{2,}").expect("valid regex constant"));
 
 /// Collapses repeated words (3+ repetitions) to a single instance.
 /// E.g., "wh wh wh wh" -> "wh", "I I I I" -> "I"

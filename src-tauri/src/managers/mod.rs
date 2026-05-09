@@ -1,4 +1,6 @@
 pub mod captions;
+pub mod cleanup;
+pub mod confidence;
 pub mod disfluency;
 pub mod editor;
 pub mod export;
@@ -6,5 +8,10 @@ pub mod filler;
 pub mod media;
 pub mod model;
 pub mod project;
+pub mod punctuation;
+pub mod search;
+pub mod silence;
+pub mod speaker;
 pub mod splice;
 pub mod transcription;
+pub mod vocabulary;

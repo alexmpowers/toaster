@@ -11,9 +11,7 @@ import {
   Save,
   FolderOpen,
   X,
-  Eraser,
   RotateCcw,
-  Scissors,
   Keyboard,
 } from "lucide-react";
 import { SettingsGroup } from "@/components/ui/SettingsGroup";
@@ -29,9 +27,13 @@ import Waveform from "@/components/player/Waveform";
 import EditorToolbar from "@/components/editor/EditorToolbar";
 import ExportMenu from "@/components/editor/ExportMenu";
 import KeyboardShortcutsDialog from "@/components/editor/KeyboardShortcutsDialog";
+import ReviewPanel from "@/components/editor/ReviewPanel";
+import CleanupDialog from "@/components/editor/CleanupDialog";
+import SpeakerPanel from "@/components/editor/SpeakerPanel";
 import { unwrapResult } from "@/components/editor/EditorView.util";
 import { useEditorExports } from "@/components/editor/hooks/useEditorExports";
 import { useEditorKeyboard } from "@/components/editor/hooks/useEditorKeyboard";
+import { findWordAtTimeUs } from "@/components/editor/playbackWord";
 
 /**
  * Top-level editor page. Owns the three-pane layout (import controls on top,
@@ -64,6 +66,7 @@ const EditorView: React.FC = () => {
     setSelectionRange,
     clearHighlights,
     refreshFromBackend,
+    refreshSpeakerNames,
   } = useEditorStore(
     useShallow((s) => ({
       words: s.words,
@@ -72,16 +75,18 @@ const EditorView: React.FC = () => {
       setSelectionRange: s.setSelectionRange,
       clearHighlights: s.clearHighlights,
       refreshFromBackend: s.refreshFromBackend,
+      refreshSpeakerNames: s.refreshSpeakerNames,
     })),
   );
   const selectedIndex = useEditorStore((s) => s.selectedIndex);
   const burnCaptions = useEditorStore((s) => s.burnCaptions);
   const setBurnCaptions = useEditorStore((s) => s.setBurnCaptions);
-  const { mediaUrl, currentTime, duration, setMedia } = usePlayerStore(
+  const { mediaUrl, currentTime, duration, isPlaying, setMedia } = usePlayerStore(
     useShallow((s) => ({
       mediaUrl: s.mediaUrl,
       currentTime: s.currentTime,
       duration: s.duration,
+      isPlaying: s.isPlaying,
       setMedia: s.setMedia,
     })),
   );
@@ -93,10 +98,12 @@ const EditorView: React.FC = () => {
   const updateSetting = useSettingsStore((s) => s.updateSetting);
   const normalizeAudio = settings?.normalize_audio_on_export ?? false;
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [isCleaningUp, setIsCleaningUp] = useState(false);
   const [modelMissing, setModelMissing] = useState(false);
   const [lastSavedPath, setLastSavedPath] = useState<string | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [isReviewMode, setIsReviewMode] = useState(false);
+  const [isCleanupOpen, setIsCleanupOpen] = useState(false);
+  const [isSpeakerPanelOpen, setIsSpeakerPanelOpen] = useState(false);
   const {
     handleExport,
     handleFFmpegScript,
@@ -104,10 +111,25 @@ const EditorView: React.FC = () => {
     isExportingMedia,
     allowedFormats,
   } = useEditorExports({ mediaInfo, burnCaptions });
+  const [activePlaybackIndex, setActivePlaybackIndex] = useState<number | null>(
+    null,
+  );
   // Suppress auto-select briefly after a manual word click so it doesn't get overridden
   const manualClickRef = React.useRef(false);
+  const manualClickTimeoutRef = useRef<number | null>(null);
   // Ref for auto-scrolling to the active word during playback
   const activeWordRef = useRef<HTMLSpanElement | null>(null);
+
+  const suppressAutoSelection = useCallback(() => {
+    manualClickRef.current = true;
+    if (manualClickTimeoutRef.current !== null) {
+      window.clearTimeout(manualClickTimeoutRef.current);
+    }
+    manualClickTimeoutRef.current = window.setTimeout(() => {
+      manualClickRef.current = false;
+      manualClickTimeoutRef.current = null;
+    }, 300);
+  }, []);
 
   // Auto-save: save project every 30 seconds when words exist and a save path is known
   useEffect(() => {
@@ -125,6 +147,15 @@ const EditorView: React.FC = () => {
   // Global keyboard shortcuts (extracted to hook for file-size cap)
   useEditorKeyboard(setShortcutsOpen);
 
+  useEffect(
+    () => () => {
+      if (manualClickTimeoutRef.current !== null) {
+        window.clearTimeout(manualClickTimeoutRef.current);
+      }
+    },
+    [],
+  );
+
   const handleTranscribe = useCallback(async () => {
     if (!mediaInfo) return;
     setIsTranscribing(true);
@@ -141,11 +172,7 @@ const EditorView: React.FC = () => {
       if (model && model.accuracy_score > 0) {
         const score = model.accuracy_score;
         const tierKey =
-          score > 0.8
-            ? "excellent"
-            : score >= 0.65
-              ? "good"
-              : "fair";
+          score > 0.8 ? "excellent" : score >= 0.65 ? "good" : "fair";
         const tierMessage = t(`editor.transcriptionQuality.${tierKey}`, {
           model: model.name,
         });
@@ -269,6 +296,7 @@ const EditorView: React.FC = () => {
       const mediaPath = unwrapResult(await commands.loadProject(path));
 
       await refreshFromBackend();
+      await refreshSpeakerNames();
 
       if (mediaPath) {
         const info = unwrapResult(await commands.mediaGetCurrent());
@@ -281,55 +309,7 @@ const EditorView: React.FC = () => {
     } catch (err) {
       console.error("Load project failed:", err);
     }
-  }, [refreshFromBackend, setMedia, setMediaInfo]);
-
-  const handleCleanup = useCallback(async () => {
-    clearHighlights();
-    setIsCleaningUp(true);
-    try {
-      const result = unwrapResult(await commands.cleanupAll(null, null));
-      const total =
-        result.fillers_removed +
-        result.duplicates_removed +
-        result.pauses_trimmed;
-      if (total === 0) {
-        toast.info(t("editor.cleanup.empty"));
-      } else {
-        await refreshFromBackend();
-        toast.success(
-          t("editor.cleanup.success", {
-            fillers: result.fillers_removed,
-            duplicates: result.duplicates_removed,
-            pauses: result.pauses_trimmed,
-          }),
-        );
-      }
-    } catch (err) {
-      console.error("Cleanup failed:", err);
-      toast.error(t("editor.cleanup.failed"));
-    } finally {
-      setIsCleaningUp(false);
-    }
-  }, [clearHighlights, refreshFromBackend, t]);
-
-  const handleRemoveSilence = useCallback(async () => {
-    clearHighlights();
-    setIsCleaningUp(true);
-    try {
-      const count = unwrapResult(await commands.removeSilence());
-      if (count === 0) {
-        toast.info(t("editor.removeSilence.empty"));
-      } else {
-        await refreshFromBackend();
-        toast.success(t("editor.removeSilence.success", { count }));
-      }
-    } catch (err) {
-      console.error("Remove silence failed:", err);
-      toast.error(t("editor.removeSilence.failed"));
-    } finally {
-      setIsCleaningUp(false);
-    }
-  }, [clearHighlights, refreshFromBackend, t]);
+  }, [refreshFromBackend, refreshSpeakerNames, setMedia, setMediaInfo]);
 
   const handleReset = useCallback(async () => {
     if (!mediaInfo) return;
@@ -343,6 +323,8 @@ const EditorView: React.FC = () => {
     clearHighlights();
     selectWord(null);
     setSelectionRange(null);
+    setIsReviewMode(false);
+    setActivePlaybackIndex(null);
     await setWords([]);
     await handleTranscribe();
   }, [
@@ -359,6 +341,10 @@ const EditorView: React.FC = () => {
     updateSetting("normalize_audio_on_export", !normalizeAudio);
   }, [updateSetting, normalizeAudio]);
 
+  const handleToggleReviewMode = useCallback(() => {
+    setIsReviewMode((previous) => !previous);
+  }, []);
+
   const handleClose = useCallback(() => {
     clearMedia();
     setWords([]);
@@ -368,44 +354,38 @@ const EditorView: React.FC = () => {
     setLastSavedPath(null);
     setIsTranscribing(false);
     setModelMissing(false);
-  }, [clearMedia, setWords, selectWord, setSelectionRange, clearHighlights]);
+    setIsReviewMode(false);
+    setIsCleanupOpen(false);
+    setIsSpeakerPanelOpen(false);
+    setActivePlaybackIndex(null);
+  }, [
+    clearMedia,
+    clearHighlights,
+    selectWord,
+    setSelectionRange,
+    setWords,
+    setActivePlaybackIndex,
+  ]);
 
   const handleTimeUpdate = useCallback(
     (time: number) => {
-      if (words.length === 0) return;
+      if (words.length === 0) {
+        setActivePlaybackIndex(null);
+        return;
+      }
+
+      const idx = findWordAtTimeUs(words, time * 1_000_000);
+      setActivePlaybackIndex(idx);
+
       // Don't auto-select during a manual word click — let the user's selection stick
-      if (manualClickRef.current) return;
-      const timeUs = time * 1_000_000;
-      // Binary search: words are sorted by start_us. Find the last word
-      // whose start_us <= timeUs, then check if timeUs < end_us.
-      let lo = 0;
-      let hi = words.length - 1;
-      let idx = -1;
-      while (lo <= hi) {
-        const mid = (lo + hi) >>> 1;
-        if (words[mid].start_us <= timeUs) {
-          lo = mid + 1;
-        } else {
-          hi = mid - 1;
-        }
-      }
-      // hi is now the largest index with start_us <= timeUs
-      for (let i = hi; i >= Math.max(0, hi - 5); i--) {
-        const w = words[i];
-        if (!w.deleted && timeUs >= w.start_us && timeUs < w.end_us) {
-          idx = i;
-          break;
-        }
-      }
-      if (idx >= 0) {
-        useEditorStore.getState().selectWord(idx);
-        // Auto-scroll the active word into view during playback
-        if (activeWordRef.current) {
-          activeWordRef.current.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-          });
-        }
+      if (manualClickRef.current || idx === null) return;
+
+      useEditorStore.getState().selectWord(idx);
+      if (activeWordRef.current) {
+        activeWordRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
       }
     },
     [words],
@@ -415,17 +395,20 @@ const EditorView: React.FC = () => {
     (index: number) => {
       const word = words[index];
       if (word) {
-        // Flag to suppress auto-select for a brief period
-        manualClickRef.current = true;
+        suppressAutoSelection();
         seekTo(word.start_us / 1_000_000);
         useEditorStore.getState().selectWord(index);
-        // Clear the flag after the seek settles
-        setTimeout(() => {
-          manualClickRef.current = false;
-        }, 300);
       }
     },
-    [words, seekTo],
+    [words, seekTo, suppressAutoSelection],
+  );
+
+  const handleWaveformWordSelect = useCallback(
+    (index: number) => {
+      suppressAutoSelection();
+      useEditorStore.getState().selectWord(index);
+    },
+    [suppressAutoSelection],
   );
 
   return (
@@ -522,8 +505,11 @@ const EditorView: React.FC = () => {
                 currentTime={currentTime}
                 duration={duration}
                 onSeek={seekTo}
+                onWordSelect={handleWaveformWordSelect}
                 words={words}
                 selectedWordIndex={selectedIndex}
+                activePlaybackIndex={activePlaybackIndex}
+                isPlaying={isPlaying}
                 className="rounded-lg overflow-hidden"
               />
             </>
@@ -570,29 +556,8 @@ const EditorView: React.FC = () => {
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={handleCleanup}
-                disabled={isCleaningUp || isTranscribing}
-                className="inline-flex items-center gap-1.5"
-              >
-                <Eraser size={14} />
-                {t("editor.cleanup.button")}
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleRemoveSilence}
-                disabled={isCleaningUp || isTranscribing}
-                title={t("editor.removeSilence.tooltip")}
-                className="inline-flex items-center gap-1.5"
-              >
-                <Scissors size={14} />
-                {t("editor.removeSilence.button")}
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
                 onClick={handleReset}
-                disabled={isCleaningUp || isTranscribing}
+                disabled={isTranscribing}
                 title={t("editor.resetTooltip")}
                 className="inline-flex items-center gap-1.5"
               >
@@ -600,7 +565,21 @@ const EditorView: React.FC = () => {
                 {isTranscribing ? t("editor.transcribing") : t("editor.reset")}
               </Button>
             </div>
-            <TranscriptEditor onWordClick={handleWordClick} activeWordRef={activeWordRef} />
+            <CleanupDialog
+              isOpen={isCleanupOpen}
+              onClose={() => setIsCleanupOpen(false)}
+            />
+            <ReviewPanel
+              isOpen={isReviewMode}
+              onClose={() => setIsReviewMode(false)}
+            />
+            {isSpeakerPanelOpen && <SpeakerPanel />}
+            <TranscriptEditor
+              onWordClick={handleWordClick}
+              activeWordRef={activeWordRef}
+              activePlaybackIndex={activePlaybackIndex}
+              isPlaying={isPlaying}
+            />
           </div>
         </div>
       )}
@@ -614,6 +593,12 @@ const EditorView: React.FC = () => {
         onBurnCaptionsChange={setBurnCaptions}
         normalizeAudio={normalizeAudio}
         onNormalizeAudioToggle={handleNormalizeToggle}
+        isReviewMode={isReviewMode}
+        onToggleReviewMode={handleToggleReviewMode}
+        isCleanupOpen={isCleanupOpen}
+        onToggleCleanup={() => setIsCleanupOpen((current) => !current)}
+        isSpeakerPanelOpen={isSpeakerPanelOpen}
+        onToggleSpeakerPanel={() => setIsSpeakerPanelOpen((current) => !current)}
       />
 
       {/* Floating help button — always visible, keyboard-first users open via

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { findWordAtTimeUs } from "@/components/editor/playbackWord";
 import { type Word } from "@/stores/editorStore";
 import { mergeRangesUs, subtractRangesUs } from "./Waveform.util";
 
@@ -7,8 +8,11 @@ interface WaveformProps {
   currentTime: number;
   duration: number;
   onSeek: (time: number) => void;
+  onWordSelect?: (index: number) => void;
   words?: Word[];
   selectedWordIndex?: number | null;
+  activePlaybackIndex?: number | null;
+  isPlaying?: boolean;
   className?: string;
 }
 
@@ -85,14 +89,18 @@ const Waveform: React.FC<WaveformProps> = ({
   currentTime,
   duration,
   onSeek,
+  onWordSelect,
   words = [],
   selectedWordIndex = null,
+  activePlaybackIndex = null,
+  isPlaying = false,
   className = "",
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [peaks, setPeaks] = useState<number[]>([]);
   const [canvasWidth, setCanvasWidth] = useState(0);
+  const [pulsePhase, setPulsePhase] = useState(0);
   const canvasHeight = 64;
 
   // Decode audio and extract waveform peaks
@@ -186,6 +194,23 @@ const Waveform: React.FC<WaveformProps> = ({
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (!isPlaying || activePlaybackIndex === null) {
+      setPulsePhase(0);
+      return;
+    }
+
+    let animationFrame = 0;
+    const start = performance.now();
+    const animate = (now: number) => {
+      setPulsePhase(((now - start) % 1200) / 1200);
+      animationFrame = window.requestAnimationFrame(animate);
+    };
+
+    animationFrame = window.requestAnimationFrame(animate);
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [activePlaybackIndex, isPlaying]);
+
   // Draw waveform with overlays
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -205,6 +230,14 @@ const Waveform: React.FC<WaveformProps> = ({
     // `--color-logo-primary` — see docs/design-tokens.md).
     const playedColor = readBrandColor();
     const selectedWordColor = withAlpha(playedColor, 0.3);
+    const activeWordColor = withAlpha(
+      playedColor,
+      0.2 + (Math.sin(pulsePhase * Math.PI * 2) + 1) * 0.1,
+    );
+    const activeWordBorderColor = withAlpha(
+      playedColor,
+      0.55 + (Math.sin(pulsePhase * Math.PI * 2) + 1) * 0.1,
+    );
 
     const barWidth = Math.max(
       1,
@@ -258,6 +291,24 @@ const Waveform: React.FC<WaveformProps> = ({
         ctx.fillRect(startX, 0, Math.max(2, endX - startX), canvasHeight);
       }
 
+      if (
+        isPlaying &&
+        activePlaybackIndex !== null &&
+        words[activePlaybackIndex] &&
+        !words[activePlaybackIndex].deleted
+      ) {
+        const activeWord = words[activePlaybackIndex];
+        const startX =
+          (activeWord.start_us / 1_000_000 / duration) * canvasWidth;
+        const endX = (activeWord.end_us / 1_000_000 / duration) * canvasWidth;
+        const width = Math.max(2, endX - startX);
+        ctx.fillStyle = activeWordColor;
+        ctx.fillRect(startX, 0, width, canvasHeight);
+        ctx.strokeStyle = activeWordBorderColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(startX, 1, width, canvasHeight - 2);
+      }
+
       // Draw word boundary lines (subtle)
       ctx.strokeStyle = WORD_BOUNDARY_COLOR;
       ctx.lineWidth = 1;
@@ -274,14 +325,24 @@ const Waveform: React.FC<WaveformProps> = ({
     // Draw playhead
     if (duration > 0) {
       const playheadX = progress * canvasWidth;
-      ctx.strokeStyle = "#ffffff";
+      ctx.strokeStyle = "rgb(255, 255, 255)";
       ctx.lineWidth = 1.5;
       ctx.beginPath();
       ctx.moveTo(playheadX, 0);
       ctx.lineTo(playheadX, canvasHeight);
       ctx.stroke();
     }
-  }, [peaks, currentTime, duration, canvasWidth, words, selectedWordIndex]);
+  }, [
+    peaks,
+    currentTime,
+    duration,
+    canvasWidth,
+    words,
+    selectedWordIndex,
+    activePlaybackIndex,
+    isPlaying,
+    pulsePhase,
+  ]);
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -290,9 +351,16 @@ const Waveform: React.FC<WaveformProps> = ({
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const ratio = Math.max(0, Math.min(1, x / rect.width));
-      onSeek(ratio * duration);
+      const nextTime = ratio * duration;
+      onSeek(nextTime);
+
+      if (!onWordSelect) return;
+      const wordIndex = findWordAtTimeUs(words, nextTime * 1_000_000);
+      if (wordIndex !== null) {
+        onWordSelect(wordIndex);
+      }
     },
-    [duration, onSeek],
+    [duration, onSeek, onWordSelect, words],
   );
 
   if (!audioUrl) return null;

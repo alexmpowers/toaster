@@ -13,26 +13,7 @@ import TranscriptContextMenu, {
   type ContextMenuState,
 } from "./TranscriptContextMenu";
 import FindReplaceBar from "./FindReplaceBar";
-
-// Speaker colors for visual differentiation — distinct palette of 8
-// hues used only when diarization assigns speaker IDs. Not a brand
-// concern; the palette is intentional variety, not drift. Allowlisted
-// in scripts/gate/check-brand-token-drift.ts.
-const SPEAKER_COLORS = [
-  "#8B5CF6", // violet
-  "#06B6D4", // cyan
-  "#F97316", // orange
-  "#10B981", // emerald
-  "#EC4899", // pink
-  "#6366F1", // indigo
-  "#14B8A6", // teal
-  "#F59E0B", // amber
-];
-
-function getSpeakerColor(speakerId: number): string {
-  if (speakerId < 0) return "transparent";
-  return SPEAKER_COLORS[speakerId % SPEAKER_COLORS.length];
-}
+import { getSpeakerColor } from "./speakerColors";
 
 /** Map confidence (0-1) to a visual style. Returns empty when confidence
  *  is unknown (-1) or above the 0.7 threshold. */
@@ -54,11 +35,25 @@ function formatTimeUs(us: number): string {
   return `${min}:${sec.toFixed(2).padStart(5, "0")}`;
 }
 
+type FindSearchMode = "exact" | "fuzzy" | "phonetic";
+
+interface SearchTranscriptResult {
+  matches: Array<{ word_index: number }>;
+  total_count: number;
+}
+
+const SEARCH_MODE_TO_COMMAND = {
+  fuzzy: "Fuzzy",
+  phonetic: "Phonetic",
+} as const satisfies Record<Exclude<FindSearchMode, "exact">, string>;
+
 interface TranscriptEditorProps {
   showConfidence?: boolean;
   showSpeakers?: boolean;
   onWordClick?: (index: number) => void;
   activeWordRef?: React.RefObject<HTMLSpanElement | null>;
+  activePlaybackIndex?: number | null;
+  isPlaying?: boolean;
 }
 
 const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
@@ -66,6 +61,8 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   showSpeakers = true,
   onWordClick,
   activeWordRef,
+  activePlaybackIndex = null,
+  isPlaying = false,
 }) => {
   const { t } = useTranslation();
   // useShallow is mandatory here: `useEditorStore()` with no selector
@@ -75,6 +72,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   // changes by reference / value. Key perf fix per audit finding F3.
   const {
     words,
+    speakerNames,
     selectedIndex,
     selectionRange,
     highlightedIndices,
@@ -95,6 +93,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   } = useEditorStore(
     useShallow((s) => ({
       words: s.words,
+      speakerNames: s.speakerNames,
       selectedIndex: s.selectedIndex,
       selectionRange: s.selectionRange,
       highlightedIndices: s.highlightedIndices,
@@ -121,6 +120,8 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   const isDraggingRef = useRef(false);
   const [showFind, setShowFind] = useState(false);
   const [findQuery, setFindQuery] = useState("");
+  const [searchMode, setSearchMode] = useState<FindSearchMode>("exact");
+  const [backendFindMatches, setBackendFindMatches] = useState<number[]>([]);
   const [findMatchIndex, setFindMatchIndex] = useState(0);
   const [replaceText, setReplaceText] = useState("");
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -131,8 +132,6 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
     y: 0,
     wordIndex: -1,
   });
-
-  const [cleanupSummary, setCleanupSummary] = useState<string | null>(null);
 
   const highlightedSet = useMemo(
     () => new Set(highlightedIndices),
@@ -182,7 +181,6 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
         // Simple click (no drag) — clear any highlights
         if (highlightedIndices.length > 0) {
           clearHighlights();
-          setCleanupSummary(null);
         }
         if (e.shiftKey && selectedIndex !== null) {
           const start = Math.min(selectedIndex, index);
@@ -216,8 +214,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
     return () => window.removeEventListener("mouseup", handleGlobalMouseUp);
   }, []);
 
-  // Find matches
-  const findMatches = useMemo(() => {
+  const exactFindMatches = useMemo(() => {
     if (!findQuery.trim()) return [];
     const q = findQuery.toLowerCase();
     return words
@@ -225,6 +222,53 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
       .filter((m) => m.match)
       .map((m) => m.index);
   }, [words, findQuery]);
+
+  useEffect(() => {
+    if (searchMode === "exact" || !findQuery.trim()) {
+      setBackendFindMatches([]);
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const result = await invoke<SearchTranscriptResult>(
+            "search_transcript",
+            {
+              query: findQuery,
+              mode: SEARCH_MODE_TO_COMMAND[searchMode],
+              maxDistance: 2,
+            },
+          );
+          if (!cancelled) {
+            setBackendFindMatches(
+              result.matches.map((match) => match.word_index),
+            );
+          }
+        } catch {
+          if (!cancelled) {
+            setBackendFindMatches([]);
+          }
+        }
+      })();
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [findQuery, searchMode]);
+
+  const findMatches =
+    searchMode === "exact" ? exactFindMatches : backendFindMatches;
+
+  useEffect(() => {
+    if (findMatchIndex < findMatches.length) {
+      return;
+    }
+    setFindMatchIndex(0);
+  }, [findMatchIndex, findMatches.length]);
 
   // Ctrl+F to toggle find bar
   useEffect(() => {
@@ -270,9 +314,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
     await setWords(updated);
     // Advance to the next match (matches will re-compute)
     if (findMatches.length > 1) {
-      setFindMatchIndex((prev) =>
-        prev >= findMatches.length - 1 ? 0 : prev,
-      );
+      setFindMatchIndex((prev) => (prev >= findMatches.length - 1 ? 0 : prev));
     }
   }, [findMatches, findMatchIndex, replaceText, words, setWords]);
 
@@ -331,6 +373,10 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
 
   const handleDeleteSelected = useCallback(async () => {
     if (highlightedIndices.length > 0) {
+      if (highlightType === "cleanup") {
+        closeContextMenu();
+        return;
+      }
       // Bulk-delete highlighted words (fillers or pause-adjacent)
       if (highlightType === "filler") {
         const count = await invoke<number>("delete_fillers", {});
@@ -433,23 +479,21 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
       tabIndex={0}
       onKeyDown={handleKeyDown}
     >
-      {/* Detection toolbar — cleanup summary only */}
-      {cleanupSummary && (
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-[11px] text-mid-gray/60">{cleanupSummary}</span>
-        </div>
-      )}
-
       {/* Find & Replace bar */}
       {showFind && (
         <FindReplaceBar
           findQuery={findQuery}
           replaceText={replaceText}
+          searchMode={searchMode}
           findMatchIndex={findMatchIndex}
           findMatchCount={findMatches.length}
           findInputRef={findInputRef}
           onQueryChange={setFindQuery}
           onReplaceTextChange={setReplaceText}
+          onSearchModeChange={(mode) => {
+            setSearchMode(mode);
+            setFindMatchIndex(0);
+          }}
           onMatchIndexReset={() => setFindMatchIndex(0)}
           onNavigate={navigateFind}
           onReplaceOne={handleReplaceOne}
@@ -484,7 +528,11 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
           let paragraphBreak = false;
           if (index > 0) {
             const prev = words[index - 1];
-            if (prev && !prev.deleted && /[.!?]["'»\u201D\u2019)]*$/.test(prev.text)) {
+            if (
+              prev &&
+              !prev.deleted &&
+              /[.!?]["'»\u201D\u2019)]*$/.test(prev.text)
+            ) {
               // Check for long pause between previous word's end and this word's start
               const pauseUs = word.start_us - prev.end_us;
               const longPause = pauseUs > 1_500_000; // 1.5 seconds
@@ -511,6 +559,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
           const isCurrentFindMatch =
             findMatches.length > 0 && findMatches[findMatchIndex] === index;
           const isHighlighted = highlightedSet.has(index);
+          const isActivePlaybackWord = isPlaying && activePlaybackIndex === index;
           const prevWord = index > 0 ? words[index - 1] : null;
           const showSpeakerLabel =
             showSpeakers &&
@@ -521,6 +570,9 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
             showConfidence && !word.deleted
               ? getConfidenceStyle(word.confidence)
               : {};
+          const speakerLabel =
+            speakerNames[String(word.speaker_id)] ??
+            t("editor.speaker", { id: word.speaker_id + 1 });
           const speakerBorderStyle =
             showSpeakers && word.speaker_id >= 0
               ? {
@@ -543,12 +595,22 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                     }}
                   />
                   <span className="text-[10px] uppercase tracking-wider text-mid-gray/60">
-                    {t("editor.speaker", { id: word.speaker_id + 1 })}
+                    {speakerLabel}
                   </span>
                 </div>
               )}
               <span
-                ref={isSelected && activeWordRef ? (el) => { (activeWordRef as React.MutableRefObject<HTMLSpanElement | null>).current = el; } : undefined}
+                ref={
+                  activeWordRef &&
+                  ((isPlaying && isActivePlaybackWord) ||
+                    (!isPlaying && isSelected))
+                    ? (el) => {
+                        (
+                          activeWordRef as React.MutableRefObject<HTMLSpanElement | null>
+                        ).current = el;
+                      }
+                    : undefined
+                }
                 role="button"
                 tabIndex={-1}
                 onMouseDown={(e) => handleWordMouseDown(index, e)}
@@ -564,9 +626,13 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                       ? t("editor.duplicateWord")
                       : isHighlighted && highlightType === "pause"
                         ? t("editor.pauseDetected")
-                        : showConfidence && word.confidence > 0 && word.confidence < 0.9
-                          ? `${t("editor.confidence")}: ${Math.round(word.confidence * 100)}% | ${formatTimeUs(word.start_us)} – ${formatTimeUs(word.end_us)}`
-                          : `${formatTimeUs(word.start_us)} – ${formatTimeUs(word.end_us)}`
+                        : isHighlighted && highlightType === "cleanup"
+                          ? t("editor.cleanupTitle")
+                          : showConfidence &&
+                              word.confidence > 0 &&
+                              word.confidence < 0.9
+                            ? `${t("editor.confidence")}: ${Math.round(word.confidence * 100)}% | ${formatTimeUs(word.start_us)} – ${formatTimeUs(word.end_us)}`
+                            : `${formatTimeUs(word.start_us)} – ${formatTimeUs(word.end_us)}`
                 }
                 className={[
                   "cursor-pointer rounded px-1 py-0.5 transition-colors",
@@ -581,6 +647,9 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                   isHighlighted &&
                     highlightType === "pause" &&
                     "bg-yellow-400/50 text-text",
+                  isHighlighted &&
+                    highlightType === "cleanup" &&
+                    "bg-logo-primary/25 ring-1 ring-logo-primary/40 text-text",
                   isCurrentFindMatch &&
                     !isHighlighted &&
                     "ring-2 ring-logo-primary bg-logo-primary/30",
@@ -597,10 +666,23 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                     !isFindMatch &&
                     !isHighlighted &&
                     "bg-logo-primary/40",
+                  isActivePlaybackWord &&
+                    !word.deleted &&
+                    !word.silenced &&
+                    "ring-2 ring-inset ring-logo-primary/70 motion-safe:animate-pulse",
+                  isActivePlaybackWord &&
+                    !isSelected &&
+                    !isRangeSelected &&
+                    !isFindMatch &&
+                    !isHighlighted &&
+                    !word.deleted &&
+                    !word.silenced &&
+                    "bg-logo-primary/25",
                   !isSelected &&
                     !isRangeSelected &&
                     !isFindMatch &&
                     !isHighlighted &&
+                    !isActivePlaybackWord &&
                     !word.deleted &&
                     !word.silenced &&
                     "hover:bg-mid-gray/20",
@@ -615,8 +697,14 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                     onChange={(e) => setEditText(e.target.value)}
                     onBlur={commitInlineEdit}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter") { e.preventDefault(); commitInlineEdit(); }
-                      if (e.key === "Escape") { e.preventDefault(); cancelInlineEdit(); }
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        commitInlineEdit();
+                      }
+                      if (e.key === "Escape") {
+                        e.preventDefault();
+                        cancelInlineEdit();
+                      }
                       e.stopPropagation();
                     }}
                     autoFocus

@@ -39,6 +39,7 @@ pub fn save_project(
     let mut project = ToasterProject::new(&project_name);
     project.source_media = media.current().map(|m| m.path.clone());
     project.set_words(editor.get_words().to_vec());
+    project.speaker_names = editor.get_speaker_names().clone();
 
     // Caption profiles: persist the currently open project's override.
     // If the project has no override yet, crystallize the app-level
@@ -70,6 +71,9 @@ pub fn load_project(
     path: String,
 ) -> Result<String, String> {
     let project = ToasterProject::load(std::path::Path::new(&path))?;
+    let source_media = project.source_media.clone();
+    let caption_profiles = project.settings.caption_profiles.clone();
+    let speaker_names = project.speaker_names.clone();
 
     // Validate words through the single trust boundary. Legacy .toaster
     // files may contain artifacts (empty words, overlapping timestamps)
@@ -83,20 +87,21 @@ pub fn load_project(
     let validated =
         crate::managers::editor::ValidatedWordSequence::sanitize(project.words, audio_duration_us);
 
-    // Restore editor words
+    // Restore editor words + project-scoped speaker labels.
     let mut editor =
         crate::lock_recovery::try_lock(editor_store.0.lock()).map_err(|e| e.to_string())?;
     editor.set_words(validated.into_inner());
+    editor.set_speaker_names(speaker_names);
 
     // Restore caption profiles into the shared project store. v1.0.0
     // projects have no profiles → store `None`, which makes
     // `get_caption_profile` fall back to the app-level defaults.
     if let Ok(mut guard) = project_store.0.lock() {
-        *guard = project.settings.caption_profiles.clone();
+        *guard = caption_profiles;
     }
 
     // Restore media if path exists
-    if let Some(ref media_path) = project.source_media {
+    if let Some(ref media_path) = source_media {
         if media_path.exists() {
             let mut media =
                 crate::lock_recovery::try_lock(media_store.0.lock()).map_err(|e| e.to_string())?;
@@ -104,8 +109,7 @@ pub fn load_project(
         }
     }
 
-    Ok(project
-        .source_media
+    Ok(source_media
         .map(|p| p.to_string_lossy().to_string())
         .unwrap_or_default())
 }

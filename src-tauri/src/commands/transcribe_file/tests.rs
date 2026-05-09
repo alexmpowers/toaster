@@ -69,7 +69,8 @@ fn proportional_split_gives_short_leading_word_adequate_duration() {
         confidence: None,
     }];
     let samples = vec![0.3_f32; 24_000]; // 1.5 s at 16 kHz
-    let (words, _meta) = build_words_from_segments("I said hello", &segments, &samples, None, false);
+    let (words, _meta) =
+        build_words_from_segments("I said hello", &segments, &samples, None, false);
     assert_eq!(words.len(), 3);
 
     // With MIN_WORD_CHAR_WEIGHT=1, "I" (1 char) out of
@@ -278,7 +279,8 @@ fn beginning_short_word_deletion_boundary_lands_in_silence() {
 
     let total_duration_us = 1_500_000;
 
-    let (mut words, align_meta) = build_words_from_segments("I said hello", &segments, &samples, None, false);
+    let (mut words, align_meta) =
+        build_words_from_segments("I said hello", &segments, &samples, None, false);
     sanitize_word_timestamps(&mut words, total_duration_us);
     realign_suspicious_spans(&mut words, &samples, Some(&align_meta));
     sanitize_word_timestamps(&mut words, total_duration_us);

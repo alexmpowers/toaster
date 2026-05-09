@@ -305,7 +305,17 @@ fn adapter_preserves_repeated_phrases() {
     // ALL words preserved — no dedup at transcription time
     assert_eq!(
         texts,
-        vec!["Microsoft", "keeps", "investing", "in", "Microsoft", "keeps", "investing", "in", "them"]
+        vec![
+            "Microsoft",
+            "keeps",
+            "investing",
+            "in",
+            "Microsoft",
+            "keeps",
+            "investing",
+            "in",
+            "them"
+        ]
     );
 }
 
@@ -342,7 +352,10 @@ fn adapter_preserves_long_repeats() {
     let audio = AudioInfo::from_samples(32_000, 16_000, 1);
     let out = ParakeetAdapter.adapt(raw, audio).expect("adapt ok");
     let texts: Vec<_> = out.words.iter().map(|w| w.text.as_str()).collect();
-    assert_eq!(texts, vec!["A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "F"]);
+    assert_eq!(
+        texts,
+        vec!["A", "B", "C", "D", "E", "A", "B", "C", "D", "E", "F"]
+    );
 }
 
 /// Unit test for dedup_repeated_phrases function itself (used by cleanup flow).
@@ -350,18 +363,28 @@ fn adapter_preserves_long_repeats() {
 fn dedup_function_removes_repeated_phrases() {
     use crate::managers::transcription::adapter_normalize::dedup_repeated_phrases;
 
-    let words: Vec<CanonicalWord> = ["Microsoft", "keeps", "investing", "in", "Microsoft", "keeps", "investing", "in", "them"]
-        .iter()
-        .enumerate()
-        .map(|(i, &t)| CanonicalWord {
-            text: t.to_string(),
-            start_us: (i as i64) * 200_000,
-            end_us: (i as i64 + 1) * 200_000,
-            confidence: -1.0,
-            speaker_id: -1,
-            is_non_speech: false,
-        })
-        .collect();
+    let words: Vec<CanonicalWord> = [
+        "Microsoft",
+        "keeps",
+        "investing",
+        "in",
+        "Microsoft",
+        "keeps",
+        "investing",
+        "in",
+        "them",
+    ]
+    .iter()
+    .enumerate()
+    .map(|(i, &t)| CanonicalWord {
+        text: t.to_string(),
+        start_us: (i as i64) * 200_000,
+        end_us: (i as i64 + 1) * 200_000,
+        confidence: -1.0,
+        speaker_id: -1,
+        is_non_speech: false,
+    })
+    .collect();
 
     let result = dedup_repeated_phrases(words);
     let texts: Vec<_> = result.iter().map(|w| w.text.as_str()).collect();
@@ -379,7 +402,10 @@ fn gigaam_adapter_adapts_word_level_segments() {
     ]);
     let audio = AudioInfo::from_samples(16_000 * 2, 16_000, 1);
     let out = GigaAmAdapter.adapt(raw, audio).expect("adapt ok");
-    assert!(out.word_timestamps_authoritative, "word-level segments should be authoritative");
+    assert!(
+        out.word_timestamps_authoritative,
+        "word-level segments should be authoritative"
+    );
     assert_eq!(out.words.len(), 3);
     assert_eq!(out.words[0].text, "привет");
     assert_eq!(out.words[0].start_us, 100_000);
@@ -393,8 +419,14 @@ fn gigaam_adapter_adapts_phrase_level_segments() {
     ]);
     let audio = AudioInfo::from_samples(16_000 * 3, 16_000, 1);
     let out = GigaAmAdapter.adapt(raw, audio).expect("adapt ok");
-    assert!(!out.word_timestamps_authoritative, "phrase-level segments are NOT authoritative");
-    assert!(out.words.len() >= 4, "phrase segments should split into words");
+    assert!(
+        !out.word_timestamps_authoritative,
+        "phrase-level segments are NOT authoritative"
+    );
+    assert!(
+        out.words.len() >= 4,
+        "phrase segments should split into words"
+    );
 }
 
 #[test]
@@ -482,7 +514,7 @@ fn sensevoice_adapter_adapts_word_level_segments() {
 fn sanitize_segments_clamps_overlapping() {
     let segs = vec![
         seg(0.0, 1.0, "hello"),
-        seg(0.8, 2.0, "world"),   // overlaps by 0.2s
+        seg(0.8, 2.0, "world"), // overlaps by 0.2s
         seg(2.0, 3.0, "again"),
     ];
     let result = sanitize_segments(&segs);
@@ -498,7 +530,7 @@ fn sanitize_segments_clamps_overlapping() {
 fn sanitize_segments_drops_fully_contained() {
     let segs = vec![
         seg(0.0, 3.0, "long segment"),
-        seg(1.0, 2.0, "contained"),  // fully inside, becomes zero after clamping
+        seg(1.0, 2.0, "contained"), // fully inside, becomes zero after clamping
         seg(3.0, 4.0, "after"),
     ];
     let result = sanitize_segments(&segs);
@@ -528,7 +560,7 @@ fn sanitize_segments_preserves_clean_input() {
     let segs = vec![
         seg(0.0, 1.0, "one"),
         seg(1.0, 2.0, "two"),
-        seg(2.5, 3.5, "three"),  // gap is fine
+        seg(2.5, 3.5, "three"), // gap is fine
     ];
     let result = sanitize_segments(&segs);
     assert_eq!(result.len(), 3);

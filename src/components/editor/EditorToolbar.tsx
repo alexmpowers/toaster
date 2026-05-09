@@ -1,9 +1,11 @@
 import React from "react";
+import { Eye, Sparkles, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/Button";
+import { Dropdown, type DropdownOption } from "@/components/ui/Dropdown";
+import { SettingContainer } from "@/components/ui/SettingContainer";
 import { SettingsGroup } from "@/components/ui/SettingsGroup";
 import { ToggleSwitch } from "@/components/ui/ToggleSwitch";
-import { SettingContainer } from "@/components/ui/SettingContainer";
-import { Dropdown, type DropdownOption } from "@/components/ui/Dropdown";
 import { useSettings } from "@/hooks/useSettings";
 import type { LoudnessTarget, Word } from "@/bindings";
 
@@ -13,6 +15,12 @@ interface EditorToolbarProps {
   onBurnCaptionsChange: (next: boolean) => void;
   normalizeAudio: boolean;
   onNormalizeAudioToggle: () => void;
+  isReviewMode: boolean;
+  onToggleReviewMode: () => void;
+  isCleanupOpen: boolean;
+  onToggleCleanup: () => void;
+  isSpeakerPanelOpen: boolean;
+  onToggleSpeakerPanel: () => void;
 }
 
 const LOUDNESS_TARGETS: LoudnessTarget[] = [
@@ -41,6 +49,12 @@ const EditorToolbar: React.FC<EditorToolbarProps> = React.memo(
     onBurnCaptionsChange,
     normalizeAudio,
     onNormalizeAudioToggle,
+    isReviewMode,
+    onToggleReviewMode,
+    isCleanupOpen,
+    onToggleCleanup,
+    isSpeakerPanelOpen,
+    onToggleSpeakerPanel,
   }) => {
     const { t } = useTranslation();
     const { settings, updateSetting, isUpdating } = useSettings();
@@ -93,6 +107,67 @@ const EditorToolbar: React.FC<EditorToolbarProps> = React.memo(
               />
             </SettingContainer>
           )}
+
+          <SettingContainer
+            title={t("editor.cleanupTitle")}
+            description={[
+              t("editor.cleanupFillers"),
+              t("editor.cleanupDuplicates"),
+              t("editor.cleanupPauses"),
+            ].join(" · ")}
+            grouped
+            layout="horizontal"
+          >
+            <Button
+              type="button"
+              variant={isCleanupOpen ? "primary-soft" : "secondary"}
+              size="sm"
+              onClick={onToggleCleanup}
+              className="inline-flex items-center gap-1.5"
+              title={t("editor.cleanupTitle")}
+            >
+              <Sparkles size={14} />
+              {t("editor.cleanupTitle")}
+            </Button>
+          </SettingContainer>
+
+          <SettingContainer
+            title={t("editor.reviewMode")}
+            description={t("editor.reviewModeTooltip")}
+            grouped
+            layout="horizontal"
+          >
+            <Button
+              type="button"
+              variant={isReviewMode ? "primary-soft" : "secondary"}
+              size="sm"
+              onClick={onToggleReviewMode}
+              className="inline-flex items-center gap-1.5"
+              title={t("editor.reviewModeTooltip")}
+            >
+              <Eye size={14} />
+              {t("editor.reviewMode")}
+            </Button>
+          </SettingContainer>
+
+          <SettingContainer
+            title={t("editor.speakers")}
+            description={t("editor.speakerPanel")}
+            grouped
+            layout="horizontal"
+          >
+            <Button
+              type="button"
+              variant={isSpeakerPanelOpen ? "primary-soft" : "secondary"}
+              size="sm"
+              onClick={onToggleSpeakerPanel}
+              className="inline-flex items-center gap-1.5"
+              title={t("editor.speakerPanel")}
+            >
+              <Users size={14} />
+              {t("editor.speakers")}
+            </Button>
+          </SettingContainer>
         </div>
       </SettingsGroup>
     );

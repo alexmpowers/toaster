@@ -324,13 +324,11 @@ impl TranscriptionManager {
                     dtw_model_preset: Some(dtw_preset),
                     ..Default::default()
                 };
-                let engine =
-                    WhisperEngine::load_with_params(&model_path, params).map_err(|e| {
-                        let error_msg =
-                            format!("Failed to load whisper model {}: {}", model_id, e);
-                        emit_loading_failed(&error_msg);
-                        anyhow::anyhow!(error_msg)
-                    })?;
+                let engine = WhisperEngine::load_with_params(&model_path, params).map_err(|e| {
+                    let error_msg = format!("Failed to load whisper model {}: {}", model_id, e);
+                    emit_loading_failed(&error_msg);
+                    anyhow::anyhow!(error_msg)
+                })?;
                 LoadedEngine::Whisper(engine)
             }
             EngineType::Parakeet => {

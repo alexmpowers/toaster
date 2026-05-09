@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::State;
 
@@ -11,12 +12,14 @@ pub struct EditorStore(pub Mutex<EditorState>);
 pub struct EditorProjection {
     pub words: Vec<Word>,
     pub timing_contract: TimingContractSnapshot,
+    pub speaker_names: HashMap<i32, String>,
 }
 
 fn build_projection(state: &EditorState) -> EditorProjection {
     EditorProjection {
         words: state.get_words().to_vec(),
         timing_contract: state.timing_contract_snapshot(),
+        speaker_names: state.get_speaker_names().clone(),
     }
 }
 
@@ -170,6 +173,7 @@ mod tests {
         assert_eq!(projection.timing_contract.total_words, 2);
         assert_eq!(projection.timing_contract.deleted_words, 1);
         assert_eq!(projection.timing_contract.keep_segments.len(), 1);
+        assert!(projection.speaker_names.is_empty());
     }
 
     #[test]

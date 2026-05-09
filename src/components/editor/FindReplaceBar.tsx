@@ -3,14 +3,27 @@ import { useTranslation } from "react-i18next";
 import { Replace, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
+type SearchMode = "exact" | "fuzzy" | "phonetic";
+
+const SEARCH_MODE_OPTIONS = [
+  { value: "exact", labelKey: "editor.searchExact" },
+  { value: "fuzzy", labelKey: "editor.searchFuzzy" },
+  { value: "phonetic", labelKey: "editor.searchPhonetic" },
+] as const satisfies ReadonlyArray<{
+  value: SearchMode;
+  labelKey: string;
+}>;
+
 interface FindReplaceBarProps {
   findQuery: string;
   replaceText: string;
+  searchMode: SearchMode;
   findMatchIndex: number;
   findMatchCount: number;
   findInputRef: React.RefObject<HTMLInputElement>;
   onQueryChange: (query: string) => void;
   onReplaceTextChange: (text: string) => void;
+  onSearchModeChange: (mode: SearchMode) => void;
   onMatchIndexReset: () => void;
   onNavigate: (direction: 1 | -1) => void;
   onReplaceOne: () => void;
@@ -23,11 +36,13 @@ const FindReplaceBar: React.FC<FindReplaceBarProps> = React.memo(
   ({
     findQuery,
     replaceText,
+    searchMode,
     findMatchIndex,
     findMatchCount,
     findInputRef,
     onQueryChange,
     onReplaceTextChange,
+    onSearchModeChange,
     onMatchIndexReset,
     onNavigate,
     onReplaceOne,
@@ -63,19 +78,39 @@ const FindReplaceBar: React.FC<FindReplaceBarProps> = React.memo(
             </span>
           )}
           {findMatchCount > 0 && (
-            <button
+            <Button
+              variant="danger-ghost"
+              size="sm"
               onClick={onDeleteAll}
-              className="px-2 py-0.5 text-[11px] text-red-400 bg-red-900/20 rounded hover:bg-red-900/40 transition-colors"
+              className="!py-0.5 !text-[11px]"
             >
               {t("editor.deleteAll")}
-            </button>
+            </Button>
           )}
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onClose}
-            className="text-mid-gray/60 hover:text-mid-gray transition-colors"
+            className="!px-1 !py-1 text-mid-gray/60 hover:!text-mid-gray"
           >
             <X size={14} />
-          </button>
+          </Button>
+        </div>
+        <div className="flex items-center gap-1 pl-5">
+          <span className="mr-1 text-[11px] text-mid-gray/60">
+            {t("editor.searchMode")}:
+          </span>
+          {SEARCH_MODE_OPTIONS.map(({ value, labelKey }) => (
+            <Button
+              key={value}
+              variant={searchMode === value ? "primary-soft" : "ghost"}
+              size="sm"
+              onClick={() => onSearchModeChange(value)}
+              className="!px-1.5 !py-0 !text-[10px]"
+            >
+              {t(labelKey)}
+            </Button>
+          ))}
         </div>
         {/* Replace row */}
         <div className="flex items-center gap-2">

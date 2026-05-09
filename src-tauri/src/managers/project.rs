@@ -7,6 +7,7 @@ use crate::managers::editor::Word;
 use crate::settings::CaptionProfileSet;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 /// Current on-disk project format version. Bumped to 1.2.0 for
@@ -27,6 +28,8 @@ pub struct ToasterProject {
     /// Path to the source media file (relative to the project file).
     pub source_media: Option<PathBuf>,
     pub words: Vec<Word>,
+    #[serde(default)]
+    pub speaker_names: HashMap<i32, String>,
     pub settings: ProjectSettings,
     /// Engine identifier that produced the transcript (e.g. "whisper-large",
     /// "parakeet-ctc-1.1b"). `None` for projects created before v1.2.0.
@@ -80,6 +83,7 @@ impl ToasterProject {
             modified_at: now,
             source_media: None,
             words: Vec::new(),
+            speaker_names: HashMap::new(),
             settings: ProjectSettings::default(),
             transcription_engine: None,
         }
@@ -182,6 +186,7 @@ mod tests {
         assert!(project.source_media.is_none());
         assert!(!project.created_at.is_empty());
         assert!(!project.modified_at.is_empty());
+        assert!(project.speaker_names.is_empty());
         assert_eq!(project.settings.export_format, "srt");
         assert!(!project.settings.filler_words.is_empty());
     }
@@ -192,6 +197,8 @@ mod tests {
         let mut project = ToasterProject::new("Round Trip");
         project.source_media = Some(PathBuf::from("media/video.mp4"));
         project.set_words(make_words());
+        project.speaker_names.insert(0, "Host".into());
+        project.speaker_names.insert(1, "Guest".into());
         project.settings.export_format = "vtt".into();
 
         project.save(&path).expect("save should succeed");
@@ -202,6 +209,14 @@ mod tests {
         assert_eq!(loaded.source_media, Some(PathBuf::from("media/video.mp4")));
         assert_eq!(loaded.settings.export_format, "vtt");
         assert_eq!(loaded.words.len(), 2);
+        assert_eq!(
+            loaded.speaker_names.get(&0).map(String::as_str),
+            Some("Host")
+        );
+        assert_eq!(
+            loaded.speaker_names.get(&1).map(String::as_str),
+            Some("Guest")
+        );
 
         // Clean up
         let _ = fs::remove_file(&path);

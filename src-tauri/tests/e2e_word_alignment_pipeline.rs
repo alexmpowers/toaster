@@ -20,14 +20,10 @@ use serde::Deserialize;
 use std::fs;
 use std::path::PathBuf;
 
-use toaster_app_lib::audio_toolkit::forced_alignment::{
-    align_words_in_segment, EnergyFrames,
-};
+use toaster_app_lib::audio_toolkit::forced_alignment::{align_words_in_segment, EnergyFrames};
 use toaster_app_lib::audio_toolkit::silence_trim::{trim_leading_silence, trim_trailing_silence};
 use toaster_app_lib::managers::editor::{ValidatedWordSequence, Word};
-use toaster_app_lib::managers::transcription::adapter::{
-    AudioInfo, WhisperAdapter,
-};
+use toaster_app_lib::managers::transcription::adapter::{AudioInfo, WhisperAdapter};
 use transcribe_rs::{TranscriptionResult, TranscriptionSegment};
 
 // ── Fixture types ────────────────────────────────────────────────────────
@@ -180,14 +176,9 @@ fn e2e_multi_segment_alignment_pipeline() {
         let seg_end_us = seconds_to_us(seg_def.end_sec);
         let seg_words: Vec<&str> = seg_def.text.split_whitespace().collect();
 
-        if let Some(mut aligned) = align_words_in_segment(
-            &seg_words,
-            seg_start_us,
-            seg_end_us,
-            &samples,
-            SR,
-            None,
-        ) {
+        if let Some(mut aligned) =
+            align_words_in_segment(&seg_words, seg_start_us, seg_end_us, &samples, SR, None)
+        {
             // Trim leading silence (same as word_builder.rs)
             if let Some(first) = aligned.first_mut() {
                 let trimmed = trim_leading_silence(&samples, first.0, first.1, SR);
@@ -276,21 +267,64 @@ fn e2e_overlapping_segments_produce_valid_words() {
 
     // Synthesize audio with words at known positions
     let oracle = vec![
-        OracleWord { text: "hello".into(),   tone_start_sec: 0.1,  tone_end_sec: 0.4  },
-        OracleWord { text: "world".into(),   tone_start_sec: 0.6,  tone_end_sec: 0.9  },
-        OracleWord { text: "world".into(),   tone_start_sec: 1.6,  tone_end_sec: 1.9  },
-        OracleWord { text: "again".into(),   tone_start_sec: 2.1,  tone_end_sec: 2.4  },
-        OracleWord { text: "today".into(),   tone_start_sec: 2.6,  tone_end_sec: 2.9  },
-        OracleWord { text: "thank".into(),   tone_start_sec: 3.6,  tone_end_sec: 3.9  },
-        OracleWord { text: "you".into(),     tone_start_sec: 4.1,  tone_end_sec: 4.4  },
+        OracleWord {
+            text: "hello".into(),
+            tone_start_sec: 0.1,
+            tone_end_sec: 0.4,
+        },
+        OracleWord {
+            text: "world".into(),
+            tone_start_sec: 0.6,
+            tone_end_sec: 0.9,
+        },
+        OracleWord {
+            text: "world".into(),
+            tone_start_sec: 1.6,
+            tone_end_sec: 1.9,
+        },
+        OracleWord {
+            text: "again".into(),
+            tone_start_sec: 2.1,
+            tone_end_sec: 2.4,
+        },
+        OracleWord {
+            text: "today".into(),
+            tone_start_sec: 2.6,
+            tone_end_sec: 2.9,
+        },
+        OracleWord {
+            text: "thank".into(),
+            tone_start_sec: 3.6,
+            tone_end_sec: 3.9,
+        },
+        OracleWord {
+            text: "you".into(),
+            tone_start_sec: 4.1,
+            tone_end_sec: 4.4,
+        },
     ];
     let samples = synth_audio_from_oracle(&oracle, total_samples);
 
     // The overlapping segments — segment 2 starts before segment 1 ends
     let segments = vec![
-        TranscriptionSegment { start: 0.0, end: 2.0, text: "hello world".to_string(), confidence: None },
-        TranscriptionSegment { start: 1.5, end: 3.5, text: "world again today".to_string(), confidence: None },
-        TranscriptionSegment { start: 3.5, end: 5.0, text: "thank you".to_string(), confidence: None },
+        TranscriptionSegment {
+            start: 0.0,
+            end: 2.0,
+            text: "hello world".to_string(),
+            confidence: None,
+        },
+        TranscriptionSegment {
+            start: 1.5,
+            end: 3.5,
+            text: "world again today".to_string(),
+            confidence: None,
+        },
+        TranscriptionSegment {
+            start: 3.5,
+            end: 5.0,
+            text: "thank you".to_string(),
+            confidence: None,
+        },
     ];
 
     // Clamp overlaps (same logic as word_builder + adapter sanitize_segments)
@@ -314,9 +348,9 @@ fn e2e_overlapping_segments_produce_valid_words() {
         let seg_end_us = seconds_to_us(seg.end as f64);
         let seg_words: Vec<&str> = seg.text.split_whitespace().collect();
 
-        if let Some(mut aligned) = align_words_in_segment(
-            &seg_words, seg_start_us, seg_end_us, &samples, SR, None,
-        ) {
+        if let Some(mut aligned) =
+            align_words_in_segment(&seg_words, seg_start_us, seg_end_us, &samples, SR, None)
+        {
             if let Some(last) = aligned.last_mut() {
                 let trimmed = trim_trailing_silence(&samples, last.0, last.1, SR);
                 if trimmed > last.0 {
@@ -331,7 +365,10 @@ fn e2e_overlapping_segments_produce_valid_words() {
     }
 
     // Must produce at least some words
-    assert!(!all_words.is_empty(), "pipeline produced no words from overlapping segments");
+    assert!(
+        !all_words.is_empty(),
+        "pipeline produced no words from overlapping segments"
+    );
 
     // Validate through trust boundary
     let validated = ValidatedWordSequence::sanitize(all_words, total_duration_us);
@@ -366,15 +403,8 @@ fn e2e_connected_speech_produces_valid_output() {
     let seg_start_us = 0_i64;
     let seg_end_us = total_duration_us;
 
-    let aligned = align_words_in_segment(
-        &words,
-        seg_start_us,
-        seg_end_us,
-        &samples,
-        SR,
-        None,
-    )
-    .expect("aligner must handle connected speech");
+    let aligned = align_words_in_segment(&words, seg_start_us, seg_end_us, &samples, SR, None)
+        .expect("aligner must handle connected speech");
 
     assert_eq!(aligned.len(), 5);
 
@@ -496,15 +526,51 @@ fn e2e_whisper_adapter_to_aligner_roundtrip() {
 
     // Synthesize audio for the aligner (words at known positions)
     let oracle = vec![
-        OracleWord { text: "The".into(),    tone_start_sec: 0.05, tone_end_sec: 0.25 },
-        OracleWord { text: "quick".into(),  tone_start_sec: 0.30, tone_end_sec: 0.55 },
-        OracleWord { text: "brown".into(),  tone_start_sec: 0.60, tone_end_sec: 0.85 },
-        OracleWord { text: "fox".into(),    tone_start_sec: 0.90, tone_end_sec: 1.10 },
-        OracleWord { text: "jumps".into(),  tone_start_sec: 1.15, tone_end_sec: 1.40 },
-        OracleWord { text: "over".into(),   tone_start_sec: 1.85, tone_end_sec: 2.10 },
-        OracleWord { text: "the".into(),    tone_start_sec: 2.15, tone_end_sec: 2.30 },
-        OracleWord { text: "lazy".into(),   tone_start_sec: 2.35, tone_end_sec: 2.60 },
-        OracleWord { text: "dog".into(),    tone_start_sec: 2.65, tone_end_sec: 2.90 },
+        OracleWord {
+            text: "The".into(),
+            tone_start_sec: 0.05,
+            tone_end_sec: 0.25,
+        },
+        OracleWord {
+            text: "quick".into(),
+            tone_start_sec: 0.30,
+            tone_end_sec: 0.55,
+        },
+        OracleWord {
+            text: "brown".into(),
+            tone_start_sec: 0.60,
+            tone_end_sec: 0.85,
+        },
+        OracleWord {
+            text: "fox".into(),
+            tone_start_sec: 0.90,
+            tone_end_sec: 1.10,
+        },
+        OracleWord {
+            text: "jumps".into(),
+            tone_start_sec: 1.15,
+            tone_end_sec: 1.40,
+        },
+        OracleWord {
+            text: "over".into(),
+            tone_start_sec: 1.85,
+            tone_end_sec: 2.10,
+        },
+        OracleWord {
+            text: "the".into(),
+            tone_start_sec: 2.15,
+            tone_end_sec: 2.30,
+        },
+        OracleWord {
+            text: "lazy".into(),
+            tone_start_sec: 2.35,
+            tone_end_sec: 2.60,
+        },
+        OracleWord {
+            text: "dog".into(),
+            tone_start_sec: 2.65,
+            tone_end_sec: 2.90,
+        },
     ];
     let samples = synth_audio_from_oracle(&oracle, total_samples);
 
@@ -520,9 +586,9 @@ fn e2e_whisper_adapter_to_aligner_roundtrip() {
             continue;
         }
 
-        if let Some(mut aligned) = align_words_in_segment(
-            &seg_words, seg_start_us, seg_end_us, &samples, SR, None,
-        ) {
+        if let Some(mut aligned) =
+            align_words_in_segment(&seg_words, seg_start_us, seg_end_us, &samples, SR, None)
+        {
             if let Some(last) = aligned.last_mut() {
                 let trimmed = trim_trailing_silence(&samples, last.0, last.1, SR);
                 if trimmed > last.0 {
@@ -560,19 +626,19 @@ fn e2e_trailing_silence_trimmed_in_pipeline() {
     let total_samples = (total_sec * SR) as usize;
     let total_duration_us = seconds_to_us(total_sec);
 
-    let oracle = vec![
-        OracleWord { text: "hello".into(), tone_start_sec: 0.0, tone_end_sec: 0.3 },
-    ];
+    let oracle = vec![OracleWord {
+        text: "hello".into(),
+        tone_start_sec: 0.0,
+        tone_end_sec: 0.3,
+    }];
     let samples = synth_audio_from_oracle(&oracle, total_samples);
 
     let seg_start_us = 0_i64;
     let seg_end_us = total_duration_us;
     let words = ["hello"];
 
-    let mut aligned = align_words_in_segment(
-        &words, seg_start_us, seg_end_us, &samples, SR, None,
-    )
-    .expect("aligner must succeed");
+    let mut aligned = align_words_in_segment(&words, seg_start_us, seg_end_us, &samples, SR, None)
+        .expect("aligner must succeed");
 
     // Apply trailing silence trim (mirrors word_builder.rs production path)
     if let Some(last) = aligned.last_mut() {
@@ -618,19 +684,19 @@ fn e2e_leading_silence_trimmed_in_pipeline() {
     let total_duration_us = seconds_to_us(total_sec);
 
     // Speech starts at 500ms, ends at 800ms
-    let oracle = vec![
-        OracleWord { text: "hello".into(), tone_start_sec: 0.5, tone_end_sec: 0.8 },
-    ];
+    let oracle = vec![OracleWord {
+        text: "hello".into(),
+        tone_start_sec: 0.5,
+        tone_end_sec: 0.8,
+    }];
     let samples = synth_audio_from_oracle(&oracle, total_samples);
 
     let seg_start_us = 0_i64;
     let seg_end_us = total_duration_us;
     let words = ["hello"];
 
-    let mut aligned = align_words_in_segment(
-        &words, seg_start_us, seg_end_us, &samples, SR, None,
-    )
-    .expect("aligner must succeed");
+    let mut aligned = align_words_in_segment(&words, seg_start_us, seg_end_us, &samples, SR, None)
+        .expect("aligner must succeed");
 
     // Apply leading silence trim (mirrors word_builder.rs production path)
     if let Some(first) = aligned.first_mut() {

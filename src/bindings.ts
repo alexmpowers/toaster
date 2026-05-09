@@ -548,6 +548,81 @@ async editorGetTimingContract() : Promise<TimingContractSnapshot> {
 async editorGetProjection() : Promise<EditorProjection> {
     return await TAURI_INVOKE("editor_get_projection");
 },
+/**
+ * Search the active transcript using exact, fuzzy, or phonetic matching.
+ */
+async searchTranscript(query: string, mode: SearchMode, maxDistance: number | null) : Promise<Result<SearchResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("search_transcript", { query, mode, maxDistance }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+async getLowConfidenceWords(threshold: number | null) : Promise<Result<LowConfidenceWord[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_low_confidence_words", { threshold }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+async verifyWord(index: number) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("verify_word", { index }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+async verifyAllWords(indices: number[]) : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("verify_all_words", { indices }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+async getVocabularySuggestions(confidenceThreshold: number | null) : Promise<Result<VocabularyCorrection[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_vocabulary_suggestions", { confidenceThreshold }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+async applyVocabularyCorrections(corrections: VocabularyCorrection[]) : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("apply_vocabulary_corrections", { corrections }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+async addToVocabulary(word: string) : Promise<Result<string[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("add_to_vocabulary", { word }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+async removeFromVocabulary(word: string) : Promise<Result<string[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("remove_from_vocabulary", { word }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+async getVocabulary() : Promise<Result<string[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_vocabulary") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
 async mediaImport(path: string) : Promise<Result<MediaInfo, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("media_import", { path }) };
@@ -884,6 +959,65 @@ async cleanupAll(minPauseUs: number | null, maxGapUs: number | null) : Promise<R
     else return { status: "error", error: e as string };
 }
 },
+async previewCleanup(config: CleanupConfig | null, preset: CleanupPreset | null) : Promise<Result<CleanupPlan, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("preview_cleanup", { config, preset }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+async applyCleanup(plan: CleanupPlan) : Promise<Result<CleanupPlan, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("apply_cleanup", { plan }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+/**
+ * Analyze silence candidates from transcript word gaps.
+ * 
+ * This command stays on the backend side of the source-of-truth boundary:
+ * it derives silence candidates from existing word timestamps and can be
+ * upgraded later to consume a backend-built VAD curve without changing the
+ * frontend IPC shape.
+ */
+async analyzeSilence(config: SilenceConfig | null) : Promise<Result<SilenceWordCandidate[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("analyze_silence", { config }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+/**
+ * Apply silence-gap markings to the current transcript.
+ */
+async applySilenceRemoval(candidates: SilenceWordCandidate[], onlyConfirmed: boolean) : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("apply_silence_removal", { candidates, onlyConfirmed }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+async analyzePunctuation(config: PunctuationConfig | null) : Promise<Result<PunctuationAnalysis, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("analyze_punctuation", { config }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+async applyPunctuationCorrections(boundaries: SentenceBoundary[]) : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("apply_punctuation_corrections", { boundaries }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
 /**
  * Collapse every adjacent repetition group in the current transcript
  * by keeping the **clearest** take and deleting the rest. Returns per-
@@ -919,6 +1053,72 @@ async saveProject(path: string, name: string | null) : Promise<Result<null, stri
 async loadProject(path: string) : Promise<Result<string, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("load_project", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+/**
+ * Return aggregated speaker stats for the active transcript.
+ */
+async getSpeakers() : Promise<Result<SpeakerInfo[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_speakers") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+/**
+ * Auto-assign speakers by detecting pauses between words.
+ */
+async autoAssignSpeakers(minGapUs: number | null, maxSpeakers: number | null) : Promise<Result<SpeakerInfo[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("auto_assign_speakers", { minGapUs, maxSpeakers }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+/**
+ * Merge one speaker into another and return the updated stats.
+ */
+async mergeSpeakers(fromId: number, toId: number) : Promise<Result<SpeakerInfo[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("merge_speakers", { fromId, toId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+/**
+ * Assign a speaker to an inclusive word range.
+ */
+async assignSpeakerToRange(startIndex: number, endIndex: number, speakerId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("assign_speaker_to_range", { startIndex, endIndex, speakerId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+/**
+ * Clear all speaker IDs and custom names from the active transcript.
+ */
+async clearSpeakers() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("clear_speakers") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
+/**
+ * Rename a speaker. Empty names remove the custom override.
+ */
+async renameSpeaker(speakerId: number, name: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rename_speaker", { speakerId, name }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e as string };
@@ -1083,6 +1283,22 @@ export type AudioDevice = { index: string; name: string; is_default: boolean }
 export type AudioExportFormat = "mp4" | "mov" | "mkv" | "mp3" | "wav" | "m4a" | "opus"
 export type AvailableAccelerators = { whisper: string[]; ort: string[]; gpu_devices: GpuDeviceOption[] }
 /**
+ * Boundary type inferred from a gap between active words.
+ */
+export type BoundaryType = 
+/**
+ * A sentence-ending boundary.
+ */
+"Sentence" | 
+/**
+ * A paragraph boundary caused by a longer pause.
+ */
+"Paragraph" | 
+/**
+ * A clause-level boundary represented by a comma.
+ */
+"Clause"
+/**
  * Authoritative caption unit consumed verbatim by preview and export.
  */
 export type CaptionBlock = { index: number; start_us: number; end_us: number; 
@@ -1175,6 +1391,26 @@ export type CaptionProfileSet = { desktop: CaptionProfile; mobile: CaptionProfil
  * A caption segment for SRT/VTT output and live preview.
  */
 export type CaptionSegment = { index: number; start_us: number; end_us: number; text: string }
+/**
+ * Per-item action proposed by the cleanup planner.
+ */
+export type CleanupAction = { word_index: number; word_text: string; action: CleanupActionType; start_us: number; end_us: number }
+/**
+ * Action type emitted by the planner.
+ */
+export type CleanupActionType = "DeleteFiller" | "DeleteDuplicate" | "SilencePause" | "TrimPause" | "RemoveSilence"
+/**
+ * Per-category cleanup configuration.
+ */
+export type CleanupConfig = { remove_fillers: boolean; remove_duplicates: boolean; silence_pauses: boolean; trim_pauses: boolean; remove_silence: boolean; pause_threshold_us: number | null; max_gap_us: number | null }
+/**
+ * Dry-run summary of a cleanup pass.
+ */
+export type CleanupPlan = { source_revision: number; actions: CleanupAction[]; filler_count: number; duplicate_count: number; pause_count: number; trim_count: number; silence_count: number; total_affected: number; estimated_duration_saved_us: number; passes: number }
+/**
+ * Cleanup intensity preset.
+ */
+export type CleanupPreset = "Gentle" | "Balanced" | "Aggressive"
 /**
  * Combined iterative cleanup: delete fillers, then delete cascading
  * duplicates, then trim pauses — all in a single undo snapshot.
@@ -1287,6 +1523,30 @@ export type LoudnessTarget =
  * Streaming preset (Spotify/YouTube-friendly): integrated -14 LUFS.
  */
 "streaming_-14"
+/**
+ * A low-confidence word returned to the review UI.
+ */
+export type LowConfidenceWord = { 
+/**
+ * Index into the editor word list.
+ */
+word_index: number; 
+/**
+ * Word text as shown in the transcript.
+ */
+text: string; 
+/**
+ * ASR confidence score in the range 0.0-1.0.
+ */
+confidence: number; 
+/**
+ * Word start timestamp in microseconds.
+ */
+start_us: number; 
+/**
+ * Word end timestamp in microseconds.
+ */
+end_us: number }
 export type MediaInfo = { 
 /**
  * Absolute path to the media file.
@@ -1350,13 +1610,133 @@ export type PreviewRenderStatus = "ready" | "no_segments" | "missing_media"
  */
 export type ProfileScope = "App" | "Project"
 /**
+ * Aggregate punctuation analysis for a transcript word list.
+ */
+export type PunctuationAnalysis = { boundaries: SentenceBoundary[]; sentence_count: number; paragraph_count: number; punctuation_insertions: number }
+/**
+ * Configuration for punctuation analysis.
+ */
+export type PunctuationConfig = { 
+/**
+ * Minimum gap between words to consider a sentence boundary.
+ */
+sentence_gap_us: number; 
+/**
+ * Minimum gap between words to insert a paragraph break.
+ */
+paragraph_gap_us: number; 
+/**
+ * Whether to insert periods at sentence and paragraph boundaries.
+ */
+insert_periods: boolean; 
+/**
+ * Whether to insert commas at clause boundaries.
+ */
+insert_commas: boolean; 
+/**
+ * Minimum gap between words to consider a clause boundary.
+ */
+comma_gap_us: number }
+/**
  * Tier label rendered to the user ("Fastest" / "Balanced" /
  * "Highest accuracy"). UI reads this to pick an i18n key from the
  * `settings.models.recommendation.*` namespace.
  */
 export type RecommendationTier = "Fastest" | "Balanced" | "HighestAccuracy"
 export type Rgba = { r: number; g: number; b: number; a: number }
+/**
+ * A single transcript word match.
+ */
+export type SearchMatch = { 
+/**
+ * Index of the matched word in the editor word list.
+ */
+word_index: number; 
+/**
+ * Original word text.
+ */
+text: string; 
+/**
+ * Lower is better. Exact matches return 0.0.
+ */
+match_score: number; 
+/**
+ * Search strategy that produced the match.
+ */
+match_type: SearchMode }
+/**
+ * Available transcript search strategies.
+ */
+export type SearchMode = "Exact" | "Fuzzy" | "Phonetic"
+/**
+ * Search response payload returned to the frontend.
+ */
+export type SearchResult = { matches: SearchMatch[]; total_count: number }
+/**
+ * A detected sentence, paragraph, or clause boundary.
+ */
+export type SentenceBoundary = { 
+/**
+ * Index of the last word before the detected gap.
+ */
+word_index: number; 
+/**
+ * Duration of the gap to the next active word, in microseconds.
+ */
+gap_us: number; 
+/**
+ * Classification for the detected boundary.
+ */
+boundary_type: BoundaryType; 
+/**
+ * Whether applying punctuation would mutate the word text.
+ */
+punctuation_inserted: boolean }
 export type ShortcutBinding = { id: string; name: string; description: string; default_binding: string; current_binding: string }
+/**
+ * High-level classification for a silence candidate.
+ */
+export type SilenceClassification = 
+/**
+ * Confirmed silence by amplitude and VAD.
+ */
+"Confirmed" | 
+/**
+ * Amplitude says silent, but VAD indicates acoustic or speech activity.
+ */
+"PossibleSpeech" | 
+/**
+ * Amplitude-only classification because VAD is unavailable or disabled.
+ */
+"AmplitudeOnly"
+/**
+ * Configuration for silence detection.
+ */
+export type SilenceConfig = { 
+/**
+ * Peak amplitude threshold (linear scale, 0.0-1.0).
+ */
+amplitude_threshold: number; 
+/**
+ * Minimum duration in microseconds for a silence region or gap.
+ */
+min_duration_us: number; 
+/**
+ * Whether to use VAD curve confirmation when available.
+ */
+use_vad: boolean }
+/**
+ * A word-gap candidate affected by silence.
+ */
+export type SilenceWordCandidate = { 
+/**
+ * Index of the word BEFORE the silence gap.
+ */
+word_index: number; 
+/**
+ * The actual gap start in microseconds.
+ */
+gap_start_us: number; gap_end_us: number; gap_duration_us: number; classification: SilenceClassification }
 export type SmartCleanupResult = { groups_collapsed: number; words_deleted: number; decisions: SmartGroupDecision[]; 
 /**
  * Sample rate used when scoring (16000 when audio was available, 0
@@ -1391,6 +1771,10 @@ survivor_score: number;
  * Articulation score of every member, aligned with `members`.
  */
 member_scores: number[] }
+/**
+ * Aggregated speaker metadata for the current transcript.
+ */
+export type SpeakerInfo = { id: number; name: string; word_count: number; total_duration_us: number }
 /**
  * Which time axis the caller wants timestamps in.
  * 
@@ -1437,6 +1821,30 @@ export type TranscriptionMetadata = { engine_type: EngineType; accuracy_score: n
  * Video dimensions in pixels. Input to `compute_caption_layout`.
  */
 export type VideoDims = { width: number; height: number }
+/**
+ * A suggested correction for a single word.
+ */
+export type VocabularyCorrection = { 
+/**
+ * Index into the word list.
+ */
+word_index: number; 
+/**
+ * Original word text from ASR.
+ */
+original_text: string; 
+/**
+ * Suggested replacement from custom vocabulary.
+ */
+suggested_text: string; 
+/**
+ * Match quality score (lower = better match).
+ */
+match_score: number; 
+/**
+ * Word confidence from ASR.
+ */
+word_confidence: number }
 export type WhisperAcceleratorSetting = "auto" | "cpu" | "gpu"
 export type WindowsMicrophonePermissionStatus = { supported: boolean; overall_access: PermissionAccess; device_access: PermissionAccess; app_access: PermissionAccess; desktop_app_access: PermissionAccess }
 export type Word = { text: string; 

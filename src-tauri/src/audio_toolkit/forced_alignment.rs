@@ -500,8 +500,9 @@ mod tests {
         let seg_start_us = 0_i64;
         let seg_end_us = 1_300_000_i64;
         let words = ["alpha", "bravo", "charlie"];
-        let aligned = align_words_in_segment(&words, seg_start_us, seg_end_us, &samples, 16_000.0, None)
-            .expect("aligner must succeed on well-formed synthetic input");
+        let aligned =
+            align_words_in_segment(&words, seg_start_us, seg_end_us, &samples, 16_000.0, None)
+                .expect("aligner must succeed on well-formed synthetic input");
         assert_eq!(aligned.len(), 3);
         assert_eq!(aligned[0].0, seg_start_us);
         assert_eq!(aligned[2].1, seg_end_us);
@@ -523,7 +524,8 @@ mod tests {
     #[test]
     fn aligner_single_word_returns_whole_span() {
         let samples = vec![0.0_f32; 16_000];
-        let out = align_words_in_segment(&["hello"], 100, 500_000, &samples, 16_000.0, None).unwrap();
+        let out =
+            align_words_in_segment(&["hello"], 100, 500_000, &samples, 16_000.0, None).unwrap();
         assert_eq!(out, vec![(100, 500_000)]);
     }
 
@@ -540,8 +542,8 @@ mod tests {
         let (samples, _) = synth_words(0.2, 0.1, 5);
         let total_us = (samples.len() as f64 / 16_000.0 * 1_000_000.0) as i64;
         let words = ["one", "two", "three", "four", "five"];
-        let out =
-            align_words_in_segment(&words, 0, total_us, &samples, 16_000.0, None).expect("must align");
+        let out = align_words_in_segment(&words, 0, total_us, &samples, 16_000.0, None)
+            .expect("must align");
         assert_eq!(out.len(), 5);
         assert_eq!(out[0].0, 0);
         assert_eq!(out[4].1, total_us);
@@ -585,9 +587,14 @@ mod tests {
         }
 
         let aligned = align_words_in_segment(
-            &words, seg_start_us, seg_end_us, &samples, 16_000.0,
+            &words,
+            seg_start_us,
+            seg_end_us,
+            &samples,
+            16_000.0,
             Some(&vad_probs),
-        ).expect("aligner must succeed");
+        )
+        .expect("aligner must succeed");
         assert_eq!(aligned.len(), 3);
 
         // Boundaries should land in the silence gaps, same as energy-only
@@ -616,9 +623,14 @@ mod tests {
         // Wrong length: just 5 probs instead of matching frame count.
         let bad_probs = vec![0.5f32; 5];
         let aligned = align_words_in_segment(
-            &words, seg_start_us, seg_end_us, &samples, 16_000.0,
+            &words,
+            seg_start_us,
+            seg_end_us,
+            &samples,
+            16_000.0,
             Some(&bad_probs),
-        ).expect("aligner must fall back to energy-only");
+        )
+        .expect("aligner must fall back to energy-only");
         assert_eq!(aligned.len(), 3);
     }
 }

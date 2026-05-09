@@ -97,7 +97,11 @@ pub(super) fn build_words_from_segments(
             use crate::audio_toolkit::timing::us_to_sample_clamped;
             let start_s = us_to_sample_clamped(seg_start_us, SAMPLE_RATE_HZ, samples.len());
             let end_s_raw = us_to_sample_clamped(seg_end_us, SAMPLE_RATE_HZ, samples.len());
-            let end_s = if end_s_raw + 1 >= samples.len() { samples.len() } else { end_s_raw };
+            let end_s = if end_s_raw + 1 >= samples.len() {
+                samples.len()
+            } else {
+                end_s_raw
+            };
             if end_s > start_s {
                 let slice = &samples[start_s..end_s];
                 let energy_frames = crate::audio_toolkit::forced_alignment::EnergyFrames::compute(
@@ -154,8 +158,8 @@ pub(super) fn build_words_from_segments(
             if let Some(last) = aligned.last_mut() {
                 let trimmed_end = crate::audio_toolkit::silence_trim::trim_trailing_silence(
                     samples,
-                    last.0,   // last word's start
-                    last.1,   // last word's end (== seg_end_us)
+                    last.0, // last word's start
+                    last.1, // last word's end (== seg_end_us)
                     SAMPLE_RATE_HZ,
                 );
                 if trimmed_end > last.0 {
@@ -175,9 +179,7 @@ pub(super) fn build_words_from_segments(
         // spoken duration than raw character count.
         let weights: Vec<usize> = seg_words
             .iter()
-            .map(|w| {
-                crate::managers::transcription::adapter_normalize::estimate_syllables(w)
-            })
+            .map(|w| crate::managers::transcription::adapter_normalize::estimate_syllables(w))
             .collect();
         let total_weight: usize = weights.iter().sum();
 
@@ -218,7 +220,11 @@ pub(super) fn build_words_from_segments(
                     seg_end_us,
                     SAMPLE_RATE_HZ,
                 );
-                if trimmed > cursor_us { trimmed } else { seg_end_us }
+                if trimmed > cursor_us {
+                    trimmed
+                } else {
+                    seg_end_us
+                }
             } else {
                 cursor_us + word_duration_us
             };
@@ -306,7 +312,10 @@ pub(super) fn build_words_from_segments(
                 confidence: -1.0,
                 speaker_id: -1,
             });
-            meta.push(WordAlignmentMeta { interpolated: true, dp_aligned: false });
+            meta.push(WordAlignmentMeta {
+                interpolated: true,
+                dp_aligned: false,
+            });
         }
     }
 
@@ -356,7 +365,9 @@ pub(super) fn build_words_from_segments(
 ///
 /// Unlike the upstream version, this does NOT strip non-speech segments
 /// (that's the adapter's job) — it only enforces time ordering.
-pub(super) fn clamp_overlapping_segments(segments: &[TranscriptionSegment]) -> Vec<TranscriptionSegment> {
+pub(super) fn clamp_overlapping_segments(
+    segments: &[TranscriptionSegment],
+) -> Vec<TranscriptionSegment> {
     if segments.is_empty() {
         return Vec::new();
     }
@@ -403,7 +414,11 @@ pub(super) fn clamp_overlapping_segments(segments: &[TranscriptionSegment]) -> V
         info!(
             "build_words_from_segments: {} segments (min {:.2}s, max {:.2}s, avg {:.2}s), \
              max words/segment={}",
-            result.len(), min_dur, max_dur, avg_dur, max_words,
+            result.len(),
+            min_dur,
+            max_dur,
+            avg_dur,
+            max_words,
         );
     }
 
