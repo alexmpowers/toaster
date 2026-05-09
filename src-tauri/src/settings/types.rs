@@ -192,6 +192,8 @@ pub struct AppSettings {
     pub lazy_stream_close: bool,
     #[serde(default)]
     pub custom_filler_words: Option<Vec<String>>,
+    #[serde(default = "default_cleanup_preset")]
+    pub cleanup_preset: crate::managers::cleanup::CleanupPreset,
     #[serde(default)]
     pub whisper_accelerator: WhisperAcceleratorSetting,
     #[serde(default)]

@@ -44,9 +44,11 @@ pub fn preview_cleanup(
     preset: Option<CleanupPreset>,
 ) -> Result<CleanupPlan, String> {
     let settings = crate::settings::get_settings(&app);
+    let cleanup_preset = settings.cleanup_preset;
     let custom_fillers = settings.custom_filler_words.unwrap_or_default();
-    let config = config
-        .unwrap_or_else(|| CleanupConfig::from_preset(preset.unwrap_or(CleanupPreset::Balanced)));
+    let config = config.unwrap_or_else(|| {
+        CleanupConfig::from_preset(preset.unwrap_or(cleanup_preset))
+    });
     let audio = load_cleanup_audio(&media_store)?;
     let audio_context = audio
         .as_ref()

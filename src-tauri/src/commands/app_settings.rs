@@ -103,6 +103,18 @@ pub fn change_custom_filler_words_setting(
 
 #[tauri::command]
 #[specta::specta]
+pub fn change_cleanup_preset_setting(
+    app: AppHandle,
+    preset: crate::managers::cleanup::CleanupPreset,
+) -> Result<(), String> {
+    let mut settings = settings::get_settings(&app);
+    settings.cleanup_preset = preset;
+    settings::write_settings(&app, settings);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn change_caption_font_size_setting(app: AppHandle, size: u32) -> Result<(), String> {
     let mut settings = settings::get_settings(&app);
     settings.caption_font_size = size.clamp(12, 72);

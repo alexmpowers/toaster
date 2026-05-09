@@ -26,6 +26,7 @@ const { mockCommands } = vi.hoisted(() => {
       changeOrtAcceleratorSetting: fn(),
       changeWhisperGpuDevice: fn(),
       changeNormalizeAudioSetting: fn(),
+      changeCleanupPresetSetting: fn(),
       changeExportVolumeDbSetting: fn(),
       changeExportFadeInMsSetting: fn(),
       changeExportFadeOutMsSetting: fn(),
@@ -254,6 +255,18 @@ describe("settingsStore", () => {
       expect(useSettingsStore.getState().isUpdatingKey("debug_mode")).toBe(
         false,
       );
+    });
+
+    it("persists cleanup preset changes through the dedicated updater", async () => {
+      mockCommands.changeCleanupPresetSetting.mockResolvedValue(undefined);
+
+      await useSettingsStore
+        .getState()
+        .updateSetting("cleanup_preset" as keyof Settings, "Aggressive" as Settings[keyof Settings]);
+
+      expect(
+        mockCommands.changeCleanupPresetSetting,
+      ).toHaveBeenCalledWith("Aggressive");
     });
   });
 

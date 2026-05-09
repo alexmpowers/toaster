@@ -140,6 +140,10 @@ pub(super) fn default_whisper_gpu_device() -> i32 {
     -1 // auto
 }
 
+pub(super) fn default_cleanup_preset() -> crate::managers::cleanup::CleanupPreset {
+    crate::managers::cleanup::CleanupPreset::Balanced
+}
+
 /// R-006 (features/reintroduce-silero-vad): default-off. Boundary
 /// refinement is gated on the AC-003 eval win; until we record a
 /// measured improvement in journal.md, the default stays off and the
@@ -250,6 +254,7 @@ pub fn get_default_settings() -> AppSettings {
             "kind of".to_string(),
             "sort of".to_string(),
         ]),
+        cleanup_preset: default_cleanup_preset(),
         whisper_accelerator: WhisperAcceleratorSetting::default(),
         ort_accelerator: OrtAcceleratorSetting::default(),
         whisper_gpu_device: default_whisper_gpu_device(),

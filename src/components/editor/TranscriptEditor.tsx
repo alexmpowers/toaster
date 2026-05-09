@@ -14,6 +14,9 @@ import TranscriptContextMenu, {
 } from "./TranscriptContextMenu";
 import FindReplaceBar from "./FindReplaceBar";
 import { getSpeakerColor } from "./speakerColors";
+import TranscriptSpeakerContextMenu, {
+  type SpeakerContextMenuState,
+} from "./TranscriptSpeakerContextMenu";
 
 /** Map confidence (0-1) to a visual style. Returns empty when confidence
  *  is unknown (-1) or above the 0.7 threshold. */
@@ -50,6 +53,7 @@ const SEARCH_MODE_TO_COMMAND = {
 interface TranscriptEditorProps {
   showConfidence?: boolean;
   showSpeakers?: boolean;
+  speakerNames?: Record<number, string>;
   onWordClick?: (index: number) => void;
   activeWordRef?: React.RefObject<HTMLSpanElement | null>;
   activePlaybackIndex?: number | null;
@@ -59,6 +63,7 @@ interface TranscriptEditorProps {
 const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   showConfidence = true,
   showSpeakers = true,
+  speakerNames = {},
   onWordClick,
   activeWordRef,
   activePlaybackIndex = null,
@@ -72,7 +77,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   // changes by reference / value. Key perf fix per audit finding F3.
   const {
     words,
-    speakerNames,
+    storeSpeakerNames,
     selectedIndex,
     selectionRange,
     highlightedIndices,
@@ -93,7 +98,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   } = useEditorStore(
     useShallow((s) => ({
       words: s.words,
-      speakerNames: s.speakerNames,
+      storeSpeakerNames: s.speakerNames,
       selectedIndex: s.selectedIndex,
       selectionRange: s.selectionRange,
       highlightedIndices: s.highlightedIndices,
@@ -132,6 +137,13 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
     y: 0,
     wordIndex: -1,
   });
+  const [speakerContextMenu, setSpeakerContextMenu] =
+    useState<SpeakerContextMenuState>({
+      visible: false,
+      x: 0,
+      y: 0,
+      speakerId: -1,
+    });
 
   const highlightedSet = useMemo(
     () => new Set(highlightedIndices),
@@ -141,6 +153,20 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   const closeContextMenu = useCallback(() => {
     setContextMenu((prev) => ({ ...prev, visible: false }));
   }, []);
+
+  const closeSpeakerContextMenu = useCallback(() => {
+    setSpeakerContextMenu((prev) => ({ ...prev, visible: false }));
+  }, []);
+
+  const effectiveSpeakerNames = useMemo(
+    () => ({
+      ...storeSpeakerNames,
+      ...Object.fromEntries(
+        Object.entries(speakerNames).map(([id, name]) => [String(id), name]),
+      ),
+    }),
+    [speakerNames, storeSpeakerNames],
+  );
 
   const isInSelectionRange = useCallback(
     (index: number): boolean => {
@@ -158,8 +184,9 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
       dragStartRef.current = index;
       isDraggingRef.current = false;
       closeContextMenu();
+      closeSpeakerContextMenu();
     },
-    [closeContextMenu],
+    [closeContextMenu, closeSpeakerContextMenu],
   );
 
   const handleWordMouseEnter = useCallback(
@@ -360,6 +387,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
   const handleContextMenu = useCallback(
     (index: number, e: React.MouseEvent) => {
       e.preventDefault();
+      closeSpeakerContextMenu();
       selectWord(index);
       setContextMenu({
         visible: true,
@@ -368,8 +396,26 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
         wordIndex: index,
       });
     },
-    [selectWord],
+    [closeSpeakerContextMenu, selectWord],
   );
+
+  const handleSpeakerContextMenu = useCallback(
+    (e: React.MouseEvent, speakerId: number) => {
+      e.preventDefault();
+      closeContextMenu();
+      setSpeakerContextMenu({
+        visible: true,
+        x: e.clientX,
+        y: e.clientY,
+        speakerId,
+      });
+    },
+    [closeContextMenu],
+  );
+
+  const handleRenameSpeaker = useCallback(async () => {
+    await refreshFromBackend();
+  }, [refreshFromBackend]);
 
   const handleDeleteSelected = useCallback(async () => {
     if (highlightedIndices.length > 0) {
@@ -459,6 +505,13 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
       return () => document.removeEventListener("click", handleClick);
     }
   }, [contextMenu.visible, closeContextMenu]);
+
+  useEffect(() => {
+    if (!speakerContextMenu.visible) return;
+    const close = () => closeSpeakerContextMenu();
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [closeSpeakerContextMenu, speakerContextMenu.visible]);
 
   if (words.length === 0) {
     return (
@@ -571,32 +624,29 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
               ? getConfidenceStyle(word.confidence)
               : {};
           const speakerLabel =
-            speakerNames[String(word.speaker_id)] ??
+            effectiveSpeakerNames[String(word.speaker_id)] ??
             t("editor.speaker", { id: word.speaker_id + 1 });
-          const speakerBorderStyle =
-            showSpeakers && word.speaker_id >= 0
-              ? {
-                  borderLeft: `2px solid ${getSpeakerColor(word.speaker_id)}`,
-                  paddingLeft: "3px",
-                }
-              : {};
 
           return (
             <React.Fragment key={`word-${word.start_us}-${index}`}>
               {paragraphBreak && !showSpeakerLabel && (
-                <div className="w-full h-3" aria-hidden="true" />
+                <div className="w-full h-5" aria-hidden="true" />
               )}
               {showSpeakerLabel && (
-                <div className="w-full mt-2 mb-0.5 flex items-center gap-1.5">
-                  <span
-                    className="inline-block w-2 h-2 rounded-full"
-                    style={{
-                      backgroundColor: getSpeakerColor(word.speaker_id),
-                    }}
-                  />
-                  <span className="text-[10px] uppercase tracking-wider text-mid-gray/60">
-                    {speakerLabel}
-                  </span>
+                <div
+                  className="w-full mt-4 mb-1 flex items-center gap-2"
+                  onContextMenu={(e) => handleSpeakerContextMenu(e, word.speaker_id)}
+                >
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span
+                      className="inline-block w-2.5 h-2.5 rounded-full"
+                      style={{ backgroundColor: getSpeakerColor(word.speaker_id) }}
+                    />
+                    <span className="text-xs font-medium text-text/70">
+                      {speakerLabel}
+                    </span>
+                  </div>
+                  <div className="flex-1 h-px bg-mid-gray/20" />
                 </div>
               )}
               <span
@@ -618,7 +668,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                 onMouseUp={(e) => handleWordMouseUp(index, e)}
                 onDoubleClick={() => handleDoubleClick(index)}
                 onContextMenu={(e) => handleContextMenu(index, e)}
-                style={{ ...confidenceStyle, ...speakerBorderStyle }}
+                style={confidenceStyle}
                 title={
                   isHighlighted && highlightType === "filler"
                     ? t("editor.fillerWord")
@@ -627,7 +677,7 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
                       : isHighlighted && highlightType === "pause"
                         ? t("editor.pauseDetected")
                         : isHighlighted && highlightType === "cleanup"
-                          ? t("editor.cleanupTitle")
+                          ? t("editor.removeSilence")
                           : showConfidence &&
                               word.confidence > 0 &&
                               word.confidence < 0.9
@@ -733,6 +783,11 @@ const TranscriptEditor: React.FC<TranscriptEditorProps> = ({
         onRedo={redo}
         onRestoreAll={restoreAll}
         onClose={closeContextMenu}
+      />
+      <TranscriptSpeakerContextMenu
+        menu={speakerContextMenu}
+        onRenamed={handleRenameSpeaker}
+        onClose={closeSpeakerContextMenu}
       />
     </div>
   );

@@ -6,6 +6,7 @@ import type {
   AudioDevice,
   CaptionFontFamily,
   CaptionProfileSet,
+  CleanupPreset,
   LogLevel,
   LoudnessTarget,
   WhisperAcceleratorSetting,
@@ -93,6 +94,8 @@ const settingUpdaters: {
   custom_words: (value) => commands.updateCustomWords(value as string[]),
   custom_filler_words: (value) =>
     commands.changeCustomFillerWordsSetting(value as string[]),
+  cleanup_preset: (value) =>
+    commands.changeCleanupPresetSetting(value as CleanupPreset),
   word_correction_threshold: (value) =>
     commands.changeWordCorrectionThresholdSetting(value as number),
   log_level: (value) => commands.setLogLevel(value as LogLevel),

@@ -36,6 +36,8 @@ type PlaybackAwareTranscriptEditorProps = {
   activePlaybackIndex?: number | null;
   isPlaying?: boolean;
   activeWordRef?: React.RefObject<HTMLSpanElement | null>;
+  showSpeakers?: boolean;
+  speakerNames?: Record<number, string>;
 };
 
 function noOpAsync() {
@@ -138,5 +140,44 @@ describe("TranscriptEditor playback highlighting", () => {
     });
 
     expect(activeWordRef.current?.textContent).toBe("beta");
+  });
+
+  it("renders speaker section headers using provided speaker names", async () => {
+    useEditorStore.setState({
+      words: [
+        {
+          text: "alpha",
+          start_us: 0,
+          end_us: 200_000,
+          deleted: false,
+          silenced: false,
+          confidence: 1,
+          speaker_id: 0,
+        },
+        {
+          text: "beta",
+          start_us: 250_000,
+          end_us: 450_000,
+          deleted: false,
+          silenced: false,
+          confidence: 1,
+          speaker_id: 1,
+        },
+      ],
+    });
+    const PlaybackAwareTranscriptEditor =
+      TranscriptEditor as React.FC<PlaybackAwareTranscriptEditorProps>;
+
+    await act(async () => {
+      root.render(
+        <PlaybackAwareTranscriptEditor
+          showSpeakers={true}
+          speakerNames={{ 0: "Host", 1: "Guest" }}
+        />,
+      );
+    });
+
+    expect(container.textContent).toContain("Host");
+    expect(container.textContent).toContain("Guest");
   });
 });

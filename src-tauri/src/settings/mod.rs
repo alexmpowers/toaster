@@ -139,6 +139,22 @@ mod tests {
     }
 
     #[test]
+    fn cleanup_preset_defaults_to_balanced_and_roundtrips() {
+        let settings = get_default_settings();
+        assert_eq!(
+            settings.cleanup_preset,
+            crate::managers::cleanup::CleanupPreset::Balanced
+        );
+
+        let json = serde_json::to_value(&settings).expect("serialize");
+        let back: AppSettings = serde_json::from_value(json).expect("deserialize");
+        assert_eq!(
+            back.cleanup_preset,
+            crate::managers::cleanup::CleanupPreset::Balanced
+        );
+    }
+
+    #[test]
     fn caption_migration_seeds_profiles_from_flat_fields() {
         let mut s = get_default_settings();
         s.caption_profiles_was_migrated = false;

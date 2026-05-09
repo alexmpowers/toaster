@@ -5,6 +5,7 @@ import { DiscardWords } from "../DiscardWords";
 import { AllowWords } from "../AllowWords";
 import { ModelUnloadTimeoutSetting } from "../ModelUnloadTimeout";
 import { CaptionSettings } from "../captions/CaptionSettings";
+import { CleanupPresetSetting } from "../CleanupPresetSetting";
 import { ExperimentalGroup } from "./ExperimentalGroup";
 import { VadRefineBoundariesToggle } from "../VadRefineBoundariesToggle";
 
@@ -28,6 +29,10 @@ export const AdvancedSettings: React.FC = () => {
       <SettingsGroup title={t("settings.advanced.groups.words.title")}>
         <DiscardWords descriptionMode="tooltip" grouped />
         <AllowWords descriptionMode="tooltip" grouped />
+      </SettingsGroup>
+
+      <SettingsGroup title={t("settings.advanced.groups.cleanup.title")}>
+        <CleanupPresetSetting descriptionMode="tooltip" grouped />
       </SettingsGroup>
 
       <SettingsGroup title={t("settings.advanced.groups.vad.title")}>

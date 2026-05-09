@@ -53,6 +53,14 @@ async changeCustomFillerWordsSetting(words: string[]) : Promise<Result<null, str
     else return { status: "error", error: e as string };
 }
 },
+async changeCleanupPresetSetting(preset: CleanupPreset) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("change_cleanup_preset_setting", { preset }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e as string };
+}
+},
 async changeCaptionFontSizeSetting(size: number) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("change_caption_font_size_setting", { size }) };
@@ -1215,6 +1223,10 @@ export type Accelerator = "Cpu" | "Cuda" | "Metal" | "Vulkan" | "DirectMl"
 export type AllowedExportFormat = { format: AudioExportFormat; extension: string }
 export type AppSettings = { bindings?: Partial<{ [key in string]: ShortcutBinding }>; start_hidden?: boolean; update_checks_enabled?: boolean; selected_model?: string; selected_output_device?: string | null; preferred_output_sample_rate?: number; translate_to_english?: boolean; selected_language?: string; debug_mode?: boolean; log_level?: LogLevel; custom_words?: string[]; model_unload_timeout?: ModelUnloadTimeout; word_correction_threshold?: number; app_language?: string; 
 /**
+ * Cleanup intensity preset.
+ */
+cleanup_preset?: CleanupPreset; 
+/**
  * Master gate for the Experimental settings group. When `false`,
  * per-flag booleans still store whatever the user last set, but the
  * `is_experiment_enabled` getter (and the matching
@@ -1423,7 +1435,7 @@ export type CleanupResult = { fillers_removed: number; duplicates_removed: numbe
 /**
  * Atomic frontend projection of editor state after a backend transaction.
  */
-export type EditorProjection = { words: Word[]; timing_contract: TimingContractSnapshot }
+export type EditorProjection = { words: Word[]; timing_contract: TimingContractSnapshot; speaker_names: Partial<{ [key in number]: string }> }
 export type EngineType = "Whisper" | "Parakeet" | "Moonshine" | "MoonshineStreaming" | "SenseVoice" | "GigaAM" | "Canary" | "Cohere"
 export type ExportFormat = "Srt" | "Vtt" | "Script"
 /**

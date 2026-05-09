@@ -392,6 +392,9 @@
           "title": "Words",
           "description": "Discard and allow word lists used across the transcript editor."
         },
+        "cleanup": {
+          "title": "Cleanup"
+        },
         "performance": {
           "title": "Performance",
           "description": "Model unload timing and related runtime behavior."
@@ -416,6 +419,15 @@
       "experimentalMaster": {
         "title": "Enable Experimental Features",
         "description": "Master switch for every experiment. When off, individual experiment flags read as disabled even if they were previously turned on. Turning this back on restores your prior selections."
+      },
+      "cleanupPreset": {
+        "title": "Cleanup Intensity",
+        "description": "Controls how aggressively Remove Fillers and Remove Silence operate",
+        "options": {
+          "Gentle": "Gentle — only clear fillers, long pauses",
+          "Balanced": "Balanced — fillers, duplicates, moderate pauses",
+          "Aggressive": "Aggressive — all cleanup, tight pauses"
+        }
       }
     },
     "sound": {
@@ -622,53 +634,21 @@
       "confirm": "Reprocess",
       "cancel": "Cancel"
     },
-    "removeSilence": {
-      "button": "Remove silence",
-      "tooltip": "Trim long stretches of silent dead air from the audio. Undoable.",
-      "empty": "No silent dead air found.",
-      "success": "Trimmed {{count}} silent stretch",
-      "success_plural": "Trimmed {{count}} silent stretches",
-      "failed": "Remove silence failed. Check the log for details."
-    },
+    "removeSilence": "Remove Silence",
     "transcriptionQuality": {
       "excellent": "Transcription complete — Excellent quality ({{model}})",
       "good": "Transcription complete — Good quality ({{model}})",
       "fair": "Transcription complete — Fair quality ({{model}}). Consider a larger model for better accuracy."
     },
-    "reviewMode": "Review Mode",
-    "reviewModeTooltip": "Review low-confidence words",
-    "reviewProgress": "{{current}} of {{total}} to review",
-    "reviewComplete": "All words reviewed",
-    "verifyWord": "Verify",
-    "verifyAll": "Verify All",
-    "skipWord": "Skip",
-    "confidenceThreshold": "Confidence threshold",
-    "noLowConfidenceWords": "No low-confidence words found",
-    "cleanupTitle": "Clean Up Transcript",
-    "cleanupPreset": "Preset",
-    "cleanupGentle": "Gentle",
-    "cleanupBalanced": "Balanced",
-    "cleanupAggressive": "Aggressive",
-    "cleanupFillers": "Remove fillers",
-    "cleanupDuplicates": "Remove duplicates",
-    "cleanupPauses": "Silence long pauses",
-    "cleanupPreview": "Preview",
-    "cleanupApply": "Apply",
-    "cleanupAffected": "{{count}} words affected",
-    "cleanupDurationSaved": "~{{duration}}s saved",
-    "cleanupNothingFound": "Nothing to clean up",
     "speakers": "Speakers",
-    "speakerPanel": "Speaker Management",
-    "autoAssignSpeakers": "Auto-detect Speakers",
-    "clearSpeakers": "Clear Speaker Assignments",
     "mergeSpeakers": "Merge Speakers",
-    "mergeInto": "Merge into",
-    "speakerName": "Speaker Name",
-    "speakerWords": "{{count}} words",
-    "speakerDuration": "{{duration}}s",
-    "noSpeakers": "No speakers assigned",
     "renameSpeaker": "Rename Speaker",
-    "assignSpeaker": "Assign Speaker"
+    "removeFillers": "Remove Fillers",
+    "fillersRemoved": "Removed {{count}} filler words",
+    "noFillersFound": "No filler words found",
+    "silenceRemoved": "Removed {{count}} silent regions",
+    "noSilenceFound": "No silence to remove",
+    "toggleSpeakers": "Toggle speaker labels"
   },
   "experiments": {
     "feedbackLink": "Send feedback"

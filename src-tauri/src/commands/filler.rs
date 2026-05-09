@@ -195,11 +195,17 @@ pub fn silence_pauses(
 #[tauri::command]
 #[specta::specta]
 pub fn trim_pauses(
+    app: tauri::AppHandle,
     store: State<EditorStore>,
     min_pause_us: Option<i64>,
     max_gap_us: Option<i64>,
 ) -> Result<usize, String> {
-    let threshold = min_pause_us.unwrap_or(filler::DEFAULT_PAUSE_THRESHOLD_US);
+    let cleanup_preset = crate::settings::get_settings(&app).cleanup_preset;
+    let threshold = min_pause_us.unwrap_or(match cleanup_preset {
+        crate::managers::cleanup::CleanupPreset::Gentle => 2_500_000,
+        crate::managers::cleanup::CleanupPreset::Balanced => filler::DEFAULT_PAUSE_THRESHOLD_US,
+        crate::managers::cleanup::CleanupPreset::Aggressive => 1_000_000,
+    });
     let max_gap = max_gap_us.unwrap_or(filler::DEFAULT_MAX_GAP_US);
 
     let mut state = crate::lock_recovery::try_lock(store.0.lock()).map_err(|e| e.to_string())?;
@@ -257,9 +263,15 @@ pub fn tighten_gaps(
 #[tauri::command]
 #[specta::specta]
 pub fn remove_silence(
+    app: tauri::AppHandle,
     store: State<EditorStore>,
     media_store: State<'_, crate::managers::media::MediaStore>,
 ) -> Result<usize, String> {
+    if crate::settings::get_settings(&app).cleanup_preset
+        != crate::managers::cleanup::CleanupPreset::Aggressive
+    {
+        return Ok(0);
+    }
     use crate::audio_toolkit::{detect_silent_ranges, SilenceDetectConfig};
 
     // Resolve the source media's cached PCM buffer. The first call decodes

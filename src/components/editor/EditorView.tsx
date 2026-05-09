@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { ask, open, save } from "@tauri-apps/plugin-dialog";
-import { convertFileSrc } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { useShallow } from "zustand/react/shallow";
 import {
   FileVideo,
@@ -13,6 +13,9 @@ import {
   X,
   RotateCcw,
   Keyboard,
+  Trash2,
+  VolumeX,
+  Users,
 } from "lucide-react";
 import { SettingsGroup } from "@/components/ui/SettingsGroup";
 import { Button } from "@/components/ui/Button";
@@ -27,9 +30,6 @@ import Waveform from "@/components/player/Waveform";
 import EditorToolbar from "@/components/editor/EditorToolbar";
 import ExportMenu from "@/components/editor/ExportMenu";
 import KeyboardShortcutsDialog from "@/components/editor/KeyboardShortcutsDialog";
-import ReviewPanel from "@/components/editor/ReviewPanel";
-import CleanupDialog from "@/components/editor/CleanupDialog";
-import SpeakerPanel from "@/components/editor/SpeakerPanel";
 import { unwrapResult } from "@/components/editor/EditorView.util";
 import { useEditorExports } from "@/components/editor/hooks/useEditorExports";
 import { useEditorKeyboard } from "@/components/editor/hooks/useEditorKeyboard";
@@ -101,9 +101,7 @@ const EditorView: React.FC = () => {
   const [modelMissing, setModelMissing] = useState(false);
   const [lastSavedPath, setLastSavedPath] = useState<string | null>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
-  const [isReviewMode, setIsReviewMode] = useState(false);
-  const [isCleanupOpen, setIsCleanupOpen] = useState(false);
-  const [isSpeakerPanelOpen, setIsSpeakerPanelOpen] = useState(false);
+  const [showSpeakers, setShowSpeakers] = useState(true);
   const {
     handleExport,
     handleFFmpegScript,
@@ -182,6 +180,13 @@ const EditorView: React.FC = () => {
           toast.success(tierMessage);
         }
       }
+
+      try {
+        await invoke("auto_assign_speakers");
+        await refreshFromBackend();
+      } catch (speakerErr) {
+        console.warn("Speaker auto-detect failed:", speakerErr);
+      }
     } catch (err) {
       const errStr = String(err);
       if (errStr.includes("Model is not loaded")) {
@@ -205,7 +210,7 @@ const EditorView: React.FC = () => {
     } finally {
       setIsTranscribing(false);
     }
-  }, [mediaInfo, setWords, t]);
+  }, [mediaInfo, refreshFromBackend, setWords, t]);
 
   const handleImportMedia = useCallback(async () => {
     try {
@@ -257,6 +262,12 @@ const EditorView: React.FC = () => {
               await commands.transcribeMediaFile(storeInfo.path),
             );
             await setWords(result);
+            try {
+              await invoke("auto_assign_speakers");
+              await refreshFromBackend();
+            } catch (speakerErr) {
+              console.warn("Speaker auto-detect failed:", speakerErr);
+            }
             setIsTranscribing(false);
           }
         } catch (err) {
@@ -269,7 +280,7 @@ const EditorView: React.FC = () => {
     } catch (err) {
       console.error("Failed to import media:", err);
     }
-  }, [t, setMedia, setMediaInfo, setWords]);
+  }, [t, refreshFromBackend, setMedia, setMediaInfo, setWords]);
 
   const handleSaveProject = useCallback(async () => {
     try {
@@ -323,7 +334,6 @@ const EditorView: React.FC = () => {
     clearHighlights();
     selectWord(null);
     setSelectionRange(null);
-    setIsReviewMode(false);
     setActivePlaybackIndex(null);
     await setWords([]);
     await handleTranscribe();
@@ -341,9 +351,37 @@ const EditorView: React.FC = () => {
     updateSetting("normalize_audio_on_export", !normalizeAudio);
   }, [updateSetting, normalizeAudio]);
 
-  const handleToggleReviewMode = useCallback(() => {
-    setIsReviewMode((previous) => !previous);
-  }, []);
+  const handleRemoveFillers = useCallback(async () => {
+    try {
+      const count = await invoke<number>("delete_fillers");
+      await refreshFromBackend();
+      if (count > 0) {
+        toast.success(t("editor.fillersRemoved", { count }));
+      } else {
+        toast.info(t("editor.noFillersFound"));
+      }
+    } catch (err) {
+      console.error("Remove fillers failed:", err);
+      toast.error(String(err));
+    }
+  }, [refreshFromBackend, t]);
+
+  const handleRemoveSilence = useCallback(async () => {
+    try {
+      const silenceCount = await invoke<number>("remove_silence");
+      const trimCount = await invoke<number>("trim_pauses");
+      await refreshFromBackend();
+      const total = (silenceCount ?? 0) + (trimCount ?? 0);
+      if (total > 0) {
+        toast.success(t("editor.silenceRemoved", { count: total }));
+      } else {
+        toast.info(t("editor.noSilenceFound"));
+      }
+    } catch (err) {
+      console.error("Remove silence failed:", err);
+      toast.error(String(err));
+    }
+  }, [refreshFromBackend, t]);
 
   const handleClose = useCallback(() => {
     clearMedia();
@@ -354,9 +392,6 @@ const EditorView: React.FC = () => {
     setLastSavedPath(null);
     setIsTranscribing(false);
     setModelMissing(false);
-    setIsReviewMode(false);
-    setIsCleanupOpen(false);
-    setIsSpeakerPanelOpen(false);
     setActivePlaybackIndex(null);
   }, [
     clearMedia,
@@ -549,32 +584,53 @@ const EditorView: React.FC = () => {
             </h2>
           </div>
           <div className="bg-background border border-mid-gray/20 rounded-lg p-4 space-y-3">
-            {/* Cleanup is a transcript modification, not an export action,
-                so it lives with the transcript itself. Left-aligned above
-                the transcript per Round 7 user feedback. */}
-            <div className="flex justify-start gap-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleReset}
+                  disabled={isTranscribing}
+                  title={t("editor.resetTooltip")}
+                  className="inline-flex items-center gap-1.5"
+                >
+                  <RotateCcw size={14} />
+                  {isTranscribing ? t("editor.transcribing") : t("editor.reset")}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleRemoveFillers}
+                  title={t("editor.removeFillers")}
+                  className="inline-flex items-center gap-1.5"
+                >
+                  <Trash2 size={14} />
+                  {t("editor.removeFillers")}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleRemoveSilence}
+                  title={t("editor.removeSilence")}
+                  className="inline-flex items-center gap-1.5"
+                >
+                  <VolumeX size={14} />
+                  {t("editor.removeSilence")}
+                </Button>
+              </div>
               <Button
-                variant="secondary"
+                variant={showSpeakers ? "primary-soft" : "secondary"}
                 size="sm"
-                onClick={handleReset}
-                disabled={isTranscribing}
-                title={t("editor.resetTooltip")}
+                onClick={() => setShowSpeakers((current) => !current)}
+                title={t("editor.toggleSpeakers")}
                 className="inline-flex items-center gap-1.5"
               >
-                <RotateCcw size={14} />
-                {isTranscribing ? t("editor.transcribing") : t("editor.reset")}
+                <Users size={14} />
+                {t("editor.speakers")}
               </Button>
             </div>
-            <CleanupDialog
-              isOpen={isCleanupOpen}
-              onClose={() => setIsCleanupOpen(false)}
-            />
-            <ReviewPanel
-              isOpen={isReviewMode}
-              onClose={() => setIsReviewMode(false)}
-            />
-            {isSpeakerPanelOpen && <SpeakerPanel />}
             <TranscriptEditor
+              showSpeakers={showSpeakers}
               onWordClick={handleWordClick}
               activeWordRef={activeWordRef}
               activePlaybackIndex={activePlaybackIndex}
@@ -593,12 +649,6 @@ const EditorView: React.FC = () => {
         onBurnCaptionsChange={setBurnCaptions}
         normalizeAudio={normalizeAudio}
         onNormalizeAudioToggle={handleNormalizeToggle}
-        isReviewMode={isReviewMode}
-        onToggleReviewMode={handleToggleReviewMode}
-        isCleanupOpen={isCleanupOpen}
-        onToggleCleanup={() => setIsCleanupOpen((current) => !current)}
-        isSpeakerPanelOpen={isSpeakerPanelOpen}
-        onToggleSpeakerPanel={() => setIsSpeakerPanelOpen((current) => !current)}
       />
 
       {/* Floating help button — always visible, keyboard-first users open via

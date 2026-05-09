@@ -197,6 +197,7 @@ pub fn run(cli_args: CliArgs) {
             commands::app_settings::change_word_correction_threshold_setting,
             commands::app_settings::update_custom_words,
             commands::app_settings::change_custom_filler_words_setting,
+            commands::app_settings::change_cleanup_preset_setting,
             commands::app_settings::change_caption_font_size_setting,
             commands::app_settings::change_caption_bg_color_setting,
             commands::app_settings::change_caption_text_color_setting,
