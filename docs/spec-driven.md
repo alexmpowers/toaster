@@ -7,9 +7,9 @@ Toaster runs an afkode-inspired ([afkode.ai/docs](https://afkode.ai/docs)) spec-
 ```
 Define -> Plan -> Execute -> Review -> Ship
  user    PM       superpowers:        superpowers:    finishing-a-
- (slug + agent    executing-plans /   code-reviewer + development-
- 6-elt           subagent-driven-     code-review       branch
- REQUEST)        development           .instructions
+ (slug + agent    executing-plans /   code-reviewer   development-
+ 6-elt           subagent-driven-                       branch
+ REQUEST)        development
 ```
 
 State lives in `features/<slug>/STATE.md`, one of: `defined`, `planned`, `executing`, `reviewing`, `shipped`, `archived`. Run `pwsh scripts/feature/feature-board.ps1` for the terminal Kanban.
