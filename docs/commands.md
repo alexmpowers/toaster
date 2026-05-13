@@ -1,5 +1,8 @@
 # Commands
 
+<!-- AUTO-GENERATED from .github/_shared/registry/commands.json by scripts/registry/build.ts -->
+<!-- To update: `bun scripts/registry/build.ts` — do not hand-edit below this line -->
+
 Authoritative structured data lives in [`.github/_shared/registry/commands.json`](../.github/_shared/registry/commands.json). This document renders the current contents for human reading.
 
 Query subsets via the reader CLI:

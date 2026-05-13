@@ -10,13 +10,13 @@
  *   bun scripts/agents-registry.ts list
  *   bun scripts/agents-registry.ts render <section>
  *
- * Sections: rules | commands | testing | boundaries | hygiene | verification
+ * Sections: rules | commands | testing | hygiene | verification
  *           | skills | agents
  *
  * Examples:
  *   bun scripts/agents-registry.ts rules --verb NEVER
+ *   bun scripts/agents-registry.ts rules --category never   # (replaces old boundaries section)
  *   bun scripts/agents-registry.ts commands --tier fast
- *   bun scripts/agents-registry.ts boundaries --category never
  *   bun scripts/agents-registry.ts skills
  *   bun scripts/agents-registry.ts render commands
  */
@@ -32,7 +32,6 @@ const SECTIONS = [
   "rules",
   "commands",
   "testing",
-  "boundaries",
   "hygiene",
   "verification",
   "skills",
@@ -71,8 +70,6 @@ function itemKey(section: Section): string {
       return "commands";
     case "testing":
       return "layers";
-    case "boundaries":
-      return "boundaries";
     case "verification":
       return "gates";
     case "skills":
@@ -119,25 +116,12 @@ function renderSection(
     }
   } else if (section === "rules") {
     for (const r of items) {
+      const catTag = r.category ? ` [${r.category}]` : "";
       lines.push(
         `- **${r.verb}** (${r.scope}) — ${r.rule}${
           r.critical ? " _(critical)_" : ""
-        }`,
+        }${catTag}`,
       );
-    }
-  } else if (section === "boundaries") {
-    for (const cat of ["always", "ask-first", "never"] as const) {
-      const subset = items.filter((i) => i.category === cat);
-      if (!subset.length) continue;
-      const title =
-        cat === "always"
-          ? "Always do"
-          : cat === "ask-first"
-            ? "Ask first"
-            : "Never do";
-      lines.push(`### ${title}`, "");
-      for (const b of subset) lines.push(`- ${b.rule}`);
-      lines.push("");
     }
   } else if (section === "testing") {
     lines.push("| Layer | Command | Notes |", "|-------|---------|-------|");

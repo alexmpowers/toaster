@@ -68,7 +68,7 @@ Append entries chronologically under the relevant section. Each entry:
 
 - For audio edits / captions / preview<->export parity / timeline rendering,
   "verified" means driving the failing input through
-  `scripts/launch-toaster-monitored.ps1 -ObservationSeconds 120`, not
+  `scripts/launch-toaster-monitored.ps1 -Duration 2m`, not
   `cargo check` (AGENTS.md "Verified means the live app, not `cargo check`").
 
 ## Discoveries (append below this line)

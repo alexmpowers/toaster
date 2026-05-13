@@ -22,7 +22,7 @@ toaster/
 ├── scripts/                   # PowerShell / TS tooling
 │   ├── setup-env.ps1          # MSVC + LLVM + Vulkan env (run first on Windows)
 │   ├── launch-toaster-monitored.ps1  # live-app verification runner
-│   ├── agents-registry.ts     # reader CLI over .github/_shared/registry/*.json
+│   ├── registry/reader.ts      # reader CLI over .github/_shared/registry/*.json
 │   ├── build-registry.ts      # auto-gen skills.json + agents.json from frontmatter
 │   ├── check-translations.ts  # i18n locale parity
 │   ├── check-file-sizes.ts    # file-size cap enforcement
@@ -71,7 +71,7 @@ toaster/
     │   └── templates/         # plan-active-work.md, retry-log-entry.md, ...
     ├── skills/                # project skills — see `bun scripts/registry/reader.ts skills`
     ├── agents/                # custom agents — see `bun scripts/registry/reader.ts agents`
-    ├── instructions/          # thin Copilot path-scoped pointers → nested AGENTS.md
+    ├── instructions/          # code-review addendum (only surviving instruction file)
     ├── prompts/               # invocable prompt files (/launch-toaster, /dump-debug, /run-eval)
     └── workflows/             # CI
 ```

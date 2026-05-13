@@ -27,7 +27,6 @@ const REQUIRED = [
   "rules.json",
   "commands.json",
   "testing.json",
-  "boundaries.json",
   "hygiene.json",
   "verification.json",
   "skills.json",

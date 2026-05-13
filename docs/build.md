@@ -72,7 +72,7 @@ Runs environment setup, starts the app, and prints bounded startup observation
 with captured logs:
 
 ```powershell
-.\scripts\launch-toaster-monitored.ps1 -ObservationSeconds 120
+.\scripts\launch-toaster-monitored.ps1 -Duration 2m
 ```
 
 It runs environment setup, starts `cargo tauri dev`, and prints:

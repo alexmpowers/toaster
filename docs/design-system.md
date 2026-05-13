@@ -1,7 +1,7 @@
 # Toaster design system — single source of truth
 
 Canonical aesthetic contract for every Toaster UI surface. Linked from
-`AGENTS.md`, `src/AGENTS.md`, and `src/components/settings/AGENTS.md`. If
+`AGENTS.md` and `src/AGENTS.md`. If
 you're about to build or edit a settings screen, editor affordance, or
 control primitive, this page is the rule you follow — and the gates
 below are what CI enforces.
