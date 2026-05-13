@@ -1,18 +1,7 @@
 # Commands
 
-<!-- AUTO-GENERATED from .github/_shared/registry/commands.json by scripts/registry/build.ts -->
-<!-- To update: `bun scripts/registry/build.ts` — do not hand-edit below this line -->
-
-Authoritative structured data lives in [`.github/_shared/registry/commands.json`](../.github/_shared/registry/commands.json). This document renders the current contents for human reading.
-
-Query subsets via the reader CLI:
-
-```bash
-bun scripts/registry/reader.ts commands --tier fast    # inner loop
-bun scripts/registry/reader.ts commands --tier full    # milestone sweep
-bun scripts/registry/reader.ts commands --tier live    # live app + evals
-bun scripts/registry/reader.ts render commands         # markdown render
-```
+Quick reference for common development commands. See
+[`src-tauri/AGENTS.md`](../src-tauri/AGENTS.md) for Windows build environment details.
 
 ## Fast inner loop (iteration)
 

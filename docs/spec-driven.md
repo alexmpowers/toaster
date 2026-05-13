@@ -29,7 +29,7 @@ Under `features/<slug>/`:
 | `journal.md`            | Operational journal (gitignored except for the example)                                                 | no       |
 | `tasks/<id>/context.md` | Curated per-task briefing for fresh subagents (gitignored except for the example)                       | no       |
 
-The `toaster-feature-pm` skill (invoked by `mission-control` via the pipeline runner) generates this bundle; see [`features/example-pm-dryrun/`](../features/example-pm-dryrun/) for a worked reference.
+The `toaster-feature-pm` skill (invoked by `mission-control` via the pipeline runner) generates this bundle.
 
 ## Coverage gate
 

@@ -22,8 +22,7 @@ toaster/
 ├── scripts/                   # PowerShell / TS tooling
 │   ├── setup-env.ps1          # MSVC + LLVM + Vulkan env (run first on Windows)
 │   ├── launch-toaster-monitored.ps1  # live-app verification runner
-│   ├── registry/reader.ts      # reader CLI over .github/_shared/registry/*.json
-│   ├── build-registry.ts      # auto-gen skills.json + agents.json from frontmatter
+│   ├── registry/check.ts      # validation gate for registry JSON files
 │   ├── check-translations.ts  # i18n locale parity
 │   ├── check-file-sizes.ts    # file-size cap enforcement
 │   ├── sql/                   # reusable SQL snippets (reap-stale-todos.sql, ...)
@@ -67,11 +66,10 @@ toaster/
 └── .github/
     ├── _shared/               # shared agentic infrastructure
     │   ├── hooks/             # session/tool hooks (hooks.json, posttool-reminders, etc.)
-    │   ├── registry/          # structured-data source of truth (rules, commands, testing, boundaries, hygiene, verification, skills, agents)
+    │   ├── registry/          # validation-only rule data (rules.json, pipeline-registry.json)
     │   └── templates/         # plan-active-work.md, retry-log-entry.md, ...
-    ├── skills/                # project skills — see `bun scripts/registry/reader.ts skills`
-    ├── agents/                # custom agents — see `bun scripts/registry/reader.ts agents`
-    ├── instructions/          # code-review addendum (only surviving instruction file)
+    ├── skills/                # project skills (toaster-adapter-contract, design-system, eval, feature-pm, hygiene, qa)
+    ├── agents/                # custom agents (mission-control)
     ├── prompts/               # invocable prompt files (/launch-toaster, /dump-debug, /run-eval)
     └── workflows/             # CI
 ```

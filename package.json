@@ -48,8 +48,6 @@
     "eval:dashboard": "bun scripts/eval/eval-dashboard.ts",
     "eval:dashboard:json": "bun scripts/eval/eval-dashboard.ts --json",
     "eval:dashboard:strict": "bun scripts/eval/eval-dashboard.ts --strict",
-    "registry:build": "bun scripts/registry/build.ts",
-    "registry": "bun scripts/registry/reader.ts",
     "postinstall": "bun scripts/check-nix-deps.ts"
   },
   "dependencies": {
