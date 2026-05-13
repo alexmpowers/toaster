@@ -44,7 +44,9 @@ Run this in the same shell before Cargo/Tauri commands:
 ## Development commands
 
 ```bash
-# full app (frontend + backend) — cross-platform minimum
+# full app (frontend + backend)
+# Windows: use the monitored launcher (see Launch protocol below)
+# Cross-platform minimum (non-Windows):
 cargo tauri dev
 
 # production build

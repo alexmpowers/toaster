@@ -33,8 +33,9 @@ npm run lint                                         # full eslint pass
 ## Live app + evals (verification)
 
 ```bash
-# Full dev app — first run compiles ~689 crates
-cargo tauri dev
+# Full dev app (Windows: use monitored launcher below instead)
+# cargo tauri dev                                       # cross-platform minimum
+pwsh scripts/launch-toaster-monitored.ps1 -Duration 5m  # required on Windows
 
 # Monitored live-app verification (required for audio / caption / preview / export fixes)
 pwsh scripts/launch-toaster-monitored.ps1 -Duration 5m

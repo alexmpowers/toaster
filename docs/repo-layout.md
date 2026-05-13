@@ -11,7 +11,7 @@ toaster/
 │   ├── PRD.md                 # product requirements (transcript-first editor scope)
 │   ├── build.md               # platform build setup
 │   ├── repo-layout.md         # this file
-│   ├── commands.md            # rendered commands reference (auto from registry)
+│   ├── commands.md            # development commands quick reference
 │   ├── spec-driven.md         # spec-driven development lifecycle (PM agent)
 │   └── testing-kb.md          # empirical testing facts across features
 ├── eval/                      # evaluation ecosystem
