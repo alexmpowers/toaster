@@ -1,4 +1,4 @@
-# Spec-driven development (Product Manager agent)
+# Spec-driven development
 
 Toaster runs an afkode-inspired ([afkode.ai/docs](https://afkode.ai/docs)) spec-driven loop on top of the superpowers chain. Any work above a single-file fix should go through it.
 
@@ -6,10 +6,10 @@ Toaster runs an afkode-inspired ([afkode.ai/docs](https://afkode.ai/docs)) spec-
 
 ```
 Define -> Plan -> Execute -> Review -> Ship
- user    PM       superpowers:        superpowers:    finishing-a-
- (slug + agent    executing-plans /   code-reviewer   development-
- 6-elt           subagent-driven-                       branch
- REQUEST)        development
+ user    toaster-   superpowers:        superpowers:    finishing-a-
+ (slug + feature-   executing-plans /   code-reviewer   development-
+ 6-elt   pm skill   subagent-driven-                       branch
+ REQUEST)           development
 ```
 
 State lives in `features/<slug>/STATE.md`, one of: `defined`, `planned`, `executing`, `reviewing`, `shipped`, `archived`. Run `pwsh scripts/feature/feature-board.ps1` for the terminal Kanban.
@@ -25,7 +25,7 @@ Under `features/<slug>/`:
 | `PRD.md`                | Requirements with `R-NNN` IDs and `AC-NNN-x` acceptance criteria                                        | yes      |
 | `BLUEPRINT.md`          | Architecture decisions per R-ID, single-source-of-truth placement, risk register                        | yes      |
 | `tasks.sql`             | `INSERT INTO todos / todo_deps` for the session SQL store                                               | yes      |
-| `coverage.json`         | Every AC -> verifier (skill / agent / cargo-test / script / manual live-app)                            | yes      |
+| `coverage.json`         | Every AC -> verifier (skill / cargo-test / script / manual / doc-section)                               | yes      |
 | `journal.md`            | Operational journal (gitignored except for the example)                                                 | no       |
 | `tasks/<id>/context.md` | Curated per-task briefing for fresh subagents (gitignored except for the example)                       | no       |
 

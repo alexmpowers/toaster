@@ -24,7 +24,7 @@ This rule exists so the next contributor does not repeat that relocation. If a s
 
 ## Recommendation table
 
-See [features/advanced-menu-restoration/journal.md](../features/advanced-menu-restoration/journal.md) "Audit" section for the per-setting recommendation table produced during this feature.
+The per-setting recommendation table was produced during the advanced-menu-restoration feature audit (now archived).
 
 ## Layout invariants
 
