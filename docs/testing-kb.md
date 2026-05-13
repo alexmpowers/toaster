@@ -44,14 +44,14 @@ Append entries chronologically under the relevant section. Each entry:
 ### 2026-04-18 — Monitored-launch warm vs cold timings (feature: build-env-ninja-hardening)
 
 - Discovery: A cold `cargo tauri dev` triggered by
-  `scripts/launch-toaster-monitored.ps1 -ObservationSeconds 300` on this
+  `scripts/launch-toaster-monitored.ps1 -Duration 5m` on this
   dependency tree (whisper-rs-sys + ffmpeg-sys + Tauri stack) takes
   roughly 4-5 minutes from "Setting up Toaster build environment..." to
   the first `tauri-ready` success signal. A warm relaunch (build cache
   intact, no source changes) reaches `launch_status=launched_ok` inside a
   60-second observation window with cycles to spare.
-- Implication: Use `-ObservationSeconds 60` for warm relaunches to keep
-  monitor cycles cheap; reserve 300+ for the first build of a session or
+- Implication: Use `-Duration 1m` for warm relaunches to keep
+  monitor cycles cheap; reserve `-Duration 5m` or more for the first build of a session or
   after a `cargo clean`. Do not retry under 10 minutes if the cold path
   appears stuck — it is almost certainly compiling, not hung
   (per AGENTS.md "Cargo runtime expectations").
